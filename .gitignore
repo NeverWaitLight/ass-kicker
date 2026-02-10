@@ -1,0 +1,9 @@
+**/.claude/
+**/.codex/
+**/.cursor/
+**/.qwen/
+**/.vscode/
+**/.idea/
+**/target/
+**/node_modules/
+**/dist/

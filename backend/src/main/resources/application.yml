@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: backend
+  main:
+    web-application-type: reactive
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: 123456
+  flyway:
+    enabled: true
+    url: jdbc:postgresql://localhost:5432/postgres
+    user: postgres
+    password: 123456
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+app:
+  security:
+    jwt:
+      secret: change-this-secret-to-32-chars-minimum
+      access-token-ttl: PT24H
+      refresh-token-ttl: PT720H
+  channel:
+    crypto:
+      secret: change-this-channel-secret
+      sensitive-keys:
+        - password
+        - secret
+        - token
+        - apiKey
+        - api_key
+        - accessKey
+        - privateKey
+  sender:
+    mail:
+      protocol: SMTP
+      smtp:
+        host: smtp.example.com
+        port: 465
+        username: change-this-smtp-username
+        password: change-this-smtp-password
+        protocol: smtp
+        ssl-enabled: true
+        from: change-this-smtp-from
+      http-api:
+        base-url: https://example.com
+        path: /api/mail/send
+        api-key-header: Authorization
+        api-key: change-this-mail-api-key
+        from: change-this-http-from
+  test-send:
+    max-requests: 5
+    window: PT1M
+    max-target-length: 255
+    max-content-length: 2000
+logging:
+  async:
+    queue-size: 1024
+    discarding-threshold: 0
+server:
+  port: 8080
