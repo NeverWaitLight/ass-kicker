@@ -31,23 +31,6 @@ app:
         - api_key
         - accessKey
         - privateKey
-  sender:
-    mail:
-      protocol: SMTP
-      smtp:
-        host: smtp.example.com
-        port: 465
-        username: change-this-smtp-username
-        password: change-this-smtp-password
-        protocol: smtp
-        ssl-enabled: true
-        from: change-this-smtp-from
-      http-api:
-        base-url: https://example.com
-        path: /api/mail/send
-        api-key-header: Authorization
-        api-key: change-this-mail-api-key
-        from: change-this-http-from
   test-send:
     max-requests: 5
     window: PT1M

@@ -9,9 +9,9 @@ import java.util.List;
 public class EmailProtocolSchemaService {
 
     public EmailProtocolSchemaResponse getSchema() {
-        EmailSenderProperties defaults = new EmailSenderProperties();
-        EmailSenderProperties.Smtp smtpDefaults = defaults.getSmtp();
-        EmailSenderProperties.HttpApi httpDefaults = defaults.getHttpApi();
+        EmailSenderProperty defaults = new EmailSenderProperty();
+        EmailSenderProperty.Smtp smtpDefaults = defaults.getSmtp();
+        EmailSenderProperty.HttpApi httpDefaults = defaults.getHttpApi();
 
         List<EmailProtocolSchemaResponse.EmailProtocolField> smtpFields = List.of(
                 field("host", "SMTP 主机", "string", true, "", "smtp.example.com"),

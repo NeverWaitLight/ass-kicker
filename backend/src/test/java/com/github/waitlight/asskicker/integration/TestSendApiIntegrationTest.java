@@ -4,7 +4,7 @@ import com.github.waitlight.asskicker.repository.RegistrationLock;
 import com.github.waitlight.asskicker.sender.MessageResponse;
 import com.github.waitlight.asskicker.sender.Sender;
 import com.github.waitlight.asskicker.sender.email.EmailSenderFactory;
-import com.github.waitlight.asskicker.sender.email.EmailSenderProperties;
+import com.github.waitlight.asskicker.sender.email.EmailSenderProperty;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -228,8 +228,18 @@ class TestSendApiIntegrationTest {
         EmailSenderFactory emailSenderFactory() {
             return new EmailSenderFactory(WebClient.builder()) {
                 @Override
-                public Sender create(EmailSenderProperties properties) {
-                    return request -> MessageResponse.success("test-id");
+                public Sender create(EmailSenderProperty property) {
+                    return new Sender() {
+                        @Override
+                        public MessageResponse send(com.github.waitlight.asskicker.sender.MessageRequest request) {
+                            return MessageResponse.success("test-id");
+                        }
+
+                        @Override
+                        public com.github.waitlight.asskicker.sender.SenderProperty getProperty() {
+                            return property;
+                        }
+                    };
                 }
             };
         }

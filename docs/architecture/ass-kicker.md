@@ -18,7 +18,7 @@
 
 - `backend/pom.xml`：依赖与构建配置
 - `backend/src/main/java/com/github/waitlight/asskicker`：主代码包
-- `backend/src/main/resources/application.yml`：运行配置
+- `backend/src/main/resources/application.yml`：运行配置（不包含通道配置，通道由页面配置并存储在数据库）
 
 ## 前端架构
 

@@ -7,8 +7,8 @@ import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.sender.MessageResponse;
 import com.github.waitlight.asskicker.sender.Sender;
 import com.github.waitlight.asskicker.sender.email.EmailSenderFactory;
-import com.github.waitlight.asskicker.sender.email.EmailSenderProperties;
-import com.github.waitlight.asskicker.sender.email.EmailSenderPropertiesMapper;
+import com.github.waitlight.asskicker.sender.email.EmailSenderProperty;
+import com.github.waitlight.asskicker.sender.email.EmailSenderPropertyMapper;
 import com.github.waitlight.asskicker.service.impl.TestSendServiceImpl;
 import com.github.waitlight.asskicker.testsend.TemporaryChannelConfigManager;
 import com.github.waitlight.asskicker.testsend.TestSendProperties;
@@ -36,11 +36,21 @@ class TestSendServiceImplTest {
         TemporaryChannelConfigManager manager = new TemporaryChannelConfigManager();
         EmailSenderFactory factory = new EmailSenderFactory(null) {
             @Override
-            public Sender create(EmailSenderProperties properties) {
-                return request -> MessageResponse.success("id-1");
+            public Sender create(EmailSenderProperty property) {
+                return new Sender() {
+                    @Override
+                    public MessageResponse send(com.github.waitlight.asskicker.sender.MessageRequest request) {
+                        return MessageResponse.success("id-1");
+                    }
+
+                    @Override
+                    public com.github.waitlight.asskicker.sender.SenderProperty getProperty() {
+                        return property;
+                    }
+                };
             }
         };
-        EmailSenderPropertiesMapper mapper = new EmailSenderPropertiesMapper();
+        EmailSenderPropertyMapper mapper = new EmailSenderPropertyMapper();
         TestSendServiceImpl service = new TestSendServiceImpl(factory, mapper, manager, limiter);
 
         Map<String, Object> smtp = Map.of(
@@ -73,11 +83,21 @@ class TestSendServiceImplTest {
         TemporaryChannelConfigManager manager = new TemporaryChannelConfigManager();
         EmailSenderFactory factory = new EmailSenderFactory(null) {
             @Override
-            public Sender create(EmailSenderProperties properties) {
-                return request -> MessageResponse.success("id-1");
+            public Sender create(EmailSenderProperty property) {
+                return new Sender() {
+                    @Override
+                    public MessageResponse send(com.github.waitlight.asskicker.sender.MessageRequest request) {
+                        return MessageResponse.success("id-1");
+                    }
+
+                    @Override
+                    public com.github.waitlight.asskicker.sender.SenderProperty getProperty() {
+                        return property;
+                    }
+                };
             }
         };
-        EmailSenderPropertiesMapper mapper = new EmailSenderPropertiesMapper();
+        EmailSenderPropertyMapper mapper = new EmailSenderPropertyMapper();
         TestSendServiceImpl service = new TestSendServiceImpl(factory, mapper, manager, limiter);
 
         Map<String, Object> smtp = Map.of(

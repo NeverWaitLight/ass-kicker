@@ -3,6 +3,8 @@ package com.github.waitlight.asskicker.sender.email;
 import com.github.waitlight.asskicker.sender.MessageRequest;
 import com.github.waitlight.asskicker.sender.MessageResponse;
 import com.github.waitlight.asskicker.sender.Sender;
+import com.github.waitlight.asskicker.sender.SenderProperty;
+
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -17,13 +19,16 @@ public class HttpApiEmailSender implements Sender {
 
     private final WebClient client;
 
-    private final EmailSenderProperties.HttpApi properties;
+    private final EmailSenderProperty property;
 
-    public HttpApiEmailSender(WebClient.Builder builder, EmailSenderProperties.HttpApi properties) {
-        this.properties = properties;
+    private final EmailSenderProperty.HttpApi httpApiProperties;
+
+    public HttpApiEmailSender(WebClient.Builder builder, EmailSenderProperty property) {
+        this.property = property;
+        this.httpApiProperties = property.getHttpApi();
         this.client = builder
-                .baseUrl(String.valueOf(properties.getBaseUrl()))
-                .defaultHeader(String.valueOf(properties.getApiKeyHeader()), String.valueOf(properties.getApiKey()))
+                .baseUrl(String.valueOf(httpApiProperties.getBaseUrl()))
+                .defaultHeader(String.valueOf(httpApiProperties.getApiKeyHeader()), String.valueOf(httpApiProperties.getApiKey()))
                 .build();
     }
 
@@ -37,13 +42,13 @@ public class HttpApiEmailSender implements Sender {
 
             String messageId = client
                     .post()
-                    .uri(properties.getPath())
+                    .uri(httpApiProperties.getPath())
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(BodyInserters.fromValue(body))
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(properties.getTimeout())
-                    .retryWhen(Retry.fixedDelay(properties.getMaxRetries(), properties.getRetryDelay())
+                    .timeout(httpApiProperties.getTimeout())
+                    .retryWhen(Retry.fixedDelay(httpApiProperties.getMaxRetries(), httpApiProperties.getRetryDelay())
                             .filter(this::isRetryableException))
                     .onErrorResume(WebClientResponseException.class, ex ->
                             Mono.error(new RuntimeException(
@@ -64,8 +69,8 @@ public class HttpApiEmailSender implements Sender {
         body.put("subject", String.valueOf(request.getSubject()));
         body.put("content", String.valueOf(request.getContent()));
 
-        if (properties.getFrom() != null && !properties.getFrom().isBlank()) {
-            body.put("from", properties.getFrom());
+        if (httpApiProperties.getFrom() != null && !httpApiProperties.getFrom().isBlank()) {
+            body.put("from", httpApiProperties.getFrom());
         }
 
         if (request.getAttributes() != null) {
@@ -85,18 +90,28 @@ public class HttpApiEmailSender implements Sender {
     }
 
     private String categorizeError(Exception ex) {
-        Throwable cause = ex.getCause();
-
-        if (ex instanceof WebClientResponseException responseEx) {
+        WebClientResponseException responseEx = findCause(ex, WebClientResponseException.class);
+        if (responseEx != null) {
             return categorizeHttpStatus(responseEx.getStatusCode().value());
-        } else if (cause instanceof WebClientResponseException responseEx) {
-            return categorizeHttpStatus(responseEx.getStatusCode().value());
-        } else if (cause instanceof java.net.ConnectException) {
+        }
+        if (findCause(ex, java.net.ConnectException.class) != null) {
             return "CONNECTION_FAILED";
-        } else if (cause instanceof java.util.concurrent.TimeoutException) {
+        }
+        if (findCause(ex, java.util.concurrent.TimeoutException.class) != null) {
             return "TIMEOUT";
         }
         return "MAIL_SEND_FAILED";
+    }
+
+    private <T extends Throwable> T findCause(Throwable ex, Class<T> type) {
+        Throwable current = ex;
+        while (current != null) {
+            if (type.isInstance(current)) {
+                return type.cast(current);
+            }
+            current = current.getCause();
+        }
+        return null;
     }
 
     private String categorizeHttpStatus(int status) {
@@ -110,6 +125,11 @@ public class HttpApiEmailSender implements Sender {
             return "SERVER_ERROR";
         }
         return "MAIL_SEND_FAILED";
+    }
+
+    @Override
+    public SenderProperty getProperty() {
+        return property;
     }
 }
 

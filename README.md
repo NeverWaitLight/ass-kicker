@@ -47,8 +47,13 @@ curl -X POST http://localhost:8080/api/channels \
     "type": "email",
     "description": "SMTP channel",
     "properties": {
-      "host": "smtp.example.com",
-      "apiKey": "secret"
+      "protocol": "SMTP",
+      "smtp": {
+        "host": "smtp.example.com",
+        "port": 465,
+        "username": "user@example.com",
+        "password": "pass"
+      }
     }
   }'
 ```

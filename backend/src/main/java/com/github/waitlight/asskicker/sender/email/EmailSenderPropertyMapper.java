@@ -10,10 +10,10 @@ import java.util.Locale;
 import java.util.Map;
 
 @Component
-public class EmailSenderPropertiesMapper {
+public class EmailSenderPropertyMapper {
 
-    public EmailSenderProperties fromProperties(Map<String, Object> properties) {
-        EmailSenderProperties result = new EmailSenderProperties();
+    public EmailSenderProperty fromProperties(Map<String, Object> properties) {
+        EmailSenderProperty result = new EmailSenderProperty();
         Map<String, Object> safe = normalizeProperties(properties);
 
         EmailProtocolType protocol = parseProtocol(safe.get("protocol"));
@@ -32,7 +32,7 @@ public class EmailSenderPropertiesMapper {
         return result;
     }
 
-    private void applySmtp(EmailSenderProperties.Smtp smtp, Map<String, Object> values) {
+    private void applySmtp(EmailSenderProperty.Smtp smtp, Map<String, Object> values) {
         String host = readString(values, "host");
         String username = readString(values, "username");
         String password = readString(values, "password");
@@ -60,7 +60,7 @@ public class EmailSenderPropertiesMapper {
         smtp.setRetryDelay(readDuration(values, "retryDelay", smtp.getRetryDelay()));
     }
 
-    private void applyHttpApi(EmailSenderProperties.HttpApi httpApi, Map<String, Object> values) {
+    private void applyHttpApi(EmailSenderProperty.HttpApi httpApi, Map<String, Object> values) {
         String baseUrl = readString(values, "baseUrl");
         String path = readString(values, "path");
         String apiKeyHeader = readString(values, "apiKeyHeader");
@@ -100,7 +100,7 @@ public class EmailSenderPropertiesMapper {
         try {
             return EmailProtocolType.valueOf(normalized);
         } catch (IllegalArgumentException ex) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "邮件协议不支持: " + normalized);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "邮件协议不支持 " + normalized);
         }
     }
 
@@ -128,8 +128,7 @@ public class EmailSenderPropertiesMapper {
         if (value == null) {
             return "";
         }
-        String text = String.valueOf(value).trim();
-        return text;
+        return String.valueOf(value).trim();
     }
 
     private String readString(Map<String, Object> values, String key, String fallback) {

@@ -3,6 +3,8 @@ package com.github.waitlight.asskicker.sender.email;
 import com.github.waitlight.asskicker.sender.MessageRequest;
 import com.github.waitlight.asskicker.sender.MessageResponse;
 import com.github.waitlight.asskicker.sender.Sender;
+import com.github.waitlight.asskicker.sender.SenderProperty;
+
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.mail.MailException;
@@ -15,11 +17,14 @@ public class SmtpEmailSender implements Sender {
 
     private final JavaMailSender mailSender;
 
-    private final EmailSenderProperties.Smtp properties;
+    private final EmailSenderProperty property;
 
-    public SmtpEmailSender(JavaMailSender mailSender, EmailSenderProperties.Smtp properties) {
+    private final EmailSenderProperty.Smtp smtpProperties;
+
+    public SmtpEmailSender(JavaMailSender mailSender, EmailSenderProperty property) {
         this.mailSender = mailSender;
-        this.properties = properties;
+        this.property = property;
+        this.smtpProperties = property.getSmtp();
     }
 
     @Override
@@ -31,7 +36,7 @@ public class SmtpEmailSender implements Sender {
         int attempts = 0;
         Exception lastException = null;
 
-        while (attempts <= properties.getMaxRetries()) {
+        while (attempts <= smtpProperties.getMaxRetries()) {
             try {
                 MimeMessage message = mailSender.createMimeMessage();
                 MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
@@ -44,9 +49,9 @@ public class SmtpEmailSender implements Sender {
             } catch (MailException | MessagingException ex) {
                 lastException = ex;
                 attempts++;
-                if (attempts <= properties.getMaxRetries()) {
+                if (attempts <= smtpProperties.getMaxRetries()) {
                     try {
-                        Thread.sleep(properties.getRetryDelay().toMillis());
+                        Thread.sleep(smtpProperties.getRetryDelay().toMillis());
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                         return MessageResponse.failure("MAIL_SEND_INTERRUPTED", ie.getMessage());
@@ -56,14 +61,18 @@ public class SmtpEmailSender implements Sender {
         }
 
         return MessageResponse.failure("MAIL_SEND_FAILED",
-            lastException != null ? lastException.getMessage() : "Unknown error after " + attempts + " attempts");
+                lastException != null ? lastException.getMessage() : "Unknown error after " + attempts + " attempts");
     }
 
     private String resolveFrom() {
-        if (properties.getFrom() != null && !properties.getFrom().isBlank()) {
-            return properties.getFrom();
+        if (smtpProperties.getFrom() != null && !smtpProperties.getFrom().isBlank()) {
+            return smtpProperties.getFrom();
         }
-        return properties.getUsername();
+        return smtpProperties.getUsername();
+    }
+
+    @Override
+    public SenderProperty getProperty() {
+        return property;
     }
 }
-

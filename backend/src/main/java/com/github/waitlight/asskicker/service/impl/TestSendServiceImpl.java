@@ -8,8 +8,8 @@ import com.github.waitlight.asskicker.sender.MessageRequest;
 import com.github.waitlight.asskicker.sender.MessageResponse;
 import com.github.waitlight.asskicker.sender.Sender;
 import com.github.waitlight.asskicker.sender.email.EmailSenderFactory;
-import com.github.waitlight.asskicker.sender.email.EmailSenderProperties;
-import com.github.waitlight.asskicker.sender.email.EmailSenderPropertiesMapper;
+import com.github.waitlight.asskicker.sender.email.EmailSenderProperty;
+import com.github.waitlight.asskicker.sender.email.EmailSenderPropertyMapper;
 import com.github.waitlight.asskicker.service.TestSendService;
 import com.github.waitlight.asskicker.testsend.TemporaryChannelConfig;
 import com.github.waitlight.asskicker.testsend.TemporaryChannelConfigManager;
@@ -32,16 +32,16 @@ public class TestSendServiceImpl implements TestSendService {
     private static final Logger logger = LoggerFactory.getLogger(TestSendServiceImpl.class);
 
     private final EmailSenderFactory emailSenderFactory;
-    private final EmailSenderPropertiesMapper emailSenderPropertiesMapper;
+    private final EmailSenderPropertyMapper emailSenderPropertyMapper;
     private final TemporaryChannelConfigManager configManager;
     private final TestSendRateLimiter rateLimiter;
 
     public TestSendServiceImpl(EmailSenderFactory emailSenderFactory,
-                               EmailSenderPropertiesMapper emailSenderPropertiesMapper,
+                               EmailSenderPropertyMapper emailSenderPropertyMapper,
                                TemporaryChannelConfigManager configManager,
                                TestSendRateLimiter rateLimiter) {
         this.emailSenderFactory = emailSenderFactory;
-        this.emailSenderPropertiesMapper = emailSenderPropertiesMapper;
+        this.emailSenderPropertyMapper = emailSenderPropertyMapper;
         this.configManager = configManager;
         this.rateLimiter = rateLimiter;
     }
@@ -95,8 +95,8 @@ public class TestSendServiceImpl implements TestSendService {
         return Mono.fromCallable(() -> {
             try {
                 if (config.type() == ChannelType.EMAIL) {
-                    EmailSenderProperties properties = emailSenderPropertiesMapper.fromProperties(config.properties());
-                    Sender emailSender = emailSenderFactory.create(properties);
+                    EmailSenderProperty property = emailSenderPropertyMapper.fromProperties(config.properties());
+                    Sender emailSender = emailSenderFactory.create(property);
                     MessageRequest messageRequest = MessageRequest.builder()
                             .recipient(request.target())
                             .subject("测试消息")
@@ -108,13 +108,13 @@ public class TestSendServiceImpl implements TestSendService {
                             .build();
                     try {
                         logger.info("SECURITY_TEST_SEND_SENDER_READY configId={} protocol={} sender={}",
-                                config.id(), properties.getProtocol().name(), emailSender.getClass().getSimpleName());
+                                config.id(), property.getProtocol().name(), emailSender.getClass().getSimpleName());
                         logger.info("SECURITY_TEST_SEND_EXEC configId={} protocol={} target={}",
-                                config.id(), properties.getProtocol().name(), request.target());
+                                config.id(), property.getProtocol().name(), request.target());
                         MessageResponse response = emailSender.send(messageRequest);
                         logger.info("SECURITY_TEST_SEND_PROVIDER_RESULT configId={} protocol={} success={} messageId={} errorCode={}",
                                 config.id(),
-                                properties.getProtocol().name(),
+                                property.getProtocol().name(),
                                 response.isSuccess(),
                                 response.getMessageId(),
                                 response.getErrorCode());

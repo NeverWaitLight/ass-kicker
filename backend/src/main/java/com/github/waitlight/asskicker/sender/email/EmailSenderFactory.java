@@ -18,15 +18,15 @@ public class EmailSenderFactory {
         this.webClientBuilder = webClientBuilder;
     }
 
-    public Sender create(EmailSenderProperties properties) {
-        if (properties.getProtocol() == EmailProtocolType.HTTP_API) {
-            return new HttpApiEmailSender(webClientBuilder, properties.getHttpApi());
+    public Sender create(EmailSenderProperty property) {
+        if (property.getProtocol() == EmailProtocolType.HTTP_API) {
+            return new HttpApiEmailSender(webClientBuilder, property);
         }
-        JavaMailSender javaMailSender = buildJavaMailSender(properties.getSmtp());
-        return new SmtpEmailSender(javaMailSender, properties.getSmtp());
+        JavaMailSender javaMailSender = buildJavaMailSender(property.getSmtp());
+        return new SmtpEmailSender(javaMailSender, property);
     }
 
-    public JavaMailSender buildJavaMailSender(EmailSenderProperties.Smtp smtp) {
+    public JavaMailSender buildJavaMailSender(EmailSenderProperty.Smtp smtp) {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost(smtp.getHost());
         mailSender.setPort(smtp.getPort());
