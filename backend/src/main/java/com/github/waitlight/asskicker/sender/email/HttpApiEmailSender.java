@@ -5,6 +5,10 @@ import com.github.waitlight.asskicker.sender.MessageResponse;
 import com.github.waitlight.asskicker.sender.Sender;
 import com.github.waitlight.asskicker.sender.SenderProperty;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -12,6 +16,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,13 +24,13 @@ public class HttpApiEmailSender implements Sender {
 
     private final WebClient client;
 
-    private final EmailSenderProperty property;
+    private final HttpApiEmailSenderProperty property;
 
-    private final EmailSenderProperty.HttpApi httpApiProperties;
+    private final HttpApiEmailSenderProperty httpApiProperties;
 
-    public HttpApiEmailSender(WebClient.Builder builder, EmailSenderProperty property) {
+    public HttpApiEmailSender(WebClient.Builder builder, HttpApiEmailSenderProperty property) {
         this.property = property;
-        this.httpApiProperties = property.getHttpApi();
+        this.httpApiProperties = property;
         this.client = builder
                 .baseUrl(String.valueOf(httpApiProperties.getBaseUrl()))
                 .defaultHeader(String.valueOf(httpApiProperties.getApiKeyHeader()), String.valueOf(httpApiProperties.getApiKey()))
@@ -131,5 +136,32 @@ public class HttpApiEmailSender implements Sender {
     public SenderProperty getProperty() {
         return property;
     }
+}
+
+@Data
+class HttpApiEmailSenderProperty implements SenderProperty {
+
+    @NotBlank
+    private String baseUrl;
+
+    @NotBlank
+    private String path;
+
+    @NotBlank
+    private String apiKeyHeader = "Authorization";
+
+    @NotBlank
+    private String apiKey;
+
+    private String from;
+
+    @NotNull
+    private Duration timeout = Duration.ofSeconds(5);
+
+    @Min(0)
+    private int maxRetries = 3;
+
+    @NotNull
+    private Duration retryDelay = Duration.ofSeconds(1);
 }
 

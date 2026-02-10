@@ -1,0 +1,42 @@
+name: native-build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/native-build.yml"
+  push:
+    paths:
+      - "backend/**"
+      - ".github/workflows/native-build.yml"
+
+jobs:
+  native-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: "21"
+          distribution: "graalvm-community"
+          graalvm-version: "23.1.2"
+          components: "native-image"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build native image
+        run: mvn -f backend/pom.xml -Pnative -DskipTests package
+
+      - name: Smoke test
+        run: |
+          ./backend/target/native/ass-kicker \
+            --spring.profiles.active=native \
+            --spring.flyway.enabled=false \
+            --spring.r2dbc.url="r2dbc:h2:mem:///testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL" \
+            --spring.r2dbc.username=sa \
+            --spring.r2dbc.password= &
+          sleep 15
+          curl -f http://localhost:8080/health

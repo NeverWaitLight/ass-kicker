@@ -10,7 +10,7 @@ import java.util.Map;
 
 import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class HealthRouter {
   @Bean
   public RouterFunction<ServerResponse> healthRoutes() {

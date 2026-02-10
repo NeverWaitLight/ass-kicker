@@ -1,6 +1,7 @@
 package com.github.waitlight.asskicker.sender.email;
 
 import com.github.waitlight.asskicker.sender.Sender;
+import com.github.waitlight.asskicker.sender.SenderProperty;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.stereotype.Component;
@@ -18,15 +19,19 @@ public class EmailSenderFactory {
         this.webClientBuilder = webClientBuilder;
     }
 
-    public Sender create(EmailSenderProperty property) {
-        if (property.getProtocol() == EmailProtocolType.HTTP_API) {
-            return new HttpApiEmailSender(webClientBuilder, property);
+    public Sender create(SenderProperty property) {
+        if (property instanceof HttpApiEmailSenderProperty httpApi) {
+            return new HttpApiEmailSender(webClientBuilder, httpApi);
         }
-        JavaMailSender javaMailSender = buildJavaMailSender(property.getSmtp());
-        return new SmtpEmailSender(javaMailSender, property);
+        if (property instanceof SmtpEmailSenderProperty smtp) {
+            JavaMailSender javaMailSender = buildJavaMailSender(smtp);
+            return new SmtpEmailSender(javaMailSender, smtp);
+        }
+        String type = property == null ? "null" : property.getClass().getName();
+        throw new IllegalArgumentException("Unsupported email sender property: " + type);
     }
 
-    public JavaMailSender buildJavaMailSender(EmailSenderProperty.Smtp smtp) {
+    public JavaMailSender buildJavaMailSender(SmtpEmailSenderProperty smtp) {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost(smtp.getHost());
         mailSender.setPort(smtp.getPort());

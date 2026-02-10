@@ -17,6 +17,9 @@
 
   <properties>
     <java.version>21</java.version>
+    <graalvm.version>23.1.2</graalvm.version>
+    <native.buildtools.version>0.10.2</native.buildtools.version>
+    <native.image.name>ass-kicker</native.image.name>
     <r2dbc-postgresql.version>1.0.4.RELEASE</r2dbc-postgresql.version>
     <lombok.version>1.18.30</lombok.version>
     <disruptor.version>3.4.4</disruptor.version>
@@ -158,6 +161,81 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>aot</id>
+      <properties>
+        <spring.aot.enabled>true</spring.aot.enabled>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <configuration>
+              <systemPropertyVariables>
+                <spring.profiles.active>native</spring.profiles.active>
+              </systemPropertyVariables>
+            </configuration>
+            <executions>
+              <execution>
+                <id>process-aot</id>
+                <goals>
+                  <goal>process-aot</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>native</id>
+      <properties>
+        <spring.aot.enabled>true</spring.aot.enabled>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>process-aot</id>
+                <goals>
+                  <goal>process-aot</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.graalvm.buildtools</groupId>
+            <artifactId>native-maven-plugin</artifactId>
+            <version>${native.buildtools.version}</version>
+            <extensions>true</extensions>
+            <executions>
+              <execution>
+                <id>native-compile</id>
+                <goals>
+                  <goal>compile-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <mainClass>com.github.waitlight.asskicker.AssKickerApplication</mainClass>
+              <imageName>${native.image.name}</imageName>
+              <outputDirectory>${project.build.directory}/native</outputDirectory>
+              <buildArgs>
+                <buildArg>--no-fallback</buildArg>
+                <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+              </buildArgs>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
   <repositories>
     <repository>

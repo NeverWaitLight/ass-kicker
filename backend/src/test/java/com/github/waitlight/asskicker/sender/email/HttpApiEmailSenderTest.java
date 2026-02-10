@@ -21,16 +21,14 @@ class HttpApiEmailSenderTest {
 
     private MockWebServer mockWebServer;
     private HttpApiEmailSender httpApiEmailSender;
-    private EmailSenderProperty property;
-    private EmailSenderProperty.HttpApi httpApiProperties;
+    private HttpApiEmailSenderProperty httpApiProperties;
 
     @BeforeEach
     void setUp() throws IOException {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
 
-        property = new EmailSenderProperty();
-        httpApiProperties = property.getHttpApi();
+        httpApiProperties = new HttpApiEmailSenderProperty();
         httpApiProperties.setBaseUrl(mockWebServer.url("/").toString());
         httpApiProperties.setPath("/api/mail/send");
         httpApiProperties.setApiKeyHeader("Authorization");
@@ -41,7 +39,7 @@ class HttpApiEmailSenderTest {
         httpApiProperties.setRetryDelay(Duration.ofMillis(100));
 
         WebClient.Builder webClientBuilder = WebClient.builder();
-        httpApiEmailSender = new HttpApiEmailSender(webClientBuilder, property);
+        httpApiEmailSender = new HttpApiEmailSender(webClientBuilder, httpApiProperties);
     }
 
     @AfterEach

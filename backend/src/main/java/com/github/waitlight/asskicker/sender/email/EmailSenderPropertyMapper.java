@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.sender.email;
 
+import com.github.waitlight.asskicker.sender.SenderProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -12,27 +13,23 @@ import java.util.Map;
 @Component
 public class EmailSenderPropertyMapper {
 
-    public EmailSenderProperty fromProperties(Map<String, Object> properties) {
-        EmailSenderProperty result = new EmailSenderProperty();
+    public SenderProperty fromProperties(Map<String, Object> properties) {
         Map<String, Object> safe = normalizeProperties(properties);
 
         EmailProtocolType protocol = parseProtocol(safe.get("protocol"));
-        if (protocol != null) {
-            result.setProtocol(protocol);
+        if (protocol == EmailProtocolType.HTTP_API) {
+            HttpApiEmailSenderProperty httpApi = new HttpApiEmailSenderProperty();
+            Map<String, Object> httpApiValues = readMap(safe.get("httpApi"));
+            applyHttpApi(httpApi, httpApiValues);
+            return httpApi;
         }
-
-        if (result.getProtocol() == EmailProtocolType.HTTP_API) {
-            Map<String, Object> httpApi = readMap(safe.get("httpApi"));
-            applyHttpApi(result.getHttpApi(), httpApi);
-        } else {
-            Map<String, Object> smtp = readMap(safe.get("smtp"));
-            applySmtp(result.getSmtp(), smtp);
-        }
-
-        return result;
+        SmtpEmailSenderProperty smtp = new SmtpEmailSenderProperty();
+        Map<String, Object> smtpValues = readMap(safe.get("smtp"));
+        applySmtp(smtp, smtpValues);
+        return smtp;
     }
 
-    private void applySmtp(EmailSenderProperty.Smtp smtp, Map<String, Object> values) {
+    private void applySmtp(SmtpEmailSenderProperty smtp, Map<String, Object> values) {
         String host = readString(values, "host");
         String username = readString(values, "username");
         String password = readString(values, "password");
@@ -60,7 +57,7 @@ public class EmailSenderPropertyMapper {
         smtp.setRetryDelay(readDuration(values, "retryDelay", smtp.getRetryDelay()));
     }
 
-    private void applyHttpApi(EmailSenderProperty.HttpApi httpApi, Map<String, Object> values) {
+    private void applyHttpApi(HttpApiEmailSenderProperty httpApi, Map<String, Object> values) {
         String baseUrl = readString(values, "baseUrl");
         String path = readString(values, "path");
         String apiKeyHeader = readString(values, "apiKeyHeader");

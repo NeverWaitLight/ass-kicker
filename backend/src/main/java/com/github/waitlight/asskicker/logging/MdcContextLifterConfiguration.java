@@ -11,7 +11,7 @@ import reactor.core.publisher.Operators;
 import reactor.util.context.Context;
 import reactor.util.context.ContextView;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class MdcContextLifterConfiguration {
     private static final String MDC_HOOK_KEY = "mdcContextLifter";
 

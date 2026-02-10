@@ -6,8 +6,8 @@ import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.sender.MessageResponse;
 import com.github.waitlight.asskicker.sender.Sender;
+import com.github.waitlight.asskicker.sender.SenderProperty;
 import com.github.waitlight.asskicker.sender.email.EmailSenderFactory;
-import com.github.waitlight.asskicker.sender.email.EmailSenderProperty;
 import com.github.waitlight.asskicker.sender.email.EmailSenderPropertyMapper;
 import com.github.waitlight.asskicker.service.impl.TestSendServiceImpl;
 import com.github.waitlight.asskicker.testsend.TemporaryChannelConfigManager;
@@ -36,7 +36,7 @@ class TestSendServiceImplTest {
         TemporaryChannelConfigManager manager = new TemporaryChannelConfigManager();
         EmailSenderFactory factory = new EmailSenderFactory(null) {
             @Override
-            public Sender create(EmailSenderProperty property) {
+            public Sender create(SenderProperty property) {
                 return new Sender() {
                     @Override
                     public MessageResponse send(com.github.waitlight.asskicker.sender.MessageRequest request) {
@@ -83,7 +83,7 @@ class TestSendServiceImplTest {
         TemporaryChannelConfigManager manager = new TemporaryChannelConfigManager();
         EmailSenderFactory factory = new EmailSenderFactory(null) {
             @Override
-            public Sender create(EmailSenderProperty property) {
+            public Sender create(SenderProperty property) {
                 return new Sender() {
                     @Override
                     public MessageResponse send(com.github.waitlight.asskicker.sender.MessageRequest request) {

@@ -11,7 +11,7 @@ import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
 
 import java.util.List;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class R2dbcConfig {
 
     @Bean

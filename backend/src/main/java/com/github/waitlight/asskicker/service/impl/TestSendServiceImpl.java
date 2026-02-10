@@ -7,8 +7,8 @@ import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.sender.MessageRequest;
 import com.github.waitlight.asskicker.sender.MessageResponse;
 import com.github.waitlight.asskicker.sender.Sender;
+import com.github.waitlight.asskicker.sender.SenderProperty;
 import com.github.waitlight.asskicker.sender.email.EmailSenderFactory;
-import com.github.waitlight.asskicker.sender.email.EmailSenderProperty;
 import com.github.waitlight.asskicker.sender.email.EmailSenderPropertyMapper;
 import com.github.waitlight.asskicker.service.TestSendService;
 import com.github.waitlight.asskicker.testsend.TemporaryChannelConfig;
@@ -95,7 +95,7 @@ public class TestSendServiceImpl implements TestSendService {
         return Mono.fromCallable(() -> {
             try {
                 if (config.type() == ChannelType.EMAIL) {
-                    EmailSenderProperty property = emailSenderPropertyMapper.fromProperties(config.properties());
+                    SenderProperty property = emailSenderPropertyMapper.fromProperties(config.properties());
                     Sender emailSender = emailSenderFactory.create(property);
                     MessageRequest messageRequest = MessageRequest.builder()
                             .recipient(request.target())
@@ -108,13 +108,13 @@ public class TestSendServiceImpl implements TestSendService {
                             .build();
                     try {
                         logger.info("SECURITY_TEST_SEND_SENDER_READY configId={} protocol={} sender={}",
-                                config.id(), property.getProtocol().name(), emailSender.getClass().getSimpleName());
+                                config.id(), protocol, emailSender.getClass().getSimpleName());
                         logger.info("SECURITY_TEST_SEND_EXEC configId={} protocol={} target={}",
-                                config.id(), property.getProtocol().name(), request.target());
+                                config.id(), protocol, request.target());
                         MessageResponse response = emailSender.send(messageRequest);
                         logger.info("SECURITY_TEST_SEND_PROVIDER_RESULT configId={} protocol={} success={} messageId={} errorCode={}",
                                 config.id(),
-                                property.getProtocol().name(),
+                                protocol,
                                 response.isSuccess(),
                                 response.getMessageId(),
                                 response.getErrorCode());

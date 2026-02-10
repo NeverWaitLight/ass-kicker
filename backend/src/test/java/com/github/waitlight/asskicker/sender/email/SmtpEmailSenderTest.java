@@ -25,14 +25,12 @@ class SmtpEmailSenderTest {
     @Mock
     private JavaMailSender javaMailSender;
 
-    private EmailSenderProperty property;
-    private EmailSenderProperty.Smtp smtpProperties;
+    private SmtpEmailSenderProperty smtpProperties;
     private SmtpEmailSender smtpEmailSender;
 
     @BeforeEach
     void setUp() {
-        property = new EmailSenderProperty();
-        smtpProperties = property.getSmtp();
+        smtpProperties = new SmtpEmailSenderProperty();
         smtpProperties.setHost("smtp.example.com");
         smtpProperties.setPort(465);
         smtpProperties.setUsername("test@example.com");
@@ -45,7 +43,7 @@ class SmtpEmailSenderTest {
         smtpProperties.setMaxRetries(3);
         smtpProperties.setRetryDelay(Duration.ofMillis(100));
 
-        smtpEmailSender = new SmtpEmailSender(javaMailSender, property);
+        smtpEmailSender = new SmtpEmailSender(javaMailSender, smtpProperties);
     }
 
     @Test
@@ -123,7 +121,7 @@ class SmtpEmailSenderTest {
         doNothing().when(javaMailSender).send(any(MimeMessage.class));
 
         smtpProperties.setFrom("custom@example.com");
-        smtpEmailSender = new SmtpEmailSender(javaMailSender, property);
+        smtpEmailSender = new SmtpEmailSender(javaMailSender, smtpProperties);
 
         MessageRequest request = MessageRequest.builder()
                 .recipient("recipient@example.com")

@@ -39,6 +39,8 @@
 - 后端运行：`mvn -f backend/pom.xml spring-boot:run`
 - 前端运行：`npm --prefix frontend install` 后执行 `npm --prefix frontend run dev`
 - 构建产物：后端输出在 `backend/target`，避免在仓库根目录执行 Maven 构建
+- native 构建：`mvn -f backend/pom.xml -Pnative -DskipTests package`，输出在 `backend/target/native`
+- native 约束与回滚说明：见 `docs/architecture/native-image.md`
 
 ## 关键决策
 

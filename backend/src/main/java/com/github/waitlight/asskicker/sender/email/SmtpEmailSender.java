@@ -5,26 +5,31 @@ import com.github.waitlight.asskicker.sender.MessageResponse;
 import com.github.waitlight.asskicker.sender.Sender;
 import com.github.waitlight.asskicker.sender.SenderProperty;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import lombok.Data;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 public class SmtpEmailSender implements Sender {
 
     private final JavaMailSender mailSender;
 
-    private final EmailSenderProperty property;
+    private final SmtpEmailSenderProperty property;
 
-    private final EmailSenderProperty.Smtp smtpProperties;
+    private final SmtpEmailSenderProperty smtpProperties;
 
-    public SmtpEmailSender(JavaMailSender mailSender, EmailSenderProperty property) {
+    public SmtpEmailSender(JavaMailSender mailSender, SmtpEmailSenderProperty property) {
         this.mailSender = mailSender;
         this.property = property;
-        this.smtpProperties = property.getSmtp();
+        this.smtpProperties = property;
     }
 
     @Override
@@ -75,4 +80,39 @@ public class SmtpEmailSender implements Sender {
     public SenderProperty getProperty() {
         return property;
     }
+}
+
+@Data
+class SmtpEmailSenderProperty implements SenderProperty {
+
+    @NotBlank
+    private String host;
+
+    @Min(1)
+    private int port = 465;
+
+    @NotBlank
+    private String username;
+
+    @NotBlank
+    private String password;
+
+    @NotBlank
+    private String protocol = "smtp";
+
+    private boolean sslEnabled = true;
+
+    private String from;
+
+    @NotNull
+    private Duration connectionTimeout = Duration.ofSeconds(5);
+
+    @NotNull
+    private Duration readTimeout = Duration.ofSeconds(10);
+
+    @Min(0)
+    private int maxRetries = 3;
+
+    @NotNull
+    private Duration retryDelay = Duration.ofSeconds(1);
 }
