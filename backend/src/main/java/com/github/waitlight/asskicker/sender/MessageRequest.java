@@ -1,0 +1,16 @@
+package com.github.waitlight.asskicker.sender;
+
+import lombok.Builder;
+import lombok.Data;
+
+import java.util.Map;
+
+@Data
+@Builder
+public class MessageRequest {
+
+    private String recipient;
+    private String subject;
+    private String content;
+    private Map<String, Object> attributes;
+}

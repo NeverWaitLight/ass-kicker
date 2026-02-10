@@ -1,0 +1,25 @@
+spring:
+  r2dbc:
+    url: r2dbc:h2:mem:///ass_kicker_test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  flyway:
+    enabled: false
+  sql:
+    init:
+      mode: never
+app:
+  channel:
+    crypto:
+      secret: test-channel-secret
+  test-send:
+    max-requests: 5
+    window: PT1M
+    max-target-length: 255
+    max-content-length: 2000
+logging:
+  async:
+    queue-size: 512
+    discarding-threshold: 0
+  level:
+    com.github.waitlight.asskicker.logging.RequestIdFilter: DEBUG
