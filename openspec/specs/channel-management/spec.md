@@ -1,111 +1,57 @@
-# Channel Management Specification
+## ADDED Requirements
 
-## Purpose
+### Requirement: 通道 CRUD 管理
 
-This specification defines the requirements for managing notification channels in the system. It allows for the creation, configuration, and management of different types of notification channels (e.g., email, SMS, push notifications) with flexible key-value properties to accommodate varying configuration needs.
+定义通知渠道（Channel）的管理功能：
 
-## Requirements
+- Channel 实体模型包含：id、name、type、description、灵活 KV 属性
+- 提供完整的 REST API（/api/channels）进行 CRUD 操作
+- 支持灵活 KV 属性存储渠道特定配置
+- 支持渠道类型分类（email、sms、push 等）
+- 敏感信息必须加密存储
+- 前端统一显示为"通道"
 
-### Requirement: Channel Model Definition
-The system SHALL provide a Channel entity model that includes basic fields (id, name, type, description) and flexible key-value properties for storing channel-specific configurations.
+#### Scenario: 创建新通道
+- **WHEN** 管理员提交通道创建表单
+- **THEN** 系统保存通道信息并返回成功响应
 
-#### Scenario: Create Channel Model
-- **WHEN** the system initializes the Channel entity
-- **THEN** it contains basic fields (id, name, type, description) and a flexible property field for additional configurations
+#### Scenario: 获取通道列表
+- **WHEN** 用户请求通道列表
+- **THEN** 系统返回所有可用通道的信息
 
-### Requirement: Channel CRUD Operations
-The system SHALL provide REST API endpoints for creating, reading, updating, and deleting Channel entities.
+#### Scenario: 更新通道配置
+- **WHEN** 管理员修改通道的 KV 属性
+- **THEN** 系统保存更新后的配置
 
-#### Scenario: Create New Channel
-- **WHEN** a client sends a POST request to /api/channels with valid channel data
-- **THEN** the system creates a new Channel entity and returns the created channel with a 201 status code
+---
 
-#### Scenario: Retrieve Channel List
-- **WHEN** a client sends a GET request to /api/channels
-- **THEN** the system returns a list of all channels with a 200 status code
+### Requirement: 通道类型国际化
 
-#### Scenario: Retrieve Specific Channel
-- **WHEN** a client sends a GET request to /api/channels/{id}
-- **THEN** the system returns the specific channel with a 200 status code
+定义通道类型的中文显示名称：
 
-#### Scenario: Update Channel
-- **WHEN** a client sends a PUT request to /api/channels/{id} with updated channel data
-- **THEN** the system updates the channel and returns the updated channel with a 200 status code
+- PUSH 渠道类型显示为"系统推送"
+- HTTP_API 渠道类型显示为"HTTP"
+- 前端下拉框显示中文名称
+- API 通信保持原始类型值（英文）
 
-#### Scenario: Delete Channel
-- **WHEN** a client sends a DELETE request to /api/channels/{id}
-- **THEN** the system deletes the channel and returns a 204 status code
+#### Scenario: 前端显示通道类型
+- **WHEN** 用户打开通道类型选择下拉框
+- **THEN** 显示中文名称而非英文代码
 
-### Requirement: Flexible Key-Value Properties
-The system SHALL allow storing and retrieving channel-specific configurations as key-value pairs in the Channel entity.
+---
 
-#### Scenario: Store Channel-Specific Configurations
-- **WHEN** a client creates or updates a channel with key-value properties
-- **THEN** the system stores these properties in the channel's flexible property field
+### Requirement: 邮件协议配置
 
-#### Scenario: Retrieve Channel-Specific Configurations
-- **WHEN** a client retrieves a channel
-- **THEN** the system returns the channel's key-value properties along with basic fields
+支持多种邮件发送协议的配置：
 
-### Requirement: Channel Type Classification
-The system SHALL support different channel types (e.g., email, sms, push notification) to distinguish between various notification methods.
+- 邮件协议选择（SMTP、HTTP_API，默认 SMTP）
+- SMTP 配置字段自动填充
+- 结构化保存邮件协议和 SMTP 配置（protocol 字段 + smtp 对象）
 
-#### Scenario: Classify Channel Types
-- **WHEN** a client creates a channel
-- **THEN** the system accepts a type field indicating the channel type (email, sms, push notification, etc.)
+#### Scenario: 选择 SMTP 协议
+- **WHEN** 用户选择 SMTP 协议
+- **THEN** 表单自动填充 SMTP 相关配置字段
 
-### Requirement: Secure Storage of Sensitive Information
-The system SHALL securely store sensitive information in channel configurations (e.g., passwords, API keys).
-
-#### Scenario: Encrypt Sensitive Data
-- **WHEN** a client creates or updates a channel with sensitive information
-- **THEN** the system encrypts the sensitive values before storing them in the database
-
-### Requirement: Channel display as 通道
-The system SHALL display all channels as "通道" in the frontend UI.
-
-#### Scenario: Channel listing
-- **WHEN** user views the channel list page
-- **THEN** all channels are displayed with the label "通道" regardless of their internal type
-
-### Requirement: Channel type selection
-The system SHALL provide a dropdown or selection mechanism for choosing the channel type during configuration.
-
-#### Scenario: Channel configuration
-- **WHEN** user initiates channel configuration
-- **THEN** the system presents a type selection interface before other configuration fields
-
-### Requirement: Channel name configuration
-The system SHALL allow users to input a name for the channel after selecting the type.
-
-#### Scenario: Name input
-- **WHEN** user selects a channel type
-- **THEN** the system displays a field for entering the channel name
-
-### Requirement: KV property configuration
-The system SHALL provide a key-value table interface for configuring channel properties instead of raw JSON input.
-
-#### Scenario: Property configuration
-- **WHEN** user configures channel properties
-- **THEN** the system displays a table with key-value pairs for property entry
-
-### Requirement: Email protocol selection for channel configuration
-The system SHALL provide mail protocol selection when channel type is EMAIL, with a default protocol.
-
-#### Scenario: Email protocol selection
-- **WHEN** user selects type EMAIL in channel configuration
-- **THEN** the system SHALL display protocol selection (containing at least SMTP and HTTP_API), with SMTP selected by default
-
-### Requirement: SMTP configuration fields auto-population
-The system SHALL automatically load SMTP required configuration items and default value prompts when selecting SMTP protocol.
-
-#### Scenario: Auto-populate SMTP fields
-- **WHEN** user selects SMTP as mail protocol
-- **THEN** the system SHALL display and pre-fill required SMTP fields (host, port, username, password, etc.) and their default value prompts
-
-### Requirement: SMTP properties structure
-The system SHALL save mail protocol and SMTP configuration in a structured way.
-
-#### Scenario: Persist SMTP properties
-- **WHEN** user saves or tests sending mail channel configuration
-- **THEN** the system SHALL write protocol field and smtp object field in properties, for backend construction of SMTP sender
+#### Scenario: 保存协议配置
+- **WHEN** 用户提交包含协议类型的通道配置
+- **THEN** 系统结构化保存 protocol 和 smtp 配置
