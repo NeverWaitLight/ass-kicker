@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.sender.email;
 
-import com.github.waitlight.asskicker.sender.SenderProperty;
+import com.github.waitlight.asskicker.sender.SenderConfig;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -9,27 +9,50 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 @Component
 public class EmailSenderPropertyMapper {
 
-    public SenderProperty fromProperties(Map<String, Object> properties) {
+    private static final Set<String> SMTP_KEYS = Set.of(
+            "host", "port", "username", "password",
+            "sslEnabled", "from", "connectionTimeout", "readTimeout",
+            "maxRetries", "retryDelay"
+    );
+    private static final Set<String> HTTP_API_KEYS = Set.of(
+            "baseUrl", "path", "apiKeyHeader", "apiKey",
+            "from", "timeout", "maxRetries", "retryDelay"
+    );
+
+    public SenderConfig fromProperties(Map<String, Object> properties) {
         Map<String, Object> safe = normalizeProperties(properties);
 
-        EmailProtocolType protocol = parseProtocol(safe.get("protocol"));
-        if (protocol == EmailProtocolType.HTTP_API) {
-            HttpApiEmailSenderProperty httpApi = new HttpApiEmailSenderProperty();
-            Map<String, Object> httpApiValues = readMap(safe.get("httpApi"));
+        EmailProtocol protocol = parseProtocol(safe.get("protocol"));
+        if (protocol == EmailProtocol.HTTP) {
+            HttpEmailSenderConfig httpApi = new HttpEmailSenderConfig();
+            Map<String, Object> httpApiValues = mergeProtocolValues(readMap(safe.get("httpApi")), safe, HTTP_API_KEYS);
             applyHttpApi(httpApi, httpApiValues);
             return httpApi;
         }
-        SmtpEmailSenderProperty smtp = new SmtpEmailSenderProperty();
-        Map<String, Object> smtpValues = readMap(safe.get("smtp"));
+        SmtpEmailSenderConfig smtp = new SmtpEmailSenderConfig();
+        Map<String, Object> smtpValues = mergeProtocolValues(readMap(safe.get("smtp")), safe, SMTP_KEYS);
         applySmtp(smtp, smtpValues);
         return smtp;
     }
 
-    private void applySmtp(SmtpEmailSenderProperty smtp, Map<String, Object> values) {
+    private Map<String, Object> mergeProtocolValues(Map<String, Object> nested,
+                                                    Map<String, Object> root,
+                                                    Set<String> allowedKeys) {
+        Map<String, Object> result = new LinkedHashMap<>(nested);
+        for (String key : allowedKeys) {
+            if ((!result.containsKey(key) || result.get(key) == null) && root.containsKey(key)) {
+                result.put(key, root.get(key));
+            }
+        }
+        return result;
+    }
+
+    private void applySmtp(SmtpEmailSenderConfig smtp, Map<String, Object> values) {
         String host = readString(values, "host");
         String username = readString(values, "username");
         String password = readString(values, "password");
@@ -48,7 +71,6 @@ public class EmailSenderPropertyMapper {
         smtp.setUsername(username);
         smtp.setPassword(password);
         smtp.setPort(readInt(values, "port", smtp.getPort(), "SMTP 端口非法"));
-        smtp.setProtocol(readString(values, "protocol", smtp.getProtocol()));
         smtp.setSslEnabled(readBoolean(values, "sslEnabled", smtp.isSslEnabled()));
         smtp.setFrom(readString(values, "from", smtp.getFrom()));
         smtp.setConnectionTimeout(readDuration(values, "connectionTimeout", smtp.getConnectionTimeout()));
@@ -57,7 +79,7 @@ public class EmailSenderPropertyMapper {
         smtp.setRetryDelay(readDuration(values, "retryDelay", smtp.getRetryDelay()));
     }
 
-    private void applyHttpApi(HttpApiEmailSenderProperty httpApi, Map<String, Object> values) {
+    private void applyHttpApi(HttpEmailSenderConfig httpApi, Map<String, Object> values) {
         String baseUrl = readString(values, "baseUrl");
         String path = readString(values, "path");
         String apiKeyHeader = readString(values, "apiKeyHeader");
@@ -86,7 +108,7 @@ public class EmailSenderPropertyMapper {
         httpApi.setRetryDelay(readDuration(values, "retryDelay", httpApi.getRetryDelay()));
     }
 
-    private EmailProtocolType parseProtocol(Object value) {
+    private EmailProtocol parseProtocol(Object value) {
         if (value == null) {
             return null;
         }
@@ -95,7 +117,7 @@ public class EmailSenderPropertyMapper {
             return null;
         }
         try {
-            return EmailProtocolType.valueOf(normalized);
+            return EmailProtocol.valueOf(normalized);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "邮件协议不支持 " + normalized);
         }
@@ -108,7 +130,6 @@ public class EmailSenderPropertyMapper {
         return new LinkedHashMap<>(properties);
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> readMap(Object value) {
         if (value instanceof Map<?, ?> mapValue) {
             Map<String, Object> result = new LinkedHashMap<>();

@@ -5,9 +5,10 @@ import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.sender.MessageResponse;
-import com.github.waitlight.asskicker.sender.Sender;
-import com.github.waitlight.asskicker.sender.SenderProperty;
+import com.github.waitlight.asskicker.sender.SenderConfig;
 import com.github.waitlight.asskicker.sender.email.EmailSenderFactory;
+import com.github.waitlight.asskicker.sender.email.SmtpEmailSenderConfig;
+import com.github.waitlight.asskicker.sender.email.EmailSender;
 import com.github.waitlight.asskicker.sender.email.EmailSenderPropertyMapper;
 import com.github.waitlight.asskicker.service.impl.TestSendServiceImpl;
 import com.github.waitlight.asskicker.testsend.TemporaryChannelConfigManager;
@@ -34,18 +35,13 @@ class TestSendServiceImplTest {
         TestSendProperties properties = new TestSendProperties();
         TestSendRateLimiter limiter = new TestSendRateLimiter(properties, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
         TemporaryChannelConfigManager manager = new TemporaryChannelConfigManager();
-        EmailSenderFactory factory = new EmailSenderFactory(null) {
+        EmailSenderFactory factory = new EmailSenderFactory() {
             @Override
-            public Sender create(SenderProperty property) {
-                return new Sender() {
+            public EmailSender<?> create(SenderConfig config) {
+                return new EmailSender<>(new SmtpEmailSenderConfig()) {
                     @Override
                     public MessageResponse send(com.github.waitlight.asskicker.sender.MessageRequest request) {
                         return MessageResponse.success("id-1");
-                    }
-
-                    @Override
-                    public com.github.waitlight.asskicker.sender.SenderProperty getProperty() {
-                        return property;
                     }
                 };
             }
@@ -81,18 +77,13 @@ class TestSendServiceImplTest {
 
         TestSendRateLimiter limiter = new TestSendRateLimiter(properties, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
         TemporaryChannelConfigManager manager = new TemporaryChannelConfigManager();
-        EmailSenderFactory factory = new EmailSenderFactory(null) {
+        EmailSenderFactory factory = new EmailSenderFactory() {
             @Override
-            public Sender create(SenderProperty property) {
-                return new Sender() {
+            public EmailSender<?> create(SenderConfig config) {
+                return new EmailSender<>(new SmtpEmailSenderConfig()) {
                     @Override
                     public MessageResponse send(com.github.waitlight.asskicker.sender.MessageRequest request) {
                         return MessageResponse.success("id-1");
-                    }
-
-                    @Override
-                    public com.github.waitlight.asskicker.sender.SenderProperty getProperty() {
-                        return property;
                     }
                 };
             }

@@ -9,15 +9,14 @@ import java.util.List;
 public class EmailProtocolSchemaService {
 
     public EmailProtocolSchemaResponse getSchema() {
-        SmtpEmailSenderProperty smtpDefaults = new SmtpEmailSenderProperty();
-        HttpApiEmailSenderProperty httpDefaults = new HttpApiEmailSenderProperty();
+        SmtpEmailSenderConfig smtpDefaults = new SmtpEmailSenderConfig();
+        HttpEmailSenderConfig httpDefaults = new HttpEmailSenderConfig();
 
         List<EmailProtocolSchemaResponse.EmailProtocolField> smtpFields = List.of(
                 field("host", "SMTP 主机", "string", true, "", "smtp.example.com"),
                 field("port", "端口", "number", true, String.valueOf(smtpDefaults.getPort()), "465"),
                 field("username", "用户名", "string", true, "", "user@example.com"),
                 field("password", "密码", "secret", true, "", ""),
-                field("protocol", "传输协议", "string", false, smtpDefaults.getProtocol(), "smtp"),
                 field("sslEnabled", "启用 SSL", "boolean", false, String.valueOf(smtpDefaults.isSslEnabled()), "true"),
                 field("from", "发件人", "string", false, nullSafe(smtpDefaults.getFrom()), "user@example.com"),
                 field("connectionTimeout", "连接超时(ms)", "duration", false,
@@ -46,7 +45,7 @@ public class EmailProtocolSchemaService {
 
         EmailProtocolSchemaResponse.EmailProtocolSchema smtpSchema =
                 new EmailProtocolSchemaResponse.EmailProtocolSchema(
-                        EmailProtocolType.SMTP.name(),
+                        EmailProtocol.SMTP.name(),
                         "SMTP",
                         "smtp",
                         smtpFields
@@ -54,13 +53,13 @@ public class EmailProtocolSchemaService {
 
         EmailProtocolSchemaResponse.EmailProtocolSchema httpSchema =
                 new EmailProtocolSchemaResponse.EmailProtocolSchema(
-                        EmailProtocolType.HTTP_API.name(),
+                        EmailProtocol.HTTP.name(),
                         "HTTP API",
                         "httpApi",
                         httpFields
                 );
 
-        return new EmailProtocolSchemaResponse(EmailProtocolType.SMTP.name(), List.of(smtpSchema, httpSchema));
+        return new EmailProtocolSchemaResponse(EmailProtocol.SMTP.name(), List.of(smtpSchema, httpSchema));
     }
 
     private EmailProtocolSchemaResponse.EmailProtocolField field(String key,

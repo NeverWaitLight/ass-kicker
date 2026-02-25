@@ -2,34 +2,47 @@ package com.github.waitlight.asskicker.sender.email;
 
 import com.github.waitlight.asskicker.sender.MessageRequest;
 import com.github.waitlight.asskicker.sender.MessageResponse;
-import com.github.waitlight.asskicker.sender.Sender;
-import com.github.waitlight.asskicker.sender.SenderProperty;
-
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import lombok.Data;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
+import java.util.Locale;
+import java.util.Properties;
 
-public class SmtpEmailSender implements Sender {
+public class SmtpEmailSender extends EmailSender<SmtpEmailSenderConfig> {
 
     private final JavaMailSender mailSender;
 
-    private final SmtpEmailSenderProperty property;
+    public SmtpEmailSender(SmtpEmailSenderConfig config) {
+        super(config);
+        this.mailSender = buildJavaMailSender(config);
+    }
 
-    private final SmtpEmailSenderProperty smtpProperties;
+    private JavaMailSender buildJavaMailSender(SmtpEmailSenderConfig smtp) {
+        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        mailSender.setHost(smtp.getHost());
+        mailSender.setPort(smtp.getPort());
+        mailSender.setUsername(smtp.getUsername());
+        mailSender.setPassword(smtp.getPassword());
+        String protocol = smtp.getProtocol().name().toLowerCase(Locale.ROOT);
+        mailSender.setProtocol(protocol);
+        mailSender.setDefaultEncoding(StandardCharsets.UTF_8.name());
 
-    public SmtpEmailSender(JavaMailSender mailSender, SmtpEmailSenderProperty property) {
-        this.mailSender = mailSender;
-        this.property = property;
-        this.smtpProperties = property;
+        Properties javaMailProperties = mailSender.getJavaMailProperties();
+        javaMailProperties.put("mail.transport.protocol", protocol);
+        javaMailProperties.put("mail.smtp.auth", "true");
+        javaMailProperties.put("mail.smtp.connectiontimeout", String.valueOf(smtp.getConnectionTimeout().toMillis()));
+        javaMailProperties.put("mail.smtp.timeout", String.valueOf(smtp.getReadTimeout().toMillis()));
+        javaMailProperties.put("mail.smtp.writetimeout", String.valueOf(smtp.getReadTimeout().toMillis()));
+        if (smtp.isSslEnabled()) {
+            javaMailProperties.put("mail.smtp.ssl.enable", "true");
+            javaMailProperties.put("mail.smtp.ssl.trust", smtp.getHost());
+        }
+        return mailSender;
     }
 
     @Override
@@ -41,7 +54,7 @@ public class SmtpEmailSender implements Sender {
         int attempts = 0;
         Exception lastException = null;
 
-        while (attempts <= smtpProperties.getMaxRetries()) {
+        while (attempts <= config.getMaxRetries()) {
             try {
                 MimeMessage message = mailSender.createMimeMessage();
                 MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
@@ -54,9 +67,9 @@ public class SmtpEmailSender implements Sender {
             } catch (MailException | MessagingException ex) {
                 lastException = ex;
                 attempts++;
-                if (attempts <= smtpProperties.getMaxRetries()) {
+                if (attempts <= config.getMaxRetries()) {
                     try {
-                        Thread.sleep(smtpProperties.getRetryDelay().toMillis());
+                        Thread.sleep(config.getRetryDelay().toMillis());
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                         return MessageResponse.failure("MAIL_SEND_INTERRUPTED", ie.getMessage());
@@ -65,54 +78,14 @@ public class SmtpEmailSender implements Sender {
             }
         }
 
-        return MessageResponse.failure("MAIL_SEND_FAILED",
-                lastException != null ? lastException.getMessage() : "Unknown error after " + attempts + " attempts");
+        return MessageResponse.failure("MAIL_SEND_FAILED", lastException != null ? lastException.getMessage() : "Unknown error after " + attempts + " attempts");
     }
 
     private String resolveFrom() {
-        if (smtpProperties.getFrom() != null && !smtpProperties.getFrom().isBlank()) {
-            return smtpProperties.getFrom();
+        if (config.getFrom() != null && !config.getFrom().isBlank()) {
+            return config.getFrom();
         }
-        return smtpProperties.getUsername();
+        return config.getUsername();
     }
 
-    @Override
-    public SenderProperty getProperty() {
-        return property;
-    }
-}
-
-@Data
-class SmtpEmailSenderProperty implements SenderProperty {
-
-    @NotBlank
-    private String host;
-
-    @Min(1)
-    private int port = 465;
-
-    @NotBlank
-    private String username;
-
-    @NotBlank
-    private String password;
-
-    @NotBlank
-    private String protocol = "smtp";
-
-    private boolean sslEnabled = true;
-
-    private String from;
-
-    @NotNull
-    private Duration connectionTimeout = Duration.ofSeconds(5);
-
-    @NotNull
-    private Duration readTimeout = Duration.ofSeconds(10);
-
-    @Min(0)
-    private int maxRetries = 3;
-
-    @NotNull
-    private Duration retryDelay = Duration.ofSeconds(1);
 }

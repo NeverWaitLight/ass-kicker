@@ -8,7 +8,6 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -17,18 +16,18 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class HttpApiEmailSenderTest {
+class HttpEmailSenderTest {
 
     private MockWebServer mockWebServer;
-    private HttpApiEmailSender httpApiEmailSender;
-    private HttpApiEmailSenderProperty httpApiProperties;
+    private HttpEmailSender httpEmailSender;
+    private HttpEmailSenderConfig httpApiProperties;
 
     @BeforeEach
     void setUp() throws IOException {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
 
-        httpApiProperties = new HttpApiEmailSenderProperty();
+        httpApiProperties = new HttpEmailSenderConfig();
         httpApiProperties.setBaseUrl(mockWebServer.url("/").toString());
         httpApiProperties.setPath("/api/mail/send");
         httpApiProperties.setApiKeyHeader("Authorization");
@@ -38,8 +37,7 @@ class HttpApiEmailSenderTest {
         httpApiProperties.setMaxRetries(3);
         httpApiProperties.setRetryDelay(Duration.ofMillis(100));
 
-        WebClient.Builder webClientBuilder = WebClient.builder();
-        httpApiEmailSender = new HttpApiEmailSender(webClientBuilder, httpApiProperties);
+        httpEmailSender = new HttpEmailSender(httpApiProperties);
     }
 
     @AfterEach
@@ -60,7 +58,7 @@ class HttpApiEmailSenderTest {
                 .content("Test Content")
                 .build();
 
-        MessageResponse response = httpApiEmailSender.send(request);
+        MessageResponse response = httpEmailSender.send(request);
 
         assertThat(response.isSuccess()).isTrue();
         assertThat(response.getMessageId()).isEqualTo("message-id-123");
@@ -72,7 +70,7 @@ class HttpApiEmailSenderTest {
 
     @Test
     void shouldReturnFailureWhenRequestIsNull() {
-        MessageResponse response = httpApiEmailSender.send(null);
+        MessageResponse response = httpEmailSender.send(null);
 
         assertThat(response.isSuccess()).isFalse();
         assertThat(response.getErrorCode()).isEqualTo("INVALID_REQUEST");
@@ -92,7 +90,7 @@ class HttpApiEmailSenderTest {
                 .content("Test Content")
                 .build();
 
-        MessageResponse response = httpApiEmailSender.send(request);
+        MessageResponse response = httpEmailSender.send(request);
 
         assertThat(response.isSuccess()).isTrue();
         assertThat(mockWebServer.getRequestCount()).isEqualTo(3);
@@ -110,7 +108,7 @@ class HttpApiEmailSenderTest {
                 .content("Test Content")
                 .build();
 
-        MessageResponse response = httpApiEmailSender.send(request);
+        MessageResponse response = httpEmailSender.send(request);
 
         assertThat(response.isSuccess()).isFalse();
         assertThat(response.getErrorCode()).isEqualTo("SERVER_ERROR");
@@ -126,7 +124,7 @@ class HttpApiEmailSenderTest {
                 .content("Test Content")
                 .build();
 
-        MessageResponse response = httpApiEmailSender.send(request);
+        MessageResponse response = httpEmailSender.send(request);
 
         assertThat(response.isSuccess()).isFalse();
         assertThat(response.getErrorCode()).isEqualTo("AUTHENTICATION_FAILED");
@@ -144,7 +142,7 @@ class HttpApiEmailSenderTest {
                 .content("Test Content")
                 .build();
 
-        MessageResponse response = httpApiEmailSender.send(request);
+        MessageResponse response = httpEmailSender.send(request);
 
         assertThat(response.isSuccess()).isFalse();
         assertThat(response.getErrorCode()).isEqualTo("RATE_LIMIT_EXCEEDED");
@@ -167,7 +165,7 @@ class HttpApiEmailSenderTest {
                 .attributes(attributes)
                 .build();
 
-        MessageResponse response = httpApiEmailSender.send(request);
+        MessageResponse response = httpEmailSender.send(request);
 
         assertThat(response.isSuccess()).isTrue();
 

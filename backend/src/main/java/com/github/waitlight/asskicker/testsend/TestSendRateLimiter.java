@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.testsend;
 
-import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.time.Clock;
 import java.time.Duration;

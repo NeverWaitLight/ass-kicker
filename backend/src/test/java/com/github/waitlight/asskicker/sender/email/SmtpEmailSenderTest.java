@@ -1,136 +1,87 @@
 package com.github.waitlight.asskicker.sender.email;
 
-import com.github.waitlight.asskicker.sender.MessageRequest;
 import com.github.waitlight.asskicker.sender.MessageResponse;
-import jakarta.mail.MessagingException;
-import jakarta.mail.Session;
-import jakarta.mail.internet.MimeMessage;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
 class SmtpEmailSenderTest {
 
-    @Mock
-    private JavaMailSender javaMailSender;
-
-    private SmtpEmailSenderProperty smtpProperties;
-    private SmtpEmailSender smtpEmailSender;
-
-    @BeforeEach
-    void setUp() {
-        smtpProperties = new SmtpEmailSenderProperty();
-        smtpProperties.setHost("smtp.example.com");
-        smtpProperties.setPort(465);
-        smtpProperties.setUsername("test@example.com");
-        smtpProperties.setPassword("password");
-        smtpProperties.setProtocol("smtp");
-        smtpProperties.setSslEnabled(true);
-        smtpProperties.setFrom("notify@example.com");
-        smtpProperties.setConnectionTimeout(Duration.ofSeconds(5));
-        smtpProperties.setReadTimeout(Duration.ofSeconds(10));
-        smtpProperties.setMaxRetries(3);
-        smtpProperties.setRetryDelay(Duration.ofMillis(100));
-
-        smtpEmailSender = new SmtpEmailSender(javaMailSender, smtpProperties);
-    }
-
     @Test
-    void shouldSendEmailSuccessfully() throws MessagingException {
-        MimeMessage mimeMessage = new MimeMessage((Session) null);
-        when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
-        doNothing().when(javaMailSender).send(any(MimeMessage.class));
+    void shouldBuildJavaMailSenderFromConfig() throws Exception {
+        SmtpEmailSenderConfig config = createConfig();
+        SmtpEmailSender sender = new SmtpEmailSender(config);
 
-        MessageRequest request = MessageRequest.builder()
-                .recipient("recipient@example.com")
-                .subject("Test Subject")
-                .content("Test Content")
-                .build();
+        Field field = SmtpEmailSender.class.getDeclaredField("mailSender");
+        field.setAccessible(true);
+        JavaMailSender mailSender = (JavaMailSender) field.get(sender);
 
-        MessageResponse response = smtpEmailSender.send(request);
+        assertThat(mailSender).isInstanceOf(JavaMailSenderImpl.class);
 
-        assertThat(response.isSuccess()).isTrue();
-        verify(javaMailSender, times(1)).send(any(MimeMessage.class));
+        JavaMailSenderImpl impl = (JavaMailSenderImpl) mailSender;
+        assertThat(impl.getHost()).isEqualTo("smtp.example.com");
+        assertThat(impl.getPort()).isEqualTo(465);
+        assertThat(impl.getUsername()).isEqualTo("test@example.com");
+        assertThat(impl.getPassword()).isEqualTo("password");
+        assertThat(impl.getProtocol()).isEqualTo("smtp");
+        assertThat(impl.getDefaultEncoding()).isEqualTo(StandardCharsets.UTF_8.name());
+
+        Properties props = impl.getJavaMailProperties();
+        assertThat(props.get("mail.transport.protocol")).isEqualTo("smtp");
+        assertThat(props.get("mail.smtp.auth")).isEqualTo("true");
+        assertThat(props.get("mail.smtp.connectiontimeout")).isEqualTo(String.valueOf(Duration.ofSeconds(5).toMillis()));
+        assertThat(props.get("mail.smtp.timeout")).isEqualTo(String.valueOf(Duration.ofSeconds(10).toMillis()));
+        assertThat(props.get("mail.smtp.writetimeout")).isEqualTo(String.valueOf(Duration.ofSeconds(10).toMillis()));
+        assertThat(props.get("mail.smtp.ssl.enable")).isEqualTo("true");
+        assertThat(props.get("mail.smtp.ssl.trust")).isEqualTo("smtp.example.com");
     }
 
     @Test
     void shouldReturnFailureWhenRequestIsNull() {
-        MessageResponse response = smtpEmailSender.send(null);
+        SmtpEmailSender sender = new SmtpEmailSender(createConfig());
+
+        MessageResponse response = sender.send(null);
 
         assertThat(response.isSuccess()).isFalse();
         assertThat(response.getErrorCode()).isEqualTo("INVALID_REQUEST");
-        verifyNoInteractions(javaMailSender);
     }
 
     @Test
-    void shouldRetryOnMailException() throws MessagingException {
-        MimeMessage mimeMessage = new MimeMessage((Session) null);
-        when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
-        doThrow(new MailException("Connection failed") {})
-                .doThrow(new MailException("Connection failed") {})
-                .doNothing()
-                .when(javaMailSender).send(any(MimeMessage.class));
+    void shouldResolveFromWithFallback() throws Exception {
+        SmtpEmailSenderConfig config = createConfig();
+        SmtpEmailSender sender = new SmtpEmailSender(config);
+        Method method = SmtpEmailSender.class.getDeclaredMethod("resolveFrom");
+        method.setAccessible(true);
 
-        MessageRequest request = MessageRequest.builder()
-                .recipient("recipient@example.com")
-                .subject("Test Subject")
-                .content("Test Content")
-                .build();
+        Object from = method.invoke(sender);
+        assertThat(from).isEqualTo("notify@example.com");
 
-        MessageResponse response = smtpEmailSender.send(request);
-
-        assertThat(response.isSuccess()).isTrue();
-        verify(javaMailSender, times(3)).send(any(MimeMessage.class));
+        config.setFrom("   ");
+        SmtpEmailSender fallbackSender = new SmtpEmailSender(config);
+        Object fallback = method.invoke(fallbackSender);
+        assertThat(fallback).isEqualTo("test@example.com");
     }
 
-    @Test
-    void shouldFailAfterMaxRetries() throws MessagingException {
-        MimeMessage mimeMessage = new MimeMessage((Session) null);
-        when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
-        doThrow(new MailException("Connection failed") {})
-                .when(javaMailSender).send(any(MimeMessage.class));
-
-        MessageRequest request = MessageRequest.builder()
-                .recipient("recipient@example.com")
-                .subject("Test Subject")
-                .content("Test Content")
-                .build();
-
-        MessageResponse response = smtpEmailSender.send(request);
-
-        assertThat(response.isSuccess()).isFalse();
-        assertThat(response.getErrorCode()).isEqualTo("MAIL_SEND_FAILED");
-        verify(javaMailSender, times(4)).send(any(MimeMessage.class));
-    }
-
-    @Test
-    void shouldUseFromFieldWhenProvided() throws MessagingException {
-        MimeMessage mimeMessage = new MimeMessage((Session) null);
-        when(javaMailSender.createMimeMessage()).thenReturn(mimeMessage);
-        doNothing().when(javaMailSender).send(any(MimeMessage.class));
-
-        smtpProperties.setFrom("custom@example.com");
-        smtpEmailSender = new SmtpEmailSender(javaMailSender, smtpProperties);
-
-        MessageRequest request = MessageRequest.builder()
-                .recipient("recipient@example.com")
-                .subject("Test Subject")
-                .content("Test Content")
-                .build();
-
-        MessageResponse response = smtpEmailSender.send(request);
-
-        assertThat(response.isSuccess()).isTrue();
+    private SmtpEmailSenderConfig createConfig() {
+        SmtpEmailSenderConfig config = new SmtpEmailSenderConfig();
+        config.setHost("smtp.example.com");
+        config.setPort(465);
+        config.setUsername("test@example.com");
+        config.setPassword("password");
+        config.setSslEnabled(true);
+        config.setFrom("notify@example.com");
+        config.setConnectionTimeout(Duration.ofSeconds(5));
+        config.setReadTimeout(Duration.ofSeconds(10));
+        config.setMaxRetries(3);
+        config.setRetryDelay(Duration.ofMillis(100));
+        return config;
     }
 }

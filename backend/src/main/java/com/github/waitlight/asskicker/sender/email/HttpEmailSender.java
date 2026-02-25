@@ -2,13 +2,6 @@ package com.github.waitlight.asskicker.sender.email;
 
 import com.github.waitlight.asskicker.sender.MessageRequest;
 import com.github.waitlight.asskicker.sender.MessageResponse;
-import com.github.waitlight.asskicker.sender.Sender;
-import com.github.waitlight.asskicker.sender.SenderProperty;
-
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.Data;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -16,25 +9,16 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HttpApiEmailSender implements Sender {
+public class HttpEmailSender extends EmailSender<HttpEmailSenderConfig> {
 
     private final WebClient client;
 
-    private final HttpApiEmailSenderProperty property;
-
-    private final HttpApiEmailSenderProperty httpApiProperties;
-
-    public HttpApiEmailSender(WebClient.Builder builder, HttpApiEmailSenderProperty property) {
-        this.property = property;
-        this.httpApiProperties = property;
-        this.client = builder
-                .baseUrl(String.valueOf(httpApiProperties.getBaseUrl()))
-                .defaultHeader(String.valueOf(httpApiProperties.getApiKeyHeader()), String.valueOf(httpApiProperties.getApiKey()))
-                .build();
+    public HttpEmailSender(HttpEmailSenderConfig config) {
+        super(config);
+        this.client = buildWebClient(config);
     }
 
     @Override
@@ -47,13 +31,13 @@ public class HttpApiEmailSender implements Sender {
 
             String messageId = client
                     .post()
-                    .uri(httpApiProperties.getPath())
+                    .uri(config.getPath())
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(BodyInserters.fromValue(body))
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(httpApiProperties.getTimeout())
-                    .retryWhen(Retry.fixedDelay(httpApiProperties.getMaxRetries(), httpApiProperties.getRetryDelay())
+                    .timeout(config.getTimeout())
+                    .retryWhen(Retry.fixedDelay(config.getMaxRetries(), config.getRetryDelay())
                             .filter(this::isRetryableException))
                     .onErrorResume(WebClientResponseException.class, ex ->
                             Mono.error(new RuntimeException(
@@ -74,14 +58,21 @@ public class HttpApiEmailSender implements Sender {
         body.put("subject", String.valueOf(request.getSubject()));
         body.put("content", String.valueOf(request.getContent()));
 
-        if (httpApiProperties.getFrom() != null && !httpApiProperties.getFrom().isBlank()) {
-            body.put("from", httpApiProperties.getFrom());
+        if (config.getFrom() != null && !config.getFrom().isBlank()) {
+            body.put("from", config.getFrom());
         }
 
         if (request.getAttributes() != null) {
             body.putAll(request.getAttributes());
         }
         return body;
+    }
+
+    private WebClient buildWebClient(HttpEmailSenderConfig httpApi) {
+        return WebClient.builder()
+                .baseUrl(String.valueOf(httpApi.getBaseUrl()))
+                .defaultHeader(String.valueOf(httpApi.getApiKeyHeader()), String.valueOf(httpApi.getApiKey()))
+                .build();
     }
 
     private boolean isRetryableException(Throwable ex) {
@@ -131,37 +122,4 @@ public class HttpApiEmailSender implements Sender {
         }
         return "MAIL_SEND_FAILED";
     }
-
-    @Override
-    public SenderProperty getProperty() {
-        return property;
-    }
 }
-
-@Data
-class HttpApiEmailSenderProperty implements SenderProperty {
-
-    @NotBlank
-    private String baseUrl;
-
-    @NotBlank
-    private String path;
-
-    @NotBlank
-    private String apiKeyHeader = "Authorization";
-
-    @NotBlank
-    private String apiKey;
-
-    private String from;
-
-    @NotNull
-    private Duration timeout = Duration.ofSeconds(5);
-
-    @Min(0)
-    private int maxRetries = 3;
-
-    @NotNull
-    private Duration retryDelay = Duration.ofSeconds(1);
-}
-

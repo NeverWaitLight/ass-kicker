@@ -7,7 +7,7 @@ import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.sender.MessageRequest;
 import com.github.waitlight.asskicker.sender.MessageResponse;
 import com.github.waitlight.asskicker.sender.Sender;
-import com.github.waitlight.asskicker.sender.SenderProperty;
+import com.github.waitlight.asskicker.sender.SenderConfig;
 import com.github.waitlight.asskicker.sender.email.EmailSenderFactory;
 import com.github.waitlight.asskicker.sender.email.EmailSenderPropertyMapper;
 import com.github.waitlight.asskicker.service.TestSendService;
@@ -95,7 +95,7 @@ public class TestSendServiceImpl implements TestSendService {
         return Mono.fromCallable(() -> {
             try {
                 if (config.type() == ChannelType.EMAIL) {
-                    SenderProperty property = emailSenderPropertyMapper.fromProperties(config.properties());
+                    SenderConfig property = emailSenderPropertyMapper.fromProperties(config.properties());
                     Sender emailSender = emailSenderFactory.create(property);
                     MessageRequest messageRequest = MessageRequest.builder()
                             .recipient(request.target())

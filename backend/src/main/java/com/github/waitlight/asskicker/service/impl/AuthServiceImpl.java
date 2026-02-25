@@ -1,8 +1,8 @@
 package com.github.waitlight.asskicker.service.impl;
 
+import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.auth.LoginRequest;
 import com.github.waitlight.asskicker.dto.auth.TokenResponse;
-import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.model.UserStatus;
 import com.github.waitlight.asskicker.repository.UserRepository;
 import com.github.waitlight.asskicker.security.JwtService;

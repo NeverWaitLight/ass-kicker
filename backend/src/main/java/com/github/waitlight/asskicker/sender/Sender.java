@@ -1,7 +1,12 @@
 package com.github.waitlight.asskicker.sender;
 
-public interface Sender {
-    MessageResponse send(MessageRequest request);
+public abstract class Sender<C extends SenderConfig> {
 
-    SenderProperty getProperty();
+    protected final C config;
+
+    public Sender(C config) {
+        this.config = config;
+    }
+
+    public abstract MessageResponse send(MessageRequest request);
 }

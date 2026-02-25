@@ -1,17 +1,17 @@
 package com.github.waitlight.asskicker.service;
 
-import com.github.waitlight.asskicker.dto.auth.RegisterRequest;
 import com.github.waitlight.asskicker.converter.UserConverter;
+import com.github.waitlight.asskicker.dto.auth.RegisterRequest;
 import com.github.waitlight.asskicker.model.User;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.repository.RegistrationLock;
 import com.github.waitlight.asskicker.repository.UserQueryRepository;
 import com.github.waitlight.asskicker.repository.UserRepository;
 import com.github.waitlight.asskicker.service.impl.UserServiceImpl;
-import org.mapstruct.factory.Mappers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;

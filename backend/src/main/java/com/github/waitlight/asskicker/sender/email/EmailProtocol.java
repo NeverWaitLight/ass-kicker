@@ -1,9 +1,9 @@
 package com.github.waitlight.asskicker.sender.email;
 
-public enum EmailProtocolType {
+public enum EmailProtocol {
 
     SMTP,
 
-    HTTP_API
+    HTTP
 }
 

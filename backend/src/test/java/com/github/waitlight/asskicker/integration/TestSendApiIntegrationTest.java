@@ -2,9 +2,10 @@ package com.github.waitlight.asskicker.integration;
 
 import com.github.waitlight.asskicker.repository.RegistrationLock;
 import com.github.waitlight.asskicker.sender.MessageResponse;
-import com.github.waitlight.asskicker.sender.Sender;
+import com.github.waitlight.asskicker.sender.SenderConfig;
+import com.github.waitlight.asskicker.sender.email.EmailSender;
 import com.github.waitlight.asskicker.sender.email.EmailSenderFactory;
-import com.github.waitlight.asskicker.sender.SenderProperty;
+import com.github.waitlight.asskicker.sender.email.SmtpEmailSenderConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,6 @@ import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.LinkedHashMap;
@@ -88,6 +88,34 @@ class TestSendApiIntegrationTest {
                         "username", "user@example.com",
                         "password", "pass"
                 )));
+
+        webTestClient.post()
+                .uri("/api/channels/test-send")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(body)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.success").isEqualTo(true)
+                .jsonPath("$.messageId").isEqualTo("test-id");
+    }
+
+    @Test
+    void testSendSuccessWithFlatSmtpProperties() {
+        String token = registerAndLogin();
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("type", "EMAIL");
+        body.put("target", "test@example.com");
+        body.put("content", "hello");
+        body.put("properties", Map.of(
+                "protocol", "SMTP",
+                "host", "smtp.example.com",
+                "port", "465",
+                "username", "user@example.com",
+                "password", "pass"
+        ));
 
         webTestClient.post()
                 .uri("/api/channels/test-send")
@@ -226,18 +254,13 @@ class TestSendApiIntegrationTest {
         @Bean
         @Primary
         EmailSenderFactory emailSenderFactory() {
-            return new EmailSenderFactory(WebClient.builder()) {
+            return new EmailSenderFactory() {
                 @Override
-                public Sender create(SenderProperty property) {
-                    return new Sender() {
+                public EmailSender<?> create(SenderConfig config) {
+                    return new EmailSender<>(new SmtpEmailSenderConfig()) {
                         @Override
                         public MessageResponse send(com.github.waitlight.asskicker.sender.MessageRequest request) {
                             return MessageResponse.success("test-id");
-                        }
-
-                        @Override
-                        public com.github.waitlight.asskicker.sender.SenderProperty getProperty() {
-                            return property;
                         }
                     };
                 }
