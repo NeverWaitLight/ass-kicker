@@ -41,9 +41,6 @@
       <a-spin :spinning="loading">
         <div class="config-section config-section--flat">
           <a-form layout="vertical" class="config-form">
-            <a-form-item label="通道名称" required :validate-status="nameError ? 'error' : ''" :help="nameError">
-              <a-input v-model:value="form.name" placeholder="请输入通道名称" />
-            </a-form-item>
             <a-form-item label="通道类型" required :validate-status="typeError ? 'error' : ''" :help="typeError">
               <a-select
                 v-model:value="form.type"
@@ -59,6 +56,9 @@
                 :options="emailProtocolOptions"
                 @change="handleProtocolChange"
               />
+            </a-form-item>
+            <a-form-item label="通道名称" required :validate-status="nameError ? 'error' : ''" :help="nameError">
+              <a-input v-model:value="form.name" placeholder="请输入通道名称" />
             </a-form-item>
           </a-form>
 
