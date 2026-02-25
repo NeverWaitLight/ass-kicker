@@ -1,6 +1,5 @@
 package com.github.waitlight.asskicker.router;
 
-import com.github.waitlight.asskicker.dto.channel.EmailProtocolSchemaResponse;
 import com.github.waitlight.asskicker.dto.channel.TestSendRequest;
 import com.github.waitlight.asskicker.handlers.ChannelHandler;
 import com.github.waitlight.asskicker.model.Channel;
@@ -76,22 +75,6 @@ public class ChannelRouter {
                             responses = {
                                     @ApiResponse(responseCode = "200", description = "成功",
                                             content = @Content(array = @ArraySchema(schema = @Schema(implementation = String.class)))),
-                                    @ApiResponse(responseCode = "401", description = "未授权")
-                            }
-                    )
-            ),
-            @RouterOperation(
-                    path = "/api/channels/email-protocols",
-                    method = RequestMethod.GET,
-                    beanClass = ChannelHandler.class,
-                    beanMethod = "listEmailProtocols",
-                    operation = @Operation(
-                            operationId = "listEmailProtocols",
-                            summary = "获取邮件协议配置定义",
-                            tags = {"Channels"},
-                            responses = {
-                                    @ApiResponse(responseCode = "200", description = "成功",
-                                            content = @Content(schema = @Schema(implementation = EmailProtocolSchemaResponse.class))),
                                     @ApiResponse(responseCode = "401", description = "未授权")
                             }
                     )
@@ -179,8 +162,6 @@ public class ChannelRouter {
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::listChannels)
                 .andRoute(RequestPredicates.GET("/api/channels/types")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::listChannelTypes)
-                .andRoute(RequestPredicates.GET("/api/channels/email-protocols")
-                        .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::listEmailProtocols)
                 .andRoute(RequestPredicates.GET("/api/channels/{id}")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::getChannelById)
                 .andRoute(RequestPredicates.PUT("/api/channels/{id}")

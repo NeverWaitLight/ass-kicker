@@ -4,7 +4,6 @@ import com.github.waitlight.asskicker.dto.channel.TestSendRequest;
 import com.github.waitlight.asskicker.model.Channel;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.security.UserPrincipal;
-import com.github.waitlight.asskicker.sender.email.EmailProtocolSchemaService;
 import com.github.waitlight.asskicker.service.ChannelService;
 import com.github.waitlight.asskicker.service.TestSendService;
 import com.github.waitlight.asskicker.testsend.TestSendProperties;
@@ -31,19 +30,16 @@ public class ChannelHandler {
     private final ChannelService channelService;
     private final TestSendService testSendService;
     private final TestSendProperties testSendProperties;
-    private final EmailProtocolSchemaService emailProtocolSchemaService;
     private static final String CHANNEL_TYPE_ERROR = "渠道类型必须为SMS、EMAIL、IM、PUSH";
     private static final String TEST_SEND_FAILED_MESSAGE = "测试发送失败";
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
     public ChannelHandler(ChannelService channelService,
                           TestSendService testSendService,
-                          TestSendProperties testSendProperties,
-                          EmailProtocolSchemaService emailProtocolSchemaService) {
+                          TestSendProperties testSendProperties) {
         this.channelService = channelService;
         this.testSendService = testSendService;
         this.testSendProperties = testSendProperties;
-        this.emailProtocolSchemaService = emailProtocolSchemaService;
     }
 
     public Mono<ServerResponse> createChannel(ServerRequest request) {
@@ -152,12 +148,6 @@ public class ChannelHandler {
         return ServerResponse.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(types);
-    }
-
-    public Mono<ServerResponse> listEmailProtocols(ServerRequest request) {
-        return ServerResponse.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(emailProtocolSchemaService.getSchema());
     }
 
     private Mono<Long> parseId(ServerRequest request) {
