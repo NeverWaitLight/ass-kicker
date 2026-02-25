@@ -41,7 +41,7 @@
       <a-spin :spinning="loading">
         <div class="config-section config-section--flat">
           <a-form layout="vertical" class="config-form">
-            <a-form-item label="通道类型" required :validate-status="typeError ? 'error' : ''" :help="typeError">
+            <a-form-item label="通道类型" :validate-status="typeError ? 'error' : ''" :help="typeError">
               <a-select
                 v-model:value="form.type"
                 placeholder="请选择通道类型"
@@ -57,7 +57,7 @@
                 @change="handleProtocolChange"
               />
             </a-form-item>
-            <a-form-item label="通道名称" required :validate-status="nameError ? 'error' : ''" :help="nameError">
+            <a-form-item label="通道名称" :validate-status="nameError ? 'error' : ''" :help="nameError">
               <a-input v-model:value="form.name" placeholder="请输入通道名称" />
             </a-form-item>
           </a-form>
