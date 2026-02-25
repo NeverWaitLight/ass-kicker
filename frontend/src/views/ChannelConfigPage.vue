@@ -443,7 +443,7 @@ const getFallbackEmailProtocols = () => ({
     },
     {
       protocol: 'HTTP_API',
-      label: 'HTTP API',
+      label: 'HTTP',
       propertyKey: 'httpApi',
       fields: [
         { key: 'baseUrl', label: 'API 基础地址', required: true, defaultValue: '' },

@@ -1,8 +1,8 @@
 package com.github.waitlight.asskicker.sender.email;
 
-import com.github.waitlight.asskicker.sender.Sender;
-import com.github.waitlight.asskicker.sender.SenderConfig;
 import org.springframework.stereotype.Component;
+
+import com.github.waitlight.asskicker.sender.SenderConfig;
 
 @Component
 public class EmailSenderFactory {
