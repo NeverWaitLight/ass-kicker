@@ -21,8 +21,11 @@
       row-key="id"
       @change="handleTableChange"
     >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'role'">
+      <template #bodyCell="{ column, record, index }">
+        <template v-if="column.key === 'ordinal'">
+          {{ (pagination.page - 1) * pagination.size + index + 1 }}
+        </template>
+        <template v-else-if="column.key === 'role'">
           <a-tag :color="record.role === 'ADMIN' ? 'gold' : 'blue'">{{ record.role }}</a-tag>
         </template>
         <template v-else-if="column.key === 'status'">
@@ -101,7 +104,7 @@ const resetForm = reactive({
 })
 
 const columns = [
-  { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
+  { title: '序号', key: 'ordinal', width: 80 },
   { title: '用户名', dataIndex: 'username', key: 'username' },
   { title: '角色', dataIndex: 'role', key: 'role', width: 120 },
   { title: '状态', dataIndex: 'status', key: 'status', width: 120 },

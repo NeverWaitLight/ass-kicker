@@ -7,8 +7,11 @@
     row-key="id"
     @change="handleChange"
   >
-    <template #bodyCell="{ column, record }">
-      <template v-if="column.key === 'type'">
+    <template #bodyCell="{ column, record, index }">
+      <template v-if="column.key === 'ordinal'">
+        {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+      </template>
+      <template v-else-if="column.key === 'type'">
         <a-tag :color="getTypeColor(record.type)">{{ getTypeLabel(record.type) }}</a-tag>
       </template>
       <template v-else-if="column.key === 'createdAt'">
@@ -46,7 +49,7 @@ const emit = defineEmits(['test', 'edit', 'delete', 'page-change'])
 const { t, te } = useI18n()
 
 const columns = [
-  { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
+  { title: '序号', key: 'ordinal', width: 80 },
   { title: '名称', dataIndex: 'name', key: 'name' },
   { title: '类型', dataIndex: 'type', key: 'type', width: 100 },
   { title: '描述', dataIndex: 'description', key: 'description' },
