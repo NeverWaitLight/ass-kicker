@@ -15,7 +15,9 @@ public class TemplateRouter {
     @Bean
     public RouterFunction<ServerResponse> templateRoutes(TemplateHandler templateHandler) {
         return RouterFunctions
-                .route(RequestPredicates.POST("/api/templates")
+                .route(RequestPredicates.GET("/api/templates")
+                        .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), templateHandler::listTemplates)
+                .andRoute(RequestPredicates.POST("/api/templates")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), templateHandler::createTemplate)
                 .andRoute(RequestPredicates.GET("/api/templates/{id}")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), templateHandler::getTemplateById)

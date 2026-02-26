@@ -144,6 +144,17 @@ public class TemplateHandler {
                 });
     }
 
+    public Mono<ServerResponse> listTemplates(ServerRequest request) {
+        return ServerResponse.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(templateService.findAll(0, Integer.MAX_VALUE), Template.class)
+                .onErrorResume(throwable -> {
+                    System.err.println("Error listing templates: " + throwable.getMessage());
+                    return ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body(BodyInserters.fromValue("Failed to list templates"));
+                });
+    }
+
     public Mono<ServerResponse> handle(ServerRequest request) {
         return ServerResponse.badRequest().build();
     }

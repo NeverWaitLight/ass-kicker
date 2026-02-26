@@ -6,6 +6,8 @@ import ProfileSettingsPage from '../views/ProfileSettingsPage.vue'
 import { getAccessToken, getUser } from '../utils/auth'
 import ChannelManagementPage from '../views/ChannelManagementPage.vue'
 import ChannelConfigPage from '../views/ChannelConfigPage.vue'
+import TemplateManagementPage from '../views/TemplateManagementPage.vue'
+import TemplateDetailPage from '../views/TemplateDetailPage.vue'
 import { hasPermission, CHANNEL_PERMISSIONS } from '../utils/permissions'
 
 const routes = [
@@ -41,6 +43,14 @@ const routes = [
     path: '/senders/:id',
     component: ChannelConfigPage,
     meta: { requiresPermission: CHANNEL_PERMISSIONS.edit }
+  },
+  {
+    path: '/templates',
+    component: TemplateManagementPage
+  },
+  {
+    path: '/templates/:id',
+    component: TemplateDetailPage
   }
 ]
 
