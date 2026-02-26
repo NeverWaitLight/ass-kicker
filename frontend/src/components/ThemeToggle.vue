@@ -19,6 +19,5 @@ const isDark = computed({
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--header-text);
 }
 </style>

@@ -39,6 +39,13 @@
         <template v-if="column.key === 'description'">
           <span class="text-muted">{{ record.description || '-' }}</span>
         </template>
+        <template v-else-if="column.key === 'applicableSenderTypes'">
+          <a-tag v-for="t in (record.applicableSenderTypes || [])" :key="t" color="blue">{{ channelTypeLabel(t) }}</a-tag>
+          <span v-if="!(record.applicableSenderTypes || []).length" class="text-muted">-</span>
+        </template>
+        <template v-else-if="column.key === 'contentType'">
+          {{ getContentTypeLabel(record.contentType) }}
+        </template>
         <template v-else-if="column.key === 'createdAt'">
           {{ formatTimestamp(record.createdAt) }}
         </template>
@@ -77,6 +84,24 @@
             v-model:value="formData.code"
             placeholder="请输入模板编码，如 WELCOME_SMS"
             :disabled="formModal.isEdit"
+          />
+        </a-form-item>
+        <a-form-item label="适用通道类型" name="applicableSenderTypes">
+          <a-select
+            v-model:value="formData.applicableSenderTypes"
+            mode="multiple"
+            placeholder="选择适用的通道类型（可多选）"
+            :options="channelTypeOptions"
+            allow-clear
+            style="width: 100%"
+          />
+        </a-form-item>
+        <a-form-item label="内容类型" name="contentType">
+          <a-select
+            v-model:value="formData.contentType"
+            placeholder="选择内容类型"
+            :options="CONTENT_TYPE_OPTIONS"
+            style="width: 100%"
           />
         </a-form-item>
         <a-form-item label="描述" name="description">
@@ -122,8 +147,17 @@ import {
   updateTemplate,
   deleteTemplate
 } from '../utils/templateApi'
+import { CHANNEL_TYPE_VALUES, CHANNEL_TYPE_LABELS } from '../constants/channelTypes'
+import { CONTENT_TYPE_OPTIONS, getContentTypeLabel } from '../constants/templateTypes'
 
 const router = useRouter()
+
+const channelTypeOptions = CHANNEL_TYPE_VALUES.map((v) => ({
+  value: v,
+  label: CHANNEL_TYPE_LABELS['zh-CN'][v] || v
+}))
+
+const channelTypeLabel = (value) => CHANNEL_TYPE_LABELS['zh-CN'][value] || value
 
 const loading = ref(false)
 const error = ref('')
@@ -154,7 +188,9 @@ const deleteModal = reactive({
 const formData = reactive({
   name: '',
   code: '',
-  description: ''
+  description: '',
+  applicableSenderTypes: [],
+  contentType: 'PLAIN_TEXT'
 })
 
 const formRules = {
@@ -165,6 +201,8 @@ const formRules = {
 const columns = [
   { title: '名称', dataIndex: 'name', key: 'name', ellipsis: true },
   { title: '编码', dataIndex: 'code', key: 'code', ellipsis: true },
+  { title: '适用通道', key: 'applicableSenderTypes', width: 180 },
+  { title: '内容类型', key: 'contentType', width: 100 },
   { title: '描述', dataIndex: 'description', key: 'description', ellipsis: true },
   { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180 },
   { title: '操作', key: 'actions', width: 180, fixed: 'right' }
@@ -205,6 +243,8 @@ const openCreate = () => {
   formData.name = ''
   formData.code = ''
   formData.description = ''
+  formData.applicableSenderTypes = []
+  formData.contentType = 'PLAIN_TEXT'
   formModal.isEdit = false
   formModal.editId = null
   formModal.open = true
@@ -214,6 +254,8 @@ const openEdit = (record) => {
   formData.name = record.name
   formData.code = record.code
   formData.description = record.description || ''
+  formData.applicableSenderTypes = record.applicableSenderTypes ? [...record.applicableSenderTypes] : []
+  formData.contentType = record.contentType || 'PLAIN_TEXT'
   formModal.isEdit = true
   formModal.editId = record.id
   formModal.open = true
@@ -235,7 +277,9 @@ const submitForm = async () => {
     const payload = {
       name: formData.name,
       code: formData.code,
-      description: formData.description
+      description: formData.description,
+      applicableSenderTypes: formData.applicableSenderTypes,
+      contentType: formData.contentType
     }
     if (formModal.isEdit) {
       await updateTemplate(formModal.editId, payload)
@@ -284,11 +328,7 @@ onMounted(loadTemplates)
 <style scoped>
 .template-layout {
   padding: 24px;
-  background: var(--surface);
   border-radius: 16px;
-  box-shadow: 0 16px 32px var(--shadow-soft);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-on-surface);
 }
 
 .template-header {
@@ -305,7 +345,6 @@ onMounted(loadTemplates)
 
 .template-header p {
   margin: 4px 0 0;
-  color: var(--text-muted);
 }
 
 .template-actions {
@@ -314,9 +353,6 @@ onMounted(loadTemplates)
   gap: 12px;
 }
 
-.text-muted {
-  color: var(--text-muted);
-}
 
 @media (max-width: 768px) {
   .template-header {

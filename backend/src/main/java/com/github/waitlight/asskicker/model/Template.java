@@ -36,6 +36,12 @@ public class Template {
     @Field("description")
     private String description;
 
+    @Field("applicable_sender_types")
+    private List<SenderType> applicableSenderTypes;
+
+    @Field("content_type")
+    private TemplateContentType contentType;
+
     @Field("created_at")
     private Long createdAt;
 

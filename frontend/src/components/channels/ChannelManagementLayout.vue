@@ -18,11 +18,7 @@
 <style scoped>
 .channel-layout {
   padding: 24px;
-  background: var(--surface);
   border-radius: 16px;
-  box-shadow: 0 16px 32px var(--shadow-soft);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-on-surface);
 }
 
 .channel-header {
@@ -39,7 +35,6 @@
 
 .channel-header p {
   margin: 4px 0 0;
-  color: var(--text-muted);
 }
 
 .channel-actions {

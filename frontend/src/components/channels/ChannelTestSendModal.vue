@@ -165,7 +165,6 @@ const resultMessage = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  color: var(--text-on-surface);
 }
 
 .test-meta {
@@ -176,14 +175,9 @@ const resultMessage = computed(() => {
 }
 
 .test-name {
-  color: var(--text-muted);
   font-size: 12px;
 }
 
-.test-modal :deep(.ant-input),
-.test-modal :deep(.ant-input-affix-wrapper) {
-  color: var(--text-on-surface);
-}
 
 .test-actions {
   display: flex;

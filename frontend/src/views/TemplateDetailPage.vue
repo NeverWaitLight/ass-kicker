@@ -11,7 +11,7 @@
         <div class="info-card-header">
           <div>
             <h2 class="info-title">{{ template.name || '模板详情' }}</h2>
-            <span class="info-code">{{ template.code }}</span>
+            <code class="info-code">{{ template.code }}</code>
           </div>
           <div class="info-card-actions">
             <template v-if="!infoEditing">
@@ -24,12 +24,38 @@
           </div>
         </div>
 
+        <!-- 只读展示 -->
+        <a-descriptions
+          v-if="!infoEditing"
+          :column="2"
+          bordered
+          size="small"
+          class="info-descriptions"
+          style="margin-top: 16px"
+        >
+          <a-descriptions-item label="模板名称">{{ template.name || '-' }}</a-descriptions-item>
+          <a-descriptions-item label="模板编码">
+            <code class="desc-code">{{ template.code || '-' }}</code>
+          </a-descriptions-item>
+          <a-descriptions-item label="适用通道类型">
+            <template v-if="(template.applicableSenderTypes || []).length">
+              <a-tag v-for="t in template.applicableSenderTypes" :key="t" color="blue">{{ channelTypeLabel(t) }}</a-tag>
+            </template>
+            <span v-else class="desc-empty">未设置</span>
+          </a-descriptions-item>
+          <a-descriptions-item label="内容类型">{{ getContentTypeLabel(template.contentType) }}</a-descriptions-item>
+          <a-descriptions-item label="描述" :span="2">{{ template.description || '-' }}</a-descriptions-item>
+          <a-descriptions-item label="创建时间">{{ formatTimestamp(template.createdAt) }}</a-descriptions-item>
+          <a-descriptions-item label="更新时间">{{ formatTimestamp(template.updatedAt) }}</a-descriptions-item>
+        </a-descriptions>
+
+        <!-- 编辑表单 -->
         <a-form
+          v-else
           ref="infoFormRef"
           :model="infoForm"
           :rules="infoRules"
           layout="vertical"
-          :disabled="!infoEditing"
           style="margin-top: 16px"
         >
           <a-row :gutter="16">
@@ -44,6 +70,24 @@
               </a-form-item>
             </a-col>
           </a-row>
+          <a-form-item label="适用通道类型" name="applicableSenderTypes">
+            <a-select
+              v-model:value="infoForm.applicableSenderTypes"
+              mode="multiple"
+              placeholder="选择适用的通道类型（可多选）"
+              :options="channelTypeOptions"
+              allow-clear
+              style="width: 100%"
+            />
+          </a-form-item>
+          <a-form-item label="内容类型" name="contentType">
+            <a-select
+              v-model:value="infoForm.contentType"
+              placeholder="选择内容类型"
+              :options="CONTENT_TYPE_OPTIONS"
+              style="width: 100%"
+            />
+          </a-form-item>
           <a-form-item label="描述" name="description">
             <a-textarea
               v-model:value="infoForm.description"
@@ -53,12 +97,11 @@
               show-count
             />
           </a-form-item>
+          <div class="info-meta">
+            <span>创建时间：{{ formatTimestamp(template.createdAt) }}</span>
+            <span>更新时间：{{ formatTimestamp(template.updatedAt) }}</span>
+          </div>
         </a-form>
-
-        <div class="info-meta">
-          <span>创建时间：{{ formatTimestamp(template.createdAt) }}</span>
-          <span>更新时间：{{ formatTimestamp(template.updatedAt) }}</span>
-        </div>
       </div>
 
       <!-- 多语言内容区域 -->
@@ -84,9 +127,9 @@
 
               <a-textarea
                 v-model:value="langContents[lang.code]"
-                :placeholder="`输入 ${lang.displayName} 的模板内容，支持变量占位符如 {{name}}...`"
+                :placeholder="contentPlaceholder(lang)"
                 :rows="10"
-                class="lang-textarea"
+                :class="['lang-textarea', { 'lang-textarea-code': isCodeContentType }]"
                 @input="markDirty(lang.code)"
               />
 
@@ -146,6 +189,15 @@ import {
   saveLanguageContent,
   deleteLanguageContent
 } from '../utils/templateApi'
+import { CHANNEL_TYPE_VALUES, CHANNEL_TYPE_LABELS } from '../constants/channelTypes'
+import { CONTENT_TYPE_OPTIONS, getContentTypeLabel } from '../constants/templateTypes'
+
+const channelTypeOptions = CHANNEL_TYPE_VALUES.map((v) => ({
+  value: v,
+  label: CHANNEL_TYPE_LABELS['zh-CN'][v] || v
+}))
+
+const channelTypeLabel = (value) => CHANNEL_TYPE_LABELS['zh-CN'][value] || value
 
 const LANGUAGES = [
   { code: 'zh-Hans', displayName: '简体中文' },
@@ -166,9 +218,27 @@ const infoEditing = ref(false)
 const infoSaving = ref(false)
 const infoFormRef = ref(null)
 
-const infoForm = reactive({ name: '', code: '', description: '' })
+const infoForm = reactive({
+  name: '',
+  code: '',
+  description: '',
+  applicableSenderTypes: [],
+  contentType: 'PLAIN_TEXT'
+})
 const infoRules = {
   name: [{ required: true, message: '请输入模板名称', trigger: 'blur' }]
+}
+
+const effectiveContentType = computed(() => template.value?.contentType || 'PLAIN_TEXT')
+const isCodeContentType = computed(
+  () => effectiveContentType.value === 'HTML' || effectiveContentType.value === 'JSON'
+)
+
+const contentPlaceholder = (lang) => {
+  const base = `输入 ${lang.displayName} 的模板内容`
+  if (effectiveContentType.value === 'HTML') return `${base}，支持 HTML 标签与变量占位符`
+  if (effectiveContentType.value === 'JSON') return `${base}，请填写合法 JSON`
+  return `${base}，支持变量占位符如 {{name}}...`
 }
 
 const langContents = reactive({})
@@ -196,6 +266,8 @@ const loadTemplate = async () => {
     infoForm.name = t.name
     infoForm.code = t.code
     infoForm.description = t.description || ''
+    infoForm.applicableSenderTypes = t.applicableSenderTypes ? [...t.applicableSenderTypes] : []
+    infoForm.contentType = t.contentType || 'PLAIN_TEXT'
 
     const contents = await fetchTemplateContents(id)
     LANGUAGES.forEach((lang) => {
@@ -224,6 +296,10 @@ const cancelInfoEdit = () => {
   infoForm.name = template.value.name
   infoForm.code = template.value.code
   infoForm.description = template.value.description || ''
+  infoForm.applicableSenderTypes = template.value.applicableSenderTypes
+    ? [...template.value.applicableSenderTypes]
+    : []
+  infoForm.contentType = template.value.contentType || 'PLAIN_TEXT'
   infoEditing.value = false
   infoFormRef.value?.clearValidate()
 }
@@ -239,7 +315,9 @@ const saveInfo = async () => {
     const updated = await updateTemplate(route.params.id, {
       name: infoForm.name,
       code: infoForm.code,
-      description: infoForm.description
+      description: infoForm.description,
+      applicableSenderTypes: infoForm.applicableSenderTypes,
+      contentType: infoForm.contentType
     })
     template.value = updated
     infoEditing.value = false
@@ -258,12 +336,21 @@ const markDirty = (code) => {
 }
 
 const saveLangContent = async (lang) => {
+  const content = langContents[lang.code]
+  if (effectiveContentType.value === 'JSON' && content && content.trim()) {
+    try {
+      JSON.parse(content)
+    } catch {
+      langErrors[lang.code] = '内容不是合法的 JSON，请检查格式后重试'
+      return
+    }
+  }
   const newSaving = new Set(savingLangs.value)
   newSaving.add(lang.code)
   savingLangs.value = newSaving
   langErrors[lang.code] = ''
   try {
-    await saveLanguageContent(route.params.id, lang.code, langContents[lang.code])
+    await saveLanguageContent(route.params.id, lang.code, content)
     originalContents[lang.code] = langContents[lang.code]
     const newDirty = new Set(dirtyLangs.value)
     newDirty.delete(lang.code)
@@ -326,12 +413,8 @@ onMounted(loadTemplate)
 }
 
 .info-card {
-  background: var(--surface);
   border-radius: 12px;
-  border: 1px solid var(--border-subtle);
-  box-shadow: 0 8px 24px var(--shadow-soft);
   padding: 24px;
-  color: var(--text-on-surface);
 }
 
 .info-card-header {
@@ -345,13 +428,27 @@ onMounted(loadTemplate)
   margin: 0 0 4px;
   font-size: 20px;
   font-weight: 600;
-  color: var(--text-on-surface);
 }
 
 .info-code {
-  font-size: 13px;
-  color: var(--text-muted);
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 12px;
   font-family: monospace;
+  padding: 1px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.desc-code {
+  font-family: monospace;
+  font-size: 12px;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.desc-empty {
+  font-size: 12px;
 }
 
 .info-card-actions {
@@ -365,25 +462,18 @@ onMounted(loadTemplate)
   gap: 24px;
   margin-top: 12px;
   font-size: 12px;
-  color: var(--text-muted);
-  border-top: 1px solid var(--border-subtle);
   padding-top: 12px;
 }
 
 .lang-card {
-  background: var(--surface);
   border-radius: 12px;
-  border: 1px solid var(--border-subtle);
-  box-shadow: 0 8px 24px var(--shadow-soft);
   padding: 24px;
-  color: var(--text-on-surface);
 }
 
 .lang-card-title {
   margin: 0 0 16px;
   font-size: 16px;
   font-weight: 600;
-  color: var(--text-on-surface);
 }
 
 .lang-tab-body {
@@ -391,9 +481,14 @@ onMounted(loadTemplate)
 }
 
 .lang-textarea {
-  font-family: monospace;
   font-size: 13px;
   resize: vertical;
+  line-height: 1.6;
+}
+
+.lang-textarea-code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 13px;
 }
 
 .lang-tab-footer {
@@ -405,6 +500,6 @@ onMounted(loadTemplate)
 
 .unsaved-hint {
   font-size: 12px;
-  color: var(--warning, #faad14);
+  color: #faad14;
 }
 </style>

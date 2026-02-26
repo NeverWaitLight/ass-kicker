@@ -31,7 +31,6 @@ const onMenuClick = ({ key }) => {
 <style scoped>
 .user-chip {
   padding: 0;
-  color: var(--header-text);
   border: none;
   box-shadow: none;
   background: transparent;

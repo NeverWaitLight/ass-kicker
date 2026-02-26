@@ -167,6 +167,8 @@ public class TemplateHandler {
         sanitized.setName(input.getName());
         sanitized.setCode(input.getCode());
         sanitized.setDescription(input.getDescription());
+        sanitized.setApplicableSenderTypes(input.getApplicableSenderTypes());
+        sanitized.setContentType(input.getContentType());
         return sanitized;
     }
 }

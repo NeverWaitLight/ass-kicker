@@ -245,11 +245,9 @@ onMounted(loadUsers)
 
 .page-header h2 {
   margin: 0;
-  color: var(--text-on-surface);
 }
 
 .page-header p {
   margin: 4px 0 0;
-  color: var(--text-muted);
 }
 </style>

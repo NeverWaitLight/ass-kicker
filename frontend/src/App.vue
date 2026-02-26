@@ -1,6 +1,7 @@
 <template>
-  <router-view v-if="isPublic" />
-  <a-layout v-else class="app-shell">
+  <a-config-provider :theme="themeConfig">
+    <router-view v-if="isPublic" />
+    <a-layout v-else class="app-shell">
     <a-layout-header class="app-header">
       <div class="brand">
         <div class="brand-mark">
@@ -25,11 +26,12 @@
       <router-view />
     </a-layout-content>
   </a-layout>
+  </a-config-provider>
 </template>
 
 <script setup>
 import { computed, watch } from 'vue'
-import { message } from 'ant-design-vue'
+import { ConfigProvider, message, theme } from 'ant-design-vue'
 import { useRoute, useRouter } from 'vue-router'
 import { clearAuth } from './utils/auth'
 import { currentUser, syncAuth } from './stores/auth'
@@ -58,6 +60,9 @@ const selectedKey = computed(() => {
 const isAdmin = computed(() => currentUser.value?.role === 'ADMIN')
 const canViewChannel = computed(() => hasPermission(currentUser.value, CHANNEL_PERMISSIONS.view))
 const menuTheme = computed(() => (currentTheme.value === 'dark' ? 'dark' : 'light'))
+const themeConfig = computed(() => ({
+  algorithm: currentTheme.value === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm
+}))
 
 const onMenu = ({ key }) => {
   router.push(key)
@@ -94,9 +99,6 @@ watch(
   align-items: center;
   gap: 24px;
   justify-content: flex-start;
-  background: var(--header-bg);
-  color: var(--header-text);
-  border-bottom: 1px solid var(--header-border);
   padding: 0 32px;
 }
 
@@ -115,7 +117,6 @@ watch(
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
-  background: var(--brand-logo-bg);
 }
 
 .brand-row {
@@ -127,7 +128,6 @@ watch(
 .brand-title {
   font-size: 20px;
   font-weight: 600;
-  color: var(--header-text);
 }
 
 .header-actions {

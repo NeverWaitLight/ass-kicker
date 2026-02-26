@@ -666,7 +666,6 @@ watch(
 
 .section-hint {
   margin: 0 0 12px;
-  color: var(--text-muted);
   font-size: 12px;
 }
 
