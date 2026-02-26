@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.sender.im;
 
 public enum IMSenderType {
-    DINGTALK
+    DINGTALK,
+    WECHAT_WORK
 }

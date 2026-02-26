@@ -19,6 +19,10 @@ public class IMSenderPropertyMapper {
             "timeout", "maxRetries", "retryDelay"
     );
 
+    private static final Set<String> WECHAT_WORK_KEYS = Set.of(
+            "webhookUrl", "timeout", "maxRetries", "retryDelay"
+    );
+
     public SenderConfig fromProperties(Map<String, Object> properties) {
         Map<String, Object> safe = normalizeProperties(properties);
 
@@ -30,14 +34,21 @@ public class IMSenderPropertyMapper {
         IMSenderType senderType = parseProtocol(protocolValue);
         if (senderType == IMSenderType.DINGTALK) {
             DingTalkIMSenderConfig dingTalk = new DingTalkIMSenderConfig();
-            // 直接从 dingtalk 嵌套对象中读取（支持大小写）
             Map<String, Object> dingTalkNested = readMap(safe.get("dingTalk"));
             if (dingTalkNested.isEmpty()) {
-                // 尝试小写 key
                 dingTalkNested = readMap(safe.get("dingtalk"));
             }
             applyDingTalk(dingTalk, dingTalkNested);
             return dingTalk;
+        }
+        if (senderType == IMSenderType.WECHAT_WORK) {
+            WechatWorkIMSenderConfig wechatWork = new WechatWorkIMSenderConfig();
+            Map<String, Object> wechatWorkNested = readMap(safe.get("wechatWork"));
+            if (wechatWorkNested.isEmpty()) {
+                wechatWorkNested = readMap(safe.get("wechat_work"));
+            }
+            applyWechatWork(wechatWork, wechatWorkNested);
+            return wechatWork;
         }
 
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "不支持的 IM 协议类型");
@@ -74,6 +85,17 @@ public class IMSenderPropertyMapper {
         dingTalk.setTimeout(readDuration(values, "timeout", dingTalk.getTimeout()));
         dingTalk.setMaxRetries(readInt(values, "maxRetries", dingTalk.getMaxRetries(), "钉钉最大重试次数非法"));
         dingTalk.setRetryDelay(readDuration(values, "retryDelay", dingTalk.getRetryDelay()));
+    }
+
+    private void applyWechatWork(WechatWorkIMSenderConfig wechatWork, Map<String, Object> values) {
+        String webhookUrl = readString(values, "webhookUrl");
+        if (webhookUrl.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "企业微信 Webhook 地址不能为空");
+        }
+        wechatWork.setWebhookUrl(webhookUrl);
+        wechatWork.setTimeout(readDuration(values, "timeout", wechatWork.getTimeout()));
+        wechatWork.setMaxRetries(readInt(values, "maxRetries", wechatWork.getMaxRetries(), "企业微信最大重试次数非法"));
+        wechatWork.setRetryDelay(readDuration(values, "retryDelay", wechatWork.getRetryDelay()));
     }
 
     /**

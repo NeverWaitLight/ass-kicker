@@ -550,6 +550,14 @@ const getFallbackImTypes = () => ({
       fields: [
         { key: 'webhookUrl', label: 'Webhook URL', required: true, defaultValue: '' }
       ]
+    },
+    {
+      type: 'WECHAT_WORK',
+      label: '企业微信',
+      propertyKey: 'wechatWork',
+      fields: [
+        { key: 'webhookUrl', label: 'Webhook URL', required: true, defaultValue: '' }
+      ]
     }
   ]
 })

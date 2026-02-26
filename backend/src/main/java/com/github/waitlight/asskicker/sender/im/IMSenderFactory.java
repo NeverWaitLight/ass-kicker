@@ -11,6 +11,9 @@ public class IMSenderFactory {
         if (config instanceof DingTalkIMSenderConfig dingTalk) {
             return new DingTalkIMSender(dingTalk);
         }
+        if (config instanceof WechatWorkIMSenderConfig wechatWork) {
+            return new WechatWorkIMSender(wechatWork);
+        }
 
         throw new IllegalArgumentException("Unsupported IM sender config: " + config);
     }
