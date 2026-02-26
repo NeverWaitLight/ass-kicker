@@ -7,7 +7,6 @@ import com.github.waitlight.asskicker.model.User;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.model.UserStatus;
 import com.github.waitlight.asskicker.repository.RegistrationLock;
-import com.github.waitlight.asskicker.repository.UserQueryRepository;
 import com.github.waitlight.asskicker.repository.UserRepository;
 import com.github.waitlight.asskicker.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -23,14 +22,12 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final UserQueryRepository userQueryRepository;
     private final PasswordEncoder passwordEncoder;
     private final RegistrationLock registrationLock;
     private final UserConverter userMapStructer;
 
-    public UserServiceImpl(UserRepository userRepository, UserQueryRepository userQueryRepository, PasswordEncoder passwordEncoder, RegistrationLock registrationLock, UserConverter userMapStructer) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, RegistrationLock registrationLock, UserConverter userMapStructer) {
         this.userRepository = userRepository;
-        this.userQueryRepository = userQueryRepository;
         this.passwordEncoder = passwordEncoder;
         this.registrationLock = registrationLock;
         this.userMapStructer = userMapStructer;
@@ -99,8 +96,8 @@ public class UserServiceImpl implements UserService {
         int normalizedSize = size <= 0 ? 10 : size;
         int offset = (normalizedPage - 1) * normalizedSize;
 
-        Mono<Long> totalMono = userQueryRepository.count(keyword);
-        Mono<List<UserView>> itemsMono = userQueryRepository.findPage(keyword, normalizedSize, offset)
+        Mono<Long> totalMono = userRepository.count(keyword);
+        Mono<List<UserView>> itemsMono = userRepository.findPage(keyword, normalizedSize, offset)
                 .map(userMapStructer::toView)
                 .collectList();
 

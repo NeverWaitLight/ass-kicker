@@ -16,7 +16,7 @@ Spring Boot 3.2 WebFlux、Java 21、R2DBC（PostgreSQL）、Spring Security（JW
 
 **service / service.impl** 业务逻辑层。AuthService 负责认证与 JWT；ChannelService 渠道的增删改查与配置；LanguageTemplateService、TemplateService 模板与多语言模板；UserService 用户与密码；TestSendService 封装「测试发送」流程，内部按渠道类型选用不同 Sender 并支持限流等。
 
-**repository** 数据访问层，基于 Spring Data R2DBC。ChannelRepository、LanguageTemplateRepository、TemplateRepository、UserRepository、UserQueryRepository 等提供反应式 CRUD 与查询；RegistrationLock、PostgresRegistrationLock 提供注册等场景的分布式锁。
+**repository** 数据访问层，基于 Spring Data R2DBC。SenderRepository、LanguageTemplateRepository、TemplateRepository、UserRepository 等提供反应式 CRUD 与查询；RegistrationLock、PostgresRegistrationLock 提供注册等场景的分布式锁。
 
 **model** 领域实体与枚举。Channel、ChannelType、Template、LanguageTemplate、Language、User、UserStatus、UserRole 等，与 R2DBC 表结构对应。
 
