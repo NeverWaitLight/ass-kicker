@@ -12,11 +12,6 @@ app:
       secret: change-this-secret-to-32-chars-minimum
       access-token-ttl: PT24H
       refresh-token-ttl: PT720H
-  test-send:
-    max-requests: 5
-    window: PT1M
-    max-target-length: 255
-    max-content-length: 2000
 logging:
   async:
     queue-size: 1024

@@ -14,7 +14,7 @@ Spring Boot 3.2 WebFlux、Java 21、R2DBC（PostgreSQL）、Spring Security（JW
 
 **handlers** 处理具体请求，解析参数、调用 Service、构造 ServerResponse。AuthHandler 处理登录注册刷新令牌；ChannelHandler 处理渠道 CRUD 与测试发送；LanguageTemplateHandler、TemplateHandler 处理模板与多语言模板；UserHandler 处理用户管理。统一返回 Mono&lt;ServerResponse&gt;，与全链路反应式一致。
 
-**service / service.impl** 业务逻辑层。AuthService 负责认证与 JWT；ChannelService 渠道的增删改查与配置；LanguageTemplateService、TemplateService 模板与多语言模板；UserService 用户与密码；TestSendService 封装「测试发送」流程，内部按渠道类型选用不同 Sender 并支持限流等。
+**service / service.impl** 业务逻辑层。AuthService 负责认证与 JWT；ChannelService 渠道的增删改查与配置，以及测试发送（按 type+properties 组装 ChannelConfig、调用 channels 包内 Factory 创建 Channel 并 send）；LanguageTemplateService、TemplateService 模板与多语言模板；UserService 用户与密码。
 
 **repository** 数据访问层，基于 Spring Data R2DBC。SenderRepository、LanguageTemplateRepository、TemplateRepository、UserRepository 等提供反应式 CRUD 与查询；RegistrationLock、PostgresRegistrationLock 提供注册等场景的分布式锁。
 
@@ -27,8 +27,6 @@ Spring Boot 3.2 WebFlux、Java 21、R2DBC（PostgreSQL）、Spring Security（JW
 **channel** 消息发送抽象与多通道实现。顶层 Sender、SenderConfig、MessageRequest、MessageResponse；email 子包提供 EmailSender 接口及 Smtp、Http 实现，EmailSenderFactory、各类 EmailSenderConfig、EmailSenderPropertyMapper 负责配置与属性映射；im 子包提供 IMSender 及钉钉、企业微信实现，IMSenderFactory、IMSenderPropertyMapper、各 IMSenderConfig 负责 IM 渠道的装配与配置。发送逻辑可基于 WebClient 等实现，保持反应式。
 
 **channel** 渠道侧配置与安全。ChannelCryptoConfig、ChannelCryptoProperties、ChannelPropertyCrypto 对渠道敏感配置（如密钥、Token）做加解密与存储，避免明文落库。
-
-**testsend** 测试发送相关配置与运行时。TestSendProperties、TestSendConfig 配置项；TestSendRateLimiter 限流；TemporaryChannelConfig、TemporaryChannelConfigManager 管理测试用临时渠道配置，与 TestSendService 配合。
 
 **security** 认证与授权。JwtService、JwtProperties、JwtPayload、JwtTokenType 负责 JWT 签发与解析；JwtServerAuthenticationConverter、JwtReactiveAuthenticationManager 将请求转为 Spring Security 的 Authentication；UserPrincipal 当前用户主体；SecurityConfig 配置需认证/放行的路径与反应式安全链。
 

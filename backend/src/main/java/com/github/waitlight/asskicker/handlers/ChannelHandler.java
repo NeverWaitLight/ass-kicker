@@ -5,8 +5,6 @@ import com.github.waitlight.asskicker.model.Channel;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.service.ChannelService;
-import com.github.waitlight.asskicker.service.TestSendService;
-import com.github.waitlight.asskicker.testsend.TestSendProperties;
 import org.springframework.core.codec.DecodingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,18 +26,12 @@ import java.util.regex.Pattern;
 public class ChannelHandler {
 
     private final ChannelService channelService;
-    private final TestSendService testSendService;
-    private final TestSendProperties testSendProperties;
     private static final String CHANNEL_TYPE_ERROR = "通道类型必须为SMS、EMAIL、IM、PUSH";
     private static final String TEST_SEND_FAILED_MESSAGE = "测试发送失败";
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
-    public ChannelHandler(ChannelService channelService,
-                          TestSendService testSendService,
-                          TestSendProperties testSendProperties) {
+    public ChannelHandler(ChannelService channelService) {
         this.channelService = channelService;
-        this.testSendService = testSendService;
-        this.testSendProperties = testSendProperties;
     }
 
     public Mono<ServerResponse> createChannel(ServerRequest request) {
@@ -131,7 +123,7 @@ public class ChannelHandler {
                         .onErrorMap(IllegalArgumentException.class,
                                 ex -> new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage()))
                         .map(this::sanitizeTestSend)
-                        .flatMap(body -> testSendService.testSend(body, principal)))
+                        .flatMap(body -> channelService.testSend(body, principal)))
                 .flatMap(response -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(response))
@@ -229,18 +221,12 @@ public class ChannelHandler {
         if (target.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "目标地址不能为空");
         }
-        if (target.length() > testSendProperties.getMaxTargetLength()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "目标地址过长");
-        }
         if (input.type() == ChannelType.EMAIL && !EMAIL_PATTERN.matcher(target).matches()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "目标地址格式不正确");
         }
         String content = sanitizeText(input.content());
         if (content.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "测试内容不能为空");
-        }
-        if (content.length() > testSendProperties.getMaxContentLength()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "测试内容过长");
         }
         Map<String, Object> properties = normalizeTestProperties(input.properties());
         validateProperties(properties, "properties");

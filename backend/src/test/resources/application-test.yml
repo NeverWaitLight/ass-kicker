@@ -2,12 +2,6 @@ spring:
   data:
     mongodb:
       uri: mongodb://admin:123456@localhost:27017/asskicker_test?authSource=admin
-app:
-  test-send:
-    max-requests: 5
-    window: PT1M
-    max-target-length: 255
-    max-content-length: 2000
 logging:
   async:
     queue-size: 512
