@@ -3,7 +3,7 @@ package com.github.waitlight.asskicker.router;
 import com.github.waitlight.asskicker.dto.channel.TestSendRequest;
 import com.github.waitlight.asskicker.handlers.ChannelHandler;
 import com.github.waitlight.asskicker.model.Channel;
-import com.github.waitlight.asskicker.sender.MessageResponse;
+import com.github.waitlight.asskicker.channels.MessageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;

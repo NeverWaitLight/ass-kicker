@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.sender.email;
+package com.github.waitlight.asskicker.channels.email;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -8,17 +8,17 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import com.github.waitlight.asskicker.sender.MessageRequest;
-import com.github.waitlight.asskicker.sender.MessageResponse;
+import com.github.waitlight.asskicker.channels.MessageRequest;
+import com.github.waitlight.asskicker.channels.MessageResponse;
 
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
-public class HttpEmailSender extends EmailSender<HttpEmailSenderConfig> {
+public class HttpEmailChannel extends EmailChannel<HttpEmailChannelConfig> {
 
     private final WebClient client;
 
-    public HttpEmailSender(HttpEmailSenderConfig config) {
+    public HttpEmailChannel(HttpEmailChannelConfig config) {
         super(config);
         this.client = buildWebClient(config);
     }
@@ -70,7 +70,7 @@ public class HttpEmailSender extends EmailSender<HttpEmailSenderConfig> {
         return body;
     }
 
-    private WebClient buildWebClient(HttpEmailSenderConfig httpApi) {
+    private WebClient buildWebClient(HttpEmailChannelConfig httpApi) {
         return WebClient.builder()
                 .baseUrl(String.valueOf(httpApi.getBaseUrl()))
                 .defaultHeader(String.valueOf(httpApi.getApiKeyHeader()), String.valueOf(httpApi.getApiKey()))

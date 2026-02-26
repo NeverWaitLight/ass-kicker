@@ -1,17 +1,17 @@
 package com.github.waitlight.asskicker.service.impl;
 
+import com.github.waitlight.asskicker.channels.Channel;
 import com.github.waitlight.asskicker.dto.channel.TestSendRequest;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.security.UserPrincipal;
-import com.github.waitlight.asskicker.sender.MessageRequest;
-import com.github.waitlight.asskicker.sender.MessageResponse;
-import com.github.waitlight.asskicker.sender.Sender;
-import com.github.waitlight.asskicker.sender.SenderConfig;
-import com.github.waitlight.asskicker.sender.email.EmailSenderFactory;
-import com.github.waitlight.asskicker.sender.email.EmailSenderPropertyMapper;
-import com.github.waitlight.asskicker.sender.im.IMSenderFactory;
-import com.github.waitlight.asskicker.sender.im.IMSenderPropertyMapper;
+import com.github.waitlight.asskicker.channels.MessageRequest;
+import com.github.waitlight.asskicker.channels.MessageResponse;
+import com.github.waitlight.asskicker.channels.ChannelConfig;
+import com.github.waitlight.asskicker.channels.email.EmailChannelFactory;
+import com.github.waitlight.asskicker.channels.email.EmailChannelPropertyMapper;
+import com.github.waitlight.asskicker.channels.im.IMChannelFactory;
+import com.github.waitlight.asskicker.channels.im.IMChannelPropertyMapper;
 import com.github.waitlight.asskicker.service.TestSendService;
 import com.github.waitlight.asskicker.testsend.TemporaryChannelConfig;
 import com.github.waitlight.asskicker.testsend.TemporaryChannelConfigManager;
@@ -33,23 +33,23 @@ public class TestSendServiceImpl implements TestSendService {
 
     private static final Logger logger = LoggerFactory.getLogger(TestSendServiceImpl.class);
 
-    private final EmailSenderFactory emailSenderFactory;
-    private final EmailSenderPropertyMapper emailSenderPropertyMapper;
-    private final IMSenderFactory imSenderFactory;
-    private final IMSenderPropertyMapper imSenderPropertyMapper;
+    private final EmailChannelFactory emailChannelFactory;
+    private final EmailChannelPropertyMapper emailChannelPropertyMapper;
+    private final IMChannelFactory imChannelFactory;
+    private final IMChannelPropertyMapper imChannelPropertyMapper;
     private final TemporaryChannelConfigManager configManager;
     private final TestSendRateLimiter rateLimiter;
 
-    public TestSendServiceImpl(EmailSenderFactory emailSenderFactory,
-                               EmailSenderPropertyMapper emailSenderPropertyMapper,
-                               IMSenderFactory imSenderFactory,
-                               IMSenderPropertyMapper imSenderPropertyMapper,
+    public TestSendServiceImpl(EmailChannelFactory emailChannelFactory,
+                               EmailChannelPropertyMapper emailChannelPropertyMapper,
+                               IMChannelFactory imChannelFactory,
+                               IMChannelPropertyMapper imChannelPropertyMapper,
                                TemporaryChannelConfigManager configManager,
                                TestSendRateLimiter rateLimiter) {
-        this.emailSenderFactory = emailSenderFactory;
-        this.emailSenderPropertyMapper = emailSenderPropertyMapper;
-        this.imSenderFactory = imSenderFactory;
-        this.imSenderPropertyMapper = imSenderPropertyMapper;
+        this.emailChannelFactory = emailChannelFactory;
+        this.emailChannelPropertyMapper = emailChannelPropertyMapper;
+        this.imChannelFactory = imChannelFactory;
+        this.imChannelPropertyMapper = imChannelPropertyMapper;
         this.configManager = configManager;
         this.rateLimiter = rateLimiter;
     }
@@ -103,8 +103,8 @@ public class TestSendServiceImpl implements TestSendService {
         return Mono.fromCallable(() -> {
             try {
                 if (config.type() == ChannelType.EMAIL) {
-                    SenderConfig property = emailSenderPropertyMapper.fromProperties(config.properties());
-                    Sender emailSender = emailSenderFactory.create(property);
+                    ChannelConfig property = emailChannelPropertyMapper.fromProperties(config.properties());
+                    Channel emailChannel = emailChannelFactory.create(property);
                     MessageRequest messageRequest = MessageRequest.builder()
                             .recipient(request.target())
                             .subject("测试消息")
@@ -116,10 +116,10 @@ public class TestSendServiceImpl implements TestSendService {
                             .build();
                     try {
                         logger.info("SECURITY_TEST_SEND_SENDER_READY configId={} protocol={} sender={}",
-                                config.id(), protocol, emailSender.getClass().getSimpleName());
+                                config.id(), protocol, emailChannel.getClass().getSimpleName());
                         logger.info("SECURITY_TEST_SEND_EXEC configId={} protocol={} target={}",
                                 config.id(), protocol, request.target());
-                        MessageResponse response = emailSender.send(messageRequest);
+                        MessageResponse response = emailChannel.send(messageRequest);
                         logger.info("SECURITY_TEST_SEND_PROVIDER_RESULT configId={} protocol={} success={} messageId={} errorCode={}",
                                 config.id(),
                                 protocol,
@@ -128,11 +128,11 @@ public class TestSendServiceImpl implements TestSendService {
                                 response.getErrorCode());
                         return response;
                     } finally {
-                        closeSender(emailSender);
+                        close(emailChannel);
                     }
                 } else if (config.type() == ChannelType.IM) {
-                    SenderConfig property = imSenderPropertyMapper.fromProperties(config.properties());
-                    Sender imSender = imSenderFactory.create(property);
+                    ChannelConfig property = imChannelPropertyMapper.fromProperties(config.properties());
+                    Channel imChannel = imChannelFactory.create(property);
                     MessageRequest messageRequest = MessageRequest.builder()
                             .recipient(request.target())
                             .subject("测试消息")
@@ -144,10 +144,10 @@ public class TestSendServiceImpl implements TestSendService {
                             .build();
                     try {
                         logger.info("SECURITY_TEST_SEND_SENDER_READY configId={} protocol={} sender={}",
-                                config.id(), protocol, imSender.getClass().getSimpleName());
+                                config.id(), protocol, imChannel.getClass().getSimpleName());
                         logger.info("SECURITY_TEST_SEND_EXEC configId={} protocol={} target={}",
                                 config.id(), protocol, request.target());
-                        MessageResponse response = imSender.send(messageRequest);
+                        MessageResponse response = imChannel.send(messageRequest);
                         logger.info("SECURITY_TEST_SEND_PROVIDER_RESULT configId={} protocol={} success={} messageId={} errorCode={}",
                                 config.id(),
                                 protocol,
@@ -156,7 +156,7 @@ public class TestSendServiceImpl implements TestSendService {
                                 response.getErrorCode());
                         return response;
                     } finally {
-                        closeSender(imSender);
+                        close(imChannel);
                     }
                 }
                 logger.info("SECURITY_TEST_SEND_SIMULATED type={} protocol={} target={}",
@@ -192,8 +192,8 @@ public class TestSendServiceImpl implements TestSendService {
         return "SMTP";
     }
 
-    private void closeSender(Sender sender) {
-        if (sender instanceof AutoCloseable closeable) {
+    private void close(Channel channel) {
+        if (channel instanceof AutoCloseable closeable) {
             try {
                 closeable.close();
             } catch (Exception ex) {

@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.sender.email;
+package com.github.waitlight.asskicker.channels.email;
 
 import java.time.Duration;
 
@@ -10,7 +10,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class HttpEmailSenderConfig extends EmailSenderConfig {
+public class HttpEmailChannelConfig extends EmailChannelConfig {
 
     @NotBlank
     private String baseUrl;
@@ -35,7 +35,7 @@ public class HttpEmailSenderConfig extends EmailSenderConfig {
     @NotNull
     private Duration retryDelay = Duration.ofSeconds(1);
 
-    public HttpEmailSenderConfig() {
-        super(EmailSenderType.HTTP);
+    public HttpEmailChannelConfig() {
+        super(EmailChannelType.HTTP);
     }
 }

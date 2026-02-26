@@ -1,7 +1,7 @@
-package com.github.waitlight.asskicker.sender.im;
+package com.github.waitlight.asskicker.channels.im;
 
-import com.github.waitlight.asskicker.sender.MessageRequest;
-import com.github.waitlight.asskicker.sender.MessageResponse;
+import com.github.waitlight.asskicker.channels.MessageRequest;
+import com.github.waitlight.asskicker.channels.MessageResponse;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.http.MediaType;
@@ -15,11 +15,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-public class WechatWorkIMSender extends IMSender<WechatWorkIMSenderConfig> {
+public class WechatWorkIMChannel extends IMChannel<WechatWorkIMChannelConfig> {
 
     private final WebClient client;
 
-    public WechatWorkIMSender(WechatWorkIMSenderConfig config) {
+    public WechatWorkIMChannel(WechatWorkIMChannelConfig config) {
         super(config);
         this.client = buildWebClient(config);
     }
@@ -104,7 +104,7 @@ public class WechatWorkIMSender extends IMSender<WechatWorkIMSenderConfig> {
         return new String(bytes, 0, end, StandardCharsets.UTF_8);
     }
 
-    private WebClient buildWebClient(WechatWorkIMSenderConfig config) {
+    private WebClient buildWebClient(WechatWorkIMChannelConfig config) {
         return WebClient.builder()
                 .codecs(clientCodecConfigurer ->
                         clientCodecConfigurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024))

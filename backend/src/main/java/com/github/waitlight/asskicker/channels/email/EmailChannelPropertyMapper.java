@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.sender.email;
+package com.github.waitlight.asskicker.channels.email;
 
 import java.time.Duration;
 import java.util.LinkedHashMap;
@@ -10,10 +10,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.github.waitlight.asskicker.sender.SenderConfig;
+import com.github.waitlight.asskicker.channels.ChannelConfig;
 
 @Component
-public class EmailSenderPropertyMapper {
+public class EmailChannelPropertyMapper {
 
     private static final Set<String> SMTP_KEYS = Set.of(
             "host", "port", "username", "password",
@@ -25,17 +25,17 @@ public class EmailSenderPropertyMapper {
             "from", "timeout", "maxRetries", "retryDelay"
     );
 
-    public SenderConfig fromProperties(Map<String, Object> properties) {
+    public ChannelConfig fromProperties(Map<String, Object> properties) {
         Map<String, Object> safe = normalizeProperties(properties);
 
-        EmailSenderType protocol = parseProtocol(safe.get("protocol"));
-        if (protocol == EmailSenderType.HTTP) {
-            HttpEmailSenderConfig httpApi = new HttpEmailSenderConfig();
+        EmailChannelType protocol = parseProtocol(safe.get("protocol"));
+        if (protocol == EmailChannelType.HTTP) {
+            HttpEmailChannelConfig httpApi = new HttpEmailChannelConfig();
             Map<String, Object> httpApiValues = mergeProtocolValues(readMap(safe.get("httpApi")), safe, HTTP_API_KEYS);
             applyHttpApi(httpApi, httpApiValues);
             return httpApi;
         }
-        SmtpEmailSenderConfig smtp = new SmtpEmailSenderConfig();
+        SmtpEmailChannelConfig smtp = new SmtpEmailChannelConfig();
         Map<String, Object> smtpValues = mergeProtocolValues(readMap(safe.get("smtp")), safe, SMTP_KEYS);
         applySmtp(smtp, smtpValues);
         return smtp;
@@ -53,7 +53,7 @@ public class EmailSenderPropertyMapper {
         return result;
     }
 
-    private void applySmtp(SmtpEmailSenderConfig smtp, Map<String, Object> values) {
+    private void applySmtp(SmtpEmailChannelConfig smtp, Map<String, Object> values) {
         String host = readString(values, "host");
         String username = readString(values, "username");
         String password = readString(values, "password");
@@ -80,7 +80,7 @@ public class EmailSenderPropertyMapper {
         smtp.setRetryDelay(readDuration(values, "retryDelay", smtp.getRetryDelay()));
     }
 
-    private void applyHttpApi(HttpEmailSenderConfig httpApi, Map<String, Object> values) {
+    private void applyHttpApi(HttpEmailChannelConfig httpApi, Map<String, Object> values) {
         String baseUrl = readString(values, "baseUrl");
         String path = readString(values, "path");
         String apiKeyHeader = readString(values, "apiKeyHeader");
@@ -109,7 +109,7 @@ public class EmailSenderPropertyMapper {
         httpApi.setRetryDelay(readDuration(values, "retryDelay", httpApi.getRetryDelay()));
     }
 
-    private EmailSenderType parseProtocol(Object value) {
+    private EmailChannelType parseProtocol(Object value) {
         if (value == null) {
             return null;
         }
@@ -118,7 +118,7 @@ public class EmailSenderPropertyMapper {
             return null;
         }
         try {
-            return EmailSenderType.valueOf(normalized);
+            return EmailChannelType.valueOf(normalized);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "邮件协议不支持 " + normalized);
         }

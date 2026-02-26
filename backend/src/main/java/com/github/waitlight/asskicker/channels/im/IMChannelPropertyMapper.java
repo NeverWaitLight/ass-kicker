@@ -1,6 +1,6 @@
-package com.github.waitlight.asskicker.sender.im;
+package com.github.waitlight.asskicker.channels.im;
 
-import com.github.waitlight.asskicker.sender.SenderConfig;
+import com.github.waitlight.asskicker.channels.ChannelConfig;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Component
-public class IMSenderPropertyMapper {
+public class IMChannelPropertyMapper {
 
     private static final Set<String> DINGTALK_KEYS = Set.of(
             "webhookUrl", "accessToken", "secret",
@@ -23,7 +23,7 @@ public class IMSenderPropertyMapper {
             "webhookUrl", "timeout", "maxRetries", "retryDelay"
     );
 
-    public SenderConfig fromProperties(Map<String, Object> properties) {
+    public ChannelConfig fromProperties(Map<String, Object> properties) {
         Map<String, Object> safe = normalizeProperties(properties);
 
         // 支持 properties.type 和 properties.protocol 两种方式读取协议
@@ -31,9 +31,9 @@ public class IMSenderPropertyMapper {
         if (protocolValue == null || String.valueOf(protocolValue).trim().isBlank()) {
             protocolValue = safe.get("protocol");
         }
-        IMSenderType senderType = parseProtocol(protocolValue);
-        if (senderType == IMSenderType.DINGTALK) {
-            DingTalkIMSenderConfig dingTalk = new DingTalkIMSenderConfig();
+        IMChannelType senderType = parseProtocol(protocolValue);
+        if (senderType == IMChannelType.DINGTALK) {
+            DingTalkIMChannelConfig dingTalk = new DingTalkIMChannelConfig();
             Map<String, Object> dingTalkNested = readMap(safe.get("dingTalk"));
             if (dingTalkNested.isEmpty()) {
                 dingTalkNested = readMap(safe.get("dingtalk"));
@@ -41,8 +41,8 @@ public class IMSenderPropertyMapper {
             applyDingTalk(dingTalk, dingTalkNested);
             return dingTalk;
         }
-        if (senderType == IMSenderType.WECHAT_WORK) {
-            WechatWorkIMSenderConfig wechatWork = new WechatWorkIMSenderConfig();
+        if (senderType == IMChannelType.WECHAT_WORK) {
+            WechatWorkIMChannelConfig wechatWork = new WechatWorkIMChannelConfig();
             Map<String, Object> wechatWorkNested = readMap(safe.get("wechatWork"));
             if (wechatWorkNested.isEmpty()) {
                 wechatWorkNested = readMap(safe.get("wechat_work"));
@@ -66,7 +66,7 @@ public class IMSenderPropertyMapper {
         return result;
     }
 
-    private void applyDingTalk(DingTalkIMSenderConfig dingTalk, Map<String, Object> values) {
+    private void applyDingTalk(DingTalkIMChannelConfig dingTalk, Map<String, Object> values) {
         String webhookUrl = readString(values, "webhookUrl");
 
         if (webhookUrl.isBlank()) {
@@ -87,7 +87,7 @@ public class IMSenderPropertyMapper {
         dingTalk.setRetryDelay(readDuration(values, "retryDelay", dingTalk.getRetryDelay()));
     }
 
-    private void applyWechatWork(WechatWorkIMSenderConfig wechatWork, Map<String, Object> values) {
+    private void applyWechatWork(WechatWorkIMChannelConfig wechatWork, Map<String, Object> values) {
         String webhookUrl = readString(values, "webhookUrl");
         if (webhookUrl.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "企业微信 Webhook 地址不能为空");
@@ -118,7 +118,7 @@ public class IMSenderPropertyMapper {
         return "";
     }
 
-    private IMSenderType parseProtocol(Object value) {
+    private IMChannelType parseProtocol(Object value) {
         if (value == null) {
             return null;
         }
@@ -127,7 +127,7 @@ public class IMSenderPropertyMapper {
             return null;
         }
         try {
-            return IMSenderType.valueOf(normalized);
+            return IMChannelType.valueOf(normalized);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "IM 协议不支持 " + normalized);
         }

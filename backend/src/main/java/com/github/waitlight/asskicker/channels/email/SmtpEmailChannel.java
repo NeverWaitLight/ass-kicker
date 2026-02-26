@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.sender.email;
+package com.github.waitlight.asskicker.channels.email;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
@@ -9,22 +9,22 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
-import com.github.waitlight.asskicker.sender.MessageRequest;
-import com.github.waitlight.asskicker.sender.MessageResponse;
+import com.github.waitlight.asskicker.channels.MessageRequest;
+import com.github.waitlight.asskicker.channels.MessageResponse;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
-public class SmtpEmailSender extends EmailSender<SmtpEmailSenderConfig> {
+public class SmtpEmailChannel extends EmailChannel<SmtpEmailChannelConfig> {
 
     private final JavaMailSender mailSender;
 
-    public SmtpEmailSender(SmtpEmailSenderConfig config) {
+    public SmtpEmailChannel(SmtpEmailChannelConfig config) {
         super(config);
-        this.mailSender = buildJavaMailSender(config);
+        this.mailSender = buildJavaMailChannel(config);
     }
 
-    private JavaMailSender buildJavaMailSender(SmtpEmailSenderConfig config) {
+    private JavaMailSender buildJavaMailChannel(SmtpEmailChannelConfig config) {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost(config.getHost());
         mailSender.setPort(config.getPort());

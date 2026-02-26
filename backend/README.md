@@ -24,7 +24,7 @@ Spring Boot 3.2 WebFlux、Java 21、R2DBC（PostgreSQL）、Spring Security（JW
 
 **converter** 实体与 DTO 的转换，如 UserConverter，供 Handler/Service 层使用。
 
-**sender** 消息发送抽象与多通道实现。顶层 Sender、SenderConfig、MessageRequest、MessageResponse；email 子包提供 EmailSender 接口及 Smtp、Http 实现，EmailSenderFactory、各类 EmailSenderConfig、EmailSenderPropertyMapper 负责配置与属性映射；im 子包提供 IMSender 及钉钉、企业微信实现，IMSenderFactory、IMSenderPropertyMapper、各 IMSenderConfig 负责 IM 渠道的装配与配置。发送逻辑可基于 WebClient 等实现，保持反应式。
+**channel** 消息发送抽象与多通道实现。顶层 Sender、SenderConfig、MessageRequest、MessageResponse；email 子包提供 EmailSender 接口及 Smtp、Http 实现，EmailSenderFactory、各类 EmailSenderConfig、EmailSenderPropertyMapper 负责配置与属性映射；im 子包提供 IMSender 及钉钉、企业微信实现，IMSenderFactory、IMSenderPropertyMapper、各 IMSenderConfig 负责 IM 渠道的装配与配置。发送逻辑可基于 WebClient 等实现，保持反应式。
 
 **channel** 渠道侧配置与安全。ChannelCryptoConfig、ChannelCryptoProperties、ChannelPropertyCrypto 对渠道敏感配置（如密钥、Token）做加解密与存储，避免明文落库。
 

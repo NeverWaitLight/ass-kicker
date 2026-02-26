@@ -1,7 +1,7 @@
-package com.github.waitlight.asskicker.sender.im;
+package com.github.waitlight.asskicker.channels.im;
 
-import com.github.waitlight.asskicker.sender.MessageRequest;
-import com.github.waitlight.asskicker.sender.MessageResponse;
+import com.github.waitlight.asskicker.channels.MessageRequest;
+import com.github.waitlight.asskicker.channels.MessageResponse;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.http.MediaType;
@@ -11,15 +11,14 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DingTalkIMSender extends IMSender<DingTalkIMSenderConfig> {
+public class DingTalkIMChannel extends IMChannel<DingTalkIMChannelConfig> {
 
     private final WebClient client;
 
-    public DingTalkIMSender(DingTalkIMSenderConfig config) {
+    public DingTalkIMChannel(DingTalkIMChannelConfig config) {
         super(config);
         this.client = buildWebClient(config);
     }
@@ -95,7 +94,7 @@ public class DingTalkIMSender extends IMSender<DingTalkIMSenderConfig> {
     /**
      * 构建 WebClient
      */
-    private WebClient buildWebClient(DingTalkIMSenderConfig config) {
+    private WebClient buildWebClient(DingTalkIMChannelConfig config) {
         return WebClient.builder()
                 .codecs(clientCodecConfigurer ->
                         clientCodecConfigurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024))
