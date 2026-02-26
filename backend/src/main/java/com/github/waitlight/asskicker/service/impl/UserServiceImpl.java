@@ -6,7 +6,6 @@ import com.github.waitlight.asskicker.dto.user.*;
 import com.github.waitlight.asskicker.model.User;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.model.UserStatus;
-import com.github.waitlight.asskicker.repository.RegistrationLock;
 import com.github.waitlight.asskicker.repository.UserRepository;
 import com.github.waitlight.asskicker.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -23,13 +22,11 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final RegistrationLock registrationLock;
     private final UserConverter userMapStructer;
 
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, RegistrationLock registrationLock, UserConverter userMapStructer) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, UserConverter userMapStructer) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.registrationLock = registrationLock;
         this.userMapStructer = userMapStructer;
     }
 
@@ -62,8 +59,7 @@ public class UserServiceImpl implements UserService {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名或密码不能为空"));
         }
         String username = request.username().trim();
-        return registrationLock.acquire()
-                .then(userRepository.existsByUsername(username))
+        return userRepository.existsByUsername(username)
                 .flatMap(exists -> {
                     if (exists) {
                         return Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "用户名已存在"));
