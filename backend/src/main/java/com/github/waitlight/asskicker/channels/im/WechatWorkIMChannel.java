@@ -19,9 +19,9 @@ public class WechatWorkIMChannel extends IMChannel<WechatWorkIMChannelConfig> {
 
     private final WebClient client;
 
-    public WechatWorkIMChannel(WechatWorkIMChannelConfig config) {
+    public WechatWorkIMChannel(WechatWorkIMChannelConfig config, WebClient webClient) {
         super(config);
-        this.client = buildWebClient(config);
+        this.client = webClient;
     }
 
     /**
@@ -102,13 +102,6 @@ public class WechatWorkIMChannel extends IMChannel<WechatWorkIMChannelConfig> {
             end--;
         }
         return new String(bytes, 0, end, StandardCharsets.UTF_8);
-    }
-
-    private WebClient buildWebClient(WechatWorkIMChannelConfig config) {
-        return WebClient.builder()
-                .codecs(clientCodecConfigurer ->
-                        clientCodecConfigurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024))
-                .build();
     }
 
     private boolean isRetryableException(Throwable ex) {

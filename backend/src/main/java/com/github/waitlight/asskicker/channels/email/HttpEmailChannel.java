@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.MediaType;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -18,9 +19,9 @@ public class HttpEmailChannel extends EmailChannel<HttpEmailChannelConfig> {
 
     private final WebClient client;
 
-    public HttpEmailChannel(HttpEmailChannelConfig config) {
+    public HttpEmailChannel(HttpEmailChannelConfig config, WebClient webClient) {
         super(config);
-        this.client = buildWebClient(config);
+        this.client = webClient;
     }
 
     @Override
@@ -30,10 +31,15 @@ public class HttpEmailChannel extends EmailChannel<HttpEmailChannelConfig> {
         }
         try {
             Map<String, Object> body = buildRequestBody(request);
+            String fullUri = UriComponentsBuilder.fromHttpUrl(config.getBaseUrl())
+                    .path(config.getPath().startsWith("/") ? config.getPath() : "/" + config.getPath())
+                    .build()
+                    .toUriString();
 
             String messageId = client
                     .post()
-                    .uri(config.getPath())
+                    .uri(fullUri)
+                    .header(config.getApiKeyHeader(), config.getApiKey())
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(BodyInserters.fromValue(body))
                     .retrieve()
@@ -68,13 +74,6 @@ public class HttpEmailChannel extends EmailChannel<HttpEmailChannelConfig> {
             body.putAll(request.getAttributes());
         }
         return body;
-    }
-
-    private WebClient buildWebClient(HttpEmailChannelConfig httpApi) {
-        return WebClient.builder()
-                .baseUrl(String.valueOf(httpApi.getBaseUrl()))
-                .defaultHeader(String.valueOf(httpApi.getApiKeyHeader()), String.valueOf(httpApi.getApiKey()))
-                .build();
     }
 
     private boolean isRetryableException(Throwable ex) {

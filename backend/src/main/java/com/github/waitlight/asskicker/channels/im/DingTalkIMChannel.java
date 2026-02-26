@@ -18,9 +18,9 @@ public class DingTalkIMChannel extends IMChannel<DingTalkIMChannelConfig> {
 
     private final WebClient client;
 
-    public DingTalkIMChannel(DingTalkIMChannelConfig config) {
+    public DingTalkIMChannel(DingTalkIMChannelConfig config, WebClient webClient) {
         super(config);
-        this.client = buildWebClient(config);
+        this.client = webClient;
     }
 
     /**
@@ -89,16 +89,6 @@ public class DingTalkIMChannel extends IMChannel<DingTalkIMChannelConfig> {
         content.append(request.getContent());
 
         return content.toString();
-    }
-
-    /**
-     * 构建 WebClient
-     */
-    private WebClient buildWebClient(DingTalkIMChannelConfig config) {
-        return WebClient.builder()
-                .codecs(clientCodecConfigurer ->
-                        clientCodecConfigurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024))
-                .build();
     }
 
     /**
