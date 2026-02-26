@@ -37,3 +37,9 @@ Spring Boot 3.2 WebFlux、Java 21、R2DBC（PostgreSQL）、Spring Security（JW
 ```sh
 docker run -d --name mongodb -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=123456 mongo:latest
 ```
+
+### Kafka
+
+```sh
+docker run -d --name kafka -p 9092:9092 apache/kafka:latest
+```

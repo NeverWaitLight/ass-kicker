@@ -6,6 +6,14 @@ spring:
   data:
     mongodb:
       uri: mongodb://admin:123456@localhost:27017/asskicker?authSource=admin
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: ass-kicker
+      auto-offset-reset: earliest
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 app:
   security:
     jwt:
