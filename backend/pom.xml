@@ -1,4 +1,4 @@
-﻿<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
@@ -20,7 +20,6 @@
     <graalvm.version>23.1.2</graalvm.version>
     <native.buildtools.version>0.10.2</native.buildtools.version>
     <native.image.name>ass-kicker</native.image.name>
-    <r2dbc-postgresql.version>1.0.4.RELEASE</r2dbc-postgresql.version>
     <lombok.version>1.18.30</lombok.version>
     <disruptor.version>3.4.4</disruptor.version>
     <mapstruct.version>1.5.5.Final</mapstruct.version>
@@ -47,25 +46,11 @@
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-data-r2dbc</artifactId>
+      <artifactId>spring-boot-starter-data-mongodb-reactive</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.flywaydb</groupId>
-      <artifactId>flyway-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.postgresql</groupId>
-      <artifactId>r2dbc-postgresql</artifactId>
-      <version>${r2dbc-postgresql.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.postgresql</groupId>
-      <artifactId>postgresql</artifactId>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
@@ -110,12 +95,6 @@
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>mockwebserver</artifactId>
       <scope>test</scope>
-    </dependency>
-    <!-- R2DBC H2 driver for testing -->
-    <dependency>
-      <groupId>io.r2dbc</groupId>
-      <artifactId>r2dbc-h2</artifactId>
-      <scope>runtime</scope>
     </dependency>
     <!-- Validation API -->
     <dependency>

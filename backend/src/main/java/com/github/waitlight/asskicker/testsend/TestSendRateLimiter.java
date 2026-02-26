@@ -13,7 +13,7 @@ public class TestSendRateLimiter {
 
     private final TestSendProperties properties;
     private final Clock clock;
-    private final ConcurrentHashMap<Long, RateWindow> windows = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, RateWindow> windows = new ConcurrentHashMap<>();
 
     @Autowired
     public TestSendRateLimiter(TestSendProperties properties) {
@@ -25,7 +25,7 @@ public class TestSendRateLimiter {
         this.clock = clock;
     }
 
-    public boolean tryAcquire(long userId) {
+    public boolean tryAcquire(String userId) {
         long now = clock.millis();
         Duration windowDuration = properties.getWindow();
         long windowMillis = windowDuration == null ? 0 : windowDuration.toMillis();

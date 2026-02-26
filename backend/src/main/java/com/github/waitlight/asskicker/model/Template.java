@@ -7,8 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,30 +16,30 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table("t_template")
+@Document(collection = "t_template")
 public class Template {
 
     @Id
-    private Long id;
+    private String id;
 
     @NotBlank(message = "Template name is required")
     @Size(max = 255, message = "Template name must not exceed 255 characters")
-    @Column("name")
+    @Field("name")
     private String name;
 
     @NotBlank(message = "Template code is required")
     @Size(max = 100, message = "Template code must not exceed 100 characters")
-    @Column("code")
+    @Field("code")
     private String code;
 
     @Size(max = 1000, message = "Description must not exceed 1000 characters")
-    @Column("description")
+    @Field("description")
     private String description;
 
-    @Column("created_at")
+    @Field("created_at")
     private Long createdAt;
 
-    @Column("updated_at")
+    @Field("updated_at")
     private Long updatedAt;
 
     @Transient

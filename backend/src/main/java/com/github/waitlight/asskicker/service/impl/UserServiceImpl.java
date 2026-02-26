@@ -13,7 +13,6 @@ import com.github.waitlight.asskicker.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
@@ -61,7 +60,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
     public Mono<UserView> registerUser(RegisterRequest request) {
         if (request == null || isBlank(request.username()) || isBlank(request.password())) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名或密码不能为空"));
@@ -89,7 +87,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Mono<UserView> getUserById(Long id) {
+    public Mono<UserView> getUserById(String id) {
         return userRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在")))
                 .map(userMapStructer::toView);
@@ -111,14 +109,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Mono<Void> deleteUser(Long id) {
+    public Mono<Void> deleteUser(String id) {
         return userRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在")))
                 .flatMap(userRepository::delete);
     }
 
     @Override
-    public Mono<UserView> resetPassword(Long id, String newPassword) {
+    public Mono<UserView> resetPassword(String id, String newPassword) {
         if (isBlank(newPassword)) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "新密码不能为空"));
         }
@@ -133,7 +131,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Mono<UserView> updateUsername(Long id, UpdateUsernameRequest request) {
+    public Mono<UserView> updateUsername(String id, UpdateUsernameRequest request) {
         if (request == null || isBlank(request.username())) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名不能为空"));
         }
@@ -158,7 +156,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Mono<UserView> updatePassword(Long id, UpdatePasswordRequest request) {
+    public Mono<UserView> updatePassword(String id, UpdatePasswordRequest request) {
         if (request == null || isBlank(request.oldPassword()) || isBlank(request.newPassword())) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "密码不能为空"));
         }

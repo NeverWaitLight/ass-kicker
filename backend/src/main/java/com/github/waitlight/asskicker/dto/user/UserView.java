@@ -4,7 +4,7 @@ import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.model.UserStatus;
 
 public record UserView(
-        Long id,
+        String id,
         String username,
         UserRole role,
         UserStatus status,

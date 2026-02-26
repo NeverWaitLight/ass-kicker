@@ -1,8 +1,8 @@
 package com.github.waitlight.asskicker.router;
 
-import com.github.waitlight.asskicker.dto.channel.TestSendRequest;
-import com.github.waitlight.asskicker.handlers.ChannelHandler;
-import com.github.waitlight.asskicker.model.Channel;
+import com.github.waitlight.asskicker.dto.sender.TestSendRequest;
+import com.github.waitlight.asskicker.handlers.SenderHandler;
+import com.github.waitlight.asskicker.model.Sender;
 import com.github.waitlight.asskicker.sender.MessageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -23,55 +23,55 @@ import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
 @Configuration(proxyBeanMethods = false)
-@Tag(name = "Channels", description = "渠道管理")
-public class ChannelRouter {
+@Tag(name = "Senders", description = "发送端管理")
+public class SenderRouter {
 
     @Bean
     @RouterOperations({
             @RouterOperation(
-                    path = "/api/channels",
+                    path = "/api/senders",
                     method = RequestMethod.POST,
-                    beanClass = ChannelHandler.class,
-                    beanMethod = "createChannel",
+                    beanClass = SenderHandler.class,
+                    beanMethod = "createSender",
                     operation = @Operation(
-                            operationId = "createChannel",
-                            summary = "创建渠道",
-                            tags = {"Channels"},
+                            operationId = "createSender",
+                            summary = "创建发送端",
+                            tags = {"Senders"},
                             requestBody = @RequestBody(required = true,
-                                    content = @Content(schema = @Schema(implementation = Channel.class))),
+                                    content = @Content(schema = @Schema(implementation = Sender.class))),
                             responses = {
                                     @ApiResponse(responseCode = "201", description = "创建成功",
-                                            content = @Content(schema = @Schema(implementation = Channel.class))),
+                                            content = @Content(schema = @Schema(implementation = Sender.class))),
                                     @ApiResponse(responseCode = "400", description = "参数错误"),
                                     @ApiResponse(responseCode = "401", description = "未授权")
                             }
                     )
             ),
             @RouterOperation(
-                    path = "/api/channels",
+                    path = "/api/senders",
                     method = RequestMethod.GET,
-                    beanClass = ChannelHandler.class,
-                    beanMethod = "listChannels",
+                    beanClass = SenderHandler.class,
+                    beanMethod = "listSenders",
                     operation = @Operation(
-                            operationId = "listChannels",
-                            summary = "获取渠道列表",
-                            tags = {"Channels"},
+                            operationId = "listSenders",
+                            summary = "获取发送端列表",
+                            tags = {"Senders"},
                             responses = {
                                     @ApiResponse(responseCode = "200", description = "成功",
-                                            content = @Content(array = @ArraySchema(schema = @Schema(implementation = Channel.class)))),
+                                            content = @Content(array = @ArraySchema(schema = @Schema(implementation = Sender.class)))),
                                     @ApiResponse(responseCode = "401", description = "未授权")
                             }
                     )
             ),
             @RouterOperation(
-                    path = "/api/channels/types",
+                    path = "/api/senders/types",
                     method = RequestMethod.GET,
-                    beanClass = ChannelHandler.class,
-                    beanMethod = "listChannelTypes",
+                    beanClass = SenderHandler.class,
+                    beanMethod = "listSenderTypes",
                     operation = @Operation(
-                            operationId = "listChannelTypes",
-                            summary = "获取通道类型列表",
-                            tags = {"Channels"},
+                            operationId = "listSenderTypes",
+                            summary = "获取发送端类型列表",
+                            tags = {"Senders"},
                             responses = {
                                     @ApiResponse(responseCode = "200", description = "成功",
                                             content = @Content(array = @ArraySchema(schema = @Schema(implementation = String.class)))),
@@ -80,36 +80,36 @@ public class ChannelRouter {
                     )
             ),
             @RouterOperation(
-                    path = "/api/channels/{id}",
+                    path = "/api/senders/{id}",
                     method = RequestMethod.GET,
-                    beanClass = ChannelHandler.class,
-                    beanMethod = "getChannelById",
+                    beanClass = SenderHandler.class,
+                    beanMethod = "getSenderById",
                     operation = @Operation(
-                            operationId = "getChannelById",
-                            summary = "获取渠道详情",
-                            tags = {"Channels"},
+                            operationId = "getSenderById",
+                            summary = "获取发送端详情",
+                            tags = {"Senders"},
                             responses = {
                                     @ApiResponse(responseCode = "200", description = "成功",
-                                            content = @Content(schema = @Schema(implementation = Channel.class))),
+                                            content = @Content(schema = @Schema(implementation = Sender.class))),
                                     @ApiResponse(responseCode = "404", description = "未找到"),
                                     @ApiResponse(responseCode = "401", description = "未授权")
                             }
                     )
             ),
             @RouterOperation(
-                    path = "/api/channels/{id}",
+                    path = "/api/senders/{id}",
                     method = RequestMethod.PUT,
-                    beanClass = ChannelHandler.class,
-                    beanMethod = "updateChannel",
+                    beanClass = SenderHandler.class,
+                    beanMethod = "updateSender",
                     operation = @Operation(
-                            operationId = "updateChannel",
-                            summary = "更新渠道",
-                            tags = {"Channels"},
+                            operationId = "updateSender",
+                            summary = "更新发送端",
+                            tags = {"Senders"},
                             requestBody = @RequestBody(required = true,
-                                    content = @Content(schema = @Schema(implementation = Channel.class))),
+                                    content = @Content(schema = @Schema(implementation = Sender.class))),
                             responses = {
                                     @ApiResponse(responseCode = "200", description = "更新成功",
-                                            content = @Content(schema = @Schema(implementation = Channel.class))),
+                                            content = @Content(schema = @Schema(implementation = Sender.class))),
                                     @ApiResponse(responseCode = "400", description = "参数错误"),
                                     @ApiResponse(responseCode = "404", description = "未找到"),
                                     @ApiResponse(responseCode = "401", description = "未授权")
@@ -117,31 +117,30 @@ public class ChannelRouter {
                     )
             ),
             @RouterOperation(
-                    path = "/api/channels/{id}",
+                    path = "/api/senders/{id}",
                     method = RequestMethod.DELETE,
-                    beanClass = ChannelHandler.class,
-                    beanMethod = "deleteChannel",
+                    beanClass = SenderHandler.class,
+                    beanMethod = "deleteSender",
                     operation = @Operation(
-                            operationId = "deleteChannel",
-                            summary = "删除渠道",
-                            tags = {"Channels"},
+                            operationId = "deleteSender",
+                            summary = "删除发送端",
+                            tags = {"Senders"},
                             responses = {
                                     @ApiResponse(responseCode = "204", description = "删除成功"),
                                     @ApiResponse(responseCode = "404", description = "未找到"),
                                     @ApiResponse(responseCode = "401", description = "未授权")
                             }
                     )
-            )
-            ,
+            ),
             @RouterOperation(
-                    path = "/api/channels/test-send",
+                    path = "/api/senders/test-send",
                     method = RequestMethod.POST,
-                    beanClass = ChannelHandler.class,
+                    beanClass = SenderHandler.class,
                     beanMethod = "testSend",
                     operation = @Operation(
-                            operationId = "testSendChannel",
-                            summary = "测试发送通道",
-                            tags = {"Channels"},
+                            operationId = "testSendSender",
+                            summary = "测试发送",
+                            tags = {"Senders"},
                             requestBody = @RequestBody(required = true,
                                     content = @Content(schema = @Schema(implementation = TestSendRequest.class))),
                             responses = {
@@ -154,20 +153,20 @@ public class ChannelRouter {
                     )
             )
     })
-    public RouterFunction<ServerResponse> channelRoutes(ChannelHandler channelHandler) {
+    public RouterFunction<ServerResponse> senderRoutes(SenderHandler senderHandler) {
         return RouterFunctions
-                .route(RequestPredicates.POST("/api/channels")
-                        .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::createChannel)
-                .andRoute(RequestPredicates.GET("/api/channels")
-                        .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::listChannels)
-                .andRoute(RequestPredicates.GET("/api/channels/types")
-                        .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::listChannelTypes)
-                .andRoute(RequestPredicates.GET("/api/channels/{id}")
-                        .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::getChannelById)
-                .andRoute(RequestPredicates.PUT("/api/channels/{id}")
-                        .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::updateChannel)
-                .andRoute(RequestPredicates.DELETE("/api/channels/{id}"), channelHandler::deleteChannel)
-                .andRoute(RequestPredicates.POST("/api/channels/test-send")
-                        .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::testSend);
+                .route(RequestPredicates.POST("/api/senders")
+                        .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), senderHandler::createSender)
+                .andRoute(RequestPredicates.GET("/api/senders")
+                        .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), senderHandler::listSenders)
+                .andRoute(RequestPredicates.GET("/api/senders/types")
+                        .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), senderHandler::listSenderTypes)
+                .andRoute(RequestPredicates.GET("/api/senders/{id}")
+                        .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), senderHandler::getSenderById)
+                .andRoute(RequestPredicates.PUT("/api/senders/{id}")
+                        .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), senderHandler::updateSender)
+                .andRoute(RequestPredicates.DELETE("/api/senders/{id}"), senderHandler::deleteSender)
+                .andRoute(RequestPredicates.POST("/api/senders/test-send")
+                        .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), senderHandler::testSend);
     }
 }

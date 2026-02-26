@@ -1,9 +1,9 @@
-package com.github.waitlight.asskicker.channel;
+package com.github.waitlight.asskicker.sendercrypto;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(ChannelCryptoProperties.class)
-public class ChannelCryptoConfig {
+@EnableConfigurationProperties(SenderCryptoProperties.class)
+public class SenderCryptoConfig {
 }

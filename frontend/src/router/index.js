@@ -28,17 +28,17 @@ const routes = [
     component: ProfileSettingsPage
   },
   {
-    path: '/channels',
+    path: '/senders',
     component: ChannelManagementPage,
     meta: { requiresPermission: CHANNEL_PERMISSIONS.view }
   },
   {
-    path: '/channels/new',
+    path: '/senders/new',
     component: ChannelConfigPage,
     meta: { requiresPermission: CHANNEL_PERMISSIONS.create }
   },
   {
-    path: '/channels/:id',
+    path: '/senders/:id',
     component: ChannelConfigPage,
     meta: { requiresPermission: CHANNEL_PERMISSIONS.edit }
   }
@@ -66,7 +66,7 @@ router.beforeEach((to) => {
   if (to.meta.requiresPermission) {
     const user = getUser()
     if (!hasPermission(user, to.meta.requiresPermission)) {
-      return { path: '/', query: { denied: 'channel' } }
+      return { path: '/', query: { denied: 'sender' } }
     }
   }
   return true

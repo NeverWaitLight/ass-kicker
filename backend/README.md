@@ -33,3 +33,9 @@ Spring Boot 3.2 WebFlux、Java 21、R2DBC（PostgreSQL）、Spring Security（JW
 **security** 认证与授权。JwtService、JwtProperties、JwtPayload、JwtTokenType 负责 JWT 签发与解析；JwtServerAuthenticationConverter、JwtReactiveAuthenticationManager 将请求转为 Spring Security 的 Authentication；UserPrincipal 当前用户主体；SecurityConfig 配置需认证/放行的路径与反应式安全链。
 
 **logging** 请求链路与日志上下文。RequestIdFilter 为请求注入或传递请求 ID；MdcContextLifterConfiguration 将 Reactor Context 中的信息放入 MDC，便于日志追踪。
+
+### MongoDB
+
+```sh
+docker run -d --name mongodb -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=123456 mongo:latest
+```

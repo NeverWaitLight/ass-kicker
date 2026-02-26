@@ -6,9 +6,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface LanguageTemplateService {
-    Flux<LanguageTemplate> findAllByTemplateId(Long templateId);
-    Mono<LanguageTemplate> findByTemplateIdAndLanguage(Long templateId, Language language);
+    Flux<LanguageTemplate> findAllByTemplateId(String templateId);
+    Mono<LanguageTemplate> findByTemplateIdAndLanguage(String templateId, Language language);
     Mono<LanguageTemplate> save(LanguageTemplate languageTemplate);
-    Mono<LanguageTemplate> update(Long id, LanguageTemplate languageTemplate);
-    Mono<Void> deleteById(Long id);
+    Mono<LanguageTemplate> update(String id, LanguageTemplate languageTemplate);
+    Mono<Void> deleteById(String id);
 }

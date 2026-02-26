@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.channel;
+package com.github.waitlight.asskicker.sendercrypto;
 
 import org.springframework.stereotype.Component;
 
@@ -11,7 +11,7 @@ import java.security.SecureRandom;
 import java.util.*;
 
 @Component
-public class ChannelPropertyCrypto {
+public class SenderPropertyCrypto {
 
     private static final String ENCRYPTED_PREFIX = "enc:";
     private static final int GCM_TAG_BITS = 128;
@@ -21,10 +21,10 @@ public class ChannelPropertyCrypto {
     private final List<String> sensitiveKeyMatchers;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    public ChannelPropertyCrypto(ChannelCryptoProperties properties) {
+    public SenderPropertyCrypto(SenderCryptoProperties properties) {
         this.secretKeySpec = new SecretKeySpec(hashSecret(properties.getSecret()), "AES");
         this.sensitiveKeyMatchers = properties.getSensitiveKeys().stream()
-                .map(ChannelPropertyCrypto::normalizeKey)
+                .map(SenderPropertyCrypto::normalizeKey)
                 .toList();
     }
 
@@ -107,7 +107,7 @@ public class ChannelPropertyCrypto {
             String encodedCipher = Base64.getEncoder().encodeToString(cipherText);
             return ENCRYPTED_PREFIX + encodedIv + ":" + encodedCipher;
         } catch (Exception ex) {
-            System.err.println("Channel property encryption failed: " + ex.getMessage());
+            System.err.println("Sender property encryption failed: " + ex.getMessage());
             return value;
         }
     }
@@ -129,7 +129,7 @@ public class ChannelPropertyCrypto {
             byte[] plainBytes = cipher.doFinal(cipherBytes);
             return new String(plainBytes, StandardCharsets.UTF_8);
         } catch (Exception ex) {
-            System.err.println("Channel property decryption failed: " + ex.getMessage());
+            System.err.println("Sender property decryption failed: " + ex.getMessage());
             return value;
         }
     }
@@ -139,7 +139,7 @@ public class ChannelPropertyCrypto {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return digest.digest(secret.getBytes(StandardCharsets.UTF_8));
         } catch (Exception ex) {
-            throw new IllegalStateException("Unable to initialize channel encryption", ex);
+            throw new IllegalStateException("Unable to initialize sender encryption", ex);
         }
     }
 

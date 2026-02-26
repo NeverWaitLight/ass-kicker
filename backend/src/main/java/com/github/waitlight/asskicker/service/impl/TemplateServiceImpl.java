@@ -34,7 +34,7 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public Mono<Template> findById(Long id) {
+    public Mono<Template> findById(String id) {
         return templateRepository.findById(id);
     }
 
@@ -54,8 +54,7 @@ public class TemplateServiceImpl implements TemplateService {
 
     @Override
     public Mono<Template> updateTemplate(String id, Template template) {
-        Long longId = Long.parseLong(id);
-        return templateRepository.findById(longId)
+        return templateRepository.findById(id)
                 .flatMap(existingTemplate -> {
                     existingTemplate.setName(template.getName());
                     existingTemplate.setCode(template.getCode());
@@ -67,23 +66,21 @@ public class TemplateServiceImpl implements TemplateService {
 
     @Override
     public Mono<Void> deleteTemplate(String id) {
-        Long longId = Long.parseLong(id);
-        return templateRepository.deleteById(longId);
+        return templateRepository.deleteById(id);
     }
 
     @Override
     public Mono<Template> getTemplateById(String id) {
-        Long longId = Long.parseLong(id);
-        return templateRepository.findById(longId);
+        return templateRepository.findById(id);
     }
 
     @Override
-    public Mono<LanguageTemplate> getTemplateContentByLanguage(Long templateId, Language language) {
+    public Mono<LanguageTemplate> getTemplateContentByLanguage(String templateId, Language language) {
         return languageTemplateRepository.findByTemplateIdAndLanguage(templateId, language);
     }
 
     @Override
-    public Mono<LanguageTemplate> saveTemplateContentByLanguage(Long templateId, Language language, String content) {
+    public Mono<LanguageTemplate> saveTemplateContentByLanguage(String templateId, Language language, String content) {
         return templateRepository.findById(templateId)
                 .flatMap(ignored -> languageTemplateRepository.findByTemplateIdAndLanguage(templateId, language)
                         .flatMap(existingLT -> {
@@ -102,12 +99,12 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public Flux<LanguageTemplate> getAllTemplateContentsByTemplateId(Long templateId) {
+    public Flux<LanguageTemplate> getAllTemplateContentsByTemplateId(String templateId) {
         return languageTemplateRepository.findByTemplateId(templateId);
     }
 
     @Override
-    public Mono<Void> deleteTemplateContentByLanguage(Long templateId, Language language) {
+    public Mono<Void> deleteTemplateContentByLanguage(String templateId, Language language) {
         return languageTemplateRepository.findByTemplateIdAndLanguage(templateId, language)
                 .flatMap(languageTemplateRepository::delete);
     }

@@ -77,17 +77,17 @@ import ChannelManagementLayout from '../components/channels/ChannelManagementLay
 import ChannelTable from '../components/channels/ChannelTable.vue'
 import ChannelDeleteModal from '../components/channels/ChannelDeleteModal.vue'
 import ChannelTestSendModal from '../components/channels/ChannelTestSendModal.vue'
-import { fetchChannel, fetchChannels, deleteChannel } from '../utils/channelApi'
+import { fetchSender, fetchSenders, deleteSender } from '../utils/senderApi'
 import {
-  channelList,
-  channelLoading,
-  channelError,
-  channelPagination,
-  channelSearch,
-  channelDeleteState,
-  setChannelList,
-  removeChannel
-} from '../stores/channels'
+  senderList as channelList,
+  senderLoading as channelLoading,
+  senderError as channelError,
+  senderPagination as channelPagination,
+  senderSearch as channelSearch,
+  senderDeleteState as channelDeleteState,
+  setSenderList as setChannelList,
+  removeSender as removeChannel
+} from '../stores/senders'
 import { currentUser } from '../stores/auth'
 import { CHANNEL_PERMISSIONS, hasPermission } from '../utils/permissions'
 import { useRouter } from 'vue-router'
@@ -139,7 +139,7 @@ const loadChannels = async () => {
   channelLoading.value = true
   channelError.value = ''
   try {
-    const data = await fetchChannels()
+    const data = await fetchSenders()
     setChannelList(data)
   } catch (error) {
     channelError.value = error?.message || '获取通道列表失败'
@@ -157,12 +157,12 @@ const handleTableChange = (pager) => {
 }
 
 const openCreate = () => {
-  router.push('/channels/new')
+  router.push('/senders/new')
 }
 
 const openEdit = (record) => {
   if (!record?.id) return
-  router.push(`/channels/${record.id}`)
+  router.push(`/senders/${record.id}`)
 }
 
 const openTest = async (record) => {
@@ -172,7 +172,7 @@ const openTest = async (record) => {
     if (record.properties && record.type) {
       testChannel.value = record
     } else {
-      testChannel.value = await fetchChannel(record.id)
+      testChannel.value = await fetchSender(record.id)
     }
     testModalOpen.value = true
   } catch (error) {
@@ -202,7 +202,7 @@ const confirmDelete = async () => {
   if (!channelDeleteState.target) return
   channelDeleteState.deleting = true
   try {
-    await deleteChannel(channelDeleteState.target.id)
+    await deleteSender(channelDeleteState.target.id)
     removeChannel(channelDeleteState.target.id)
     message.success('通道已删除')
     closeDelete()

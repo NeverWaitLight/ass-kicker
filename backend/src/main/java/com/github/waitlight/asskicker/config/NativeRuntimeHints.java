@@ -9,6 +9,5 @@ public class NativeRuntimeHints implements RuntimeHintsRegistrar {
         hints.resources().registerPattern("application.yml");
         hints.resources().registerPattern("application-native.yml");
         hints.resources().registerPattern("logback-spring.xml");
-        hints.resources().registerPattern("db/migration/*");
     }
 }

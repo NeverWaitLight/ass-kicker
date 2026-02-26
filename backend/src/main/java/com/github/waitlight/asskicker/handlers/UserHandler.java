@@ -37,8 +37,8 @@ public class UserHandler {
     }
 
     public Mono<ServerResponse> deleteUser(ServerRequest request) {
-        return parseId(request)
-                .flatMap(userService::deleteUser)
+        String id = request.pathVariable("id");
+        return userService.deleteUser(id)
                 .then(ServerResponse.noContent().build())
                 .onErrorResume(ResponseStatusException.class, ex ->
                         ServerResponse.status(ex.getStatusCode())
@@ -47,9 +47,9 @@ public class UserHandler {
     }
 
     public Mono<ServerResponse> resetPassword(ServerRequest request) {
-        return parseId(request)
-                .flatMap(id -> request.bodyToMono(ResetPasswordRequest.class)
-                        .flatMap(body -> userService.resetPassword(id, body.newPassword())))
+        String id = request.pathVariable("id");
+        return request.bodyToMono(ResetPasswordRequest.class)
+                .flatMap(body -> userService.resetPassword(id, body.newPassword()))
                 .flatMap(user -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(user))
@@ -74,8 +74,8 @@ public class UserHandler {
     }
 
     public Mono<ServerResponse> getUserById(ServerRequest request) {
-        return parseId(request)
-                .flatMap(userService::getUserById)
+        String id = request.pathVariable("id");
+        return userService.getUserById(id)
                 .flatMap(user -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(user))
@@ -124,14 +124,6 @@ public class UserHandler {
             return Integer.parseInt(value);
         } catch (NumberFormatException ex) {
             return defaultValue;
-        }
-    }
-
-    private Mono<Long> parseId(ServerRequest request) {
-        try {
-            return Mono.just(Long.parseLong(request.pathVariable("id")));
-        } catch (NumberFormatException ex) {
-            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "非法的用户ID"));
         }
     }
 }

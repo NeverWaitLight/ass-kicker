@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.channel;
+package com.github.waitlight.asskicker.sendercrypto;
 
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Validated
-@ConfigurationProperties(prefix = "app.channel.crypto")
-public class ChannelCryptoProperties {
+@ConfigurationProperties(prefix = "app.sender.crypto")
+public class SenderCryptoProperties {
 
     @NotBlank
     private String secret;

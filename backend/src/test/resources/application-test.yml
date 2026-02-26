@@ -1,17 +1,11 @@
 spring:
-  r2dbc:
-    url: r2dbc:h2:mem:///ass_kicker_test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
-    username: sa
-    password:
-  flyway:
-    enabled: false
-  sql:
-    init:
-      mode: never
+  data:
+    mongodb:
+      uri: mongodb://admin:123456@localhost:27017/asskicker_test?authSource=admin
 app:
-  channel:
+  sender:
     crypto:
-      secret: test-channel-secret
+      secret: test-sender-secret
   test-send:
     max-requests: 5
     window: PT1M

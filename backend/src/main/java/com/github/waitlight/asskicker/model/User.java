@@ -4,36 +4,36 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 @Getter
 @Setter
 @NoArgsConstructor
-@Table("t_user")
+@Document(collection = "t_user")
 public class User {
 
     @Id
-    private Long id;
+    private String id;
 
-    @Column("username")
+    @Field("username")
     private String username;
 
-    @Column("password_hash")
+    @Field("password_hash")
     private String passwordHash;
 
-    @Column("role")
+    @Field("role")
     private UserRole role;
 
-    @Column("status")
+    @Field("status")
     private UserStatus status;
 
-    @Column("created_at")
+    @Field("created_at")
     private Long createdAt;
 
-    @Column("updated_at")
+    @Field("updated_at")
     private Long updatedAt;
 
-    @Column("last_login_at")
+    @Field("last_login_at")
     private Long lastLoginAt;
 }

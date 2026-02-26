@@ -6,37 +6,37 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 @Getter
 @Setter
 @NoArgsConstructor
-@Table("t_language_template")
+@Document(collection = "t_language_template")
 public class LanguageTemplate {
 
     @Id
-    private Long id;
+    private String id;
 
     @NotNull
-    @Column("template_id")
-    private Long templateId;
+    @Field("template_id")
+    private String templateId;
 
     @NotNull
-    @Column("language")
+    @Field("language")
     private Language language;
 
     @NotBlank
-    @Column("content")
+    @Field("content")
     private String content;
 
-    @Column("created_at")
+    @Field("created_at")
     private Long createdAt;
 
-    @Column("updated_at")
+    @Field("updated_at")
     private Long updatedAt;
 
-    public LanguageTemplate(Long templateId, Language language, String content) {
+    public LanguageTemplate(String templateId, Language language, String content) {
         this.templateId = templateId;
         this.language = language;
         this.content = content;

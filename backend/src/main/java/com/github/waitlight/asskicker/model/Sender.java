@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -19,34 +19,34 @@ import java.util.Map;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table("t_channel")
-public class Channel {
+@Document(collection = "t_sender")
+public class Sender {
 
     @Id
-    private Long id;
+    private String id;
 
-    @NotBlank(message = "Channel name is required")
-    @Size(max = 255, message = "Channel name must not exceed 255 characters")
-    @Column("name")
+    @NotBlank(message = "Sender name is required")
+    @Size(max = 255, message = "Sender name must not exceed 255 characters")
+    @Field("name")
     private String name;
 
-    @NotNull(message = "Channel type is required")
-    @Column("type")
-    @Schema(description = "渠道类型", allowableValues = {"SMS", "EMAIL", "IM", "PUSH"})
-    private ChannelType type;
+    @NotNull(message = "Sender type is required")
+    @Field("type")
+    @Schema(description = "发送端类型", allowableValues = {"SMS", "EMAIL", "IM", "PUSH"})
+    private SenderType type;
 
     @Size(max = 1000, message = "Description must not exceed 1000 characters")
-    @Column("description")
+    @Field("description")
     private String description;
 
     @JsonIgnore
-    @Column("properties")
+    @Field("properties_json")
     private String propertiesJson;
 
-    @Column("created_at")
+    @Field("created_at")
     private Long createdAt;
 
-    @Column("updated_at")
+    @Field("updated_at")
     private Long updatedAt;
 
     @Transient

@@ -9,15 +9,15 @@ public interface UserService {
 
     Mono<UserView> registerUser(RegisterRequest request);
 
-    Mono<UserView> getUserById(Long id);
+    Mono<UserView> getUserById(String id);
 
     Mono<UserPageResponse> listUsers(int page, int size, String keyword);
 
-    Mono<Void> deleteUser(Long id);
+    Mono<Void> deleteUser(String id);
 
-    Mono<UserView> resetPassword(Long id, String newPassword);
+    Mono<UserView> resetPassword(String id, String newPassword);
 
-    Mono<UserView> updateUsername(Long id, UpdateUsernameRequest request);
+    Mono<UserView> updateUsername(String id, UpdateUsernameRequest request);
 
-    Mono<UserView> updatePassword(Long id, UpdatePasswordRequest request);
+    Mono<UserView> updatePassword(String id, UpdatePasswordRequest request);
 }

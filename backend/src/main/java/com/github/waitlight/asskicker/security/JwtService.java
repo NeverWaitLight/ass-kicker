@@ -75,7 +75,7 @@ public class JwtService {
             throw new JwtException("Missing role claim.");
         }
         UserRole role = UserRole.valueOf(roleValue);
-        Long userId = Long.parseLong(claims.getSubject());
+        String userId = claims.getSubject();
         return new JwtPayload(userId, role, expectedType);
     }
 }
