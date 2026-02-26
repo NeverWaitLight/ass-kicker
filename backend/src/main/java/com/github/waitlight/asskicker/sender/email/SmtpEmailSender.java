@@ -22,25 +22,25 @@ public class SmtpEmailSender extends EmailSender<SmtpEmailSenderConfig> {
         this.mailSender = buildJavaMailSender(config);
     }
 
-    private JavaMailSender buildJavaMailSender(SmtpEmailSenderConfig smtp) {
+    private JavaMailSender buildJavaMailSender(SmtpEmailSenderConfig config) {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
-        mailSender.setHost(smtp.getHost());
-        mailSender.setPort(smtp.getPort());
-        mailSender.setUsername(smtp.getUsername());
-        mailSender.setPassword(smtp.getPassword());
-        String protocol = smtp.getProtocol().name().toLowerCase(Locale.ROOT);
+        mailSender.setHost(config.getHost());
+        mailSender.setPort(config.getPort());
+        mailSender.setUsername(config.getUsername());
+        mailSender.setPassword(config.getPassword());
+        String protocol = config.getProtocol().name().toLowerCase(Locale.ROOT);
         mailSender.setProtocol(protocol);
         mailSender.setDefaultEncoding(StandardCharsets.UTF_8.name());
 
         Properties javaMailProperties = mailSender.getJavaMailProperties();
         javaMailProperties.put("mail.transport.protocol", protocol);
         javaMailProperties.put("mail.smtp.auth", "true");
-        javaMailProperties.put("mail.smtp.connectiontimeout", String.valueOf(smtp.getConnectionTimeout().toMillis()));
-        javaMailProperties.put("mail.smtp.timeout", String.valueOf(smtp.getReadTimeout().toMillis()));
-        javaMailProperties.put("mail.smtp.writetimeout", String.valueOf(smtp.getReadTimeout().toMillis()));
-        if (smtp.isSslEnabled()) {
+        javaMailProperties.put("mail.smtp.connectiontimeout", String.valueOf(config.getConnectionTimeout().toMillis()));
+        javaMailProperties.put("mail.smtp.timeout", String.valueOf(config.getReadTimeout().toMillis()));
+        javaMailProperties.put("mail.smtp.writetimeout", String.valueOf(config.getReadTimeout().toMillis()));
+        if (config.isSslEnabled()) {
             javaMailProperties.put("mail.smtp.ssl.enable", "true");
-            javaMailProperties.put("mail.smtp.ssl.trust", smtp.getHost());
+            javaMailProperties.put("mail.smtp.ssl.trust", config.getHost());
         }
         return mailSender;
     }

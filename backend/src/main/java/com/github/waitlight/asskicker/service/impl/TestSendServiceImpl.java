@@ -10,6 +10,8 @@ import com.github.waitlight.asskicker.sender.Sender;
 import com.github.waitlight.asskicker.sender.SenderConfig;
 import com.github.waitlight.asskicker.sender.email.EmailSenderFactory;
 import com.github.waitlight.asskicker.sender.email.EmailSenderPropertyMapper;
+import com.github.waitlight.asskicker.sender.im.IMSenderFactory;
+import com.github.waitlight.asskicker.sender.im.IMSenderPropertyMapper;
 import com.github.waitlight.asskicker.service.TestSendService;
 import com.github.waitlight.asskicker.testsend.TemporaryChannelConfig;
 import com.github.waitlight.asskicker.testsend.TemporaryChannelConfigManager;
@@ -33,15 +35,21 @@ public class TestSendServiceImpl implements TestSendService {
 
     private final EmailSenderFactory emailSenderFactory;
     private final EmailSenderPropertyMapper emailSenderPropertyMapper;
+    private final IMSenderFactory imSenderFactory;
+    private final IMSenderPropertyMapper imSenderPropertyMapper;
     private final TemporaryChannelConfigManager configManager;
     private final TestSendRateLimiter rateLimiter;
 
     public TestSendServiceImpl(EmailSenderFactory emailSenderFactory,
                                EmailSenderPropertyMapper emailSenderPropertyMapper,
+                               IMSenderFactory imSenderFactory,
+                               IMSenderPropertyMapper imSenderPropertyMapper,
                                TemporaryChannelConfigManager configManager,
                                TestSendRateLimiter rateLimiter) {
         this.emailSenderFactory = emailSenderFactory;
         this.emailSenderPropertyMapper = emailSenderPropertyMapper;
+        this.imSenderFactory = imSenderFactory;
+        this.imSenderPropertyMapper = imSenderPropertyMapper;
         this.configManager = configManager;
         this.rateLimiter = rateLimiter;
     }
@@ -122,6 +130,34 @@ public class TestSendServiceImpl implements TestSendService {
                     } finally {
                         closeSender(emailSender);
                     }
+                } else if (config.type() == ChannelType.IM) {
+                    SenderConfig property = imSenderPropertyMapper.fromProperties(config.properties());
+                    Sender imSender = imSenderFactory.create(property);
+                    MessageRequest messageRequest = MessageRequest.builder()
+                            .recipient(request.target())
+                            .subject("测试消息")
+                            .content(request.content())
+                            .attributes(Map.of(
+                                    "temporaryConfigId", config.id(),
+                                    "channelType", config.type().name()
+                            ))
+                            .build();
+                    try {
+                        logger.info("SECURITY_TEST_SEND_SENDER_READY configId={} protocol={} sender={}",
+                                config.id(), protocol, imSender.getClass().getSimpleName());
+                        logger.info("SECURITY_TEST_SEND_EXEC configId={} protocol={} target={}",
+                                config.id(), protocol, request.target());
+                        MessageResponse response = imSender.send(messageRequest);
+                        logger.info("SECURITY_TEST_SEND_PROVIDER_RESULT configId={} protocol={} success={} messageId={} errorCode={}",
+                                config.id(),
+                                protocol,
+                                response.isSuccess(),
+                                response.getMessageId(),
+                                response.getErrorCode());
+                        return response;
+                    } finally {
+                        closeSender(imSender);
+                    }
                 }
                 logger.info("SECURITY_TEST_SEND_SIMULATED type={} protocol={} target={}",
                         config.type(), protocol, request.target());
@@ -138,12 +174,23 @@ public class TestSendServiceImpl implements TestSendService {
         if (properties == null) {
             return "SMTP";
         }
-        Object value = properties.get("protocol");
+        // 支持 properties.type 和 properties.protocol 两种方式读取协议
+        Object value = properties.get("type");
+        if (value == null || String.valueOf(value).trim().isBlank()) {
+            value = properties.get("protocol");
+        }
         if (value == null) {
             return "SMTP";
         }
         String text = String.valueOf(value).trim();
-        return text.isBlank() ? "SMTP" : text.toUpperCase(Locale.ROOT);
+        if (text.isBlank()) {
+            return "SMTP";
+        }
+        String upper = text.toUpperCase(Locale.ROOT);
+        if ("DINGTALK".equals(upper)) {
+            return "DINGTALK";
+        }
+        return "SMTP";
     }
 
     private void closeSender(Sender sender) {

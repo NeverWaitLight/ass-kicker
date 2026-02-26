@@ -57,6 +57,14 @@
                 @change="handleProtocolChange"
               />
             </a-form-item>
+            <a-form-item v-if="isImChannel" label="IM 类型">
+              <a-select
+                v-model:value="imType"
+                placeholder="请选择 IM 类型"
+                :options="imTypeOptions"
+                @change="handleImTypeChange"
+              />
+            </a-form-item>
             <a-form-item label="通道名称" :validate-status="nameError ? 'error' : ''" :help="nameError">
               <a-input v-model:value="form.name" placeholder="请输入通道名称" />
             </a-form-item>
@@ -150,6 +158,16 @@ const emailProtocolOptions = computed(() =>
   }))
 )
 
+const imTypes = ref({ defaultType: 'DINGTALK', types: [] })
+const imType = ref('')
+const isImChannel = computed(() => form.type === 'IM')
+const imTypeOptions = computed(() =>
+  (imTypes.value.types || []).map((type) => ({
+    value: type.type,
+    label: type.label || type.type
+  }))
+)
+
 const isEdit = computed(() => !!route.params.id)
 const pageTitle = computed(() => (isEdit.value ? '编辑通道' : '新建通道'))
 
@@ -161,13 +179,23 @@ const denied = computed(() => {
 const testDenied = computed(() => denied.value || !form.type)
 const baseSectionHint = '每一行可选择字符串或对象类型。'
 const sectionHint = computed(() => {
-  if (!isEmailChannel.value) return baseSectionHint
-  const schema = findEmailProtocolSchema(emailProtocol.value)
-  if (!schema) return baseSectionHint
-  const requiredFields = (schema.fields || []).filter((field) => field.required)
-  if (requiredFields.length === 0) return baseSectionHint
-  const labels = requiredFields.map((field) => field.label || field.key).join('、')
-  return `${baseSectionHint} ${schema.label || schema.protocol}必填：${labels}。`
+  if (isEmailChannel.value) {
+    const schema = findEmailProtocolSchema(emailProtocol.value)
+    if (!schema) return baseSectionHint
+    const requiredFields = (schema.fields || []).filter((field) => field.required)
+    if (requiredFields.length === 0) return baseSectionHint
+    const labels = requiredFields.map((field) => field.label || field.key).join('、')
+    return `${baseSectionHint} ${schema.label || schema.protocol}必填：${labels}。`
+  }
+  if (isImChannel.value) {
+    const schema = findImTypeSchema(imType.value)
+    if (!schema) return baseSectionHint
+    const requiredFields = (schema.fields || []).filter((field) => field.required)
+    if (requiredFields.length === 0) return baseSectionHint
+    const labels = requiredFields.map((field) => field.label || field.key).join('、')
+    return `${baseSectionHint} ${schema.label || schema.type}必填：${labels}。`
+  }
+  return baseSectionHint
 })
 
 const loadTypes = async () => {
@@ -188,6 +216,15 @@ const loadEmailProtocols = async () => {
   }
 }
 
+const loadImTypes = async () => {
+  try {
+    // TODO: 将来可以从后端 API 获取 IM 类型列表
+    imTypes.value = getFallbackImTypes()
+  } catch (error) {
+    imTypes.value = getFallbackImTypes()
+  }
+}
+
 const loadChannel = async () => {
   if (!isEdit.value) return
   loading.value = true
@@ -204,6 +241,13 @@ const loadChannel = async () => {
       const schema = findEmailProtocolSchema(protocol)
       propertyRows.value = schema
         ? buildProtocolRowsFromProperties(schema, data.properties)
+        : propertiesToRows(data.properties)
+    } else if (form.type === 'IM') {
+      const type = resolveImTypeValue(data.properties?.type)
+      imType.value = type
+      const schema = findImTypeSchema(type)
+      propertyRows.value = schema
+        ? buildImTypeRowsFromProperties(schema, data.properties)
         : propertiesToRows(data.properties)
     } else {
       propertyRows.value = propertiesToRows(data.properties)
@@ -230,25 +274,45 @@ const validateForm = () => {
 }
 
 const buildProperties = () => {
-  if (!isEmailChannel.value) {
+  if (!isEmailChannel.value && !isImChannel.value) {
     return rowsToProperties(propertyRows.value)
   }
-  const protocol = resolveProtocolValue(emailProtocol.value)
-  const schema = findEmailProtocolSchema(protocol)
+  if (isEmailChannel.value) {
+    const protocol = resolveProtocolValue(emailProtocol.value)
+    const schema = findEmailProtocolSchema(protocol)
+    if (!schema) {
+      return rowsToProperties(propertyRows.value)
+    }
+    const raw = rowsToProperties(propertyRows.value)
+    const requiredFields = (schema.fields || []).filter((field) => field.required)
+    const protocolPayload = {}
+    requiredFields.forEach((field) => {
+      if (raw[field.key] !== undefined) {
+        protocolPayload[field.key] = raw[field.key]
+      }
+    })
+    return {
+      protocol,
+      [schema.propertyKey]: protocolPayload
+    }
+  }
+  // IM channel
+  const type = resolveImTypeValue(imType.value)
+  const schema = findImTypeSchema(type)
   if (!schema) {
     return rowsToProperties(propertyRows.value)
   }
   const raw = rowsToProperties(propertyRows.value)
   const requiredFields = (schema.fields || []).filter((field) => field.required)
-  const protocolPayload = {}
+  const typePayload = {}
   requiredFields.forEach((field) => {
     if (raw[field.key] !== undefined) {
-      protocolPayload[field.key] = raw[field.key]
+      typePayload[field.key] = raw[field.key]
     }
   })
   return {
-    protocol,
-    [schema.propertyKey]: protocolPayload
+    type,
+    [schema.propertyKey]: typePayload
   }
 }
 
@@ -309,9 +373,13 @@ const goBack = () => {
 onMounted(async () => {
   await loadTypes()
   await loadEmailProtocols()
+  await loadImTypes()
   await loadChannel()
   if (!isEdit.value && form.type === 'EMAIL') {
     initializeEmailProtocol()
+  }
+  if (!isEdit.value && form.type === 'IM') {
+    initializeImType()
   }
 })
 
@@ -323,15 +391,36 @@ const handleProtocolChange = (value) => {
   applyEmailProtocolSchema(value, { preferExisting: true })
 }
 
+const handleImTypeChange = (value) => {
+  if (!value) return
+  imType.value = value
+  applyImTypeSchema(value, { preferExisting: true })
+}
+
 const initializeEmailProtocol = () => {
   const protocol = resolveProtocolValue(emailProtocol.value)
   emailProtocol.value = protocol
   applyEmailProtocolSchema(protocol, { preferExisting: true })
 }
 
+const initializeImType = () => {
+  const type = resolveImTypeValue(imType.value)
+  imType.value = type
+  applyImTypeSchema(type, { preferExisting: true })
+}
+
 const applyEmailProtocolSchema = (protocol, { preferExisting } = {}) => {
   if (!protocol || !isEmailChannel.value) return
   const schema = findEmailProtocolSchema(protocol)
+  if (!schema) return
+
+  const requiredFields = (schema.fields || []).filter((field) => field.required)
+  propertyRows.value = mergeFlatRows(propertyRows.value, requiredFields, preferExisting)
+}
+
+const applyImTypeSchema = (type, { preferExisting } = {}) => {
+  if (!type || !isImChannel.value) return
+  const schema = findImTypeSchema(type)
   if (!schema) return
 
   const requiredFields = (schema.fields || []).filter((field) => field.required)
@@ -420,6 +509,51 @@ const getProtocolFieldValue = (properties, schemaKey, fieldKey, defaultValue) =>
 const findEmailProtocolSchema = (protocol) =>
   (emailProtocols.value.protocols || []).find((item) => item.protocol === protocol)
 
+const findImTypeSchema = (type) =>
+  (imTypes.value.types || []).find((item) => item.type === type)
+
+const resolveImTypeValue = (value) => {
+  const fallback = imTypes.value.defaultType || 'DINGTALK'
+  if (!value) return fallback
+  const normalized = String(value).trim()
+  return normalized ? normalized.toUpperCase() : fallback
+}
+
+const buildImTypeRowsFromProperties = (schema, properties) => {
+  const requiredFields = (schema.fields || []).filter((field) => field.required)
+  return requiredFields.map((field) => {
+    const value = getImTypeFieldValue(properties, schema.propertyKey, field.key, field.defaultValue)
+    return createPropertyRow({ key: field.key, value })
+  })
+}
+
+const getImTypeFieldValue = (properties, schemaKey, fieldKey, defaultValue) => {
+  if (properties && typeof properties === 'object') {
+    const nested = properties?.[schemaKey]
+    if (nested && typeof nested === 'object' && nested[fieldKey] != null) {
+      return String(nested[fieldKey])
+    }
+    if (properties[fieldKey] != null) {
+      return String(properties[fieldKey])
+    }
+  }
+  return String(defaultValue ?? '')
+}
+
+const getFallbackImTypes = () => ({
+  defaultType: 'DINGTALK',
+  types: [
+    {
+      type: 'DINGTALK',
+      label: '钉钉机器人',
+      propertyKey: 'dingtalk',
+      fields: [
+        { key: 'webhookUrl', label: 'Webhook URL', required: true, defaultValue: '' }
+      ]
+    }
+  ]
+})
+
 const getFallbackEmailProtocols = () => ({
   defaultProtocol: 'SMTP',
   protocols: [
@@ -467,6 +601,11 @@ watch(
         emailProtocol.value = emailProtocols.value.defaultProtocol || 'SMTP'
       }
       applyEmailProtocolSchema(emailProtocol.value, { preferExisting: true })
+    } else if (value === 'IM') {
+      if (!imType.value) {
+        imType.value = imTypes.value.defaultType || 'DINGTALK'
+      }
+      applyImTypeSchema(imType.value, { preferExisting: true })
     }
   }
 )
