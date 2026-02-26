@@ -1,12 +1,12 @@
 package com.github.waitlight.asskicker.sender.email;
 
+import java.time.Duration;
+
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.time.Duration;
 
 @Getter
 @Setter
@@ -41,6 +41,6 @@ public class SmtpEmailSenderConfig extends EmailSenderConfig {
     private Duration retryDelay = Duration.ofSeconds(1);
 
     public SmtpEmailSenderConfig() {
-        super(EmailProtocol.SMTP);
+        super(EmailSenderType.SMTP);
     }
 }

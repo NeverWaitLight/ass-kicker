@@ -1,16 +1,18 @@
 package com.github.waitlight.asskicker.sender.email;
 
-import com.github.waitlight.asskicker.sender.MessageRequest;
-import com.github.waitlight.asskicker.sender.MessageResponse;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+
+import com.github.waitlight.asskicker.sender.MessageRequest;
+import com.github.waitlight.asskicker.sender.MessageResponse;
+
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class HttpEmailSender extends EmailSender<HttpEmailSenderConfig> {
 

@@ -1,17 +1,19 @@
 package com.github.waitlight.asskicker.sender.email;
 
-import com.github.waitlight.asskicker.sender.MessageRequest;
-import com.github.waitlight.asskicker.sender.MessageResponse;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
+import java.util.Properties;
+
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Locale;
-import java.util.Properties;
+import com.github.waitlight.asskicker.sender.MessageRequest;
+import com.github.waitlight.asskicker.sender.MessageResponse;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 
 public class SmtpEmailSender extends EmailSender<SmtpEmailSenderConfig> {
 

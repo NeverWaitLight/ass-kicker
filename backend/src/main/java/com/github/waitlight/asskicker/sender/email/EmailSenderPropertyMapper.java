@@ -1,15 +1,16 @@
 package com.github.waitlight.asskicker.sender.email;
 
-import com.github.waitlight.asskicker.sender.SenderConfig;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.github.waitlight.asskicker.sender.SenderConfig;
 
 @Component
 public class EmailSenderPropertyMapper {
@@ -27,8 +28,8 @@ public class EmailSenderPropertyMapper {
     public SenderConfig fromProperties(Map<String, Object> properties) {
         Map<String, Object> safe = normalizeProperties(properties);
 
-        EmailProtocol protocol = parseProtocol(safe.get("protocol"));
-        if (protocol == EmailProtocol.HTTP) {
+        EmailSenderType protocol = parseProtocol(safe.get("protocol"));
+        if (protocol == EmailSenderType.HTTP) {
             HttpEmailSenderConfig httpApi = new HttpEmailSenderConfig();
             Map<String, Object> httpApiValues = mergeProtocolValues(readMap(safe.get("httpApi")), safe, HTTP_API_KEYS);
             applyHttpApi(httpApi, httpApiValues);
@@ -108,7 +109,7 @@ public class EmailSenderPropertyMapper {
         httpApi.setRetryDelay(readDuration(values, "retryDelay", httpApi.getRetryDelay()));
     }
 
-    private EmailProtocol parseProtocol(Object value) {
+    private EmailSenderType parseProtocol(Object value) {
         if (value == null) {
             return null;
         }
@@ -117,7 +118,7 @@ public class EmailSenderPropertyMapper {
             return null;
         }
         try {
-            return EmailProtocol.valueOf(normalized);
+            return EmailSenderType.valueOf(normalized);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "邮件协议不支持 " + normalized);
         }

@@ -1,5 +1,0 @@
-package com.github.waitlight.asskicker.sender.im;
-
-public enum IMProtocol {
-    DINGTALK
-}

@@ -27,8 +27,8 @@ public class IMSenderPropertyMapper {
         if (protocolValue == null || String.valueOf(protocolValue).trim().isBlank()) {
             protocolValue = safe.get("protocol");
         }
-        IMProtocol protocol = parseProtocol(protocolValue);
-        if (protocol == IMProtocol.DINGTALK) {
+        IMSenderType senderType = parseProtocol(protocolValue);
+        if (senderType == IMSenderType.DINGTALK) {
             DingTalkIMSenderConfig dingTalk = new DingTalkIMSenderConfig();
             // 直接从 dingtalk 嵌套对象中读取（支持大小写）
             Map<String, Object> dingTalkNested = readMap(safe.get("dingTalk"));
@@ -96,7 +96,7 @@ public class IMSenderPropertyMapper {
         return "";
     }
 
-    private IMProtocol parseProtocol(Object value) {
+    private IMSenderType parseProtocol(Object value) {
         if (value == null) {
             return null;
         }
@@ -105,7 +105,7 @@ public class IMSenderPropertyMapper {
             return null;
         }
         try {
-            return IMProtocol.valueOf(normalized);
+            return IMSenderType.valueOf(normalized);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "IM 协议不支持 " + normalized);
         }
