@@ -2,7 +2,7 @@
   <section class="page-shell">
     <div class="page-header">
       <div>
-        <h2>用户管理</h2>
+        <h2>用户</h2>
         <p>管理系统账号、重置密码与控制状态</p>
       </div>
       <a-space>

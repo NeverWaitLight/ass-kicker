@@ -1,42 +1,42 @@
 import { describe, it, expect, vi } from 'vitest'
-import { fetchSender, fetchSenders, fetchSenderTypes, createSender, testSendSender } from '../senderApi'
+import { fetchChannel, fetchChannels, fetchChannelTypes, createChannel, testSendChannel } from '../channelApi'
 import { apiFetch } from '../api'
 
 vi.mock('../api', () => ({
   apiFetch: vi.fn()
 }))
 
-describe('senderApi', () => {
-  it('fetches sender list', async () => {
+describe('channelApi', () => {
+  it('fetches channel list', async () => {
     apiFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve([{ id: '1', name: 'Email' }])
     })
 
-    const data = await fetchSenders()
-    expect(apiFetch).toHaveBeenCalledWith('/api/senders')
+    const data = await fetchChannels()
+    expect(apiFetch).toHaveBeenCalledWith('/api/channels')
     expect(data).toHaveLength(1)
   })
 
-  it('fetches sender detail', async () => {
+  it('fetches channel detail', async () => {
     apiFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ id: '1', name: 'Email' })
     })
 
-    const data = await fetchSender('1')
-    expect(apiFetch).toHaveBeenCalledWith('/api/senders/1')
+    const data = await fetchChannel('1')
+    expect(apiFetch).toHaveBeenCalledWith('/api/channels/1')
     expect(data.name).toBe('Email')
   })
 
-  it('fetches sender types', async () => {
+  it('fetches channel types', async () => {
     apiFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve(['SMS', 'EMAIL'])
     })
 
-    const data = await fetchSenderTypes()
-    expect(apiFetch).toHaveBeenCalledWith('/api/senders/types')
+    const data = await fetchChannelTypes()
+    expect(apiFetch).toHaveBeenCalledWith('/api/channels/types')
     expect(data).toContain('SMS')
   })
 
@@ -46,35 +46,35 @@ describe('senderApi', () => {
       text: () => Promise.resolve('error')
     })
 
-    await expect(fetchSenders()).rejects.toThrow('error')
+    await expect(fetchChannels()).rejects.toThrow('error')
   })
 
-  it('creates sender via api', async () => {
+  it('creates channel via api', async () => {
     apiFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ id: '2', name: 'SMS' })
     })
 
     const payload = { name: 'SMS', type: 'SMS', properties: {} }
-    const data = await createSender(payload)
+    const data = await createChannel(payload)
 
-    expect(apiFetch).toHaveBeenCalledWith('/api/senders', {
+    expect(apiFetch).toHaveBeenCalledWith('/api/channels', {
       method: 'POST',
       body: JSON.stringify(payload)
     })
     expect(data.id).toBe('2')
   })
 
-  it('tests send sender via api', async () => {
+  it('tests send channel via api', async () => {
     apiFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ success: true, messageId: 'test-1' })
     })
 
     const payload = { type: 'EMAIL', target: 'a@b.com', content: 'test', properties: {} }
-    const data = await testSendSender(payload)
+    const data = await testSendChannel(payload)
 
-    expect(apiFetch).toHaveBeenCalledWith('/api/senders/test-send', {
+    expect(apiFetch).toHaveBeenCalledWith('/api/channels/test-send', {
       method: 'POST',
       body: JSON.stringify(payload)
     })

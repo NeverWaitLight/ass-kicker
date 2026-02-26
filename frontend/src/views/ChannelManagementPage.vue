@@ -1,6 +1,6 @@
 <template>
   <ChannelManagementLayout>
-    <template #title>通道管理</template>
+    <template #title>通道</template>
     <template #subtitle>集中管理通道配置、状态与权限</template>
     <template #actions>
       <a-input
@@ -27,7 +27,7 @@
       style="margin-bottom: 16px"
     />
 
-    <a-result v-if="denied" status="403" title="暂无权限" sub-title="请联系管理员开通通道管理权限。">
+    <a-result v-if="denied" status="403" title="暂无权限" sub-title="请联系管理员开通通道权限。">
       <template #extra>
         <a-tooltip title="返回首页">
           <a-button type="primary" @click="goHome">返回</a-button>
@@ -77,17 +77,17 @@ import ChannelManagementLayout from '../components/channels/ChannelManagementLay
 import ChannelTable from '../components/channels/ChannelTable.vue'
 import ChannelDeleteModal from '../components/channels/ChannelDeleteModal.vue'
 import ChannelTestSendModal from '../components/channels/ChannelTestSendModal.vue'
-import { fetchSender, fetchSenders, deleteSender } from '../utils/senderApi'
+import { fetchChannel, fetchChannels, deleteChannel } from '../utils/channelApi'
 import {
-  senderList as channelList,
-  senderLoading as channelLoading,
-  senderError as channelError,
-  senderPagination as channelPagination,
-  senderSearch as channelSearch,
-  senderDeleteState as channelDeleteState,
-  setSenderList as setChannelList,
-  removeSender as removeChannel
-} from '../stores/senders'
+  channelList,
+  channelLoading,
+  channelError,
+  channelPagination,
+  channelSearch,
+  channelDeleteState,
+  setChannelList,
+  removeChannel
+} from '../stores/channels'
 import { currentUser } from '../stores/auth'
 import { CHANNEL_PERMISSIONS, hasPermission } from '../utils/permissions'
 import { useRouter } from 'vue-router'
@@ -139,7 +139,7 @@ const loadChannels = async () => {
   channelLoading.value = true
   channelError.value = ''
   try {
-    const data = await fetchSenders()
+    const data = await fetchChannels()
     setChannelList(data)
   } catch (error) {
     channelError.value = error?.message || '获取通道列表失败'
@@ -157,12 +157,12 @@ const handleTableChange = (pager) => {
 }
 
 const openCreate = () => {
-  router.push('/senders/new')
+  router.push('/channels/new')
 }
 
 const openEdit = (record) => {
   if (!record?.id) return
-  router.push(`/senders/${record.id}`)
+  router.push(`/channels/${record.id}`)
 }
 
 const openTest = async (record) => {
@@ -172,7 +172,7 @@ const openTest = async (record) => {
     if (record.properties && record.type) {
       testChannel.value = record
     } else {
-      testChannel.value = await fetchSender(record.id)
+      testChannel.value = await fetchChannel(record.id)
     }
     testModalOpen.value = true
   } catch (error) {
@@ -202,7 +202,7 @@ const confirmDelete = async () => {
   if (!channelDeleteState.target) return
   channelDeleteState.deleting = true
   try {
-    await deleteSender(channelDeleteState.target.id)
+    await deleteChannel(channelDeleteState.target.id)
     removeChannel(channelDeleteState.target.id)
     message.success('通道已删除')
     closeDelete()

@@ -12,12 +12,12 @@ vi.mock('ant-design-vue', () => ({
   }
 }))
 
-vi.mock('../../../utils/senderApi', () => ({
-  createSender: vi.fn(),
-  fetchSender: vi.fn(),
-  fetchSenderTypes: vi.fn(() => Promise.resolve(['SMS', 'EMAIL', 'IM', 'PUSH'])),
+vi.mock('../../../utils/channelApi', () => ({
+  createChannel: vi.fn(),
+  fetchChannel: vi.fn(),
+  fetchChannelTypes: vi.fn(() => Promise.resolve(['SMS', 'EMAIL', 'IM', 'PUSH'])),
   fetchEmailProtocols: vi.fn(() => Promise.resolve({ defaultProtocol: 'SMTP', protocols: [] })),
-  updateSender: vi.fn()
+  updateChannel: vi.fn()
 }))
 
 vi.mock('../../../utils/permissions', () => ({

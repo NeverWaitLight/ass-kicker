@@ -1,23 +1,23 @@
 import { apiFetch } from './api'
 
-export const fetchSenders = async () => {
-  const response = await apiFetch('/api/senders')
+export const fetchChannels = async () => {
+  const response = await apiFetch('/api/channels')
   if (!response.ok) {
     throw new Error(await response.text())
   }
   return response.json()
 }
 
-export const fetchSender = async (id) => {
-  const response = await apiFetch(`/api/senders/${id}`)
+export const fetchChannel = async (id) => {
+  const response = await apiFetch(`/api/channels/${id}`)
   if (!response.ok) {
     throw new Error(await response.text())
   }
   return response.json()
 }
 
-export const fetchSenderTypes = async () => {
-  const response = await apiFetch('/api/senders/types')
+export const fetchChannelTypes = async () => {
+  const response = await apiFetch('/api/channels/types')
   if (!response.ok) {
     throw new Error(await response.text())
   }
@@ -25,15 +25,15 @@ export const fetchSenderTypes = async () => {
 }
 
 export const fetchEmailProtocols = async () => {
-  const response = await apiFetch('/api/senders/email-protocols')
+  const response = await apiFetch('/api/channels/email-protocols')
   if (!response.ok) {
     throw new Error(await response.text())
   }
   return response.json()
 }
 
-export const createSender = async (payload) => {
-  const response = await apiFetch('/api/senders', {
+export const createChannel = async (payload) => {
+  const response = await apiFetch('/api/channels', {
     method: 'POST',
     body: JSON.stringify(payload)
   })
@@ -43,8 +43,8 @@ export const createSender = async (payload) => {
   return response.json()
 }
 
-export const updateSender = async (id, payload) => {
-  const response = await apiFetch(`/api/senders/${id}`, {
+export const updateChannel = async (id, payload) => {
+  const response = await apiFetch(`/api/channels/${id}`, {
     method: 'PUT',
     body: JSON.stringify(payload)
   })
@@ -54,8 +54,8 @@ export const updateSender = async (id, payload) => {
   return response.json()
 }
 
-export const deleteSender = async (id) => {
-  const response = await apiFetch(`/api/senders/${id}`, {
+export const deleteChannel = async (id) => {
+  const response = await apiFetch(`/api/channels/${id}`, {
     method: 'DELETE'
   })
   if (!response.ok) {
@@ -64,8 +64,8 @@ export const deleteSender = async (id) => {
   return true
 }
 
-export const testSendSender = async (payload) => {
-  const response = await apiFetch('/api/senders/test-send', {
+export const testSendChannel = async (payload) => {
+  const response = await apiFetch('/api/channels/test-send', {
     method: 'POST',
     body: JSON.stringify(payload)
   })

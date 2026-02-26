@@ -5,14 +5,14 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.util.Locale;
 
-public enum SenderType {
+public enum ChannelType {
     SMS,
     EMAIL,
     IM,
     PUSH;
 
     @JsonCreator
-    public static SenderType fromString(String value) {
+    public static ChannelType fromString(String value) {
         if (value == null) {
             return null;
         }
@@ -21,9 +21,9 @@ public enum SenderType {
             return null;
         }
         try {
-            return SenderType.valueOf(normalized.toUpperCase(Locale.ROOT));
+            return ChannelType.valueOf(normalized.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("发送端类型必须为SMS、EMAIL、IM、PUSH");
+            throw new IllegalArgumentException("通道类型必须为SMS、EMAIL、IM、PUSH");
         }
     }
 

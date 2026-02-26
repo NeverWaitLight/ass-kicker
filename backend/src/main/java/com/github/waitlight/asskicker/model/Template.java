@@ -36,8 +36,8 @@ public class Template {
     @Field("description")
     private String description;
 
-    @Field("applicable_sender_types")
-    private List<SenderType> applicableSenderTypes;
+    @Field("applicable_channel_types")
+    private List<ChannelType> applicableChannelTypes;
 
     @Field("content_type")
     private TemplateContentType contentType;

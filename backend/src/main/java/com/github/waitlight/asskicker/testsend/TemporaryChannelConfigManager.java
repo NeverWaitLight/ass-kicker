@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.testsend;
 
-import com.github.waitlight.asskicker.model.SenderType;
+import com.github.waitlight.asskicker.model.ChannelType;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -8,19 +8,19 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class TemporarySenderConfigManager {
+public class TemporaryChannelConfigManager {
 
-    private final ConcurrentHashMap<String, TemporarySenderConfig> configs = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, TemporaryChannelConfig> configs = new ConcurrentHashMap<>();
 
-    public TemporarySenderConfig create(SenderType type, Map<String, Object> properties) {
+    public TemporaryChannelConfig create(ChannelType type, Map<String, Object> properties) {
         String id = UUID.randomUUID().toString();
         Map<String, Object> safeProperties = deepCopyMap(properties);
-        TemporarySenderConfig config = new TemporarySenderConfig(id, type, safeProperties, Instant.now().toEpochMilli());
+        TemporaryChannelConfig config = new TemporaryChannelConfig(id, type, safeProperties, Instant.now().toEpochMilli());
         configs.put(id, config);
         return config;
     }
 
-    public TemporarySenderConfig get(String id) {
+    public TemporaryChannelConfig get(String id) {
         if (id == null) {
             return null;
         }

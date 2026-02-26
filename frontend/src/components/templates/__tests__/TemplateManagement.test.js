@@ -21,7 +21,7 @@ describe('TemplateManagement', () => {
     const wrapper = await mount(TemplateManagement);
 
     // 检查组件标题是否存在
-    expect(wrapper.find('h2').text()).toBe('模板管理');
+    expect(wrapper.find('h2').text()).toBe('模板');
     
     // 检查是否有新建模板按钮
     expect(wrapper.find('.btn-primary').text()).toBe('新建');

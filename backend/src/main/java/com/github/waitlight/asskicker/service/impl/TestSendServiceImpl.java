@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.service.impl;
 
-import com.github.waitlight.asskicker.dto.sender.TestSendRequest;
-import com.github.waitlight.asskicker.model.SenderType;
+import com.github.waitlight.asskicker.dto.channel.TestSendRequest;
+import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.sender.MessageRequest;
@@ -13,8 +13,8 @@ import com.github.waitlight.asskicker.sender.email.EmailSenderPropertyMapper;
 import com.github.waitlight.asskicker.sender.im.IMSenderFactory;
 import com.github.waitlight.asskicker.sender.im.IMSenderPropertyMapper;
 import com.github.waitlight.asskicker.service.TestSendService;
-import com.github.waitlight.asskicker.testsend.TemporarySenderConfig;
-import com.github.waitlight.asskicker.testsend.TemporarySenderConfigManager;
+import com.github.waitlight.asskicker.testsend.TemporaryChannelConfig;
+import com.github.waitlight.asskicker.testsend.TemporaryChannelConfigManager;
 import com.github.waitlight.asskicker.testsend.TestSendRateLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,14 +37,14 @@ public class TestSendServiceImpl implements TestSendService {
     private final EmailSenderPropertyMapper emailSenderPropertyMapper;
     private final IMSenderFactory imSenderFactory;
     private final IMSenderPropertyMapper imSenderPropertyMapper;
-    private final TemporarySenderConfigManager configManager;
+    private final TemporaryChannelConfigManager configManager;
     private final TestSendRateLimiter rateLimiter;
 
     public TestSendServiceImpl(EmailSenderFactory emailSenderFactory,
                                EmailSenderPropertyMapper emailSenderPropertyMapper,
                                IMSenderFactory imSenderFactory,
                                IMSenderPropertyMapper imSenderPropertyMapper,
-                               TemporarySenderConfigManager configManager,
+                               TemporaryChannelConfigManager configManager,
                                TestSendRateLimiter rateLimiter) {
         this.emailSenderFactory = emailSenderFactory;
         this.emailSenderPropertyMapper = emailSenderPropertyMapper;
@@ -71,7 +71,7 @@ public class TestSendServiceImpl implements TestSendService {
             return Mono.error(new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "测试发送过于频繁，请稍后再试"));
         }
         return Mono.defer(() -> {
-            TemporarySenderConfig config = configManager.create(request.type(), request.properties());
+            TemporaryChannelConfig config = configManager.create(request.type(), request.properties());
             String protocol = resolveProtocol(config.properties());
             logger.info("SECURITY_TEST_SEND_START userId={} configId={} type={} protocol={} target={}",
                     userId, config.id(), config.type(), protocol, request.target());
@@ -99,10 +99,10 @@ public class TestSendServiceImpl implements TestSendService {
         return principal.role() == UserRole.ADMIN || principal.role() == UserRole.USER;
     }
 
-    private Mono<MessageResponse> sendWithConfig(TemporarySenderConfig config, TestSendRequest request, String protocol) {
+    private Mono<MessageResponse> sendWithConfig(TemporaryChannelConfig config, TestSendRequest request, String protocol) {
         return Mono.fromCallable(() -> {
             try {
-                if (config.type() == SenderType.EMAIL) {
+                if (config.type() == ChannelType.EMAIL) {
                     SenderConfig property = emailSenderPropertyMapper.fromProperties(config.properties());
                     Sender emailSender = emailSenderFactory.create(property);
                     MessageRequest messageRequest = MessageRequest.builder()
@@ -130,7 +130,7 @@ public class TestSendServiceImpl implements TestSendService {
                     } finally {
                         closeSender(emailSender);
                     }
-                } else if (config.type() == SenderType.IM) {
+                } else if (config.type() == ChannelType.IM) {
                     SenderConfig property = imSenderPropertyMapper.fromProperties(config.properties());
                     Sender imSender = imSenderFactory.create(property);
                     MessageRequest messageRequest = MessageRequest.builder()

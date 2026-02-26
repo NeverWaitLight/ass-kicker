@@ -1,6 +1,6 @@
 <template>
   <div class="template-management">
-    <h2>模板管理</h2>
+    <h2>模板</h2>
     
     <!-- 模板列表 -->
     <div class="template-list-section">

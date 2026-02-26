@@ -2,7 +2,7 @@
   <section class="template-layout">
     <div class="template-header">
       <div>
-        <h2>模板管理</h2>
+        <h2>模板</h2>
         <p>集中管理消息模板与多语言内容</p>
       </div>
       <div class="template-actions">

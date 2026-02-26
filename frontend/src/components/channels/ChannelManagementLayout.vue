@@ -2,7 +2,7 @@
   <section class="channel-layout">
     <div class="channel-header">
       <div>
-        <h2><slot name="title">通道管理</slot></h2>
+        <h2><slot name="title">通道</slot></h2>
         <p><slot name="subtitle">管理所有通道配置与状态</slot></p>
       </div>
       <div class="channel-actions">

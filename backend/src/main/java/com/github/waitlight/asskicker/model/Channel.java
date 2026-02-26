@@ -19,21 +19,21 @@ import java.util.Map;
 @Getter
 @Setter
 @NoArgsConstructor
-@Document(collection = "t_sender")
-public class Sender {
+@Document(collection = "t_channel")
+public class Channel {
 
     @Id
     private String id;
 
-    @NotBlank(message = "Sender name is required")
-    @Size(max = 255, message = "Sender name must not exceed 255 characters")
+    @NotBlank(message = "Channel name is required")
+    @Size(max = 255, message = "Channel name must not exceed 255 characters")
     @Field("name")
     private String name;
 
-    @NotNull(message = "Sender type is required")
+    @NotNull(message = "Channel type is required")
     @Field("type")
-    @Schema(description = "发送端类型", allowableValues = {"SMS", "EMAIL", "IM", "PUSH"})
-    private SenderType type;
+    @Schema(description = "通道类型", allowableValues = {"SMS", "EMAIL", "IM", "PUSH"})
+    private ChannelType type;
 
     @Size(max = 1000, message = "Description must not exceed 1000 characters")
     @Field("description")

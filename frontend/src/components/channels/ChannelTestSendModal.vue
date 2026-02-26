@@ -63,7 +63,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
-import { testSendSender } from '../../utils/senderApi'
+import { testSendChannel } from '../../utils/channelApi'
 import { useI18n } from 'vue-i18n'
 import { getChannelTypeLabel } from '../../constants/channelTypes'
 
@@ -133,7 +133,7 @@ const submitTestSend = async () => {
       content: content.value.trim(),
       properties: props.properties || {}
     }
-    const response = await testSendSender(payload)
+    const response = await testSendChannel(payload)
     result.value = response
     if (response?.success) {
       message.success('测试发送成功')

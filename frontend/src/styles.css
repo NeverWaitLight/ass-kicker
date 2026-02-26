@@ -46,6 +46,30 @@ html[data-theme='dark'] .ant-layout-header {
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+html[data-theme='dark'] .ant-layout-header .ant-menu-dark.ant-menu-horizontal {
+  background: transparent !important;
+  border-bottom: none !important;
+}
+
+html[data-theme='dark'] .ant-layout-header .ant-menu-dark.ant-menu-horizontal .ant-menu-item {
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+html[data-theme='dark'] .ant-layout-header .ant-menu-dark.ant-menu-horizontal .ant-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+html[data-theme='dark'] .ant-layout-header .ant-menu-dark.ant-menu-horizontal .ant-menu-item-selected {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+html[data-theme='dark'] .ant-layout-header .ant-menu-dark.ant-menu-horizontal .ant-menu-item-selected::after {
+  border-bottom-color: rgba(255, 255, 255, 0.25) !important;
+}
+
 .brand {
   display: flex;
   flex-direction: column;

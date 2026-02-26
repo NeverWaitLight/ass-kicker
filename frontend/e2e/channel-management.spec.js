@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test('sender management flow', async ({ page }) => {
+test('channel management flow', async ({ page }) => {
   const permissions = ['channel:read', 'channel:create', 'channel:update', 'channel:delete']
   await page.addInitScript((perms) => {
     localStorage.setItem('access_token', 'e2e-token')
@@ -11,7 +11,7 @@ test('sender management flow', async ({ page }) => {
     }))
   }, permissions)
 
-  let senders = [
+  let channels = [
     {
       id: '1',
       name: 'Email Channel',
@@ -23,10 +23,10 @@ test('sender management flow', async ({ page }) => {
     }
   ]
 
-  await page.route('**/api/senders', async (route) => {
+  await page.route('**/api/channels', async (route) => {
     const request = route.request()
     if (request.method() === 'GET') {
-      return route.fulfill({ status: 200, json: senders })
+      return route.fulfill({ status: 200, json: channels })
     }
     if (request.method() === 'POST') {
       const payload = request.postDataJSON()
@@ -36,17 +36,17 @@ test('sender management flow', async ({ page }) => {
         createdAt: Date.now(),
         updatedAt: Date.now()
       }
-      senders = [created, ...senders]
+      channels = [created, ...channels]
       return route.fulfill({ status: 201, json: created })
     }
     return route.fallback()
   })
 
-  await page.route('**/api/senders/types', async (route) => {
+  await page.route('**/api/channels/types', async (route) => {
     return route.fulfill({ status: 200, json: ['SMS', 'EMAIL', 'IM', 'PUSH'] })
   })
 
-  await page.route('**/api/senders/email-protocols', async (route) => {
+  await page.route('**/api/channels/email-protocols', async (route) => {
     return route.fulfill({
       status: 200,
       json: {
@@ -76,18 +76,18 @@ test('sender management flow', async ({ page }) => {
     })
   })
 
-  await page.route('**/api/senders/test-send', async (route) => {
+  await page.route('**/api/channels/test-send', async (route) => {
     if (route.request().method() === 'POST') {
       return route.fulfill({ status: 200, json: { success: true, messageId: 'test-1' } })
     }
     return route.fallback()
   })
 
-  await page.route('**/api/senders/*', async (route) => {
+  await page.route('**/api/channels/*', async (route) => {
     const request = route.request()
     const id = request.url().split('/').pop()
     if (request.method() === 'GET') {
-      const found = senders.find((sender) => sender.id === id)
+      const found = channels.find((ch) => ch.id === id)
       if (!found) {
         return route.fulfill({ status: 404, body: 'not found' })
       }
@@ -95,23 +95,23 @@ test('sender management flow', async ({ page }) => {
     }
     if (request.method() === 'PUT') {
       const payload = request.postDataJSON()
-      senders = senders.map((sender) =>
-        sender.id === id
-          ? { ...sender, ...payload, updatedAt: Date.now() }
-          : sender
+      channels = channels.map((ch) =>
+        ch.id === id
+          ? { ...ch, ...payload, updatedAt: Date.now() }
+          : ch
       )
-      const updated = senders.find((sender) => sender.id === id)
+      const updated = channels.find((ch) => ch.id === id)
       return route.fulfill({ status: 200, json: updated })
     }
     if (request.method() === 'DELETE') {
-      senders = senders.filter((sender) => sender.id !== id)
+      channels = channels.filter((ch) => ch.id !== id)
       return route.fulfill({ status: 204, body: '' })
     }
     return route.fallback()
   })
 
-  await page.goto('/senders')
-  await expect(page.getByText('通道管理')).toBeVisible()
+  await page.goto('/channels')
+  await expect(page.getByText('通道')).toBeVisible()
   await expect(page.getByText('Email Channel')).toBeVisible()
 
   await page.getByRole('button', { name: '测试' }).first().click()

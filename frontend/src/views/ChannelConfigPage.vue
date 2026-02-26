@@ -110,7 +110,7 @@ import { useI18n } from 'vue-i18n'
 import ChannelManagementLayout from '../components/channels/ChannelManagementLayout.vue'
 import PropertyEditor from '../components/channels/PropertyEditor.vue'
 import ChannelTestSendModal from '../components/channels/ChannelTestSendModal.vue'
-import { createSender, fetchSender, fetchSenderTypes, fetchEmailProtocols, updateSender } from '../utils/senderApi'
+import { createChannel, fetchChannel, fetchChannelTypes, fetchEmailProtocols, updateChannel } from '../utils/channelApi'
 import { buildChannelTypeOptions, CHANNEL_TYPE_VALUES } from '../constants/channelTypes'
 import {
   createObjectRow,
@@ -200,7 +200,7 @@ const sectionHint = computed(() => {
 
 const loadTypes = async () => {
   try {
-    const data = await fetchSenderTypes()
+    const data = await fetchChannelTypes()
     channelTypes.value = data || []
   } catch (error) {
     channelTypes.value = CHANNEL_TYPE_VALUES
@@ -230,7 +230,7 @@ const loadChannel = async () => {
   loading.value = true
   pageError.value = ''
   try {
-    const data = await fetchSender(route.params.id)
+    const data = await fetchChannel(route.params.id)
     form.id = data.id
     form.name = data.name || ''
     form.type = data.type || ''
@@ -331,13 +331,13 @@ const saveChannel = async () => {
       properties: buildProperties()
     }
     if (isEdit.value) {
-      await updateSender(form.id, payload)
+      await updateChannel(form.id, payload)
       message.success('通道已更新')
     } else {
-      await createSender(payload)
+      await createChannel(payload)
       message.success('通道已创建')
     }
-    router.push('/senders')
+    router.push('/channels')
   } catch (error) {
     message.error(error?.message || '保存通道失败')
   } finally {
@@ -367,7 +367,7 @@ const closeTestModal = () => {
 }
 
 const goBack = () => {
-  router.push('/senders')
+  router.push('/channels')
 }
 
 onMounted(async () => {
