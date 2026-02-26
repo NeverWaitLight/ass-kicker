@@ -34,6 +34,18 @@ body {
   backdrop-filter: blur(10px);
 }
 
+html[data-theme='light'] .ant-layout-header {
+  background: #ffffff;
+  color: rgba(0, 0, 0, 0.88);
+  border-bottom: 1px solid rgba(5, 5, 5, 0.06);
+}
+
+html[data-theme='dark'] .ant-layout-header {
+  background: #141414;
+  color: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
 .brand {
   display: flex;
   flex-direction: column;
