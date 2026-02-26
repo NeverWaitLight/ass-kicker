@@ -3,9 +3,6 @@ spring:
     mongodb:
       uri: mongodb://admin:123456@localhost:27017/asskicker_test?authSource=admin
 app:
-  sender:
-    crypto:
-      secret: test-sender-secret
   test-send:
     max-requests: 5
     window: PT1M

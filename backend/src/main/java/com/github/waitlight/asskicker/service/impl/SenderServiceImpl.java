@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.model.Sender;
 import com.github.waitlight.asskicker.repository.SenderRepository;
-import com.github.waitlight.asskicker.sendercrypto.SenderPropertyCrypto;
 import com.github.waitlight.asskicker.service.SenderService;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -22,14 +21,11 @@ public class SenderServiceImpl implements SenderService {
             };
 
     private final SenderRepository senderRepository;
-    private final SenderPropertyCrypto propertyCrypto;
     private final ObjectMapper objectMapper;
 
     public SenderServiceImpl(SenderRepository senderRepository,
-                             SenderPropertyCrypto propertyCrypto,
                              ObjectMapper objectMapper) {
         this.senderRepository = senderRepository;
-        this.propertyCrypto = propertyCrypto;
         this.objectMapper = objectMapper;
     }
 
@@ -44,8 +40,7 @@ public class SenderServiceImpl implements SenderService {
         toSave.setCreatedAt(timestamp);
         toSave.setUpdatedAt(timestamp);
         Map<String, Object> properties = normalizeProperties(sender.getProperties());
-        Map<String, Object> encrypted = propertyCrypto.encryptSensitive(properties);
-        toSave.setPropertiesJson(writeProperties(encrypted));
+        toSave.setPropertiesJson(writeProperties(properties));
         return senderRepository.save(toSave)
                 .map(this::enrichSender);
     }
@@ -71,8 +66,7 @@ public class SenderServiceImpl implements SenderService {
                     existing.setDescription(sender.getDescription());
                     existing.setUpdatedAt(Instant.now().toEpochMilli());
                     Map<String, Object> properties = normalizeProperties(sender.getProperties());
-                    Map<String, Object> encrypted = propertyCrypto.encryptSensitive(properties);
-                    existing.setPropertiesJson(writeProperties(encrypted));
+                    existing.setPropertiesJson(writeProperties(properties));
                     return senderRepository.save(existing);
                 })
                 .map(this::enrichSender);
@@ -85,8 +79,7 @@ public class SenderServiceImpl implements SenderService {
 
     private Sender enrichSender(Sender sender) {
         Map<String, Object> properties = readProperties(sender.getPropertiesJson());
-        Map<String, Object> decrypted = propertyCrypto.decryptSensitive(properties);
-        sender.setProperties(decrypted);
+        sender.setProperties(properties);
         return sender;
     }
 

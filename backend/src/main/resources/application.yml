@@ -12,17 +12,6 @@ app:
       secret: change-this-secret-to-32-chars-minimum
       access-token-ttl: PT24H
       refresh-token-ttl: PT720H
-  sender:
-    crypto:
-      secret: change-this-sender-secret
-      sensitive-keys:
-        - password
-        - secret
-        - token
-        - apiKey
-        - api_key
-        - accessKey
-        - privateKey
   test-send:
     max-requests: 5
     window: PT1M
