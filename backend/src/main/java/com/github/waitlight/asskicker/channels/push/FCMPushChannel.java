@@ -2,6 +2,7 @@ package com.github.waitlight.asskicker.channels.push;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.waitlight.asskicker.channels.ChannelDebugSimulator;
 import com.github.waitlight.asskicker.channels.MsgReq;
 import com.github.waitlight.asskicker.channels.MsgResp;
 import com.google.auth.oauth2.GoogleCredentials;
@@ -27,11 +28,13 @@ public class FCMPushChannel extends PushChannel<FCMPushChannelConfig> {
     private static final String FCM_SEND_URL = "https://fcm.googleapis.com/v1/projects/%s/messages:send";
 
     private final WebClient client;
+    private final ChannelDebugSimulator debugSimulator;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public FCMPushChannel(FCMPushChannelConfig config, WebClient webClient) {
+    public FCMPushChannel(FCMPushChannelConfig config, WebClient webClient, ChannelDebugSimulator debugSimulator) {
         super(config);
         this.client = webClient;
+        this.debugSimulator = debugSimulator;
     }
 
     @Override
@@ -42,6 +45,9 @@ public class FCMPushChannel extends PushChannel<FCMPushChannelConfig> {
         String token = request.getRecipient();
         if (token == null || token.isBlank()) {
             return MsgResp.failure("INVALID_REQUEST", "FCM token is required");
+        }
+        if (debugSimulator.isEnabled()) {
+            return debugSimulator.simulate(getClass().getSimpleName());
         }
         try {
             String projectId = resolveProjectId();

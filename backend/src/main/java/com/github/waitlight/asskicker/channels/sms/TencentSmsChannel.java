@@ -2,6 +2,7 @@ package com.github.waitlight.asskicker.channels.sms;
 
 import com.github.waitlight.asskicker.channels.MsgReq;
 import com.github.waitlight.asskicker.channels.MsgResp;
+import com.github.waitlight.asskicker.channels.ChannelDebugSimulator;
 import com.tencentcloudapi.common.Credential;
 import com.tencentcloudapi.common.exception.TencentCloudSDKException;
 import com.tencentcloudapi.sms.v20210111.SmsClient;
@@ -14,8 +15,11 @@ import com.tencentcloudapi.sms.v20210111.models.SendStatus;
  */
 public class TencentSmsChannel extends SmsChannel<TencentSmsChannelConfig> {
 
-    public TencentSmsChannel(TencentSmsChannelConfig config) {
+    private final ChannelDebugSimulator debugSimulator;
+
+    public TencentSmsChannel(TencentSmsChannelConfig config, ChannelDebugSimulator debugSimulator) {
         super(config);
+        this.debugSimulator = debugSimulator;
     }
 
     @Override
@@ -28,6 +32,9 @@ public class TencentSmsChannel extends SmsChannel<TencentSmsChannelConfig> {
             return MsgResp.failure("INVALID_REQUEST", "手机号不能为空");
         }
         String content = request.getContent() != null ? request.getContent() : "";
+        if (debugSimulator.isEnabled()) {
+            return debugSimulator.simulate(getClass().getSimpleName());
+        }
         try {
             Credential credential = new Credential(config.getSecretId(), config.getSecretKey());
             SmsClient client = new SmsClient(credential, config.getRegion());

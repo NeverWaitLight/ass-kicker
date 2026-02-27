@@ -1,6 +1,7 @@
 package com.github.waitlight.asskicker.channels.push;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.waitlight.asskicker.channels.ChannelDebugSimulator;
 import com.github.waitlight.asskicker.channels.MsgReq;
 import com.github.waitlight.asskicker.channels.MsgResp;
 import io.jsonwebtoken.Jwts;
@@ -33,9 +34,11 @@ public class APNsPushChannel extends PushChannel<APNsPushChannelConfig> {
     private static final String APNS_PATH_PREFIX = "/3/device/";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ChannelDebugSimulator debugSimulator;
 
-    public APNsPushChannel(APNsPushChannelConfig config) {
+    public APNsPushChannel(APNsPushChannelConfig config, ChannelDebugSimulator debugSimulator) {
         super(config);
+        this.debugSimulator = debugSimulator;
     }
 
     @Override
@@ -46,6 +49,9 @@ public class APNsPushChannel extends PushChannel<APNsPushChannelConfig> {
         String token = request.getRecipient();
         if (token == null || token.isBlank()) {
             return MsgResp.failure("INVALID_REQUEST", "Device token is required");
+        }
+        if (debugSimulator.isEnabled()) {
+            return debugSimulator.simulate(getClass().getSimpleName());
         }
         try {
             PrivateKey key = loadPrivateKey();

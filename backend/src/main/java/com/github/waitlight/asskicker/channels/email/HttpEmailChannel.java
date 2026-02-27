@@ -11,6 +11,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import com.github.waitlight.asskicker.channels.MsgReq;
 import com.github.waitlight.asskicker.channels.MsgResp;
+import com.github.waitlight.asskicker.channels.ChannelDebugSimulator;
 
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
@@ -18,16 +19,21 @@ import reactor.util.retry.Retry;
 public class HttpEmailChannel extends EmailChannel<HttpEmailChannelConfig> {
 
     private final WebClient client;
+    private final ChannelDebugSimulator debugSimulator;
 
-    public HttpEmailChannel(HttpEmailChannelConfig config, WebClient webClient) {
+    public HttpEmailChannel(HttpEmailChannelConfig config, WebClient webClient, ChannelDebugSimulator debugSimulator) {
         super(config);
         this.client = webClient;
+        this.debugSimulator = debugSimulator;
     }
 
     @Override
     public MsgResp send(MsgReq request) {
         if (request == null) {
             return MsgResp.failure("INVALID_REQUEST", "Message request is null");
+        }
+        if (debugSimulator.isEnabled()) {
+            return debugSimulator.simulate(getClass().getSimpleName());
         }
         try {
             Map<String, Object> body = buildRequestBody(request);

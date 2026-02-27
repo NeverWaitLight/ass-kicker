@@ -11,17 +11,20 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 
 import com.github.waitlight.asskicker.channels.MsgReq;
 import com.github.waitlight.asskicker.channels.MsgResp;
+import com.github.waitlight.asskicker.channels.ChannelDebugSimulator;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
 public class SmtpEmailChannel extends EmailChannel<SmtpEmailChannelConfig> {
 
+    private final ChannelDebugSimulator debugSimulator;
     private final JavaMailSender mailSender;
 
-    public SmtpEmailChannel(SmtpEmailChannelConfig config) {
+    public SmtpEmailChannel(SmtpEmailChannelConfig config, ChannelDebugSimulator debugSimulator) {
         super(config);
-        this.mailSender = buildJavaMailChannel(config);
+        this.debugSimulator = debugSimulator;
+        this.mailSender = debugSimulator.isEnabled() ? null : buildJavaMailChannel(config);
     }
 
     private JavaMailSender buildJavaMailChannel(SmtpEmailChannelConfig config) {
@@ -51,6 +54,9 @@ public class SmtpEmailChannel extends EmailChannel<SmtpEmailChannelConfig> {
     public MsgResp send(MsgReq request) {
         if (request == null) {
             return MsgResp.failure("INVALID_REQUEST", "Message request is null");
+        }
+        if (debugSimulator.isEnabled()) {
+            return debugSimulator.simulate(getClass().getSimpleName());
         }
 
         int attempts = 0;

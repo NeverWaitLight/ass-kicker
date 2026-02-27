@@ -2,6 +2,7 @@ package com.github.waitlight.asskicker.channels.im;
 
 import com.github.waitlight.asskicker.channels.MsgReq;
 import com.github.waitlight.asskicker.channels.MsgResp;
+import com.github.waitlight.asskicker.channels.ChannelDebugSimulator;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.http.MediaType;
@@ -18,10 +19,12 @@ import java.util.Map;
 public class WechatWorkIMChannel extends IMChannel<WechatWorkIMChannelConfig> {
 
     private final WebClient client;
+    private final ChannelDebugSimulator debugSimulator;
 
-    public WechatWorkIMChannel(WechatWorkIMChannelConfig config, WebClient webClient) {
+    public WechatWorkIMChannel(WechatWorkIMChannelConfig config, WebClient webClient, ChannelDebugSimulator debugSimulator) {
         super(config);
         this.client = webClient;
+        this.debugSimulator = debugSimulator;
     }
 
     /**
@@ -35,6 +38,9 @@ public class WechatWorkIMChannel extends IMChannel<WechatWorkIMChannelConfig> {
     public MsgResp send(MsgReq request) {
         if (request == null) {
             return MsgResp.failure("INVALID_REQUEST", "Message request is null");
+        }
+        if (debugSimulator.isEnabled()) {
+            return debugSimulator.simulate(getClass().getSimpleName());
         }
         try {
             String webhookUrl = config.getWebhookUrl();

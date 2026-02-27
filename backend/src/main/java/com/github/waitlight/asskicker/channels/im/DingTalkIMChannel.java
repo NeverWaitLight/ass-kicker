@@ -2,6 +2,7 @@ package com.github.waitlight.asskicker.channels.im;
 
 import com.github.waitlight.asskicker.channels.MsgReq;
 import com.github.waitlight.asskicker.channels.MsgResp;
+import com.github.waitlight.asskicker.channels.ChannelDebugSimulator;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.http.MediaType;
@@ -17,10 +18,12 @@ import java.util.Map;
 public class DingTalkIMChannel extends IMChannel<DingTalkIMChannelConfig> {
 
     private final WebClient client;
+    private final ChannelDebugSimulator debugSimulator;
 
-    public DingTalkIMChannel(DingTalkIMChannelConfig config, WebClient webClient) {
+    public DingTalkIMChannel(DingTalkIMChannelConfig config, WebClient webClient, ChannelDebugSimulator debugSimulator) {
         super(config);
         this.client = webClient;
+        this.debugSimulator = debugSimulator;
     }
 
     /**
@@ -33,6 +36,9 @@ public class DingTalkIMChannel extends IMChannel<DingTalkIMChannelConfig> {
     public MsgResp send(MsgReq request) {
         if (request == null) {
             return MsgResp.failure("INVALID_REQUEST", "Message request is null");
+        }
+        if (debugSimulator.isEnabled()) {
+            return debugSimulator.simulate(getClass().getSimpleName());
         }
         try {
             // 使用完整的 webhookUrl（已包含 access_token）

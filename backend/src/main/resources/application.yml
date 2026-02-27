@@ -15,6 +15,11 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 app:
+  channel:
+    debug:
+      enabled: false
+      min-sleep-ms: 60
+      max-sleep-ms: 120
   security:
     jwt:
       secret: change-this-secret-to-32-chars-minimum

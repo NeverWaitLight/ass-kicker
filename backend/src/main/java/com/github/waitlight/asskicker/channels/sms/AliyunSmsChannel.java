@@ -5,6 +5,7 @@ import com.aliyun.dysmsapi20170525.models.SendSmsRequest;
 import com.aliyun.dysmsapi20170525.models.SendSmsResponse;
 import com.aliyun.dysmsapi20170525.models.SendSmsResponseBody;
 import com.aliyun.teaopenapi.models.Config;
+import com.github.waitlight.asskicker.channels.ChannelDebugSimulator;
 import com.github.waitlight.asskicker.channels.MsgReq;
 import com.github.waitlight.asskicker.channels.MsgResp;
 
@@ -16,8 +17,11 @@ import java.util.Map;
  */
 public class AliyunSmsChannel extends SmsChannel<AliyunSmsChannelConfig> {
 
-    public AliyunSmsChannel(AliyunSmsChannelConfig config) {
+    private final ChannelDebugSimulator debugSimulator;
+
+    public AliyunSmsChannel(AliyunSmsChannelConfig config, ChannelDebugSimulator debugSimulator) {
         super(config);
+        this.debugSimulator = debugSimulator;
     }
 
     @Override
@@ -30,6 +34,9 @@ public class AliyunSmsChannel extends SmsChannel<AliyunSmsChannelConfig> {
             return MsgResp.failure("INVALID_REQUEST", "手机号不能为空");
         }
         String content = request.getContent() != null ? request.getContent() : "";
+        if (debugSimulator.isEnabled()) {
+            return debugSimulator.simulate(getClass().getSimpleName());
+        }
         try {
             Config apiConfig = new Config()
                     .setAccessKeyId(config.getAccessKeyId())
