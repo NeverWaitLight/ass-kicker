@@ -8,5 +8,5 @@ public abstract class Channel<C extends ChannelConfig> {
         this.config = config;
     }
 
-    public abstract MessageResponse send(MessageRequest request);
+    public abstract MsgResp send(MsgReq request);
 }

@@ -3,12 +3,16 @@ package com.github.waitlight.asskicker.mq;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channels.ChannelConfig;
-import com.github.waitlight.asskicker.channels.MessageRequest;
-import com.github.waitlight.asskicker.channels.MessageResponse;
+import com.github.waitlight.asskicker.channels.MsgReq;
+import com.github.waitlight.asskicker.channels.MsgResp;
 import com.github.waitlight.asskicker.channels.email.EmailChannelFactory;
 import com.github.waitlight.asskicker.channels.email.EmailChannelPropertyMapper;
 import com.github.waitlight.asskicker.channels.im.IMChannelFactory;
 import com.github.waitlight.asskicker.channels.im.IMChannelPropertyMapper;
+import com.github.waitlight.asskicker.channels.push.PushChannelFactory;
+import com.github.waitlight.asskicker.channels.push.PushChannelPropertyMapper;
+import com.github.waitlight.asskicker.channels.sms.SmsChannelFactory;
+import com.github.waitlight.asskicker.channels.sms.SmsChannelPropertyMapper;
 import com.github.waitlight.asskicker.model.Channel;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.Language;
@@ -47,6 +51,10 @@ public class SendTaskConsumer {
     private final EmailChannelPropertyMapper emailChannelPropertyMapper;
     private final IMChannelFactory imChannelFactory;
     private final IMChannelPropertyMapper imChannelPropertyMapper;
+    private final PushChannelFactory pushChannelFactory;
+    private final PushChannelPropertyMapper pushChannelPropertyMapper;
+    private final SmsChannelFactory smsChannelFactory;
+    private final SmsChannelPropertyMapper smsChannelPropertyMapper;
     private final ObjectMapper objectMapper;
 
     public SendTaskConsumer(TemplateRepository templateRepository,
@@ -57,6 +65,10 @@ public class SendTaskConsumer {
                             EmailChannelPropertyMapper emailChannelPropertyMapper,
                             IMChannelFactory imChannelFactory,
                             IMChannelPropertyMapper imChannelPropertyMapper,
+                            PushChannelFactory pushChannelFactory,
+                            PushChannelPropertyMapper pushChannelPropertyMapper,
+                            SmsChannelFactory smsChannelFactory,
+                            SmsChannelPropertyMapper smsChannelPropertyMapper,
                             ObjectMapper objectMapper) {
         this.templateRepository = templateRepository;
         this.languageTemplateRepository = languageTemplateRepository;
@@ -66,6 +78,10 @@ public class SendTaskConsumer {
         this.emailChannelPropertyMapper = emailChannelPropertyMapper;
         this.imChannelFactory = imChannelFactory;
         this.imChannelPropertyMapper = imChannelPropertyMapper;
+        this.pushChannelFactory = pushChannelFactory;
+        this.pushChannelPropertyMapper = pushChannelPropertyMapper;
+        this.smsChannelFactory = smsChannelFactory;
+        this.smsChannelPropertyMapper = smsChannelPropertyMapper;
         this.objectMapper = objectMapper;
     }
 
@@ -126,25 +142,25 @@ public class SendTaskConsumer {
                                com.github.waitlight.asskicker.channels.Channel<?> sendChannel,
                                String recipient) {
         long sentAt = Instant.now().toEpochMilli();
-        MessageRequest request = MessageRequest.builder()
+        MsgReq request = MsgReq.builder()
                 .recipient(recipient)
                 .subject("")
                 .content(renderedContent)
                 .attributes(Map.of("senderType", channelEntity.getType().name()))
                 .build();
-        MessageResponse response;
+        MsgResp response;
         try {
             response = sendChannel.send(request);
         } catch (Exception ex) {
             logger.warn("Send failed taskId={} recipient={} reason={}", task.getTaskId(), recipient, ex.getMessage());
-            response = MessageResponse.failure("SEND_EXCEPTION", ex.getMessage());
+            response = MsgResp.failure("SEND_EXCEPTION", ex.getMessage());
         }
         SendRecord record = buildRecord(task, renderedContent, channelEntity, recipient, response, sentAt);
         sendRecordRepository.save(record).block();
     }
 
     private SendRecord buildRecord(SendTask task, String renderedContent, Channel channelEntity,
-                                   String recipient, MessageResponse response, long sentAt) {
+                                   String recipient, MsgResp response, long sentAt) {
         SendRecord record = new SendRecord();
         record.setTaskId(task.getTaskId());
         record.setTemplateCode(task.getTemplateCode());
@@ -209,6 +225,14 @@ public class SendTaskConsumer {
         if (type == ChannelType.IM) {
             ChannelConfig config = imChannelPropertyMapper.fromProperties(properties);
             return imChannelFactory.create(config);
+        }
+        if (type == ChannelType.PUSH) {
+            ChannelConfig config = pushChannelPropertyMapper.fromProperties(properties);
+            return pushChannelFactory.create(config);
+        }
+        if (type == ChannelType.SMS) {
+            ChannelConfig config = smsChannelPropertyMapper.fromProperties(properties);
+            return smsChannelFactory.create(config);
         }
         return null;
     }

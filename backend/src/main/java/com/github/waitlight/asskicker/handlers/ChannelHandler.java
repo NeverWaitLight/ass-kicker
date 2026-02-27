@@ -29,6 +29,7 @@ public class ChannelHandler {
     private static final String CHANNEL_TYPE_ERROR = "通道类型必须为SMS、EMAIL、IM、PUSH";
     private static final String TEST_SEND_FAILED_MESSAGE = "测试发送失败";
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+    private static final Pattern SMS_PHONE_PATTERN = Pattern.compile("^1[3-9]\\d{9}$");
 
     public ChannelHandler(ChannelService channelService) {
         this.channelService = channelService;
@@ -223,6 +224,9 @@ public class ChannelHandler {
         }
         if (input.type() == ChannelType.EMAIL && !EMAIL_PATTERN.matcher(target).matches()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "目标地址格式不正确");
+        }
+        if (input.type() == ChannelType.SMS && !SMS_PHONE_PATTERN.matcher(target).matches()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "目标手机号格式不正确");
         }
         String content = sanitizeText(input.content());
         if (content.isBlank()) {

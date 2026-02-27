@@ -9,8 +9,8 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import com.github.waitlight.asskicker.channels.MessageRequest;
-import com.github.waitlight.asskicker.channels.MessageResponse;
+import com.github.waitlight.asskicker.channels.MsgReq;
+import com.github.waitlight.asskicker.channels.MsgResp;
 
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
@@ -25,9 +25,9 @@ public class HttpEmailChannel extends EmailChannel<HttpEmailChannelConfig> {
     }
 
     @Override
-    public MessageResponse send(MessageRequest request) {
+    public MsgResp send(MsgReq request) {
         if (request == null) {
-            return MessageResponse.failure("INVALID_REQUEST", "Message request is null");
+            return MsgResp.failure("INVALID_REQUEST", "Message request is null");
         }
         try {
             Map<String, Object> body = buildRequestBody(request);
@@ -53,14 +53,14 @@ public class HttpEmailChannel extends EmailChannel<HttpEmailChannelConfig> {
                                     ex)))
                     .onErrorResume(ex -> Mono.error(new RuntimeException(ex.getMessage(), ex)))
                     .block();
-            return MessageResponse.success(messageId);
+            return MsgResp.success(messageId);
         } catch (Exception ex) {
             String errorCode = categorizeError(ex);
-            return MessageResponse.failure(errorCode, ex.getMessage());
+            return MsgResp.failure(errorCode, ex.getMessage());
         }
     }
 
-    private Map<String, Object> buildRequestBody(MessageRequest request) {
+    private Map<String, Object> buildRequestBody(MsgReq request) {
         Map<String, Object> body = new HashMap<>();
         body.put("to", String.valueOf(request.getRecipient()));
         body.put("subject", String.valueOf(request.getSubject()));

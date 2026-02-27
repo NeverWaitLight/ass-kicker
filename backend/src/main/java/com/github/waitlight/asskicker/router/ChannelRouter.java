@@ -3,7 +3,7 @@ package com.github.waitlight.asskicker.router;
 import com.github.waitlight.asskicker.dto.channel.TestSendRequest;
 import com.github.waitlight.asskicker.handlers.ChannelHandler;
 import com.github.waitlight.asskicker.model.Channel;
-import com.github.waitlight.asskicker.channels.MessageResponse;
+import com.github.waitlight.asskicker.channels.MsgResp;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -145,7 +145,7 @@ public class ChannelRouter {
                                     content = @Content(schema = @Schema(implementation = TestSendRequest.class))),
                             responses = {
                                     @ApiResponse(responseCode = "200", description = "测试发送成功",
-                                            content = @Content(schema = @Schema(implementation = MessageResponse.class))),
+                                            content = @Content(schema = @Schema(implementation = MsgResp.class))),
                                     @ApiResponse(responseCode = "400", description = "参数错误"),
                                     @ApiResponse(responseCode = "401", description = "未授权"),
                                     @ApiResponse(responseCode = "429", description = "请求过于频繁")

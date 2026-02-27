@@ -9,8 +9,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
-import com.github.waitlight.asskicker.channels.MessageRequest;
-import com.github.waitlight.asskicker.channels.MessageResponse;
+import com.github.waitlight.asskicker.channels.MsgReq;
+import com.github.waitlight.asskicker.channels.MsgResp;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -48,9 +48,9 @@ public class SmtpEmailChannel extends EmailChannel<SmtpEmailChannelConfig> {
     }
 
     @Override
-    public MessageResponse send(MessageRequest request) {
+    public MsgResp send(MsgReq request) {
         if (request == null) {
-            return MessageResponse.failure("INVALID_REQUEST", "Message request is null");
+            return MsgResp.failure("INVALID_REQUEST", "Message request is null");
         }
 
         int attempts = 0;
@@ -65,7 +65,7 @@ public class SmtpEmailChannel extends EmailChannel<SmtpEmailChannelConfig> {
                 helper.setSubject(String.valueOf(request.getSubject()));
                 helper.setText(String.valueOf(request.getContent()), false);
                 mailSender.send(message);
-                return MessageResponse.success(message.getMessageID());
+                return MsgResp.success(message.getMessageID());
             } catch (MailException | MessagingException ex) {
                 lastException = ex;
                 attempts++;
@@ -74,13 +74,13 @@ public class SmtpEmailChannel extends EmailChannel<SmtpEmailChannelConfig> {
                         Thread.sleep(config.getRetryDelay().toMillis());
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
-                        return MessageResponse.failure("MAIL_SEND_INTERRUPTED", ie.getMessage());
+                        return MsgResp.failure("MAIL_SEND_INTERRUPTED", ie.getMessage());
                     }
                 }
             }
         }
 
-        return MessageResponse.failure("MAIL_SEND_FAILED", lastException != null ? lastException.getMessage() : "Unknown error after " + attempts + " attempts");
+        return MsgResp.failure("MAIL_SEND_FAILED", lastException != null ? lastException.getMessage() : "Unknown error after " + attempts + " attempts");
     }
 
     private String resolveFrom() {

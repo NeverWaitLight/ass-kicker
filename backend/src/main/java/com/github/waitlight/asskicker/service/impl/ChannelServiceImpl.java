@@ -3,8 +3,8 @@ package com.github.waitlight.asskicker.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channels.ChannelConfig;
-import com.github.waitlight.asskicker.channels.MessageRequest;
-import com.github.waitlight.asskicker.channels.MessageResponse;
+import com.github.waitlight.asskicker.channels.MsgReq;
+import com.github.waitlight.asskicker.channels.MsgResp;
 import com.github.waitlight.asskicker.dto.channel.TestSendRequest;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.UserRole;
@@ -13,6 +13,10 @@ import com.github.waitlight.asskicker.channels.email.EmailChannelFactory;
 import com.github.waitlight.asskicker.channels.email.EmailChannelPropertyMapper;
 import com.github.waitlight.asskicker.channels.im.IMChannelFactory;
 import com.github.waitlight.asskicker.channels.im.IMChannelPropertyMapper;
+import com.github.waitlight.asskicker.channels.push.PushChannelFactory;
+import com.github.waitlight.asskicker.channels.push.PushChannelPropertyMapper;
+import com.github.waitlight.asskicker.channels.sms.SmsChannelFactory;
+import com.github.waitlight.asskicker.channels.sms.SmsChannelPropertyMapper;
 import com.github.waitlight.asskicker.model.Channel;
 import com.github.waitlight.asskicker.repository.ChannelRepository;
 import com.github.waitlight.asskicker.service.ChannelService;
@@ -45,19 +49,31 @@ public class ChannelServiceImpl implements ChannelService {
     private final EmailChannelPropertyMapper emailChannelPropertyMapper;
     private final IMChannelFactory imChannelFactory;
     private final IMChannelPropertyMapper imChannelPropertyMapper;
+    private final PushChannelFactory pushChannelFactory;
+    private final PushChannelPropertyMapper pushChannelPropertyMapper;
+    private final SmsChannelFactory smsChannelFactory;
+    private final SmsChannelPropertyMapper smsChannelPropertyMapper;
 
     public ChannelServiceImpl(ChannelRepository channelRepository,
                               ObjectMapper objectMapper,
                               EmailChannelFactory emailChannelFactory,
                               EmailChannelPropertyMapper emailChannelPropertyMapper,
                               IMChannelFactory imChannelFactory,
-                              IMChannelPropertyMapper imChannelPropertyMapper) {
+                              IMChannelPropertyMapper imChannelPropertyMapper,
+                              PushChannelFactory pushChannelFactory,
+                              PushChannelPropertyMapper pushChannelPropertyMapper,
+                              SmsChannelFactory smsChannelFactory,
+                              SmsChannelPropertyMapper smsChannelPropertyMapper) {
         this.channelRepository = channelRepository;
         this.objectMapper = objectMapper;
         this.emailChannelFactory = emailChannelFactory;
         this.emailChannelPropertyMapper = emailChannelPropertyMapper;
         this.imChannelFactory = imChannelFactory;
         this.imChannelPropertyMapper = imChannelPropertyMapper;
+        this.pushChannelFactory = pushChannelFactory;
+        this.pushChannelPropertyMapper = pushChannelPropertyMapper;
+        this.smsChannelFactory = smsChannelFactory;
+        this.smsChannelPropertyMapper = smsChannelPropertyMapper;
     }
 
     @Override
@@ -109,7 +125,7 @@ public class ChannelServiceImpl implements ChannelService {
     }
 
     @Override
-    public Mono<MessageResponse> testSend(TestSendRequest request, UserPrincipal principal) {
+    public Mono<MsgResp> testSend(TestSendRequest request, UserPrincipal principal) {
         if (principal == null) {
             return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "未授权"));
         }
@@ -133,13 +149,13 @@ public class ChannelServiceImpl implements ChannelService {
         return principal.role() == UserRole.ADMIN || principal.role() == UserRole.USER;
     }
 
-    private Mono<MessageResponse> sendWithRequest(TestSendRequest request, String protocol) {
+    private Mono<MsgResp> sendWithRequest(TestSendRequest request, String protocol) {
         return Mono.fromCallable(() -> {
             try {
                 if (request.type() == ChannelType.EMAIL) {
                     ChannelConfig config = emailChannelPropertyMapper.fromProperties(request.properties());
                     com.github.waitlight.asskicker.channels.Channel<?> channel = emailChannelFactory.create(config);
-                    MessageRequest messageRequest = MessageRequest.builder()
+                    MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
                             .subject("测试消息")
                             .content(request.content())
@@ -150,7 +166,7 @@ public class ChannelServiceImpl implements ChannelService {
                                 request.type(), protocol, channel.getClass().getSimpleName());
                         logger.info("SECURITY_TEST_SEND_EXEC type={} protocol={} target={}",
                                 request.type(), protocol, request.target());
-                        MessageResponse response = channel.send(messageRequest);
+                        MsgResp response = channel.send(messageRequest);
                         logger.info("SECURITY_TEST_SEND_PROVIDER_RESULT type={} protocol={} success={} messageId={} errorCode={}",
                                 request.type(), protocol, response.isSuccess(), response.getMessageId(), response.getErrorCode());
                         return response;
@@ -161,7 +177,7 @@ public class ChannelServiceImpl implements ChannelService {
                 if (request.type() == ChannelType.IM) {
                     ChannelConfig config = imChannelPropertyMapper.fromProperties(request.properties());
                     com.github.waitlight.asskicker.channels.Channel<?> channel = imChannelFactory.create(config);
-                    MessageRequest messageRequest = MessageRequest.builder()
+                    MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
                             .subject("测试消息")
                             .content(request.content())
@@ -172,7 +188,51 @@ public class ChannelServiceImpl implements ChannelService {
                                 request.type(), protocol, channel.getClass().getSimpleName());
                         logger.info("SECURITY_TEST_SEND_EXEC type={} protocol={} target={}",
                                 request.type(), protocol, request.target());
-                        MessageResponse response = channel.send(messageRequest);
+                        MsgResp response = channel.send(messageRequest);
+                        logger.info("SECURITY_TEST_SEND_PROVIDER_RESULT type={} protocol={} success={} messageId={} errorCode={}",
+                                request.type(), protocol, response.isSuccess(), response.getMessageId(), response.getErrorCode());
+                        return response;
+                    } finally {
+                        closeChannel(channel);
+                    }
+                }
+                if (request.type() == ChannelType.PUSH) {
+                    ChannelConfig config = pushChannelPropertyMapper.fromProperties(request.properties());
+                    com.github.waitlight.asskicker.channels.Channel<?> channel = pushChannelFactory.create(config);
+                    MsgReq messageRequest = MsgReq.builder()
+                            .recipient(request.target())
+                            .subject("测试消息")
+                            .content(request.content())
+                            .attributes(Map.of("senderType", request.type().name()))
+                            .build();
+                    try {
+                        logger.info("SECURITY_TEST_SEND_SENDER_READY type={} protocol={} sender={}",
+                                request.type(), protocol, channel.getClass().getSimpleName());
+                        logger.info("SECURITY_TEST_SEND_EXEC type={} protocol={} target={}",
+                                request.type(), protocol, request.target());
+                        MsgResp response = channel.send(messageRequest);
+                        logger.info("SECURITY_TEST_SEND_PROVIDER_RESULT type={} protocol={} success={} messageId={} errorCode={}",
+                                request.type(), protocol, response.isSuccess(), response.getMessageId(), response.getErrorCode());
+                        return response;
+                    } finally {
+                        closeChannel(channel);
+                    }
+                }
+                if (request.type() == ChannelType.SMS) {
+                    ChannelConfig config = smsChannelPropertyMapper.fromProperties(request.properties());
+                    com.github.waitlight.asskicker.channels.Channel<?> channel = smsChannelFactory.create(config);
+                    MsgReq messageRequest = MsgReq.builder()
+                            .recipient(request.target())
+                            .subject("")
+                            .content(request.content())
+                            .attributes(Map.of("senderType", request.type().name()))
+                            .build();
+                    try {
+                        logger.info("SECURITY_TEST_SEND_SENDER_READY type={} protocol={} sender={}",
+                                request.type(), protocol, channel.getClass().getSimpleName());
+                        logger.info("SECURITY_TEST_SEND_EXEC type={} protocol={} target={}",
+                                request.type(), protocol, request.target());
+                        MsgResp response = channel.send(messageRequest);
                         logger.info("SECURITY_TEST_SEND_PROVIDER_RESULT type={} protocol={} success={} messageId={} errorCode={}",
                                 request.type(), protocol, response.isSuccess(), response.getMessageId(), response.getErrorCode());
                         return response;
@@ -182,11 +242,11 @@ public class ChannelServiceImpl implements ChannelService {
                 }
                 logger.info("SECURITY_TEST_SEND_SIMULATED type={} protocol={} target={}",
                         request.type(), protocol, request.target());
-                return MessageResponse.success("SIMULATED-" + UUID.randomUUID());
+                return MsgResp.success("SIMULATED-" + UUID.randomUUID());
             } catch (ResponseStatusException ex) {
                 throw ex;
             } catch (Exception ex) {
-                return MessageResponse.failure("TEST_SEND_FAILED", ex.getMessage());
+                return MsgResp.failure("TEST_SEND_FAILED", ex.getMessage());
             }
         }).subscribeOn(Schedulers.boundedElastic());
     }
@@ -207,10 +267,13 @@ public class ChannelServiceImpl implements ChannelService {
             return "SMTP";
         }
         String upper = text.toUpperCase(Locale.ROOT);
-        if ("DINGTALK".equals(upper)) {
-            return "DINGTALK";
-        }
-        return "SMTP";
+        if ("DINGTALK".equals(upper)) return "DINGTALK";
+        if ("WECHAT_WORK".equals(upper)) return "WECHAT_WORK";
+        if ("APNS".equals(upper)) return "APNS";
+        if ("FCM".equals(upper)) return "FCM";
+        if ("ALIYUN".equals(upper)) return "ALIYUN";
+        if ("TENCENT".equals(upper)) return "TENCENT";
+        return upper;
     }
 
     private void closeChannel(com.github.waitlight.asskicker.channels.Channel<?> channel) {

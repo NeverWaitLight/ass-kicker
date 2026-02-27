@@ -7,7 +7,7 @@ import java.util.Map;
 
 @Data
 @Builder
-public class MessageRequest {
+public class MsgReq {
 
     private String recipient;
     private String subject;

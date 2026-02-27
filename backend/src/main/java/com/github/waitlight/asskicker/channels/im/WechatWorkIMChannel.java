@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.channels.im;
 
-import com.github.waitlight.asskicker.channels.MessageRequest;
-import com.github.waitlight.asskicker.channels.MessageResponse;
+import com.github.waitlight.asskicker.channels.MsgReq;
+import com.github.waitlight.asskicker.channels.MsgResp;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.http.MediaType;
@@ -32,9 +32,9 @@ public class WechatWorkIMChannel extends IMChannel<WechatWorkIMChannelConfig> {
      * @return 发送结果
      */
     @Override
-    public MessageResponse send(MessageRequest request) {
+    public MsgResp send(MsgReq request) {
         if (request == null) {
-            return MessageResponse.failure("INVALID_REQUEST", "Message request is null");
+            return MsgResp.failure("INVALID_REQUEST", "Message request is null");
         }
         try {
             String webhookUrl = config.getWebhookUrl();
@@ -65,18 +65,18 @@ public class WechatWorkIMChannel extends IMChannel<WechatWorkIMChannelConfig> {
                     .block();
 
             if (response != null && response.getErrcode() == 0) {
-                return MessageResponse.success(response.getErrmsg() != null ? response.getErrmsg() : "ok");
+                return MsgResp.success(response.getErrmsg() != null ? response.getErrmsg() : "ok");
             } else if (response != null) {
-                return MessageResponse.failure("WECHAT_WORK_API_ERROR", response.getErrmsg());
+                return MsgResp.failure("WECHAT_WORK_API_ERROR", response.getErrmsg());
             }
-            return MessageResponse.failure("WECHAT_WORK_API_ERROR", "企业微信 API 返回空响应");
+            return MsgResp.failure("WECHAT_WORK_API_ERROR", "企业微信 API 返回空响应");
         } catch (Exception ex) {
             String errorCode = categorizeError(ex);
-            return MessageResponse.failure(errorCode, ex.getMessage());
+            return MsgResp.failure(errorCode, ex.getMessage());
         }
     }
 
-    private String buildMessageContent(MessageRequest request) {
+    private String buildMessageContent(MsgReq request) {
         StringBuilder content = new StringBuilder();
         if (request.getSubject() != null && !request.getSubject().isBlank()) {
             content.append("【").append(request.getSubject()).append("】\n");

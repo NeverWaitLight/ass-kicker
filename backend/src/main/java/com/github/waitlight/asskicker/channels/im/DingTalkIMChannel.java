@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.channels.im;
 
-import com.github.waitlight.asskicker.channels.MessageRequest;
-import com.github.waitlight.asskicker.channels.MessageResponse;
+import com.github.waitlight.asskicker.channels.MsgReq;
+import com.github.waitlight.asskicker.channels.MsgResp;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.http.MediaType;
@@ -30,9 +30,9 @@ public class DingTalkIMChannel extends IMChannel<DingTalkIMChannelConfig> {
      * @return 发送结果
      */
     @Override
-    public MessageResponse send(MessageRequest request) {
+    public MsgResp send(MsgReq request) {
         if (request == null) {
-            return MessageResponse.failure("INVALID_REQUEST", "Message request is null");
+            return MsgResp.failure("INVALID_REQUEST", "Message request is null");
         }
         try {
             // 使用完整的 webhookUrl（已包含 access_token）
@@ -63,21 +63,21 @@ public class DingTalkIMChannel extends IMChannel<DingTalkIMChannelConfig> {
                     .block();
 
             if (response != null && response.getErrcode() == 0) {
-                return MessageResponse.success(response.getMsgId());
+                return MsgResp.success(response.getMsgId());
             } else if (response != null) {
-                return MessageResponse.failure("DINGTALK_API_ERROR", response.getErrmsg());
+                return MsgResp.failure("DINGTALK_API_ERROR", response.getErrmsg());
             }
-            return MessageResponse.failure("DINGTALK_API_ERROR", "钉钉 API 返回空响应");
+            return MsgResp.failure("DINGTALK_API_ERROR", "钉钉 API 返回空响应");
         } catch (Exception ex) {
             String errorCode = categorizeError(ex);
-            return MessageResponse.failure(errorCode, ex.getMessage());
+            return MsgResp.failure(errorCode, ex.getMessage());
         }
     }
 
     /**
      * 构建消息内容
      */
-    private String buildMessageContent(MessageRequest request) {
+    private String buildMessageContent(MsgReq request) {
         StringBuilder content = new StringBuilder();
 
         // 添加主题（如果有）
