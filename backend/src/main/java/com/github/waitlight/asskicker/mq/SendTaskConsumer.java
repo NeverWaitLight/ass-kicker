@@ -6,13 +6,13 @@ import com.github.waitlight.asskicker.channels.ChannelConfig;
 import com.github.waitlight.asskicker.channels.MsgReq;
 import com.github.waitlight.asskicker.channels.MsgResp;
 import com.github.waitlight.asskicker.channels.email.EmailChannelFactory;
-import com.github.waitlight.asskicker.channels.email.EmailChannelPropertyMapper;
+import com.github.waitlight.asskicker.channels.email.EmailChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.im.IMChannelFactory;
-import com.github.waitlight.asskicker.channels.im.IMChannelPropertyMapper;
+import com.github.waitlight.asskicker.channels.im.IMChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.push.PushChannelFactory;
-import com.github.waitlight.asskicker.channels.push.PushChannelPropertyMapper;
+import com.github.waitlight.asskicker.channels.push.PushChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.sms.SmsChannelFactory;
-import com.github.waitlight.asskicker.channels.sms.SmsChannelPropertyMapper;
+import com.github.waitlight.asskicker.channels.sms.SmsChannelConfigConverter;
 import com.github.waitlight.asskicker.model.Channel;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.Language;
@@ -48,13 +48,13 @@ public class SendTaskConsumer {
     private final ChannelRepository channelRepository;
     private final SendRecordRepository sendRecordRepository;
     private final EmailChannelFactory emailChannelFactory;
-    private final EmailChannelPropertyMapper emailChannelPropertyMapper;
+    private final EmailChannelConfigConverter emailChannelConfigConverter;
     private final IMChannelFactory imChannelFactory;
-    private final IMChannelPropertyMapper imChannelPropertyMapper;
+    private final IMChannelConfigConverter imChannelConfigConverter;
     private final PushChannelFactory pushChannelFactory;
-    private final PushChannelPropertyMapper pushChannelPropertyMapper;
+    private final PushChannelConfigConverter pushChannelConfigConverter;
     private final SmsChannelFactory smsChannelFactory;
-    private final SmsChannelPropertyMapper smsChannelPropertyMapper;
+    private final SmsChannelConfigConverter smsChannelConfigConverter;
     private final ObjectMapper objectMapper;
 
     public SendTaskConsumer(TemplateRepository templateRepository,
@@ -62,26 +62,26 @@ public class SendTaskConsumer {
                             ChannelRepository channelRepository,
                             SendRecordRepository sendRecordRepository,
                             EmailChannelFactory emailChannelFactory,
-                            EmailChannelPropertyMapper emailChannelPropertyMapper,
+                            EmailChannelConfigConverter emailChannelConfigConverter,
                             IMChannelFactory imChannelFactory,
-                            IMChannelPropertyMapper imChannelPropertyMapper,
+                            IMChannelConfigConverter imChannelConfigConverter,
                             PushChannelFactory pushChannelFactory,
-                            PushChannelPropertyMapper pushChannelPropertyMapper,
+                            PushChannelConfigConverter pushChannelConfigConverter,
                             SmsChannelFactory smsChannelFactory,
-                            SmsChannelPropertyMapper smsChannelPropertyMapper,
+                            SmsChannelConfigConverter smsChannelConfigConverter,
                             ObjectMapper objectMapper) {
         this.templateRepository = templateRepository;
         this.languageTemplateRepository = languageTemplateRepository;
         this.channelRepository = channelRepository;
         this.sendRecordRepository = sendRecordRepository;
         this.emailChannelFactory = emailChannelFactory;
-        this.emailChannelPropertyMapper = emailChannelPropertyMapper;
+        this.emailChannelConfigConverter = emailChannelConfigConverter;
         this.imChannelFactory = imChannelFactory;
-        this.imChannelPropertyMapper = imChannelPropertyMapper;
+        this.imChannelConfigConverter = imChannelConfigConverter;
         this.pushChannelFactory = pushChannelFactory;
-        this.pushChannelPropertyMapper = pushChannelPropertyMapper;
+        this.pushChannelConfigConverter = pushChannelConfigConverter;
         this.smsChannelFactory = smsChannelFactory;
-        this.smsChannelPropertyMapper = smsChannelPropertyMapper;
+        this.smsChannelConfigConverter = smsChannelConfigConverter;
         this.objectMapper = objectMapper;
     }
 
@@ -219,19 +219,19 @@ public class SendTaskConsumer {
         ChannelType type = channelEntity.getType();
         Map<String, Object> properties = readProperties(channelEntity.getPropertiesJson());
         if (type == ChannelType.EMAIL) {
-            ChannelConfig config = emailChannelPropertyMapper.fromProperties(properties);
+            ChannelConfig config = emailChannelConfigConverter.fromProperties(properties);
             return emailChannelFactory.create(config);
         }
         if (type == ChannelType.IM) {
-            ChannelConfig config = imChannelPropertyMapper.fromProperties(properties);
+            ChannelConfig config = imChannelConfigConverter.fromProperties(properties);
             return imChannelFactory.create(config);
         }
         if (type == ChannelType.PUSH) {
-            ChannelConfig config = pushChannelPropertyMapper.fromProperties(properties);
+            ChannelConfig config = pushChannelConfigConverter.fromProperties(properties);
             return pushChannelFactory.create(config);
         }
         if (type == ChannelType.SMS) {
-            ChannelConfig config = smsChannelPropertyMapper.fromProperties(properties);
+            ChannelConfig config = smsChannelConfigConverter.fromProperties(properties);
             return smsChannelFactory.create(config);
         }
         return null;

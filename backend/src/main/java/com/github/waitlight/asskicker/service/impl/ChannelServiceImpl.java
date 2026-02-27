@@ -10,13 +10,13 @@ import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.channels.email.EmailChannelFactory;
-import com.github.waitlight.asskicker.channels.email.EmailChannelPropertyMapper;
+import com.github.waitlight.asskicker.channels.email.EmailChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.im.IMChannelFactory;
-import com.github.waitlight.asskicker.channels.im.IMChannelPropertyMapper;
+import com.github.waitlight.asskicker.channels.im.IMChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.push.PushChannelFactory;
-import com.github.waitlight.asskicker.channels.push.PushChannelPropertyMapper;
+import com.github.waitlight.asskicker.channels.push.PushChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.sms.SmsChannelFactory;
-import com.github.waitlight.asskicker.channels.sms.SmsChannelPropertyMapper;
+import com.github.waitlight.asskicker.channels.sms.SmsChannelConfigConverter;
 import com.github.waitlight.asskicker.model.Channel;
 import com.github.waitlight.asskicker.repository.ChannelRepository;
 import com.github.waitlight.asskicker.service.ChannelService;
@@ -46,34 +46,34 @@ public class ChannelServiceImpl implements ChannelService {
     private final ChannelRepository channelRepository;
     private final ObjectMapper objectMapper;
     private final EmailChannelFactory emailChannelFactory;
-    private final EmailChannelPropertyMapper emailChannelPropertyMapper;
+    private final EmailChannelConfigConverter emailChannelConfigConverter;
     private final IMChannelFactory imChannelFactory;
-    private final IMChannelPropertyMapper imChannelPropertyMapper;
+    private final IMChannelConfigConverter imChannelConfigConverter;
     private final PushChannelFactory pushChannelFactory;
-    private final PushChannelPropertyMapper pushChannelPropertyMapper;
+    private final PushChannelConfigConverter pushChannelConfigConverter;
     private final SmsChannelFactory smsChannelFactory;
-    private final SmsChannelPropertyMapper smsChannelPropertyMapper;
+    private final SmsChannelConfigConverter smsChannelConfigConverter;
 
     public ChannelServiceImpl(ChannelRepository channelRepository,
                               ObjectMapper objectMapper,
                               EmailChannelFactory emailChannelFactory,
-                              EmailChannelPropertyMapper emailChannelPropertyMapper,
+                              EmailChannelConfigConverter emailChannelConfigConverter,
                               IMChannelFactory imChannelFactory,
-                              IMChannelPropertyMapper imChannelPropertyMapper,
+                              IMChannelConfigConverter imChannelConfigConverter,
                               PushChannelFactory pushChannelFactory,
-                              PushChannelPropertyMapper pushChannelPropertyMapper,
+                              PushChannelConfigConverter pushChannelConfigConverter,
                               SmsChannelFactory smsChannelFactory,
-                              SmsChannelPropertyMapper smsChannelPropertyMapper) {
+                              SmsChannelConfigConverter smsChannelConfigConverter) {
         this.channelRepository = channelRepository;
         this.objectMapper = objectMapper;
         this.emailChannelFactory = emailChannelFactory;
-        this.emailChannelPropertyMapper = emailChannelPropertyMapper;
+        this.emailChannelConfigConverter = emailChannelConfigConverter;
         this.imChannelFactory = imChannelFactory;
-        this.imChannelPropertyMapper = imChannelPropertyMapper;
+        this.imChannelConfigConverter = imChannelConfigConverter;
         this.pushChannelFactory = pushChannelFactory;
-        this.pushChannelPropertyMapper = pushChannelPropertyMapper;
+        this.pushChannelConfigConverter = pushChannelConfigConverter;
         this.smsChannelFactory = smsChannelFactory;
-        this.smsChannelPropertyMapper = smsChannelPropertyMapper;
+        this.smsChannelConfigConverter = smsChannelConfigConverter;
     }
 
     @Override
@@ -153,7 +153,7 @@ public class ChannelServiceImpl implements ChannelService {
         return Mono.fromCallable(() -> {
             try {
                 if (request.type() == ChannelType.EMAIL) {
-                    ChannelConfig config = emailChannelPropertyMapper.fromProperties(request.properties());
+                    ChannelConfig config = emailChannelConfigConverter.fromProperties(request.properties());
                     com.github.waitlight.asskicker.channels.Channel<?> channel = emailChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
@@ -175,7 +175,7 @@ public class ChannelServiceImpl implements ChannelService {
                     }
                 }
                 if (request.type() == ChannelType.IM) {
-                    ChannelConfig config = imChannelPropertyMapper.fromProperties(request.properties());
+                    ChannelConfig config = imChannelConfigConverter.fromProperties(request.properties());
                     com.github.waitlight.asskicker.channels.Channel<?> channel = imChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
@@ -197,7 +197,7 @@ public class ChannelServiceImpl implements ChannelService {
                     }
                 }
                 if (request.type() == ChannelType.PUSH) {
-                    ChannelConfig config = pushChannelPropertyMapper.fromProperties(request.properties());
+                    ChannelConfig config = pushChannelConfigConverter.fromProperties(request.properties());
                     com.github.waitlight.asskicker.channels.Channel<?> channel = pushChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
@@ -219,7 +219,7 @@ public class ChannelServiceImpl implements ChannelService {
                     }
                 }
                 if (request.type() == ChannelType.SMS) {
-                    ChannelConfig config = smsChannelPropertyMapper.fromProperties(request.properties());
+                    ChannelConfig config = smsChannelConfigConverter.fromProperties(request.properties());
                     com.github.waitlight.asskicker.channels.Channel<?> channel = smsChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
