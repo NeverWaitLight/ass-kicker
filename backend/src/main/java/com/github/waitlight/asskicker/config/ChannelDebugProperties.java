@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 @Validated
-@ConfigurationProperties(prefix = "app.channel.debug")
+@ConfigurationProperties(prefix = "ass-kicker.channel.debug")
 public class ChannelDebugProperties {
 
     private boolean enabled = false;
@@ -41,7 +41,7 @@ public class ChannelDebugProperties {
         this.maxSleepMs = maxSleepMs;
     }
 
-    @AssertTrue(message = "app.channel.debug.max-sleep-ms must be greater than or equal to min-sleep-ms")
+    @AssertTrue(message = "ass-kicker.channel.debug.max-sleep-ms must be greater than or equal to min-sleep-ms")
     public boolean isSleepRangeValid() {
         return maxSleepMs >= minSleepMs;
     }

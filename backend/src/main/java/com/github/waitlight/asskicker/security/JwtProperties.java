@@ -8,7 +8,7 @@ import org.springframework.validation.annotation.Validated;
 import java.time.Duration;
 
 @Validated
-@ConfigurationProperties(prefix = "app.security.jwt")
+@ConfigurationProperties(prefix = "ass-kicker.security.jwt")
 public class JwtProperties {
 
     @NotBlank
