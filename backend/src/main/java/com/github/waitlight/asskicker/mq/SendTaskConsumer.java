@@ -5,19 +5,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channels.ChannelConfig;
 import com.github.waitlight.asskicker.channels.MsgReq;
 import com.github.waitlight.asskicker.channels.MsgResp;
-import com.github.waitlight.asskicker.channels.email.EmailChannelFactory;
 import com.github.waitlight.asskicker.channels.email.EmailChannelConfigConverter;
-import com.github.waitlight.asskicker.channels.im.IMChannelFactory;
+import com.github.waitlight.asskicker.channels.email.EmailChannelFactory;
 import com.github.waitlight.asskicker.channels.im.IMChannelConfigConverter;
-import com.github.waitlight.asskicker.channels.push.PushChannelFactory;
+import com.github.waitlight.asskicker.channels.im.IMChannelFactory;
 import com.github.waitlight.asskicker.channels.push.PushChannelConfigConverter;
-import com.github.waitlight.asskicker.channels.sms.SmsChannelFactory;
+import com.github.waitlight.asskicker.channels.push.PushChannelFactory;
 import com.github.waitlight.asskicker.channels.sms.SmsChannelConfigConverter;
+import com.github.waitlight.asskicker.channels.sms.SmsChannelFactory;
 import com.github.waitlight.asskicker.model.Channel;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.LanguageTemplate;
 import com.github.waitlight.asskicker.model.SendRecord;
+import com.github.waitlight.asskicker.model.SendRecordStatus;
 import com.github.waitlight.asskicker.model.SendTask;
 import com.github.waitlight.asskicker.model.Template;
 import com.github.waitlight.asskicker.repository.ChannelRepository;
@@ -26,18 +27,26 @@ import com.github.waitlight.asskicker.repository.SendRecordRepository;
 import com.github.waitlight.asskicker.repository.TemplateRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
-public class SendTaskConsumer {
+public class SendTaskConsumer implements DisposableBean {
 
     private static final Logger logger = LoggerFactory.getLogger(SendTaskConsumer.class);
     private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE = new TypeReference<>() {};
@@ -56,6 +65,8 @@ public class SendTaskConsumer {
     private final SmsChannelFactory smsChannelFactory;
     private final SmsChannelConfigConverter smsChannelConfigConverter;
     private final ObjectMapper objectMapper;
+    private final ExecutorService taskExecutor;
+    private final ExecutorService auditExecutor;
 
     public SendTaskConsumer(TemplateRepository templateRepository,
                             LanguageTemplateRepository languageTemplateRepository,
@@ -70,6 +81,27 @@ public class SendTaskConsumer {
                             SmsChannelFactory smsChannelFactory,
                             SmsChannelConfigConverter smsChannelConfigConverter,
                             ObjectMapper objectMapper) {
+        this(templateRepository, languageTemplateRepository, channelRepository, sendRecordRepository,
+                emailChannelFactory, emailChannelConfigConverter, imChannelFactory, imChannelConfigConverter,
+                pushChannelFactory, pushChannelConfigConverter, smsChannelFactory, smsChannelConfigConverter,
+                objectMapper, Executors.newVirtualThreadPerTaskExecutor(), Executors.newVirtualThreadPerTaskExecutor());
+    }
+
+    SendTaskConsumer(TemplateRepository templateRepository,
+                     LanguageTemplateRepository languageTemplateRepository,
+                     ChannelRepository channelRepository,
+                     SendRecordRepository sendRecordRepository,
+                     EmailChannelFactory emailChannelFactory,
+                     EmailChannelConfigConverter emailChannelConfigConverter,
+                     IMChannelFactory imChannelFactory,
+                     IMChannelConfigConverter imChannelConfigConverter,
+                     PushChannelFactory pushChannelFactory,
+                     PushChannelConfigConverter pushChannelConfigConverter,
+                     SmsChannelFactory smsChannelFactory,
+                     SmsChannelConfigConverter smsChannelConfigConverter,
+                     ObjectMapper objectMapper,
+                     ExecutorService taskExecutor,
+                     ExecutorService auditExecutor) {
         this.templateRepository = templateRepository;
         this.languageTemplateRepository = languageTemplateRepository;
         this.channelRepository = channelRepository;
@@ -83,6 +115,8 @@ public class SendTaskConsumer {
         this.smsChannelFactory = smsChannelFactory;
         this.smsChannelConfigConverter = smsChannelConfigConverter;
         this.objectMapper = objectMapper;
+        this.taskExecutor = taskExecutor;
+        this.auditExecutor = auditExecutor;
     }
 
     @KafkaListener(topics = KafkaConfig.SEND_TASKS_TOPIC, containerFactory = "sendTaskListenerContainerFactory")
@@ -91,57 +125,108 @@ public class SendTaskConsumer {
             logger.warn("SendTaskConsumer ignored null or empty task");
             return;
         }
-        logger.info("SendTaskConsumer processing taskId={}", task.getTaskId());
+        try {
+            taskExecutor.submit(() -> processTask(task));
+        } catch (RejectedExecutionException ex) {
+            logger.error("SendTaskConsumer rejected taskId={} reason={}", task.getTaskId(), ex.getMessage());
+            markRecipientsFailedAsync(task, null, null, fallbackRecipients(task.getRecipients()),
+                    "TASK_REJECTED", messageOrDefault(ex.getMessage(), "Task executor rejected task"));
+        }
+    }
+
+    private void processTask(SendTask task) {
+        long taskStartedAt = Instant.now().toEpochMilli();
+        List<String> recipients = normalizeRecipients(task.getRecipients());
+        List<String> failureRecipients = recipients.isEmpty() ? Collections.singletonList(null) : recipients;
+        logExecutionAsync("SEND_TASK_RECEIVED", task.getTaskId(), null, null, SendRecordStatus.PENDING, null, null, 0L);
         try {
             Template template = templateRepository.findByCode(task.getTemplateCode()).block();
             if (template == null) {
-                writeFailureRecord(task, null, null, "TEMPLATE_NOT_FOUND", "模板不存在: " + task.getTemplateCode());
+                markRecipientsFailedAsync(task, null, null, failureRecipients,
+                        "TEMPLATE_NOT_FOUND", "Template not found: " + task.getTemplateCode());
                 return;
             }
+
             Language language;
             try {
                 language = Language.fromCode(task.getLanguageCode());
-            } catch (IllegalArgumentException e) {
-                writeFailureRecord(task, null, null, "INVALID_LANGUAGE", e.getMessage());
+            } catch (IllegalArgumentException ex) {
+                markRecipientsFailedAsync(task, null, null, failureRecipients, "INVALID_LANGUAGE", ex.getMessage());
                 return;
             }
+
             LanguageTemplate langTemplate = languageTemplateRepository
                     .findByTemplateIdAndLanguage(template.getId(), language).block();
             if (langTemplate == null) {
-                writeFailureRecord(task, null, null, "LANGUAGE_TEMPLATE_NOT_FOUND", "语言模板不存在");
+                markRecipientsFailedAsync(task, null, null, failureRecipients,
+                        "LANGUAGE_TEMPLATE_NOT_FOUND", "Language template not found");
                 return;
             }
             String renderedContent = render(langTemplate.getContent(), task.getParams());
 
             Channel channelEntity = channelRepository.findById(task.getChannelId()).block();
             if (channelEntity == null) {
-                writeFailureRecord(task, renderedContent, null, "CHANNEL_NOT_FOUND", "通道不存在: " + task.getChannelId());
+                markRecipientsFailedAsync(task, renderedContent, null, failureRecipients,
+                        "CHANNEL_NOT_FOUND", "Channel not found: " + task.getChannelId());
                 return;
             }
+            if (recipients.isEmpty()) {
+                markRecipientsFailedAsync(task, renderedContent, channelEntity, failureRecipients,
+                        "RECIPIENTS_EMPTY", "No valid recipients provided");
+                return;
+            }
+
             com.github.waitlight.asskicker.channels.Channel<?> sendChannel = createChannel(channelEntity);
             if (sendChannel == null) {
-                writeFailureRecord(task, renderedContent, channelEntity.getName(), "CHANNEL_CREATE_FAILED", "不支持的通道类型: " + channelEntity.getType());
+                markRecipientsFailedAsync(task, renderedContent, channelEntity, failureRecipients,
+                        "CHANNEL_CREATE_FAILED", "Unsupported channel type: " + channelEntity.getType());
                 return;
             }
+
             try {
-                List<String> recipients = task.getRecipients() != null ? task.getRecipients() : List.of();
                 for (String recipient : recipients) {
-                    sendAndRecord(task, renderedContent, channelEntity, sendChannel, recipient);
+                    processRecipient(task, renderedContent, channelEntity, sendChannel, recipient);
                 }
             } finally {
                 closeChannel(sendChannel);
             }
         } catch (Exception ex) {
-            logger.error("SendTaskConsumer failed taskId={}", task.getTaskId(), ex);
-            writeFailureRecord(task, null, null, "CONSUMER_ERROR", ex.getMessage());
+            markRecipientsFailedAsync(task, null, null, failureRecipients,
+                    "CONSUMER_ERROR", messageOrDefault(ex.getMessage(), "Consumer execution failed"));
+        } finally {
+            long durationMs = Math.max(0L, Instant.now().toEpochMilli() - taskStartedAt);
+            logExecutionAsync("SEND_TASK_FINISHED", task.getTaskId(), null, null, SendRecordStatus.PENDING, null, null, durationMs);
         }
     }
 
-    private void sendAndRecord(SendTask task, String renderedContent,
-                               Channel channelEntity,
-                               com.github.waitlight.asskicker.channels.Channel<?> sendChannel,
-                               String recipient) {
+    private void processRecipient(SendTask task, String renderedContent,
+                                  Channel channelEntity,
+                                  com.github.waitlight.asskicker.channels.Channel<?> sendChannel,
+                                  String recipient) {
+        long sendStartedAt = Instant.now().toEpochMilli();
+        CompletableFuture<String> pendingRecordFuture = createPendingRecordAsync(task, renderedContent, channelEntity, recipient);
+        MsgResp response = sendMessage(task, renderedContent, channelEntity, sendChannel, recipient, sendStartedAt);
+        SendRecordStatus finalStatus = response.isSuccess() ? SendRecordStatus.SUCCESS : SendRecordStatus.FAILED;
         long sentAt = Instant.now().toEpochMilli();
+
+        pendingRecordFuture.whenComplete((recordId, pendingEx) -> {
+            if (pendingEx != null) {
+                logExecutionAsync("SEND_RECORD_PENDING_FAILED", task.getTaskId(), null, recipient, SendRecordStatus.FAILED,
+                        "PENDING_RECORD_CREATE_FAILED",
+                        messageOrDefault(pendingEx.getMessage(), "Failed to create pending record"),
+                        Math.max(0L, sentAt - sendStartedAt));
+                return;
+            }
+            updateRecordStatusAsync(task.getTaskId(), recordId, recipient, finalStatus,
+                    response.getErrorCode(), response.getErrorMessage(), sentAt, sendStartedAt);
+        });
+    }
+
+    private MsgResp sendMessage(SendTask task, String renderedContent,
+                                Channel channelEntity,
+                                com.github.waitlight.asskicker.channels.Channel<?> sendChannel,
+                                String recipient,
+                                long sendStartedAt) {
         MsgReq request = MsgReq.builder()
                 .recipient(recipient)
                 .subject("")
@@ -152,15 +237,54 @@ public class SendTaskConsumer {
         try {
             response = sendChannel.send(request);
         } catch (Exception ex) {
-            logger.warn("Send failed taskId={} recipient={} reason={}", task.getTaskId(), recipient, ex.getMessage());
-            response = MsgResp.failure("SEND_EXCEPTION", ex.getMessage());
+            response = MsgResp.failure("SEND_EXCEPTION", messageOrDefault(ex.getMessage(), "Send failed"));
         }
-        SendRecord record = buildRecord(task, renderedContent, channelEntity, recipient, response, sentAt);
-        sendRecordRepository.save(record).block();
+        SendRecordStatus status = response.isSuccess() ? SendRecordStatus.SUCCESS : SendRecordStatus.FAILED;
+        long durationMs = Math.max(0L, Instant.now().toEpochMilli() - sendStartedAt);
+        logExecutionAsync("SEND_RESULT", task.getTaskId(), null, recipient, status,
+                response.getErrorCode(), response.getErrorMessage(), durationMs);
+        return response;
     }
 
-    private SendRecord buildRecord(SendTask task, String renderedContent, Channel channelEntity,
-                                   String recipient, MsgResp response, long sentAt) {
+    private void markRecipientsFailedAsync(SendTask task,
+                                           String renderedContent,
+                                           Channel channelEntity,
+                                           List<String> recipients,
+                                           String errorCode,
+                                           String errorMessage) {
+        for (String recipient : recipients) {
+            long failedAt = Instant.now().toEpochMilli();
+            CompletableFuture<String> pendingRecordFuture = createPendingRecordAsync(task, renderedContent, channelEntity, recipient);
+            pendingRecordFuture.whenComplete((recordId, pendingEx) -> {
+                if (pendingEx != null) {
+                    logExecutionAsync("SEND_RECORD_PENDING_FAILED", task.getTaskId(), null, recipient, SendRecordStatus.FAILED,
+                            errorCode, messageOrDefault(pendingEx.getMessage(), errorMessage), 0L);
+                    return;
+                }
+                updateRecordStatusAsync(task.getTaskId(), recordId, recipient, SendRecordStatus.FAILED,
+                        errorCode, errorMessage, failedAt, 0L);
+            });
+            logExecutionAsync("SEND_RESULT", task.getTaskId(), null, recipient, SendRecordStatus.FAILED, errorCode, errorMessage, 0L);
+        }
+    }
+
+    private CompletableFuture<String> createPendingRecordAsync(SendTask task,
+                                                               String renderedContent,
+                                                               Channel channelEntity,
+                                                               String recipient) {
+        return CompletableFuture.supplyAsync(() -> {
+            SendRecord record = buildPendingRecord(task, renderedContent, channelEntity, recipient);
+            SendRecord saved = sendRecordRepository.save(record).block();
+            if (saved == null || saved.getId() == null) {
+                throw new IllegalStateException("Failed to create pending send record");
+            }
+            logExecution("SEND_RECORD_PENDING_CREATED", task.getTaskId(), saved.getId(), recipient,
+                    SendRecordStatus.PENDING, null, null, 0L);
+            return saved.getId();
+        }, auditExecutor);
+    }
+
+    private SendRecord buildPendingRecord(SendTask task, String renderedContent, Channel channelEntity, String recipient) {
         SendRecord record = new SendRecord();
         record.setTaskId(task.getTaskId());
         record.setTemplateCode(task.getTemplateCode());
@@ -171,38 +295,106 @@ public class SendTaskConsumer {
         record.setRecipient(recipient);
         record.setSubmittedAt(task.getSubmittedAt());
         record.setRenderedContent(renderedContent);
-        record.setChannelType(channelEntity.getType());
-        record.setChannelName(channelEntity.getName());
-        record.setSuccess(response.isSuccess());
-        record.setErrorCode(response.getErrorCode());
-        record.setErrorMessage(response.getErrorMessage());
-        record.setSentAt(sentAt);
+        record.setChannelType(channelEntity != null ? channelEntity.getType() : null);
+        record.setChannelName(channelEntity != null ? channelEntity.getName() : null);
+        record.setStatus(SendRecordStatus.PENDING);
+        record.setErrorCode(null);
+        record.setErrorMessage(null);
+        record.setSentAt(null);
         return record;
     }
 
-    private void writeFailureRecord(SendTask task, String renderedContent, String channelName,
-                                    String errorCode, String errorMessage) {
-        SendRecord record = new SendRecord();
-        record.setTaskId(task.getTaskId());
-        record.setTemplateCode(task.getTemplateCode());
-        record.setLanguageCode(task.getLanguageCode());
-        record.setParams(task.getParams());
-        record.setChannelId(task.getChannelId());
-        record.setRecipients(task.getRecipients());
-        record.setRecipient(task.getRecipients() != null && !task.getRecipients().isEmpty() ? task.getRecipients().get(0) : null);
-        record.setSubmittedAt(task.getSubmittedAt());
-        record.setRenderedContent(renderedContent);
-        record.setChannelName(channelName);
-        record.setSuccess(false);
-        record.setErrorCode(errorCode);
-        record.setErrorMessage(errorMessage);
-        record.setSentAt(Instant.now().toEpochMilli());
-        sendRecordRepository.save(record).block();
+    private void updateRecordStatusAsync(String taskId,
+                                         String recordId,
+                                         String recipient,
+                                         SendRecordStatus status,
+                                         String errorCode,
+                                         String errorMessage,
+                                         long sentAt,
+                                         long startedAt) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                SendRecord record = sendRecordRepository.findById(recordId).block();
+                if (record == null) {
+                    logExecution("SEND_RECORD_NOT_FOUND", taskId, recordId, recipient, SendRecordStatus.FAILED,
+                            "RECORD_NOT_FOUND", "Send record not found", 0L);
+                    return;
+                }
+                record.setStatus(status);
+                if (status == SendRecordStatus.SUCCESS) {
+                    record.setErrorCode(null);
+                    record.setErrorMessage(null);
+                } else {
+                    record.setErrorCode(errorCode);
+                    record.setErrorMessage(errorMessage);
+                }
+                record.setSentAt(sentAt);
+                sendRecordRepository.save(record).block();
+                long durationMs = startedAt == 0L ? 0L : Math.max(0L, sentAt - startedAt);
+                logExecution("SEND_RECORD_STATUS_UPDATED", taskId, recordId, recipient, status,
+                        record.getErrorCode(), record.getErrorMessage(), durationMs);
+            } catch (Exception ex) {
+                logExecution("SEND_RECORD_STATUS_UPDATE_FAILED", taskId, recordId, recipient, SendRecordStatus.FAILED,
+                        "STATUS_UPDATE_FAILED", messageOrDefault(ex.getMessage(), "Failed to update send record"), 0L);
+            }
+        }, auditExecutor);
+    }
+
+    private void logExecutionAsync(String event,
+                                   String taskId,
+                                   String recordId,
+                                   String recipient,
+                                   SendRecordStatus status,
+                                   String errorCode,
+                                   String errorMessage,
+                                   long durationMs) {
+        CompletableFuture.runAsync(() -> logExecution(event, taskId, recordId, recipient, status, errorCode, errorMessage, durationMs),
+                auditExecutor);
+    }
+
+    private void logExecution(String event,
+                              String taskId,
+                              String recordId,
+                              String recipient,
+                              SendRecordStatus status,
+                              String errorCode,
+                              String errorMessage,
+                              long durationMs) {
+        if (status == SendRecordStatus.FAILED) {
+            logger.warn("{} taskId={} recordId={} recipient={} status={} errorCode={} errorMessage={} durationMs={}",
+                    event, taskId, recordId, recipient, status, errorCode, errorMessage, durationMs);
+            return;
+        }
+        logger.info("{} taskId={} recordId={} recipient={} status={} errorCode={} errorMessage={} durationMs={}",
+                event, taskId, recordId, recipient, status, errorCode, errorMessage, durationMs);
+    }
+
+    private List<String> normalizeRecipients(List<String> recipients) {
+        if (recipients == null || recipients.isEmpty()) {
+            return List.of();
+        }
+        return recipients.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .toList();
+    }
+
+    private List<String> fallbackRecipients(List<String> recipients) {
+        List<String> normalized = normalizeRecipients(recipients);
+        if (normalized.isEmpty()) {
+            return Collections.singletonList(null);
+        }
+        return normalized;
     }
 
     private String render(String content, Map<String, Object> params) {
-        if (content == null) return "";
-        if (params == null || params.isEmpty()) return content;
+        if (content == null) {
+            return "";
+        }
+        if (params == null || params.isEmpty()) {
+            return content;
+        }
         Matcher matcher = PLACEHOLDER.matcher(content);
         StringBuffer sb = new StringBuffer();
         while (matcher.find()) {
@@ -242,18 +434,48 @@ public class SendTaskConsumer {
             try {
                 closeable.close();
             } catch (Exception ex) {
-                logger.warn("SendTaskConsumer close channel failed reason={}", ex.getMessage());
+                logExecutionAsync("SEND_CHANNEL_CLOSE_FAILED", null, null, null, SendRecordStatus.FAILED,
+                        "CHANNEL_CLOSE_FAILED", messageOrDefault(ex.getMessage(), "Failed to close channel"), 0L);
             }
         }
     }
 
     private Map<String, Object> readProperties(String json) {
-        if (json == null || json.isBlank()) return new LinkedHashMap<>();
+        if (json == null || json.isBlank()) {
+            return new LinkedHashMap<>();
+        }
         try {
             return objectMapper.readValue(json, MAP_TYPE);
         } catch (Exception ex) {
-            logger.warn("Failed to read channel properties: {}", ex.getMessage());
+            logExecutionAsync("SEND_CHANNEL_PROPERTIES_PARSE_FAILED", null, null, null, SendRecordStatus.FAILED,
+                    "CHANNEL_PROPERTIES_PARSE_FAILED", messageOrDefault(ex.getMessage(), "Failed to parse channel properties"), 0L);
             return new LinkedHashMap<>();
+        }
+    }
+
+    private String messageOrDefault(String message, String defaultMessage) {
+        if (message == null || message.isBlank()) {
+            return defaultMessage;
+        }
+        return message;
+    }
+
+    @Override
+    public void destroy() {
+        shutdownExecutor(taskExecutor, "taskExecutor");
+        shutdownExecutor(auditExecutor, "auditExecutor");
+    }
+
+    private void shutdownExecutor(ExecutorService executor, String name) {
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            executor.shutdownNow();
+            logger.warn("Executor shutdown interrupted name={}", name);
         }
     }
 }

@@ -57,7 +57,7 @@ public class SendRecordServiceImpl implements SendRecordService {
                 r.getRenderedContent(),
                 r.getChannelType(),
                 r.getChannelName(),
-                r.getSuccess(),
+                r.getStatus(),
                 r.getErrorCode(),
                 r.getErrorMessage(),
                 r.getSentAt()

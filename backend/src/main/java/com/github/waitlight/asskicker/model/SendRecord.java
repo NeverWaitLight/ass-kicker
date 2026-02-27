@@ -52,8 +52,8 @@ public class SendRecord {
     @Field("channel_name")
     private String channelName;
 
-    @Field("success")
-    private Boolean success;
+    @Field("status")
+    private SendRecordStatus status;
 
     @Field("error_code")
     private String errorCode;

@@ -1,7 +1,7 @@
 <template>
   <section class="page-shell">
     <div class="detail-nav">
-      <a-button @click="goBack">← 返回列表</a-button>
+      <a-button @click="goBack">返回列表</a-button>
     </div>
 
     <a-spin :spinning="loading">
@@ -26,10 +26,10 @@
           <a-descriptions-item label="提交时间">{{ formatTimestamp(record.submittedAt) }}</a-descriptions-item>
           <a-descriptions-item label="发送时间">{{ formatTimestamp(record.sentAt) }}</a-descriptions-item>
           <a-descriptions-item label="发送结果">
-            <a-tag :color="record.success ? 'green' : 'red'">{{ record.success ? '成功' : '失败' }}</a-tag>
+            <a-tag :color="statusColor(record.status)">{{ statusLabel(record.status) }}</a-tag>
           </a-descriptions-item>
-          <a-descriptions-item v-if="!record.success" label="错误码">{{ record.errorCode || '-' }}</a-descriptions-item>
-          <a-descriptions-item v-if="!record.success" label="错误信息">{{ record.errorMessage || '-' }}</a-descriptions-item>
+          <a-descriptions-item v-if="record.status === 'FAILED'" label="错误码">{{ record.errorCode || '-' }}</a-descriptions-item>
+          <a-descriptions-item v-if="record.status === 'FAILED'" label="错误信息">{{ record.errorMessage || '-' }}</a-descriptions-item>
           <a-descriptions-item label="模板参数" :span="2">
             <pre v-if="record.params && Object.keys(record.params).length" class="pre-block">{{ JSON.stringify(record.params, null, 2) }}</pre>
             <span v-else class="text-muted">-</span>
@@ -60,6 +60,20 @@ const loading = ref(true)
 const error = ref('')
 
 const channelTypeLabel = (value) => (value ? (CHANNEL_TYPE_LABELS['zh-CN'][value] || value) : '-')
+
+const statusColor = (status) => {
+  if (status === 'SUCCESS') return 'green'
+  if (status === 'FAILED') return 'red'
+  if (status === 'PENDING') return 'blue'
+  return 'default'
+}
+
+const statusLabel = (status) => {
+  if (status === 'SUCCESS') return '成功'
+  if (status === 'FAILED') return '失败'
+  if (status === 'PENDING') return '处理中'
+  return status || '-'
+}
 
 const fetchRecord = async () => {
   const id = route.params.id

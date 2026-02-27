@@ -26,8 +26,8 @@
         <template v-else-if="column.key === 'recipient'">
           {{ record.recipient || (record.recipients && record.recipients[0]) || '-' }}
         </template>
-        <template v-else-if="column.key === 'success'">
-          <a-tag :color="record.success ? 'green' : 'red'">{{ record.success ? '成功' : '失败' }}</a-tag>
+        <template v-else-if="column.key === 'status'">
+          <a-tag :color="statusColor(record.status)">{{ statusLabel(record.status) }}</a-tag>
         </template>
         <template v-else-if="column.key === 'submittedAt'">
           {{ formatTimestamp(record.submittedAt) }}
@@ -63,7 +63,7 @@ const columns = [
   { title: '通道', dataIndex: 'channelName', key: 'channelName', width: 120 },
   { title: '通道类型', key: 'channelType', width: 100 },
   { title: '接收人', key: 'recipient', width: 140 },
-  { title: '状态', key: 'success', width: 80 },
+  { title: '状态', key: 'status', width: 90 },
   { title: '提交时间', key: 'submittedAt', width: 170 },
   { title: '发送时间', key: 'sentAt', width: 170 },
   { title: '操作', key: 'actions', width: 90 }
@@ -77,6 +77,20 @@ const tablePagination = computed(() => ({
 }))
 
 const channelTypeLabel = (value) => (value ? (CHANNEL_TYPE_LABELS['zh-CN'][value] || value) : '-')
+
+const statusColor = (status) => {
+  if (status === 'SUCCESS') return 'green'
+  if (status === 'FAILED') return 'red'
+  if (status === 'PENDING') return 'blue'
+  return 'default'
+}
+
+const statusLabel = (status) => {
+  if (status === 'SUCCESS') return '成功'
+  if (status === 'FAILED') return '失败'
+  if (status === 'PENDING') return '处理中'
+  return status || '-'
+}
 
 const loadRecords = async () => {
   loading.value = true
