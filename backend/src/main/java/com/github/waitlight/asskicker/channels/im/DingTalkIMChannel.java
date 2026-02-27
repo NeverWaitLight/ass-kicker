@@ -24,7 +24,7 @@ public class DingTalkIMChannel extends IMChannel<DingTalkIMChannelConfig> {
     }
 
     /**
-     * 发送钉钉机器人消息
+     * 发送钉钉消息
      *
      * @param request 消息请求
      * @return 发送结果

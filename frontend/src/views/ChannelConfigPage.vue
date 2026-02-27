@@ -545,7 +545,7 @@ const getFallbackImTypes = () => ({
   types: [
     {
       type: 'DINGTALK',
-      label: '钉钉机器人',
+      label: '钉钉',
       propertyKey: 'dingtalk',
       fields: [
         { key: 'webhookUrl', label: 'Webhook URL', required: true, defaultValue: '' }
