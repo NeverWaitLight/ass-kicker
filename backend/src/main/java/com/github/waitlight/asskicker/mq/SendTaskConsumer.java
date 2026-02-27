@@ -136,7 +136,7 @@ public class SendTaskConsumer implements DisposableBean {
         }
     }
 
-    private void processTask(SendTask task) {
+    public void processTask(SendTask task) {
         long taskStartedAt = Instant.now().toEpochMilli();
         List<String> recipients = normalizeRecipients(task.getRecipients());
         List<String> failureRecipients = recipients.isEmpty() ? Collections.singletonList(null) : recipients;
