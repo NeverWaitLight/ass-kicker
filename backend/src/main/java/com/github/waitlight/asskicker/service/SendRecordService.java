@@ -6,7 +6,7 @@ import reactor.core.publisher.Mono;
 
 public interface SendRecordService {
 
-    Mono<SendRecordPageResponse> listRecords(int page, int size);
+    Mono<SendRecordPageResponse> listRecords(int page, int size, String recipient, String channelType);
 
     Mono<SendRecordView> getById(String id);
 }

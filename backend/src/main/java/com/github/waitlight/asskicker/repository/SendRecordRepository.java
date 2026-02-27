@@ -3,6 +3,7 @@ package com.github.waitlight.asskicker.repository;
 import com.github.waitlight.asskicker.model.SendRecord;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import org.springframework.stereotype.Repository;
@@ -17,9 +18,9 @@ public interface SendRecordRepository extends ReactiveMongoRepository<SendRecord
 
 interface SendRecordRepositoryCustom {
 
-    Flux<SendRecord> findPage(int limit, int offset);
+    Flux<SendRecord> findPage(int limit, int offset, String recipient, String channelType);
 
-    Mono<Long> countAll();
+    Mono<Long> countAll(String recipient, String channelType);
 }
 
 class SendRecordRepositoryCustomImpl implements SendRecordRepositoryCustom {
@@ -31,15 +32,29 @@ class SendRecordRepositoryCustomImpl implements SendRecordRepositoryCustom {
     }
 
     @Override
-    public Flux<SendRecord> findPage(int limit, int offset) {
-        Query query = new Query();
+    public Flux<SendRecord> findPage(int limit, int offset, String recipient, String channelType) {
+        Query query = buildListQuery(recipient, channelType);
         query.with(Sort.by(Sort.Direction.DESC, "sentAt"));
         query.skip(offset).limit(limit);
         return mongoTemplate.find(query, SendRecord.class);
     }
 
     @Override
-    public Mono<Long> countAll() {
-        return mongoTemplate.count(new Query(), SendRecord.class);
+    public Mono<Long> countAll(String recipient, String channelType) {
+        return mongoTemplate.count(buildListQuery(recipient, channelType), SendRecord.class);
+    }
+
+    private Query buildListQuery(String recipient, String channelType) {
+        Query query = new Query();
+        if (recipient != null && !recipient.isBlank()) {
+            String term = recipient.trim();
+            query.addCriteria(new Criteria().orOperator(
+                    Criteria.where("recipient").is(term),
+                    Criteria.where("recipients").is(term)));
+        }
+        if (channelType != null && !channelType.isBlank()) {
+            query.addCriteria(Criteria.where("channel_type").is(channelType.trim()));
+        }
+        return query;
     }
 }

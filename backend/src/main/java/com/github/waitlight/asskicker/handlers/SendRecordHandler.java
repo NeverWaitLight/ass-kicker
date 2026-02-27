@@ -20,7 +20,9 @@ public class SendRecordHandler {
     public Mono<ServerResponse> listRecords(ServerRequest request) {
         int page = parseInt(request.queryParam("page").orElse("1"), 1);
         int size = parseInt(request.queryParam("size").orElse("10"), 10);
-        return sendRecordService.listRecords(page, size)
+        String recipient = request.queryParam("recipient").filter(s -> !s.isBlank()).orElse(null);
+        String channelType = request.queryParam("channelType").filter(s -> !s.isBlank()).orElse(null);
+        return sendRecordService.listRecords(page, size, recipient, channelType)
                 .flatMap(response -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(response))

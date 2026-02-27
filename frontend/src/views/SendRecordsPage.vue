@@ -8,6 +8,25 @@
       <a-button :loading="loading" @click="loadRecords">刷新</a-button>
     </div>
 
+    <div class="search-bar">
+      <a-select
+        v-model:value="channelTypeFilter"
+        placeholder="通道类型"
+        allow-clear
+        class="filter-select"
+        :options="channelTypeOptions"
+        @change="doSearch"
+      />
+      <a-input-search
+        v-model:value="recipientSearch"
+        placeholder="输入邮箱/手机号等精准搜索"
+        enter-button="搜索"
+        allow-clear
+        class="search-input"
+        @search="doSearch"
+      />
+    </div>
+
     <a-table
       :data-source="records"
       :columns="columns"
@@ -49,12 +68,19 @@ import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { listSendRecords } from '../utils/sendRecordApi'
 import { formatTimestamp } from '../utils/time'
-import { CHANNEL_TYPE_LABELS } from '../constants/channelTypes'
+import { CHANNEL_TYPE_LABELS, CHANNEL_TYPE_VALUES } from '../constants/channelTypes'
 
 const router = useRouter()
 const records = ref([])
 const loading = ref(false)
+const recipientSearch = ref('')
+const channelTypeFilter = ref('')
 const pagination = reactive({ page: 1, size: 10, total: 0 })
+
+const channelTypeOptions = [
+  { value: '', label: '全部' },
+  ...CHANNEL_TYPE_VALUES.map((v) => ({ value: v, label: CHANNEL_TYPE_LABELS['zh-CN'][v] || v }))
+]
 
 const columns = [
   { title: '序号', key: 'ordinal', width: 70 },
@@ -95,7 +121,9 @@ const statusLabel = (status) => {
 const loadRecords = async () => {
   loading.value = true
   try {
-    const data = await listSendRecords(pagination.page, pagination.size)
+    const recipient = recipientSearch.value != null ? String(recipientSearch.value).trim() || undefined : undefined
+    const channelType = channelTypeFilter.value != null && String(channelTypeFilter.value).trim() !== '' ? String(channelTypeFilter.value).trim() : undefined
+    const data = await listSendRecords(pagination.page, pagination.size, recipient, channelType)
     records.value = data.items || []
     pagination.total = data.total ?? 0
   } catch (error) {
@@ -103,6 +131,11 @@ const loadRecords = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const doSearch = () => {
+  pagination.page = 1
+  loadRecords()
 }
 
 const handleTableChange = (pager) => {
@@ -135,5 +168,23 @@ onMounted(loadRecords)
 
 .page-header p {
   margin: 4px 0 0;
+}
+
+.search-bar {
+  margin-bottom: 16px;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-bar .filter-select {
+  width: 140px;
+}
+
+.search-bar .search-input {
+  max-width: 360px;
 }
 </style>
