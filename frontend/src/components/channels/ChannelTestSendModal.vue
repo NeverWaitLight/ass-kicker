@@ -15,12 +15,12 @@
         </div>
         <a-form layout="vertical" class="test-form">
           <a-form-item
-            label="目标地址"
+            :label="targetLabel"
             required
             :validate-status="targetError ? 'error' : ''"
             :help="targetError"
           >
-            <a-input v-model:value="target" placeholder="请输入目标地址" />
+            <a-input v-model:value="target" :placeholder="targetPlaceholder" />
           </a-form-item>
           <a-form-item
             label="测试内容"
@@ -91,6 +91,32 @@ const { t, te } = useI18n()
 const sendDisabled = computed(() => props.disabled || props.loading || testing.value)
 const displayChannelType = computed(() => getChannelTypeLabel(props.channelType, t, te))
 
+const targetLabel = computed(() => {
+  switch (props.channelType) {
+    case 'SMS':
+      return '手机号'
+    case 'EMAIL':
+      return '邮箱地址'
+    case 'PUSH':
+      return '设备 Token'
+    default:
+      return '目标地址'
+  }
+})
+
+const targetPlaceholder = computed(() => {
+  switch (props.channelType) {
+    case 'SMS':
+      return '请输入手机号'
+    case 'EMAIL':
+      return '请输入邮箱地址'
+    case 'PUSH':
+      return '请输入设备 Token / FCM Token'
+    default:
+      return '请输入目标地址'
+  }
+})
+
 const resetState = () => {
   target.value = ''
   content.value = ''
@@ -112,7 +138,7 @@ watch(
 
 const validate = () => {
   typeError.value = props.channelType ? '' : '请选择通道类型'
-  targetError.value = target.value.trim() ? '' : '请输入目标地址'
+  targetError.value = target.value.trim() ? '' : `请填写${targetLabel.value}`
   contentError.value = content.value.trim() ? '' : '请输入测试内容'
   return !typeError.value && !targetError.value && !contentError.value
 }

@@ -65,6 +65,22 @@
                 @change="handleImTypeChange"
               />
             </a-form-item>
+            <a-form-item v-if="isPushChannel" label="推送类型">
+              <a-select
+                v-model:value="pushType"
+                placeholder="请选择推送类型"
+                :options="pushTypeOptions"
+                @change="handlePushTypeChange"
+              />
+            </a-form-item>
+            <a-form-item v-if="isSmsChannel" label="短信服务">
+              <a-select
+                v-model:value="smsType"
+                placeholder="请选择短信服务"
+                :options="smsTypeOptions"
+                @change="handleSmsTypeChange"
+              />
+            </a-form-item>
             <a-form-item label="通道名称" :validate-status="nameError ? 'error' : ''" :help="nameError">
               <a-input v-model:value="form.name" placeholder="请输入通道名称" />
             </a-form-item>
@@ -168,6 +184,26 @@ const imTypeOptions = computed(() =>
   }))
 )
 
+const pushTypes = ref({ defaultType: 'APNS', types: [] })
+const pushType = ref('')
+const isPushChannel = computed(() => form.type === 'PUSH')
+const pushTypeOptions = computed(() =>
+  (pushTypes.value.types || []).map((type) => ({
+    value: type.type,
+    label: type.label || type.type
+  }))
+)
+
+const smsTypes = ref({ defaultType: 'ALIYUN', types: [] })
+const smsType = ref('')
+const isSmsChannel = computed(() => form.type === 'SMS')
+const smsTypeOptions = computed(() =>
+  (smsTypes.value.types || []).map((type) => ({
+    value: type.type,
+    label: type.label || type.type
+  }))
+)
+
 const isEdit = computed(() => !!route.params.id)
 const pageTitle = computed(() => (isEdit.value ? '编辑通道' : '新建通道'))
 
@@ -189,6 +225,22 @@ const sectionHint = computed(() => {
   }
   if (isImChannel.value) {
     const schema = findImTypeSchema(imType.value)
+    if (!schema) return baseSectionHint
+    const requiredFields = (schema.fields || []).filter((field) => field.required)
+    if (requiredFields.length === 0) return baseSectionHint
+    const labels = requiredFields.map((field) => field.label || field.key).join('、')
+    return `${baseSectionHint} ${schema.label || schema.type}必填：${labels}。`
+  }
+  if (isPushChannel.value) {
+    const schema = findPushTypeSchema(pushType.value)
+    if (!schema) return baseSectionHint
+    const requiredFields = (schema.fields || []).filter((field) => field.required)
+    if (requiredFields.length === 0) return baseSectionHint
+    const labels = requiredFields.map((field) => field.label || field.key).join('、')
+    return `${baseSectionHint} ${schema.label || schema.type}必填：${labels}。`
+  }
+  if (isSmsChannel.value) {
+    const schema = findSmsTypeSchema(smsType.value)
     if (!schema) return baseSectionHint
     const requiredFields = (schema.fields || []).filter((field) => field.required)
     if (requiredFields.length === 0) return baseSectionHint
@@ -225,6 +277,14 @@ const loadImTypes = async () => {
   }
 }
 
+const loadPushTypes = () => {
+  pushTypes.value = getFallbackPushTypes()
+}
+
+const loadSmsTypes = () => {
+  smsTypes.value = getFallbackSmsTypes()
+}
+
 const loadChannel = async () => {
   if (!isEdit.value) return
   loading.value = true
@@ -248,6 +308,20 @@ const loadChannel = async () => {
       const schema = findImTypeSchema(type)
       propertyRows.value = schema
         ? buildImTypeRowsFromProperties(schema, data.properties)
+        : propertiesToRows(data.properties)
+    } else if (form.type === 'PUSH') {
+      const type = resolvePushTypeValue(data.properties?.type ?? data.properties?.protocol)
+      pushType.value = type
+      const schema = findPushTypeSchema(type)
+      propertyRows.value = schema
+        ? buildPushTypeRowsFromProperties(schema, data.properties)
+        : propertiesToRows(data.properties)
+    } else if (form.type === 'SMS') {
+      const type = resolveSmsTypeValue(data.properties?.type ?? data.properties?.protocol)
+      smsType.value = type
+      const schema = findSmsTypeSchema(type)
+      propertyRows.value = schema
+        ? buildSmsTypeRowsFromProperties(schema, data.properties)
         : propertiesToRows(data.properties)
     } else {
       propertyRows.value = propertiesToRows(data.properties)
@@ -274,7 +348,7 @@ const validateForm = () => {
 }
 
 const buildProperties = () => {
-  if (!isEmailChannel.value && !isImChannel.value) {
+  if (!isEmailChannel.value && !isImChannel.value && !isPushChannel.value && !isSmsChannel.value) {
     return rowsToProperties(propertyRows.value)
   }
   if (isEmailChannel.value) {
@@ -297,23 +371,66 @@ const buildProperties = () => {
     }
   }
   // IM channel
-  const type = resolveImTypeValue(imType.value)
-  const schema = findImTypeSchema(type)
-  if (!schema) {
-    return rowsToProperties(propertyRows.value)
-  }
-  const raw = rowsToProperties(propertyRows.value)
-  const requiredFields = (schema.fields || []).filter((field) => field.required)
-  const typePayload = {}
-  requiredFields.forEach((field) => {
-    if (raw[field.key] !== undefined) {
-      typePayload[field.key] = raw[field.key]
+  if (isImChannel.value) {
+    const type = resolveImTypeValue(imType.value)
+    const schema = findImTypeSchema(type)
+    if (!schema) {
+      return rowsToProperties(propertyRows.value)
     }
-  })
-  return {
-    type,
-    [schema.propertyKey]: typePayload
+    const raw = rowsToProperties(propertyRows.value)
+    const allFields = schema.fields || []
+    const typePayload = {}
+    allFields.forEach((field) => {
+      if (raw[field.key] !== undefined) {
+        typePayload[field.key] = raw[field.key]
+      }
+    })
+    return {
+      type,
+      [schema.propertyKey]: typePayload
+    }
   }
+  // PUSH channel
+  if (isPushChannel.value) {
+    const type = resolvePushTypeValue(pushType.value)
+    const schema = findPushTypeSchema(type)
+    if (!schema) {
+      return rowsToProperties(propertyRows.value)
+    }
+    const raw = rowsToProperties(propertyRows.value)
+    const allFields = schema.fields || []
+    const typePayload = {}
+    allFields.forEach((field) => {
+      if (raw[field.key] !== undefined) {
+        typePayload[field.key] = raw[field.key]
+      }
+    })
+    return {
+      type,
+      [schema.propertyKey]: typePayload
+    }
+  }
+  // SMS channel
+  if (isSmsChannel.value) {
+    const type = resolveSmsTypeValue(smsType.value)
+    const schema = findSmsTypeSchema(type)
+    if (!schema) {
+      return rowsToProperties(propertyRows.value)
+    }
+    const raw = rowsToProperties(propertyRows.value)
+    const allFields = schema.fields || []
+    const typePayload = {}
+    allFields.forEach((field) => {
+      if (raw[field.key] !== undefined) {
+        typePayload[field.key] = raw[field.key]
+      }
+    })
+    return {
+      type,
+      [schema.propertyKey]: typePayload
+    }
+  }
+  return rowsToProperties(propertyRows.value)
 }
 
 const saveChannel = async () => {
@@ -374,12 +491,20 @@ onMounted(async () => {
   await loadTypes()
   await loadEmailProtocols()
   await loadImTypes()
+  loadPushTypes()
+  loadSmsTypes()
   await loadChannel()
   if (!isEdit.value && form.type === 'EMAIL') {
     initializeEmailProtocol()
   }
   if (!isEdit.value && form.type === 'IM') {
     initializeImType()
+  }
+  if (!isEdit.value && form.type === 'PUSH') {
+    initializePushType()
+  }
+  if (!isEdit.value && form.type === 'SMS') {
+    initializeSmsType()
   }
 })
 
@@ -397,6 +522,18 @@ const handleImTypeChange = (value) => {
   applyImTypeSchema(value, { preferExisting: true })
 }
 
+const handlePushTypeChange = (value) => {
+  if (!value) return
+  pushType.value = value
+  applyPushTypeSchema(value, { preferExisting: true })
+}
+
+const handleSmsTypeChange = (value) => {
+  if (!value) return
+  smsType.value = value
+  applySmsTypeSchema(value, { preferExisting: true })
+}
+
 const initializeEmailProtocol = () => {
   const protocol = resolveProtocolValue(emailProtocol.value)
   emailProtocol.value = protocol
@@ -407,6 +544,18 @@ const initializeImType = () => {
   const type = resolveImTypeValue(imType.value)
   imType.value = type
   applyImTypeSchema(type, { preferExisting: true })
+}
+
+const initializePushType = () => {
+  const type = resolvePushTypeValue(pushType.value)
+  pushType.value = type
+  applyPushTypeSchema(type, { preferExisting: true })
+}
+
+const initializeSmsType = () => {
+  const type = resolveSmsTypeValue(smsType.value)
+  smsType.value = type
+  applySmsTypeSchema(type, { preferExisting: true })
 }
 
 const applyEmailProtocolSchema = (protocol, { preferExisting } = {}) => {
@@ -425,6 +574,24 @@ const applyImTypeSchema = (type, { preferExisting } = {}) => {
 
   const requiredFields = (schema.fields || []).filter((field) => field.required)
   propertyRows.value = mergeFlatRows(propertyRows.value, requiredFields, preferExisting)
+}
+
+const applyPushTypeSchema = (type, { preferExisting } = {}) => {
+  if (!type || !isPushChannel.value) return
+  const schema = findPushTypeSchema(type)
+  if (!schema) return
+
+  const allFields = schema.fields || []
+  propertyRows.value = mergeFlatRows(propertyRows.value, allFields, preferExisting)
+}
+
+const applySmsTypeSchema = (type, { preferExisting } = {}) => {
+  if (!type || !isSmsChannel.value) return
+  const schema = findSmsTypeSchema(type)
+  if (!schema) return
+
+  const allFields = schema.fields || []
+  propertyRows.value = mergeFlatRows(propertyRows.value, allFields, preferExisting)
 }
 
 const mergeObjectRows = (rows, fields, preferExisting, keepExtra = true) => {
@@ -512,8 +679,28 @@ const findEmailProtocolSchema = (protocol) =>
 const findImTypeSchema = (type) =>
   (imTypes.value.types || []).find((item) => item.type === type)
 
+const findPushTypeSchema = (type) =>
+  (pushTypes.value.types || []).find((item) => item.type === type)
+
+const findSmsTypeSchema = (type) =>
+  (smsTypes.value.types || []).find((item) => item.type === type)
+
 const resolveImTypeValue = (value) => {
   const fallback = imTypes.value.defaultType || 'DINGTALK'
+  if (!value) return fallback
+  const normalized = String(value).trim()
+  return normalized ? normalized.toUpperCase() : fallback
+}
+
+const resolvePushTypeValue = (value) => {
+  const fallback = pushTypes.value.defaultType || 'APNS'
+  if (!value) return fallback
+  const normalized = String(value).trim()
+  return normalized ? normalized.toUpperCase() : fallback
+}
+
+const resolveSmsTypeValue = (value) => {
+  const fallback = smsTypes.value.defaultType || 'ALIYUN'
   if (!value) return fallback
   const normalized = String(value).trim()
   return normalized ? normalized.toUpperCase() : fallback
@@ -528,6 +715,48 @@ const buildImTypeRowsFromProperties = (schema, properties) => {
 }
 
 const getImTypeFieldValue = (properties, schemaKey, fieldKey, defaultValue) => {
+  if (properties && typeof properties === 'object') {
+    const nested = properties?.[schemaKey]
+    if (nested && typeof nested === 'object' && nested[fieldKey] != null) {
+      return String(nested[fieldKey])
+    }
+    if (properties[fieldKey] != null) {
+      return String(properties[fieldKey])
+    }
+  }
+  return String(defaultValue ?? '')
+}
+
+const buildPushTypeRowsFromProperties = (schema, properties) => {
+  const allFields = schema.fields || []
+  return allFields.map((field) => {
+    const value = getPushTypeFieldValue(properties, schema.propertyKey, field.key, field.defaultValue)
+    return createPropertyRow({ key: field.key, value })
+  })
+}
+
+const getPushTypeFieldValue = (properties, schemaKey, fieldKey, defaultValue) => {
+  if (properties && typeof properties === 'object') {
+    const nested = properties?.[schemaKey]
+    if (nested && typeof nested === 'object' && nested[fieldKey] != null) {
+      return String(nested[fieldKey])
+    }
+    if (properties[fieldKey] != null) {
+      return String(properties[fieldKey])
+    }
+  }
+  return String(defaultValue ?? '')
+}
+
+const buildSmsTypeRowsFromProperties = (schema, properties) => {
+  const allFields = schema.fields || []
+  return allFields.map((field) => {
+    const value = getSmsTypeFieldValue(properties, schema.propertyKey, field.key, field.defaultValue)
+    return createPropertyRow({ key: field.key, value })
+  })
+}
+
+const getSmsTypeFieldValue = (properties, schemaKey, fieldKey, defaultValue) => {
   if (properties && typeof properties === 'object') {
     const nested = properties?.[schemaKey]
     if (nested && typeof nested === 'object' && nested[fieldKey] != null) {
@@ -601,6 +830,78 @@ const getFallbackEmailProtocols = () => ({
   ]
 })
 
+const getFallbackPushTypes = () => ({
+  defaultType: 'APNS',
+  types: [
+    {
+      type: 'APNS',
+      label: '苹果 APNs',
+      propertyKey: 'apns',
+      fields: [
+        { key: 'teamId', label: 'Team ID', required: true, defaultValue: '' },
+        { key: 'keyId', label: 'Key ID', required: true, defaultValue: '' },
+        { key: 'bundleId', label: 'Bundle ID', required: true, defaultValue: '' },
+        { key: 'p8KeyContent', label: 'P8 私钥内容', required: false, defaultValue: '' },
+        { key: 'p8KeyPath', label: 'P8 私钥文件路径', required: false, defaultValue: '' },
+        { key: 'production', label: '生产环境', required: false, defaultValue: 'true' },
+        { key: 'timeout', label: '超时(ms)', required: false, defaultValue: '10000' },
+        { key: 'maxRetries', label: '最大重试次数', required: false, defaultValue: '3' },
+        { key: 'retryDelay', label: '重试间隔(ms)', required: false, defaultValue: '1000' }
+      ]
+    },
+    {
+      type: 'FCM',
+      label: '谷歌 FCM',
+      propertyKey: 'fcm',
+      fields: [
+        { key: 'serviceAccountJson', label: '服务账号 JSON', required: true, defaultValue: '' },
+        { key: 'projectId', label: 'Project ID（可选）', required: false, defaultValue: '' },
+        { key: 'timeout', label: '超时(ms)', required: false, defaultValue: '10000' },
+        { key: 'maxRetries', label: '最大重试次数', required: false, defaultValue: '3' },
+        { key: 'retryDelay', label: '重试间隔(ms)', required: false, defaultValue: '1000' }
+      ]
+    }
+  ]
+})
+
+const getFallbackSmsTypes = () => ({
+  defaultType: 'ALIYUN',
+  types: [
+    {
+      type: 'ALIYUN',
+      label: '阿里云短信',
+      propertyKey: 'aliyun',
+      fields: [
+        { key: 'accessKeyId', label: 'AccessKey ID', required: true, defaultValue: '' },
+        { key: 'accessKeySecret', label: 'AccessKey Secret', required: true, defaultValue: '' },
+        { key: 'signName', label: '签名名称', required: true, defaultValue: '' },
+        { key: 'templateCode', label: '模板编码', required: true, defaultValue: '' },
+        { key: 'templateParamKey', label: '模板变量名', required: false, defaultValue: 'content' },
+        { key: 'regionId', label: 'Region ID', required: false, defaultValue: 'cn-hangzhou' },
+        { key: 'timeout', label: '超时(ms)', required: false, defaultValue: '10000' },
+        { key: 'maxRetries', label: '最大重试次数', required: false, defaultValue: '3' },
+        { key: 'retryDelay', label: '重试间隔(ms)', required: false, defaultValue: '1000' }
+      ]
+    },
+    {
+      type: 'TENCENT',
+      label: '腾讯云短信',
+      propertyKey: 'tencent',
+      fields: [
+        { key: 'secretId', label: 'SecretId', required: true, defaultValue: '' },
+        { key: 'secretKey', label: 'SecretKey', required: true, defaultValue: '' },
+        { key: 'sdkAppId', label: 'SdkAppId', required: true, defaultValue: '' },
+        { key: 'signName', label: '签名名称', required: true, defaultValue: '' },
+        { key: 'templateId', label: '模板 ID', required: true, defaultValue: '' },
+        { key: 'region', label: 'Region', required: false, defaultValue: 'ap-guangzhou' },
+        { key: 'timeout', label: '超时(ms)', required: false, defaultValue: '10000' },
+        { key: 'maxRetries', label: '最大重试次数', required: false, defaultValue: '3' },
+        { key: 'retryDelay', label: '重试间隔(ms)', required: false, defaultValue: '1000' }
+      ]
+    }
+  ]
+})
+
 watch(
   () => form.type,
   (value) => {
@@ -614,6 +915,16 @@ watch(
         imType.value = imTypes.value.defaultType || 'DINGTALK'
       }
       applyImTypeSchema(imType.value, { preferExisting: true })
+    } else if (value === 'PUSH') {
+      if (!pushType.value) {
+        pushType.value = pushTypes.value.defaultType || 'APNS'
+      }
+      applyPushTypeSchema(pushType.value, { preferExisting: true })
+    } else if (value === 'SMS') {
+      if (!smsType.value) {
+        smsType.value = smsTypes.value.defaultType || 'ALIYUN'
+      }
+      applySmsTypeSchema(smsType.value, { preferExisting: true })
     }
   }
 )
