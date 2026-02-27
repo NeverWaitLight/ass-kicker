@@ -8,6 +8,8 @@ import ChannelManagementPage from '../views/ChannelManagementPage.vue'
 import ChannelConfigPage from '../views/ChannelConfigPage.vue'
 import TemplateManagementPage from '../views/TemplateManagementPage.vue'
 import TemplateDetailPage from '../views/TemplateDetailPage.vue'
+import SendRecordsPage from '../views/SendRecordsPage.vue'
+import SendRecordDetailPage from '../views/SendRecordDetailPage.vue'
 import { hasPermission, CHANNEL_PERMISSIONS } from '../utils/permissions'
 
 const routes = [
@@ -51,6 +53,14 @@ const routes = [
   {
     path: '/templates/:id',
     component: TemplateDetailPage
+  },
+  {
+    path: '/send-records',
+    component: SendRecordsPage
+  },
+  {
+    path: '/send-records/:id',
+    component: SendRecordDetailPage
   }
 ]
 

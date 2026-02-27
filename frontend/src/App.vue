@@ -16,6 +16,7 @@
         <a-menu-item v-if="isAdmin" key="/users">用户</a-menu-item>
         <a-menu-item v-if="canViewChannel" key="/channels">通道</a-menu-item>
         <a-menu-item key="/templates">模板</a-menu-item>
+        <a-menu-item key="/send-records">发送记录</a-menu-item>
       </a-menu>
       <a-space class="header-actions" size="middle">
         <ThemeToggle />
@@ -51,7 +52,7 @@ const selectedKey = computed(() => {
     return '/'
   }
   const base = `/${path.split('/')[1] || ''}`
-  const menuKeys = ['/', '/users', '/channels', '/templates', '/settings']
+  const menuKeys = ['/', '/users', '/channels', '/templates', '/send-records', '/settings']
   if (menuKeys.includes(base)) {
     return base
   }

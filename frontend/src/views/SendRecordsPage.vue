@@ -1,0 +1,125 @@
+<template>
+  <section class="page-shell">
+    <div class="page-header">
+      <div>
+        <h2>发送记录</h2>
+        <p>分页浏览消息发送记录</p>
+      </div>
+      <a-button :loading="loading" @click="loadRecords">刷新</a-button>
+    </div>
+
+    <a-table
+      :data-source="records"
+      :columns="columns"
+      :pagination="tablePagination"
+      :loading="loading"
+      row-key="id"
+      @change="handleTableChange"
+    >
+      <template #bodyCell="{ column, record, index }">
+        <template v-if="column.key === 'ordinal'">
+          {{ (pagination.page - 1) * pagination.size + index + 1 }}
+        </template>
+        <template v-else-if="column.key === 'channelType'">
+          <a-tag color="blue">{{ channelTypeLabel(record.channelType) }}</a-tag>
+        </template>
+        <template v-else-if="column.key === 'recipient'">
+          {{ record.recipient || (record.recipients && record.recipients[0]) || '-' }}
+        </template>
+        <template v-else-if="column.key === 'success'">
+          <a-tag :color="record.success ? 'green' : 'red'">{{ record.success ? '成功' : '失败' }}</a-tag>
+        </template>
+        <template v-else-if="column.key === 'submittedAt'">
+          {{ formatTimestamp(record.submittedAt) }}
+        </template>
+        <template v-else-if="column.key === 'sentAt'">
+          {{ formatTimestamp(record.sentAt) }}
+        </template>
+        <template v-else-if="column.key === 'actions'">
+          <a-button size="small" @click="goDetail(record)">详情</a-button>
+        </template>
+      </template>
+    </a-table>
+  </section>
+</template>
+
+<script setup>
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { message } from 'ant-design-vue'
+import { listSendRecords } from '../utils/sendRecordApi'
+import { formatTimestamp } from '../utils/time'
+import { CHANNEL_TYPE_LABELS } from '../constants/channelTypes'
+
+const router = useRouter()
+const records = ref([])
+const loading = ref(false)
+const pagination = reactive({ page: 1, size: 10, total: 0 })
+
+const columns = [
+  { title: '序号', key: 'ordinal', width: 70 },
+  { title: '任务ID', dataIndex: 'taskId', key: 'taskId', ellipsis: true, width: 140 },
+  { title: '模板编码', dataIndex: 'templateCode', key: 'templateCode', width: 120 },
+  { title: '通道', dataIndex: 'channelName', key: 'channelName', width: 120 },
+  { title: '通道类型', key: 'channelType', width: 100 },
+  { title: '接收人', key: 'recipient', width: 140 },
+  { title: '状态', key: 'success', width: 80 },
+  { title: '提交时间', key: 'submittedAt', width: 170 },
+  { title: '发送时间', key: 'sentAt', width: 170 },
+  { title: '操作', key: 'actions', width: 90 }
+]
+
+const tablePagination = computed(() => ({
+  current: pagination.page,
+  pageSize: pagination.size,
+  total: pagination.total,
+  showSizeChanger: false
+}))
+
+const channelTypeLabel = (value) => (value ? (CHANNEL_TYPE_LABELS['zh-CN'][value] || value) : '-')
+
+const loadRecords = async () => {
+  loading.value = true
+  try {
+    const data = await listSendRecords(pagination.page, pagination.size)
+    records.value = data.items || []
+    pagination.total = data.total ?? 0
+  } catch (error) {
+    message.error(error?.message || '获取发送记录失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleTableChange = (pager) => {
+  pagination.page = pager.current
+  loadRecords()
+}
+
+const goDetail = (record) => {
+  router.push(`/send-records/${record.id}`)
+}
+
+onMounted(loadRecords)
+</script>
+
+<style scoped>
+.page-shell {
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.page-header h2 {
+  margin: 0;
+}
+
+.page-header p {
+  margin: 4px 0 0;
+}
+</style>
