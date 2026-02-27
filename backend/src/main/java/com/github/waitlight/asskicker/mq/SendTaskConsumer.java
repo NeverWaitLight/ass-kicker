@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.kafka;
+package com.github.waitlight.asskicker.mq;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

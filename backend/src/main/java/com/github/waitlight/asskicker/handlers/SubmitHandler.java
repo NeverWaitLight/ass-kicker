@@ -2,8 +2,9 @@ package com.github.waitlight.asskicker.handlers;
 
 import com.github.waitlight.asskicker.dto.submit.SubmitRequest;
 import com.github.waitlight.asskicker.dto.submit.SubmitResponse;
-import com.github.waitlight.asskicker.kafka.SendTaskProducer;
 import com.github.waitlight.asskicker.model.SendTask;
+import com.github.waitlight.asskicker.mq.SendTaskProducer;
+
 import org.springframework.core.codec.DecodingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

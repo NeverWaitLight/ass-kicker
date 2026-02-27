@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.kafka;
+package com.github.waitlight.asskicker.mq;
 
 import com.github.waitlight.asskicker.model.SendTask;
 import org.apache.kafka.clients.admin.NewTopic;
