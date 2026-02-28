@@ -1,24 +1,42 @@
 package com.github.waitlight.asskicker.service.impl;
 
+import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
+import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.dto.sendrecord.SendRecordPageResponse;
 import com.github.waitlight.asskicker.dto.sendrecord.SendRecordView;
 import com.github.waitlight.asskicker.model.SendRecord;
 import com.github.waitlight.asskicker.repository.SendRecordRepository;
 import com.github.waitlight.asskicker.service.SendRecordService;
+import jakarta.annotation.PostConstruct;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class SendRecordServiceImpl implements SendRecordService {
 
     private final SendRecordRepository sendRecordRepository;
+    private final CaffeineCacheConfig caffeineCacheConfig;
 
-    public SendRecordServiceImpl(SendRecordRepository sendRecordRepository) {
+    private AsyncLoadingCache<String, Optional<SendRecordView>> recordByIdCache;
+
+    public SendRecordServiceImpl(SendRecordRepository sendRecordRepository,
+                                 CaffeineCacheConfig caffeineCacheConfig) {
         this.sendRecordRepository = sendRecordRepository;
+        this.caffeineCacheConfig = caffeineCacheConfig;
+    }
+
+    @PostConstruct
+    void initCaches() {
+        recordByIdCache = caffeineCacheConfig.buildCache((id, executor) ->
+                sendRecordRepository.findById(id)
+                        .map(r -> Optional.of(toView(r)))
+                        .defaultIfEmpty(Optional.empty())
+                        .toFuture());
     }
 
     @Override
@@ -40,9 +58,10 @@ public class SendRecordServiceImpl implements SendRecordService {
 
     @Override
     public Mono<SendRecordView> getById(String id) {
-        return sendRecordRepository.findById(id)
-                .map(this::toView)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "发送记录不存在")));
+        return Mono.fromFuture(recordByIdCache.get(id))
+                .flatMap(opt -> opt
+                        .map(Mono::just)
+                        .orElseGet(() -> Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "发送记录不存在"))));
     }
 
     private SendRecordView toView(SendRecord r) {

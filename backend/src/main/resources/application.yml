@@ -15,6 +15,10 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 ass-kicker:
+  cache:
+    maximum-size: 1000
+    expire-after-write-minutes: 10
+    random-jitter-percent: 20
   channel:
     debug:
       enabled: true

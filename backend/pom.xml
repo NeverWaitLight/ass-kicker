@@ -120,6 +120,12 @@
       <version>${mustache.version}</version>
     </dependency>
 
+    <!-- ==================== Cache ==================== -->
+    <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
+    </dependency>
+
     <!-- ==================== Utilities ==================== -->
     <dependency>
       <groupId>com.lmax</groupId>

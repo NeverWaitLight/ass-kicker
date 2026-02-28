@@ -1,5 +1,7 @@
 package com.github.waitlight.asskicker.service.impl;
 
+import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
+import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.auth.RegisterRequest;
 import com.github.waitlight.asskicker.dto.user.*;
@@ -8,6 +10,7 @@ import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.model.UserStatus;
 import com.github.waitlight.asskicker.repository.UserRepository;
 import com.github.waitlight.asskicker.service.UserService;
+import jakarta.annotation.PostConstruct;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,6 +19,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -23,11 +27,32 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserConverter userMapStructer;
+    private final CaffeineCacheConfig caffeineCacheConfig;
 
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, UserConverter userMapStructer) {
+    private AsyncLoadingCache<String, Optional<User>> userByIdCache;
+    private AsyncLoadingCache<String, Optional<User>> userByUsernameCache;
+
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                           UserConverter userMapStructer, CaffeineCacheConfig caffeineCacheConfig) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userMapStructer = userMapStructer;
+        this.caffeineCacheConfig = caffeineCacheConfig;
+    }
+
+    @PostConstruct
+    void initCaches() {
+        userByIdCache = caffeineCacheConfig.buildCache((id, executor) ->
+                userRepository.findById(id)
+                        .map(Optional::of)
+                        .defaultIfEmpty(Optional.empty())
+                        .toFuture());
+
+        userByUsernameCache = caffeineCacheConfig.buildCache((username, executor) ->
+                userRepository.findByUsername(username)
+                        .map(Optional::of)
+                        .defaultIfEmpty(Optional.empty())
+                        .toFuture());
     }
 
     @Override
@@ -36,9 +61,9 @@ public class UserServiceImpl implements UserService {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名或密码不能为空"));
         }
         String username = request.username().trim();
-        return userRepository.existsByUsername(username)
-                .flatMap(exists -> {
-                    if (exists) {
+        return Mono.fromFuture(userByUsernameCache.get(username))
+                .flatMap(cached -> {
+                    if (cached.isPresent()) {
                         return Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "用户名已存在"));
                     }
                     User user = new User();
@@ -59,9 +84,9 @@ public class UserServiceImpl implements UserService {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名或密码不能为空"));
         }
         String username = request.username().trim();
-        return userRepository.existsByUsername(username)
-                .flatMap(exists -> {
-                    if (exists) {
+        return Mono.fromFuture(userByUsernameCache.get(username))
+                .flatMap(cached -> {
+                    if (cached.isPresent()) {
                         return Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "用户名已存在"));
                     }
                     return userRepository.count();
@@ -81,9 +106,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Mono<UserView> getUserById(String id) {
-        return userRepository.findById(id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在")))
-                .map(userMapStructer::toView);
+        return Mono.fromFuture(userByIdCache.get(id))
+                .flatMap(opt -> opt
+                        .map(u -> Mono.just(userMapStructer.toView(u)))
+                        .orElseGet(() -> Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在"))));
     }
 
     @Override
@@ -105,7 +131,11 @@ public class UserServiceImpl implements UserService {
     public Mono<Void> deleteUser(String id) {
         return userRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在")))
-                .flatMap(userRepository::delete);
+                .flatMap(user -> userRepository.delete(user)
+                        .doOnSuccess(v -> {
+                            userByIdCache.synchronous().invalidate(id);
+                            userByUsernameCache.synchronous().invalidate(user.getUsername());
+                        }));
     }
 
     @Override
@@ -118,7 +148,11 @@ public class UserServiceImpl implements UserService {
                 .flatMap(user -> {
                     user.setPasswordHash(passwordEncoder.encode(newPassword));
                     user.setUpdatedAt(Instant.now().toEpochMilli());
-                    return userRepository.save(user);
+                    return userRepository.save(user)
+                            .doOnSuccess(saved -> {
+                                userByIdCache.synchronous().invalidate(id);
+                                userByUsernameCache.synchronous().invalidate(saved.getUsername());
+                            });
                 })
                 .map(userMapStructer::toView);
     }
@@ -135,14 +169,20 @@ public class UserServiceImpl implements UserService {
                     if (newUsername.equals(user.getUsername())) {
                         return Mono.just(user);
                     }
-                    return userRepository.existsByUsername(newUsername)
-                            .flatMap(exists -> {
-                                if (exists) {
+                    return Mono.fromFuture(userByUsernameCache.get(newUsername))
+                            .flatMap(cached -> {
+                                if (cached.isPresent()) {
                                     return Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "用户名已存在"));
                                 }
+                                String oldUsername = user.getUsername();
                                 user.setUsername(newUsername);
                                 user.setUpdatedAt(Instant.now().toEpochMilli());
-                                return userRepository.save(user);
+                                return userRepository.save(user)
+                                        .doOnSuccess(saved -> {
+                                            userByIdCache.synchronous().invalidate(id);
+                                            userByUsernameCache.synchronous().invalidate(oldUsername);
+                                            userByUsernameCache.synchronous().invalidate(newUsername);
+                                        });
                             });
                 })
                 .map(userMapStructer::toView);
@@ -161,7 +201,11 @@ public class UserServiceImpl implements UserService {
                     }
                     user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
                     user.setUpdatedAt(Instant.now().toEpochMilli());
-                    return userRepository.save(user);
+                    return userRepository.save(user)
+                            .doOnSuccess(saved -> {
+                                userByIdCache.synchronous().invalidate(id);
+                                userByUsernameCache.synchronous().invalidate(saved.getUsername());
+                            });
                 })
                 .map(userMapStructer::toView);
     }
