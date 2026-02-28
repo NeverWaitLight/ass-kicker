@@ -106,27 +106,25 @@ class SendTaskConsumerTest {
     }
 
     @Test
-    void shouldUpdateRecordToFailedWhenTemplateMissing() {
+    void shouldSaveRecordAsFailedWhenTemplateMissing() {
         SendTask task = baseTask();
-        SendRecord storedRecord = mockRecordPersistence("record-failed");
+        mockRecordPersistence("record-failed");
 
         when(templateManager.fill(any(), any(), any())).thenReturn(
                 Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Template not found: " + task.getTemplateCode())));
-        when(sendRecordRepository.findById("record-failed")).thenAnswer(invocation -> Mono.just(storedRecord));
 
         consumer.consume(task);
 
-        verify(sendRecordRepository, timeout(2000)).findById("record-failed");
         ArgumentCaptor<SendRecord> captor = ArgumentCaptor.forClass(SendRecord.class);
-        verify(sendRecordRepository, timeout(2000).atLeast(2)).save(captor.capture());
-        SendRecord updatedRecord = captor.getAllValues().get(captor.getAllValues().size() - 1);
+        verify(sendRecordRepository, timeout(2000)).save(captor.capture());
+        SendRecord savedRecord = captor.getValue();
 
-        assertEquals(SendRecordStatus.FAILED, updatedRecord.getStatus());
-        assertEquals("TEMPLATE_NOT_FOUND", updatedRecord.getErrorCode());
+        assertEquals(SendRecordStatus.FAILED, savedRecord.getStatus());
+        assertEquals("TEMPLATE_NOT_FOUND", savedRecord.getErrorCode());
     }
 
     @Test
-    void shouldUpdateRecordToSuccessWhenSendSucceeded() {
+    void shouldSaveRecordAsSuccessWhenSendSucceeded() {
         SendTask task = baseTask();
         Channel channel = new Channel();
         channel.setId("channel-1");
@@ -134,8 +132,7 @@ class SendTaskConsumerTest {
         channel.setType(ChannelType.EMAIL);
         channel.setPropertiesJson("{}");
 
-        SendRecord storedRecord = mockRecordPersistence("record-success");
-        when(sendRecordRepository.findById("record-success")).thenAnswer(invocation -> Mono.just(storedRecord));
+        mockRecordPersistence("record-success");
 
         when(templateManager.fill(eq(task.getTemplateCode()), eq(Language.EN), any())).thenReturn(Mono.just("hello codex"));
         when(channelManager.selectChannel(task.getTemplateCode())).thenReturn(Mono.just(channel));
@@ -146,14 +143,13 @@ class SendTaskConsumerTest {
 
         consumer.consume(task);
 
-        verify(sendRecordRepository, timeout(2000)).findById("record-success");
         ArgumentCaptor<SendRecord> captor = ArgumentCaptor.forClass(SendRecord.class);
-        verify(sendRecordRepository, timeout(2000).atLeast(2)).save(captor.capture());
-        SendRecord updatedRecord = captor.getAllValues().get(captor.getAllValues().size() - 1);
+        verify(sendRecordRepository, timeout(2000)).save(captor.capture());
+        SendRecord savedRecord = captor.getValue();
 
-        assertEquals(SendRecordStatus.SUCCESS, updatedRecord.getStatus());
-        assertNull(updatedRecord.getErrorCode());
-        assertNull(updatedRecord.getErrorMessage());
+        assertEquals(SendRecordStatus.SUCCESS, savedRecord.getStatus());
+        assertNull(savedRecord.getErrorCode());
+        assertNull(savedRecord.getErrorMessage());
     }
 
     private SendTask baseTask() {
@@ -167,23 +163,13 @@ class SendTaskConsumerTest {
                 .build();
     }
 
-    private SendRecord mockRecordPersistence(String recordId) {
-        SendRecord storedRecord = new SendRecord();
-        storedRecord.setId(recordId);
-        storedRecord.setStatus(SendRecordStatus.PENDING);
-
+    private void mockRecordPersistence(String recordId) {
         when(sendRecordRepository.save(any(SendRecord.class))).thenAnswer(invocation -> {
             SendRecord record = invocation.getArgument(0);
             if (record.getId() == null) {
                 record.setId(recordId);
             }
-            storedRecord.setId(record.getId());
-            storedRecord.setStatus(record.getStatus());
-            storedRecord.setErrorCode(record.getErrorCode());
-            storedRecord.setErrorMessage(record.getErrorMessage());
-            storedRecord.setSentAt(record.getSentAt());
             return Mono.just(record);
         });
-        return storedRecord;
     }
 }

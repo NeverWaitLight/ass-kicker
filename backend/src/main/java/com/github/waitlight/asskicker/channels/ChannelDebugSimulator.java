@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 @Component
 public class ChannelDebugSimulator {
@@ -23,7 +22,7 @@ public class ChannelDebugSimulator {
     }
 
     public MsgResp simulate(String channelName) {
-        int sleepMs = resolveSleepMillis();
+        int sleepMs = properties.getSleepMs();
         try {
             Thread.sleep(sleepMs);
         } catch (InterruptedException ex) {
@@ -34,14 +33,5 @@ public class ChannelDebugSimulator {
         logger.info("CHANNEL_DEBUG_SIMULATED channel={} sleepMs={} messageId={}",
                 channelName, sleepMs, messageId);
         return MsgResp.success(messageId);
-    }
-
-    private int resolveSleepMillis() {
-        int min = properties.getMinSleepMs();
-        int max = properties.getMaxSleepMs();
-        if (max <= min) {
-            return min;
-        }
-        return ThreadLocalRandom.current().nextInt(min, max + 1);
     }
 }

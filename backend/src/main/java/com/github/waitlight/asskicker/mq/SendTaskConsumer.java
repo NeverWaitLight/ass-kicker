@@ -132,7 +132,7 @@ public class SendTaskConsumer implements DisposableBean {
         long taskStartedAt = Instant.now().toEpochMilli();
         List<String> recipients = normalizeRecipients(task.getRecipients());
         List<String> failureRecipients = recipients.isEmpty() ? Collections.singletonList(null) : recipients;
-        logExecutionAsync("SEND_TASK_RECEIVED", task.getTaskId(), null, null, SendRecordStatus.PENDING, null, null, 0L);
+        logExecutionAsync("SEND_TASK_RECEIVED", task.getTaskId(), null, null, null, null, null, 0L);
         try {
             Language language;
             try {
@@ -191,8 +191,7 @@ public class SendTaskConsumer implements DisposableBean {
                     "CONSUMER_ERROR", messageOrDefault(ex.getMessage(), "Consumer execution failed"));
         } finally {
             long durationMs = Math.max(0L, Instant.now().toEpochMilli() - taskStartedAt);
-            logExecutionAsync("SEND_TASK_FINISHED", task.getTaskId(), null, null, SendRecordStatus.PENDING, null, null,
-                    durationMs);
+            logExecutionAsync("SEND_TASK_FINISHED", task.getTaskId(), null, null, null, null, null, durationMs);
         }
     }
 
@@ -201,24 +200,11 @@ public class SendTaskConsumer implements DisposableBean {
             com.github.waitlight.asskicker.channels.Channel<?> sendChannel,
             String recipient) {
         long sendStartedAt = Instant.now().toEpochMilli();
-        CompletableFuture<String> pendingRecordFuture = createPendingRecordAsync(task, renderedContent, channelEntity,
-                recipient);
         MsgResp response = sendMessage(task, renderedContent, channelEntity, sendChannel, recipient, sendStartedAt);
         SendRecordStatus finalStatus = response.isSuccess() ? SendRecordStatus.SUCCESS : SendRecordStatus.FAILED;
         long sentAt = Instant.now().toEpochMilli();
-
-        pendingRecordFuture.whenComplete((recordId, pendingEx) -> {
-            if (pendingEx != null) {
-                logExecutionAsync("SEND_RECORD_PENDING_FAILED", task.getTaskId(), null, recipient,
-                        SendRecordStatus.FAILED,
-                        "PENDING_RECORD_CREATE_FAILED",
-                        messageOrDefault(pendingEx.getMessage(), "Failed to create pending record"),
-                        Math.max(0L, sentAt - sendStartedAt));
-                return;
-            }
-            updateRecordStatusAsync(task.getTaskId(), recordId, recipient, finalStatus,
-                    response.getErrorCode(), response.getErrorMessage(), sentAt, sendStartedAt);
-        });
+        saveFinalRecordAsync(task, renderedContent, channelEntity, recipient, finalStatus,
+                response.getErrorCode(), response.getErrorMessage(), sentAt, sendStartedAt);
     }
 
     private MsgResp sendMessage(SendTask task, String renderedContent,
@@ -253,41 +239,44 @@ public class SendTaskConsumer implements DisposableBean {
             String errorMessage) {
         for (String recipient : recipients) {
             long failedAt = Instant.now().toEpochMilli();
-            CompletableFuture<String> pendingRecordFuture = createPendingRecordAsync(task, renderedContent,
-                    channelEntity, recipient);
-            pendingRecordFuture.whenComplete((recordId, pendingEx) -> {
-                if (pendingEx != null) {
-                    logExecutionAsync("SEND_RECORD_PENDING_FAILED", task.getTaskId(), null, recipient,
-                            SendRecordStatus.FAILED,
-                            errorCode, messageOrDefault(pendingEx.getMessage(), errorMessage), 0L);
-                    return;
-                }
-                updateRecordStatusAsync(task.getTaskId(), recordId, recipient, SendRecordStatus.FAILED,
-                        errorCode, errorMessage, failedAt, 0L);
-            });
+            saveFinalRecordAsync(task, renderedContent, channelEntity, recipient, SendRecordStatus.FAILED,
+                    errorCode, errorMessage, failedAt, 0L);
             logExecutionAsync("SEND_RESULT", task.getTaskId(), null, recipient, SendRecordStatus.FAILED, errorCode,
                     errorMessage, 0L);
         }
     }
 
-    private CompletableFuture<String> createPendingRecordAsync(SendTask task,
+    private void saveFinalRecordAsync(SendTask task,
             String renderedContent,
             Channel channelEntity,
-            String recipient) {
-        return CompletableFuture.supplyAsync(() -> {
-            SendRecord record = buildPendingRecord(task, renderedContent, channelEntity, recipient);
-            SendRecord saved = sendRecordRepository.save(record).block();
-            if (saved == null || saved.getId() == null) {
-                throw new IllegalStateException("Failed to create pending send record");
+            String recipient,
+            SendRecordStatus status,
+            String errorCode,
+            String errorMessage,
+            long sentAt,
+            long startedAt) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                SendRecord record = buildFinalRecord(task, renderedContent, channelEntity, recipient,
+                        status, errorCode, errorMessage, sentAt);
+                SendRecord saved = sendRecordRepository.save(record).block();
+                if (saved == null || saved.getId() == null) {
+                    logExecution("SEND_RECORD_SAVE_FAILED", task.getTaskId(), null, recipient,
+                            SendRecordStatus.FAILED, "RECORD_SAVE_FAILED", "Failed to save send record", 0L);
+                    return;
+                }
+                long durationMs = startedAt == 0L ? 0L : Math.max(0L, sentAt - startedAt);
+                logExecution("SEND_RECORD_SAVED", task.getTaskId(), saved.getId(), recipient, status,
+                        errorCode, errorMessage, durationMs);
+            } catch (Exception ex) {
+                logExecution("SEND_RECORD_SAVE_FAILED", task.getTaskId(), null, recipient, SendRecordStatus.FAILED,
+                        "RECORD_SAVE_FAILED", messageOrDefault(ex.getMessage(), "Failed to save send record"), 0L);
             }
-            logExecution("SEND_RECORD_PENDING_CREATED", task.getTaskId(), saved.getId(), recipient,
-                    SendRecordStatus.PENDING, null, null, 0L);
-            return saved.getId();
         }, auditExecutor);
     }
 
-    private SendRecord buildPendingRecord(SendTask task, String renderedContent, Channel channelEntity,
-            String recipient) {
+    private SendRecord buildFinalRecord(SendTask task, String renderedContent, Channel channelEntity,
+            String recipient, SendRecordStatus status, String errorCode, String errorMessage, long sentAt) {
         SendRecord record = new SendRecord();
         record.setTaskId(task.getTaskId());
         record.setTemplateCode(task.getTemplateCode());
@@ -300,47 +289,11 @@ public class SendTaskConsumer implements DisposableBean {
         record.setRenderedContent(renderedContent);
         record.setChannelType(channelEntity != null ? channelEntity.getType() : null);
         record.setChannelName(channelEntity != null ? channelEntity.getName() : null);
-        record.setStatus(SendRecordStatus.PENDING);
-        record.setErrorCode(null);
-        record.setErrorMessage(null);
-        record.setSentAt(null);
+        record.setStatus(status);
+        record.setErrorCode(status == SendRecordStatus.SUCCESS ? null : errorCode);
+        record.setErrorMessage(status == SendRecordStatus.SUCCESS ? null : errorMessage);
+        record.setSentAt(sentAt);
         return record;
-    }
-
-    private void updateRecordStatusAsync(String taskId,
-            String recordId,
-            String recipient,
-            SendRecordStatus status,
-            String errorCode,
-            String errorMessage,
-            long sentAt,
-            long startedAt) {
-        CompletableFuture.runAsync(() -> {
-            try {
-                SendRecord record = sendRecordRepository.findById(recordId).block();
-                if (record == null) {
-                    logExecution("SEND_RECORD_NOT_FOUND", taskId, recordId, recipient, SendRecordStatus.FAILED,
-                            "RECORD_NOT_FOUND", "Send record not found", 0L);
-                    return;
-                }
-                record.setStatus(status);
-                if (status == SendRecordStatus.SUCCESS) {
-                    record.setErrorCode(null);
-                    record.setErrorMessage(null);
-                } else {
-                    record.setErrorCode(errorCode);
-                    record.setErrorMessage(errorMessage);
-                }
-                record.setSentAt(sentAt);
-                sendRecordRepository.save(record).block();
-                long durationMs = startedAt == 0L ? 0L : Math.max(0L, sentAt - startedAt);
-                logExecution("SEND_RECORD_STATUS_UPDATED", taskId, recordId, recipient, status,
-                        record.getErrorCode(), record.getErrorMessage(), durationMs);
-            } catch (Exception ex) {
-                logExecution("SEND_RECORD_STATUS_UPDATE_FAILED", taskId, recordId, recipient, SendRecordStatus.FAILED,
-                        "STATUS_UPDATE_FAILED", messageOrDefault(ex.getMessage(), "Failed to update send record"), 0L);
-            }
-        }, auditExecutor);
     }
 
     private void logExecutionAsync(String event,

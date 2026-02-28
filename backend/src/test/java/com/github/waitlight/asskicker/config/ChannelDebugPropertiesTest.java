@@ -15,10 +15,9 @@ class ChannelDebugPropertiesTest {
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
     @Test
-    void shouldPassValidationForValidRange() {
+    void shouldPassValidationForValidSleepMs() {
         ChannelDebugProperties properties = new ChannelDebugProperties();
-        properties.setMinSleepMs(60);
-        properties.setMaxSleepMs(120);
+        properties.setSleepMs(100);
 
         Set<ConstraintViolation<ChannelDebugProperties>> violations = validator.validate(properties);
 
@@ -26,10 +25,9 @@ class ChannelDebugPropertiesTest {
     }
 
     @Test
-    void shouldFailValidationWhenMaxLessThanMin() {
+    void shouldFailValidationWhenSleepMsIsNegative() {
         ChannelDebugProperties properties = new ChannelDebugProperties();
-        properties.setMinSleepMs(120);
-        properties.setMaxSleepMs(60);
+        properties.setSleepMs(-1);
 
         Set<ConstraintViolation<ChannelDebugProperties>> violations = validator.validate(properties);
 

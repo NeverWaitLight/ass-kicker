@@ -6,6 +6,7 @@ spring:
   data:
     mongodb:
       uri: mongodb://admin:123456@localhost:27017/asskicker?authSource=admin
+      # uri: mongodb://admin:123456@localhost:27017/asskicker?authSource=admin&minPoolSize=20
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
@@ -22,8 +23,7 @@ ass-kicker:
   channel:
     debug:
       enabled: true
-      min-sleep-ms: 50
-      max-sleep-ms: 200
+      sleep-ms: 100
   security:
     jwt:
       secret: change-this-secret-to-32-chars-minimum

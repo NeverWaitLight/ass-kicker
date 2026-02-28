@@ -17,8 +17,7 @@ class SmtpEmailChannelDebugTest {
         SmtpEmailChannelConfig config = new SmtpEmailChannelConfig();
         ChannelDebugProperties properties = new ChannelDebugProperties();
         properties.setEnabled(true);
-        properties.setMinSleepMs(0);
-        properties.setMaxSleepMs(0);
+        properties.setSleepMs(0);
 
         SmtpEmailChannel channel = new SmtpEmailChannel(config, new ChannelDebugSimulator(properties));
         MsgReq request = MsgReq.builder()
@@ -38,8 +37,7 @@ class SmtpEmailChannelDebugTest {
         SmtpEmailChannelConfig config = new SmtpEmailChannelConfig();
         ChannelDebugProperties properties = new ChannelDebugProperties();
         properties.setEnabled(true);
-        properties.setMinSleepMs(0);
-        properties.setMaxSleepMs(0);
+        properties.setSleepMs(0);
 
         SmtpEmailChannel channel = new SmtpEmailChannel(config, new ChannelDebugSimulator(properties));
         MsgResp response = channel.send(null);

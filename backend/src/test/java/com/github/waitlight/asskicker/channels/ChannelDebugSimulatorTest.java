@@ -13,8 +13,7 @@ class ChannelDebugSimulatorTest {
     void shouldReportEnabledStateAndReturnSimulatedSuccess() {
         ChannelDebugProperties properties = new ChannelDebugProperties();
         properties.setEnabled(true);
-        properties.setMinSleepMs(0);
-        properties.setMaxSleepMs(0);
+        properties.setSleepMs(0);
         ChannelDebugSimulator simulator = new ChannelDebugSimulator(properties);
 
         assertTrue(simulator.isEnabled());

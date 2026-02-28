@@ -107,14 +107,12 @@ const channelTypeLabel = (value) => (value ? (CHANNEL_TYPE_LABELS['zh-CN'][value
 const statusColor = (status) => {
   if (status === 'SUCCESS') return 'green'
   if (status === 'FAILED') return 'red'
-  if (status === 'PENDING') return 'blue'
   return 'default'
 }
 
 const statusLabel = (status) => {
   if (status === 'SUCCESS') return '成功'
   if (status === 'FAILED') return '失败'
-  if (status === 'PENDING') return '处理中'
   return status || '-'
 }
 
