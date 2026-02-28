@@ -52,7 +52,6 @@ public class SendHandler {
                 .templateCode(body.templateCode())
                 .languageCode(body.language().getCode())
                 .params(params)
-                .channelId(body.channelId())
                 .recipients(body.recipients())
                 .submittedAt(Instant.now().toEpochMilli())
                 .build();

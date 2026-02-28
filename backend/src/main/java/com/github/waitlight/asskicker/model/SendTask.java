@@ -18,7 +18,6 @@ public class SendTask {
     private String templateCode;
     private String languageCode;
     private Map<String, Object> params;
-    private String channelId;
     private List<String> recipients;
     private Long submittedAt;
 }

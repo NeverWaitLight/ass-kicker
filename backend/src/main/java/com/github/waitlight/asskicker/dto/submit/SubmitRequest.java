@@ -19,9 +19,6 @@ public record SubmitRequest(
         Language language,
         @Schema(description = "模板参数，用于占位符替换")
         Map<String, Object> params,
-        @NotBlank(message = "通道ID不能为空")
-        @Schema(description = "通道ID", requiredMode = Schema.RequiredMode.REQUIRED)
-        String channelId,
         @NotEmpty(message = "收件人列表不能为空")
         @Schema(description = "收件人列表", requiredMode = Schema.RequiredMode.REQUIRED)
         List<String> recipients

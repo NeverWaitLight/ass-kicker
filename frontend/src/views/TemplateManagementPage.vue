@@ -39,9 +39,9 @@
         <template v-if="column.key === 'description'">
           <span class="text-muted">{{ record.description || '-' }}</span>
         </template>
-        <template v-else-if="column.key === 'applicableSenderTypes'">
-          <a-tag v-for="t in (record.applicableSenderTypes || [])" :key="t" color="blue">{{ channelTypeLabel(t) }}</a-tag>
-          <span v-if="!(record.applicableSenderTypes || []).length" class="text-muted">-</span>
+        <template v-else-if="column.key === 'applicableChannelTypes'">
+          <a-tag v-for="t in (record.applicableChannelTypes || [])" :key="t" color="blue">{{ channelTypeLabel(t) }}</a-tag>
+          <span v-if="!(record.applicableChannelTypes || []).length" class="text-muted">-</span>
         </template>
         <template v-else-if="column.key === 'contentType'">
           {{ getContentTypeLabel(record.contentType) }}
@@ -86,9 +86,9 @@
             :disabled="formModal.isEdit"
           />
         </a-form-item>
-        <a-form-item label="适用通道类型" name="applicableSenderTypes">
+        <a-form-item label="适用通道类型" name="applicableChannelTypes">
           <a-select
-            v-model:value="formData.applicableSenderTypes"
+            v-model:value="formData.applicableChannelTypes"
             mode="multiple"
             placeholder="选择适用的通道类型（可多选）"
             :options="channelTypeOptions"
@@ -189,7 +189,7 @@ const formData = reactive({
   name: '',
   code: '',
   description: '',
-  applicableSenderTypes: [],
+  applicableChannelTypes: [],
   contentType: 'PLAIN_TEXT'
 })
 
@@ -201,7 +201,7 @@ const formRules = {
 const columns = [
   { title: '名称', dataIndex: 'name', key: 'name', ellipsis: true },
   { title: '编码', dataIndex: 'code', key: 'code', ellipsis: true },
-  { title: '适用通道', key: 'applicableSenderTypes', width: 180 },
+  { title: '适用通道', key: 'applicableChannelTypes', width: 180 },
   { title: '内容类型', key: 'contentType', width: 100 },
   { title: '描述', dataIndex: 'description', key: 'description', ellipsis: true },
   { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180 },
@@ -243,7 +243,7 @@ const openCreate = () => {
   formData.name = ''
   formData.code = ''
   formData.description = ''
-  formData.applicableSenderTypes = []
+  formData.applicableChannelTypes = []
   formData.contentType = 'PLAIN_TEXT'
   formModal.isEdit = false
   formModal.editId = null
@@ -254,7 +254,7 @@ const openEdit = (record) => {
   formData.name = record.name
   formData.code = record.code
   formData.description = record.description || ''
-  formData.applicableSenderTypes = record.applicableSenderTypes ? [...record.applicableSenderTypes] : []
+  formData.applicableChannelTypes = record.applicableChannelTypes ? [...record.applicableChannelTypes] : []
   formData.contentType = record.contentType || 'PLAIN_TEXT'
   formModal.isEdit = true
   formModal.editId = record.id
@@ -278,7 +278,7 @@ const submitForm = async () => {
       name: formData.name,
       code: formData.code,
       description: formData.description,
-      applicableSenderTypes: formData.applicableSenderTypes,
+      applicableChannelTypes: formData.applicableChannelTypes,
       contentType: formData.contentType
     }
     if (formModal.isEdit) {

@@ -135,6 +135,11 @@ public class ChannelServiceImpl implements ChannelService {
     }
 
     @Override
+    public Flux<Channel> findByTypes(List<ChannelType> types) {
+        return listChannels().filter(ch -> types.contains(ch.getType()));
+    }
+
+    @Override
     public Mono<Channel> updateChannel(String id, Channel channel) {
         return channelRepository.findById(id)
                 .flatMap(existing -> {

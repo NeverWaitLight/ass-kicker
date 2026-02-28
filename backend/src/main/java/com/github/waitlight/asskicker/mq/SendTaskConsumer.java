@@ -13,6 +13,7 @@ import com.github.waitlight.asskicker.channels.push.PushChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.push.PushChannelFactory;
 import com.github.waitlight.asskicker.channels.sms.SmsChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.sms.SmsChannelFactory;
+import com.github.waitlight.asskicker.manager.ChannelManager;
 import com.github.waitlight.asskicker.manager.TemplateManager;
 import com.github.waitlight.asskicker.model.Channel;
 import com.github.waitlight.asskicker.model.ChannelType;
@@ -20,7 +21,6 @@ import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.SendRecord;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
 import com.github.waitlight.asskicker.model.SendTask;
-import com.github.waitlight.asskicker.repository.ChannelRepository;
 import com.github.waitlight.asskicker.repository.SendRecordRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,10 +46,11 @@ import java.util.concurrent.TimeUnit;
 public class SendTaskConsumer implements DisposableBean {
 
     private static final Logger logger = LoggerFactory.getLogger(SendTaskConsumer.class);
-    private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE = new TypeReference<>() {};
+    private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE = new TypeReference<>() {
+    };
 
     private final TemplateManager templateManager;
-    private final ChannelRepository channelRepository;
+    private final ChannelManager channelManager;
     private final SendRecordRepository sendRecordRepository;
     private final EmailChannelFactory emailChannelFactory;
     private final EmailChannelConfigConverter emailChannelConfigConverter;
@@ -65,39 +66,39 @@ public class SendTaskConsumer implements DisposableBean {
 
     @Autowired
     public SendTaskConsumer(TemplateManager templateManager,
-                            ChannelRepository channelRepository,
-                            SendRecordRepository sendRecordRepository,
-                            EmailChannelFactory emailChannelFactory,
-                            EmailChannelConfigConverter emailChannelConfigConverter,
-                            IMChannelFactory imChannelFactory,
-                            IMChannelConfigConverter imChannelConfigConverter,
-                            PushChannelFactory pushChannelFactory,
-                            PushChannelConfigConverter pushChannelConfigConverter,
-                            SmsChannelFactory smsChannelFactory,
-                            SmsChannelConfigConverter smsChannelConfigConverter,
-                            ObjectMapper objectMapper) {
-        this(templateManager, channelRepository, sendRecordRepository,
+            ChannelManager channelManager,
+            SendRecordRepository sendRecordRepository,
+            EmailChannelFactory emailChannelFactory,
+            EmailChannelConfigConverter emailChannelConfigConverter,
+            IMChannelFactory imChannelFactory,
+            IMChannelConfigConverter imChannelConfigConverter,
+            PushChannelFactory pushChannelFactory,
+            PushChannelConfigConverter pushChannelConfigConverter,
+            SmsChannelFactory smsChannelFactory,
+            SmsChannelConfigConverter smsChannelConfigConverter,
+            ObjectMapper objectMapper) {
+        this(templateManager, channelManager, sendRecordRepository,
                 emailChannelFactory, emailChannelConfigConverter, imChannelFactory, imChannelConfigConverter,
                 pushChannelFactory, pushChannelConfigConverter, smsChannelFactory, smsChannelConfigConverter,
                 objectMapper, Executors.newVirtualThreadPerTaskExecutor(), Executors.newVirtualThreadPerTaskExecutor());
     }
 
     SendTaskConsumer(TemplateManager templateManager,
-                     ChannelRepository channelRepository,
-                     SendRecordRepository sendRecordRepository,
-                     EmailChannelFactory emailChannelFactory,
-                     EmailChannelConfigConverter emailChannelConfigConverter,
-                     IMChannelFactory imChannelFactory,
-                     IMChannelConfigConverter imChannelConfigConverter,
-                     PushChannelFactory pushChannelFactory,
-                     PushChannelConfigConverter pushChannelConfigConverter,
-                     SmsChannelFactory smsChannelFactory,
-                     SmsChannelConfigConverter smsChannelConfigConverter,
-                     ObjectMapper objectMapper,
-                     ExecutorService taskExecutor,
-                     ExecutorService auditExecutor) {
+            ChannelManager channelManager,
+            SendRecordRepository sendRecordRepository,
+            EmailChannelFactory emailChannelFactory,
+            EmailChannelConfigConverter emailChannelConfigConverter,
+            IMChannelFactory imChannelFactory,
+            IMChannelConfigConverter imChannelConfigConverter,
+            PushChannelFactory pushChannelFactory,
+            PushChannelConfigConverter pushChannelConfigConverter,
+            SmsChannelFactory smsChannelFactory,
+            SmsChannelConfigConverter smsChannelConfigConverter,
+            ObjectMapper objectMapper,
+            ExecutorService taskExecutor,
+            ExecutorService auditExecutor) {
         this.templateManager = templateManager;
-        this.channelRepository = channelRepository;
+        this.channelManager = channelManager;
         this.sendRecordRepository = sendRecordRepository;
         this.emailChannelFactory = emailChannelFactory;
         this.emailChannelConfigConverter = emailChannelConfigConverter;
@@ -146,15 +147,23 @@ public class SendTaskConsumer implements DisposableBean {
                 renderedContent = templateManager.fill(task.getTemplateCode(), language, task.getParams()).block();
             } catch (ResponseStatusException ex) {
                 String reason = ex.getReason() != null ? ex.getReason() : "";
-                String errorCode = reason.contains("Language template not found") ? "LANGUAGE_TEMPLATE_NOT_FOUND" : "TEMPLATE_NOT_FOUND";
+                String errorCode = reason.contains("Language template not found") ? "LANGUAGE_TEMPLATE_NOT_FOUND"
+                        : "TEMPLATE_NOT_FOUND";
                 markRecipientsFailedAsync(task, null, null, failureRecipients, errorCode, reason);
                 return;
             }
 
-            Channel channelEntity = channelRepository.findById(task.getChannelId()).block();
+            Channel channelEntity;
+            try {
+                channelEntity = channelManager.selectChannel(task.getTemplateCode()).block();
+            } catch (Exception ex) {
+                markRecipientsFailedAsync(task, renderedContent, null, failureRecipients,
+                        "CHANNEL_NOT_FOUND", messageOrDefault(ex.getMessage(), "No available channel"));
+                return;
+            }
             if (channelEntity == null) {
                 markRecipientsFailedAsync(task, renderedContent, null, failureRecipients,
-                        "CHANNEL_NOT_FOUND", "Channel not found: " + task.getChannelId());
+                        "CHANNEL_NOT_FOUND", "No available channel for template: " + task.getTemplateCode());
                 return;
             }
             if (recipients.isEmpty()) {
@@ -182,23 +191,26 @@ public class SendTaskConsumer implements DisposableBean {
                     "CONSUMER_ERROR", messageOrDefault(ex.getMessage(), "Consumer execution failed"));
         } finally {
             long durationMs = Math.max(0L, Instant.now().toEpochMilli() - taskStartedAt);
-            logExecutionAsync("SEND_TASK_FINISHED", task.getTaskId(), null, null, SendRecordStatus.PENDING, null, null, durationMs);
+            logExecutionAsync("SEND_TASK_FINISHED", task.getTaskId(), null, null, SendRecordStatus.PENDING, null, null,
+                    durationMs);
         }
     }
 
     private void processRecipient(SendTask task, String renderedContent,
-                                  Channel channelEntity,
-                                  com.github.waitlight.asskicker.channels.Channel<?> sendChannel,
-                                  String recipient) {
+            Channel channelEntity,
+            com.github.waitlight.asskicker.channels.Channel<?> sendChannel,
+            String recipient) {
         long sendStartedAt = Instant.now().toEpochMilli();
-        CompletableFuture<String> pendingRecordFuture = createPendingRecordAsync(task, renderedContent, channelEntity, recipient);
+        CompletableFuture<String> pendingRecordFuture = createPendingRecordAsync(task, renderedContent, channelEntity,
+                recipient);
         MsgResp response = sendMessage(task, renderedContent, channelEntity, sendChannel, recipient, sendStartedAt);
         SendRecordStatus finalStatus = response.isSuccess() ? SendRecordStatus.SUCCESS : SendRecordStatus.FAILED;
         long sentAt = Instant.now().toEpochMilli();
 
         pendingRecordFuture.whenComplete((recordId, pendingEx) -> {
             if (pendingEx != null) {
-                logExecutionAsync("SEND_RECORD_PENDING_FAILED", task.getTaskId(), null, recipient, SendRecordStatus.FAILED,
+                logExecutionAsync("SEND_RECORD_PENDING_FAILED", task.getTaskId(), null, recipient,
+                        SendRecordStatus.FAILED,
                         "PENDING_RECORD_CREATE_FAILED",
                         messageOrDefault(pendingEx.getMessage(), "Failed to create pending record"),
                         Math.max(0L, sentAt - sendStartedAt));
@@ -210,10 +222,10 @@ public class SendTaskConsumer implements DisposableBean {
     }
 
     private MsgResp sendMessage(SendTask task, String renderedContent,
-                                Channel channelEntity,
-                                com.github.waitlight.asskicker.channels.Channel<?> sendChannel,
-                                String recipient,
-                                long sendStartedAt) {
+            Channel channelEntity,
+            com.github.waitlight.asskicker.channels.Channel<?> sendChannel,
+            String recipient,
+            long sendStartedAt) {
         MsgReq request = MsgReq.builder()
                 .recipient(recipient)
                 .subject("")
@@ -234,31 +246,34 @@ public class SendTaskConsumer implements DisposableBean {
     }
 
     private void markRecipientsFailedAsync(SendTask task,
-                                           String renderedContent,
-                                           Channel channelEntity,
-                                           List<String> recipients,
-                                           String errorCode,
-                                           String errorMessage) {
+            String renderedContent,
+            Channel channelEntity,
+            List<String> recipients,
+            String errorCode,
+            String errorMessage) {
         for (String recipient : recipients) {
             long failedAt = Instant.now().toEpochMilli();
-            CompletableFuture<String> pendingRecordFuture = createPendingRecordAsync(task, renderedContent, channelEntity, recipient);
+            CompletableFuture<String> pendingRecordFuture = createPendingRecordAsync(task, renderedContent,
+                    channelEntity, recipient);
             pendingRecordFuture.whenComplete((recordId, pendingEx) -> {
                 if (pendingEx != null) {
-                    logExecutionAsync("SEND_RECORD_PENDING_FAILED", task.getTaskId(), null, recipient, SendRecordStatus.FAILED,
+                    logExecutionAsync("SEND_RECORD_PENDING_FAILED", task.getTaskId(), null, recipient,
+                            SendRecordStatus.FAILED,
                             errorCode, messageOrDefault(pendingEx.getMessage(), errorMessage), 0L);
                     return;
                 }
                 updateRecordStatusAsync(task.getTaskId(), recordId, recipient, SendRecordStatus.FAILED,
                         errorCode, errorMessage, failedAt, 0L);
             });
-            logExecutionAsync("SEND_RESULT", task.getTaskId(), null, recipient, SendRecordStatus.FAILED, errorCode, errorMessage, 0L);
+            logExecutionAsync("SEND_RESULT", task.getTaskId(), null, recipient, SendRecordStatus.FAILED, errorCode,
+                    errorMessage, 0L);
         }
     }
 
     private CompletableFuture<String> createPendingRecordAsync(SendTask task,
-                                                               String renderedContent,
-                                                               Channel channelEntity,
-                                                               String recipient) {
+            String renderedContent,
+            Channel channelEntity,
+            String recipient) {
         return CompletableFuture.supplyAsync(() -> {
             SendRecord record = buildPendingRecord(task, renderedContent, channelEntity, recipient);
             SendRecord saved = sendRecordRepository.save(record).block();
@@ -271,13 +286,14 @@ public class SendTaskConsumer implements DisposableBean {
         }, auditExecutor);
     }
 
-    private SendRecord buildPendingRecord(SendTask task, String renderedContent, Channel channelEntity, String recipient) {
+    private SendRecord buildPendingRecord(SendTask task, String renderedContent, Channel channelEntity,
+            String recipient) {
         SendRecord record = new SendRecord();
         record.setTaskId(task.getTaskId());
         record.setTemplateCode(task.getTemplateCode());
         record.setLanguageCode(task.getLanguageCode());
         record.setParams(task.getParams());
-        record.setChannelId(task.getChannelId());
+        record.setChannelId(channelEntity != null ? channelEntity.getId() : null);
         record.setRecipients(task.getRecipients());
         record.setRecipient(recipient);
         record.setSubmittedAt(task.getSubmittedAt());
@@ -292,13 +308,13 @@ public class SendTaskConsumer implements DisposableBean {
     }
 
     private void updateRecordStatusAsync(String taskId,
-                                         String recordId,
-                                         String recipient,
-                                         SendRecordStatus status,
-                                         String errorCode,
-                                         String errorMessage,
-                                         long sentAt,
-                                         long startedAt) {
+            String recordId,
+            String recipient,
+            SendRecordStatus status,
+            String errorCode,
+            String errorMessage,
+            long sentAt,
+            long startedAt) {
         CompletableFuture.runAsync(() -> {
             try {
                 SendRecord record = sendRecordRepository.findById(recordId).block();
@@ -328,25 +344,26 @@ public class SendTaskConsumer implements DisposableBean {
     }
 
     private void logExecutionAsync(String event,
-                                   String taskId,
-                                   String recordId,
-                                   String recipient,
-                                   SendRecordStatus status,
-                                   String errorCode,
-                                   String errorMessage,
-                                   long durationMs) {
-        CompletableFuture.runAsync(() -> logExecution(event, taskId, recordId, recipient, status, errorCode, errorMessage, durationMs),
+            String taskId,
+            String recordId,
+            String recipient,
+            SendRecordStatus status,
+            String errorCode,
+            String errorMessage,
+            long durationMs) {
+        CompletableFuture.runAsync(
+                () -> logExecution(event, taskId, recordId, recipient, status, errorCode, errorMessage, durationMs),
                 auditExecutor);
     }
 
     private void logExecution(String event,
-                              String taskId,
-                              String recordId,
-                              String recipient,
-                              SendRecordStatus status,
-                              String errorCode,
-                              String errorMessage,
-                              long durationMs) {
+            String taskId,
+            String recordId,
+            String recipient,
+            SendRecordStatus status,
+            String errorCode,
+            String errorMessage,
+            long durationMs) {
         if (status == SendRecordStatus.FAILED) {
             logger.warn("{} taskId={} recordId={} recipient={} status={} errorCode={} errorMessage={} durationMs={}",
                     event, taskId, recordId, recipient, status, errorCode, errorMessage, durationMs);
@@ -416,7 +433,8 @@ public class SendTaskConsumer implements DisposableBean {
             return objectMapper.readValue(json, MAP_TYPE);
         } catch (Exception ex) {
             logExecutionAsync("SEND_CHANNEL_PROPERTIES_PARSE_FAILED", null, null, null, SendRecordStatus.FAILED,
-                    "CHANNEL_PROPERTIES_PARSE_FAILED", messageOrDefault(ex.getMessage(), "Failed to parse channel properties"), 0L);
+                    "CHANNEL_PROPERTIES_PARSE_FAILED",
+                    messageOrDefault(ex.getMessage(), "Failed to parse channel properties"), 0L);
             return new LinkedHashMap<>();
         }
     }

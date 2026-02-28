@@ -12,6 +12,7 @@ import com.github.waitlight.asskicker.channels.push.PushChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.push.PushChannelFactory;
 import com.github.waitlight.asskicker.channels.sms.SmsChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.sms.SmsChannelFactory;
+import com.github.waitlight.asskicker.manager.ChannelManager;
 import com.github.waitlight.asskicker.manager.TemplateManager;
 import com.github.waitlight.asskicker.model.Channel;
 import com.github.waitlight.asskicker.model.ChannelType;
@@ -19,7 +20,6 @@ import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.SendRecord;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
 import com.github.waitlight.asskicker.model.SendTask;
-import com.github.waitlight.asskicker.repository.ChannelRepository;
 import com.github.waitlight.asskicker.repository.SendRecordRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -52,7 +52,7 @@ class SendTaskConsumerTest {
     @Mock
     private TemplateManager templateManager;
     @Mock
-    private ChannelRepository channelRepository;
+    private ChannelManager channelManager;
     @Mock
     private SendRecordRepository sendRecordRepository;
     @Mock
@@ -84,7 +84,7 @@ class SendTaskConsumerTest {
         auditExecutor = Executors.newSingleThreadExecutor();
         consumer = new SendTaskConsumer(
                 templateManager,
-                channelRepository,
+                channelManager,
                 sendRecordRepository,
                 emailChannelFactory,
                 emailChannelConfigConverter,
@@ -129,7 +129,7 @@ class SendTaskConsumerTest {
     void shouldUpdateRecordToSuccessWhenSendSucceeded() {
         SendTask task = baseTask();
         Channel channel = new Channel();
-        channel.setId(task.getChannelId());
+        channel.setId("channel-1");
         channel.setName("mail-chan");
         channel.setType(ChannelType.EMAIL);
         channel.setPropertiesJson("{}");
@@ -138,7 +138,7 @@ class SendTaskConsumerTest {
         when(sendRecordRepository.findById("record-success")).thenAnswer(invocation -> Mono.just(storedRecord));
 
         when(templateManager.fill(eq(task.getTemplateCode()), eq(Language.EN), any())).thenReturn(Mono.just("hello codex"));
-        when(channelRepository.findById(task.getChannelId())).thenReturn(Mono.just(channel));
+        when(channelManager.selectChannel(task.getTemplateCode())).thenReturn(Mono.just(channel));
         when(emailChannelConfigConverter.fromProperties(anyMap())).thenReturn(new ChannelConfig() {
         });
         when(emailChannelFactory.create(any(ChannelConfig.class))).thenAnswer(invocation -> sendChannel);
@@ -162,7 +162,6 @@ class SendTaskConsumerTest {
                 .templateCode("welcome")
                 .languageCode("en")
                 .params(Map.of("name", "codex"))
-                .channelId("channel-1")
                 .recipients(List.of("user@example.com"))
                 .submittedAt(System.currentTimeMillis())
                 .build();
