@@ -12,18 +12,17 @@ import com.github.waitlight.asskicker.channels.push.PushChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.push.PushChannelFactory;
 import com.github.waitlight.asskicker.channels.sms.SmsChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.sms.SmsChannelFactory;
+import com.github.waitlight.asskicker.manager.TemplateManager;
 import com.github.waitlight.asskicker.model.Channel;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.Language;
-import com.github.waitlight.asskicker.model.LanguageTemplate;
 import com.github.waitlight.asskicker.model.SendRecord;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
 import com.github.waitlight.asskicker.model.SendTask;
-import com.github.waitlight.asskicker.model.Template;
 import com.github.waitlight.asskicker.repository.ChannelRepository;
-import com.github.waitlight.asskicker.repository.LanguageTemplateRepository;
 import com.github.waitlight.asskicker.repository.SendRecordRepository;
-import com.github.waitlight.asskicker.repository.TemplateRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,9 +50,7 @@ import static org.mockito.Mockito.when;
 class SendTaskConsumerTest {
 
     @Mock
-    private TemplateRepository templateRepository;
-    @Mock
-    private LanguageTemplateRepository languageTemplateRepository;
+    private TemplateManager templateManager;
     @Mock
     private ChannelRepository channelRepository;
     @Mock
@@ -85,8 +83,7 @@ class SendTaskConsumerTest {
         taskExecutor = Executors.newSingleThreadExecutor();
         auditExecutor = Executors.newSingleThreadExecutor();
         consumer = new SendTaskConsumer(
-                templateRepository,
-                languageTemplateRepository,
+                templateManager,
                 channelRepository,
                 sendRecordRepository,
                 emailChannelFactory,
@@ -113,7 +110,8 @@ class SendTaskConsumerTest {
         SendTask task = baseTask();
         SendRecord storedRecord = mockRecordPersistence("record-failed");
 
-        when(templateRepository.findByCode(task.getTemplateCode())).thenReturn(Mono.empty());
+        when(templateManager.fill(any(), any(), any())).thenReturn(
+                Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Template not found: " + task.getTemplateCode())));
         when(sendRecordRepository.findById("record-failed")).thenAnswer(invocation -> Mono.just(storedRecord));
 
         consumer.consume(task);
@@ -130,15 +128,6 @@ class SendTaskConsumerTest {
     @Test
     void shouldUpdateRecordToSuccessWhenSendSucceeded() {
         SendTask task = baseTask();
-        Template template = new Template();
-        template.setId("tpl-1");
-        template.setCode(task.getTemplateCode());
-
-        LanguageTemplate languageTemplate = new LanguageTemplate();
-        languageTemplate.setTemplateId("tpl-1");
-        languageTemplate.setLanguage(Language.EN);
-        languageTemplate.setContent("hello {name}");
-
         Channel channel = new Channel();
         channel.setId(task.getChannelId());
         channel.setName("mail-chan");
@@ -148,8 +137,7 @@ class SendTaskConsumerTest {
         SendRecord storedRecord = mockRecordPersistence("record-success");
         when(sendRecordRepository.findById("record-success")).thenAnswer(invocation -> Mono.just(storedRecord));
 
-        when(templateRepository.findByCode(task.getTemplateCode())).thenReturn(Mono.just(template));
-        when(languageTemplateRepository.findByTemplateIdAndLanguage("tpl-1", Language.EN)).thenReturn(Mono.just(languageTemplate));
+        when(templateManager.fill(eq(task.getTemplateCode()), eq(Language.EN), any())).thenReturn(Mono.just("hello codex"));
         when(channelRepository.findById(task.getChannelId())).thenReturn(Mono.just(channel));
         when(emailChannelConfigConverter.fromProperties(anyMap())).thenReturn(new ChannelConfig() {
         });

@@ -7,6 +7,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface TemplateService {
+
     Flux<Template> findAll(int page, int size);
     Mono<Template> findById(String id);
     Mono<Template> findByCode(String code);

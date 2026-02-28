@@ -1,5 +1,8 @@
 package com.github.waitlight.asskicker.handlers;
 
+import com.github.waitlight.asskicker.dto.template.FillTemplateRequest;
+import com.github.waitlight.asskicker.dto.template.FillTemplateResponse;
+import com.github.waitlight.asskicker.manager.TemplateManager;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.LanguageTemplate;
 import com.github.waitlight.asskicker.model.Template;
@@ -10,15 +13,19 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.web.server.ResponseStatusException;
+import java.util.Collections;
 import reactor.core.publisher.Mono;
 
 @Component
 public class TemplateHandler {
 
     private final TemplateService templateService;
+    private final TemplateManager templateManager;
 
-    public TemplateHandler(TemplateService templateService) {
+    public TemplateHandler(TemplateService templateService, TemplateManager templateManager) {
         this.templateService = templateService;
+        this.templateManager = templateManager;
     }
 
     public Mono<ServerResponse> createTemplate(ServerRequest request) {
@@ -142,6 +149,20 @@ public class TemplateHandler {
                     return ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body(BodyInserters.fromValue("Failed to retrieve all template contents"));
                 });
+    }
+
+    public Mono<ServerResponse> fillTemplate(ServerRequest request) {
+        return request.bodyToMono(FillTemplateRequest.class)
+                .flatMap(req -> templateManager.fill(
+                        req.templateCode(),
+                        req.language(),
+                        req.params() != null ? req.params() : Collections.emptyMap()))
+                .map(content -> new FillTemplateResponse(content))
+                .flatMap(resp -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(BodyInserters.fromValue(resp)))
+                .onErrorResume(ResponseStatusException.class, ex ->
+                        ServerResponse.status(ex.getStatusCode()).body(BodyInserters.fromValue(ex.getReason())));
     }
 
     public Mono<ServerResponse> listTemplates(ServerRequest request) {

@@ -19,6 +19,8 @@ public class TemplateRouter {
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), templateHandler::listTemplates)
                 .andRoute(RequestPredicates.POST("/api/templates")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), templateHandler::createTemplate)
+                .andRoute(RequestPredicates.POST("/api/templates/fill")
+                        .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), templateHandler::fillTemplate)
                 .andRoute(RequestPredicates.GET("/api/templates/{id}")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), templateHandler::getTemplateById)
                 .andRoute(RequestPredicates.GET("/api/templates/code/{code}")

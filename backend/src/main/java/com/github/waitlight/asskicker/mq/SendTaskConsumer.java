@@ -13,24 +13,22 @@ import com.github.waitlight.asskicker.channels.push.PushChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.push.PushChannelFactory;
 import com.github.waitlight.asskicker.channels.sms.SmsChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.sms.SmsChannelFactory;
+import com.github.waitlight.asskicker.manager.TemplateManager;
 import com.github.waitlight.asskicker.model.Channel;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.Language;
-import com.github.waitlight.asskicker.model.LanguageTemplate;
 import com.github.waitlight.asskicker.model.SendRecord;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
 import com.github.waitlight.asskicker.model.SendTask;
-import com.github.waitlight.asskicker.model.Template;
 import com.github.waitlight.asskicker.repository.ChannelRepository;
-import com.github.waitlight.asskicker.repository.LanguageTemplateRepository;
 import com.github.waitlight.asskicker.repository.SendRecordRepository;
-import com.github.waitlight.asskicker.repository.TemplateRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -43,18 +41,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Component
 public class SendTaskConsumer implements DisposableBean {
 
     private static final Logger logger = LoggerFactory.getLogger(SendTaskConsumer.class);
     private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE = new TypeReference<>() {};
-    private static final Pattern PLACEHOLDER = Pattern.compile("\\{([^}]+)}");
 
-    private final TemplateRepository templateRepository;
-    private final LanguageTemplateRepository languageTemplateRepository;
+    private final TemplateManager templateManager;
     private final ChannelRepository channelRepository;
     private final SendRecordRepository sendRecordRepository;
     private final EmailChannelFactory emailChannelFactory;
@@ -70,8 +64,7 @@ public class SendTaskConsumer implements DisposableBean {
     private final ExecutorService auditExecutor;
 
     @Autowired
-    public SendTaskConsumer(TemplateRepository templateRepository,
-                            LanguageTemplateRepository languageTemplateRepository,
+    public SendTaskConsumer(TemplateManager templateManager,
                             ChannelRepository channelRepository,
                             SendRecordRepository sendRecordRepository,
                             EmailChannelFactory emailChannelFactory,
@@ -83,14 +76,13 @@ public class SendTaskConsumer implements DisposableBean {
                             SmsChannelFactory smsChannelFactory,
                             SmsChannelConfigConverter smsChannelConfigConverter,
                             ObjectMapper objectMapper) {
-        this(templateRepository, languageTemplateRepository, channelRepository, sendRecordRepository,
+        this(templateManager, channelRepository, sendRecordRepository,
                 emailChannelFactory, emailChannelConfigConverter, imChannelFactory, imChannelConfigConverter,
                 pushChannelFactory, pushChannelConfigConverter, smsChannelFactory, smsChannelConfigConverter,
                 objectMapper, Executors.newVirtualThreadPerTaskExecutor(), Executors.newVirtualThreadPerTaskExecutor());
     }
 
-    SendTaskConsumer(TemplateRepository templateRepository,
-                     LanguageTemplateRepository languageTemplateRepository,
+    SendTaskConsumer(TemplateManager templateManager,
                      ChannelRepository channelRepository,
                      SendRecordRepository sendRecordRepository,
                      EmailChannelFactory emailChannelFactory,
@@ -104,8 +96,7 @@ public class SendTaskConsumer implements DisposableBean {
                      ObjectMapper objectMapper,
                      ExecutorService taskExecutor,
                      ExecutorService auditExecutor) {
-        this.templateRepository = templateRepository;
-        this.languageTemplateRepository = languageTemplateRepository;
+        this.templateManager = templateManager;
         this.channelRepository = channelRepository;
         this.sendRecordRepository = sendRecordRepository;
         this.emailChannelFactory = emailChannelFactory;
@@ -142,13 +133,6 @@ public class SendTaskConsumer implements DisposableBean {
         List<String> failureRecipients = recipients.isEmpty() ? Collections.singletonList(null) : recipients;
         logExecutionAsync("SEND_TASK_RECEIVED", task.getTaskId(), null, null, SendRecordStatus.PENDING, null, null, 0L);
         try {
-            Template template = templateRepository.findByCode(task.getTemplateCode()).block();
-            if (template == null) {
-                markRecipientsFailedAsync(task, null, null, failureRecipients,
-                        "TEMPLATE_NOT_FOUND", "Template not found: " + task.getTemplateCode());
-                return;
-            }
-
             Language language;
             try {
                 language = Language.fromCode(task.getLanguageCode());
@@ -157,14 +141,15 @@ public class SendTaskConsumer implements DisposableBean {
                 return;
             }
 
-            LanguageTemplate langTemplate = languageTemplateRepository
-                    .findByTemplateIdAndLanguage(template.getId(), language).block();
-            if (langTemplate == null) {
-                markRecipientsFailedAsync(task, null, null, failureRecipients,
-                        "LANGUAGE_TEMPLATE_NOT_FOUND", "Language template not found");
+            String renderedContent;
+            try {
+                renderedContent = templateManager.fill(task.getTemplateCode(), language, task.getParams()).block();
+            } catch (ResponseStatusException ex) {
+                String reason = ex.getReason() != null ? ex.getReason() : "";
+                String errorCode = reason.contains("Language template not found") ? "LANGUAGE_TEMPLATE_NOT_FOUND" : "TEMPLATE_NOT_FOUND";
+                markRecipientsFailedAsync(task, null, null, failureRecipients, errorCode, reason);
                 return;
             }
-            String renderedContent = render(langTemplate.getContent(), task.getParams());
 
             Channel channelEntity = channelRepository.findById(task.getChannelId()).block();
             if (channelEntity == null) {
@@ -388,25 +373,6 @@ public class SendTaskConsumer implements DisposableBean {
             return Collections.singletonList(null);
         }
         return normalized;
-    }
-
-    private String render(String content, Map<String, Object> params) {
-        if (content == null) {
-            return "";
-        }
-        if (params == null || params.isEmpty()) {
-            return content;
-        }
-        Matcher matcher = PLACEHOLDER.matcher(content);
-        StringBuffer sb = new StringBuffer();
-        while (matcher.find()) {
-            String key = matcher.group(1).trim();
-            Object value = params.get(key);
-            String replacement = value != null ? value.toString() : "";
-            matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
-        }
-        matcher.appendTail(sb);
-        return sb.toString();
     }
 
     private com.github.waitlight.asskicker.channels.Channel<?> createChannel(Channel channelEntity) {
