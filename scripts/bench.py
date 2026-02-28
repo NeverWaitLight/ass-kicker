@@ -34,6 +34,9 @@ PAUSE_BETWEEN_ROUNDS = 10  # 轮次间暂停时间(秒)
 CONCURRENCY_STEP_RATIO = 1.25  # 每轮并发递增比例,下一轮并发=上一轮TPS*125%
 TPS_THRESHOLD_RATIO = 0.8  # TPS低于并发数80%时停止压测
 
+WARMUP_CONCURRENCY = 200  # 预热并发数
+WARMUP_DURATION = 15  # 预热持续时间(秒)
+
 TEMPLATE_CODES = ["captcha-sms", "captcha-email", "captcha-im", "captcha-push"]
 
 CHANNEL_TYPE_FOR_TEMPLATE = {
@@ -396,12 +399,29 @@ async def run():
         print(f"压测目标:      {endpoint}")
         print(f"模板列表:      {TEMPLATE_CODES}")
         print(f"语言:          {LANGUAGE}")
+        print(f"预热并发:      {WARMUP_CONCURRENCY} x {WARMUP_DURATION}s")
         print(f"起始并发:      {INITIAL_CONCURRENCY}")
         print(f"每轮持续:      {ROUND_DURATION}s")
         print(f"轮间暂停:      {PAUSE_BETWEEN_ROUNDS}s")
         print(f"递增策略:      下一轮并发 = 上一轮TPS x {CONCURRENCY_STEP_RATIO:.0%}")
         print(f"TPS 停止阈值:  并发数 x {TPS_THRESHOLD_RATIO:.0%}")
         print("=" * 78)
+
+        print()
+        print(f">>> 预热阶段  并发数 {WARMUP_CONCURRENCY}  持续 {WARMUP_DURATION}s（不计入评判）")
+        warmup_result = await run_round(
+            session, endpoint, payload_templates, headers,
+            WARMUP_CONCURRENCY, WARMUP_DURATION, 0,
+        )
+        print()
+        print(
+            f"  -- 预热完成 --  "
+            f"TPS {warmup_result['avg_tps']:.1f}  "
+            f"成功率 {warmup_result['success_rate']:.1f}%  "
+            f"P95 {warmup_result['p95']:.1f}ms"
+        )
+        print(f"\n>>> 预热结束 暂停{PAUSE_BETWEEN_ROUNDS}s后开始正式压测")
+        await asyncio.sleep(PAUSE_BETWEEN_ROUNDS)
 
         concurrency = INITIAL_CONCURRENCY
         round_num = 0
