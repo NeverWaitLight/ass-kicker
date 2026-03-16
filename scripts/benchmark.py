@@ -127,35 +127,6 @@ async def login(session: aiohttp.ClientSession) -> str:
         return token
 
 
-async def fetch_channels(session: aiohttp.ClientSession, token: str) -> dict[str, str]:
-    url = f"{BASE_URL}/api/channels"
-    headers = {"Authorization": f"Bearer {token}"}
-    async with session.get(url, headers=headers) as resp:
-        if resp.status != 200:
-            body = await resp.text()
-            print(f"获取通道列表失败 (HTTP {resp.status}): {body}")
-            sys.exit(1)
-        channels = await resp.json()
-
-    type_to_id: dict[str, str] = {}
-    for ch in channels:
-        ch_type = ch.get("type", "").upper()
-        if ch_type and ch_type not in type_to_id:
-            type_to_id[ch_type] = ch.get("id") or ch.get("_id") or ""
-
-    missing = [
-        CHANNEL_TYPE_FOR_TEMPLATE[t]
-        for t in TEMPLATE_CODES
-        if CHANNEL_TYPE_FOR_TEMPLATE[t] not in type_to_id
-    ]
-    if missing:
-        print(f"以下通道类型在系统中未找到: {missing}")
-        print("请先在管理界面创建对应类型的通道")
-        sys.exit(1)
-
-    return type_to_id
-
-
 class BenchStats:
     def __init__(self):
         self.total = 0
@@ -384,13 +355,9 @@ async def run():
     async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
         print("正在登录...")
         token = await login(session)
-        print("登录成功，正在获取通道列表...")
+        print("登录成功")
 
-        type_to_id = await fetch_channels(session, token)
-        print("通道映射:")
-        for t, cid in type_to_id.items():
-            print(f"  {t}: {cid}")
-
+        type_to_id = {CHANNEL_TYPE_FOR_TEMPLATE[t]: "" for t in TEMPLATE_CODES}
         payload_templates = build_payloads(type_to_id)
         endpoint = f"{BASE_URL}/api/send"
         headers = {"Authorization": f"Bearer {token}"}
