@@ -3,7 +3,7 @@
 渐进式压测脚本 - 自动递增并发数直到服务器扛不住
 
 依赖安装:
-  pip install aiohttp
+  pip install aiohttp pymongo
 
 使用示例:
   python scripts/bench.py
@@ -22,20 +22,30 @@ except ImportError:
     print("缺少依赖，请先安装: pip install aiohttp")
     sys.exit(1)
 
+try:
+    from pymongo import MongoClient
+except ImportError:
+    print("缺少依赖，请先安装: pip install pymongo")
+    sys.exit(1)
+
 # ── 默认配置 ──────────────────────────────────────────────────────────────────
 BASE_URL = "http://localhost:8080"
 USERNAME = "admin"
 PASSWORD = "123456"
 LANGUAGE = "ZH_HANS"
 
-INITIAL_CONCURRENCY = 1000  # 起始并发数
-ROUND_DURATION = 30  # 每轮压测持续时间(秒)
-PAUSE_BETWEEN_ROUNDS = 10  # 轮次间暂停时间(秒)
-CONCURRENCY_STEP_RATIO = 1.25  # 每轮并发递增比例,下一轮并发=上一轮TPS*125%
-TPS_THRESHOLD_RATIO = 0.8  # TPS低于并发数80%时停止压测
+# 与 backend application.yml 一致
+MONGODB_URI = "mongodb://admin:123456@localhost:27017/asskicker?authSource=admin"
+SENDRECORD_COLLECTION = "t_send_record"
+
+INITIAL_CONCURRENCY = 1600  # 起始并发数
+ROUND_DURATION = 20  # 每轮压测持续时间(秒)
+PAUSE_BETWEEN_ROUNDS = 5  # 轮次间暂停时间(秒)
+CONCURRENCY_STEP_DELTA = 200  # 每轮并发固定增加的数量
+SATURATION_CONCURRENCY_RATIO = 0.9  # TPS低于当前并发数的90%时视为饱和信号
 
 WARMUP_CONCURRENCY = 200  # 预热并发数
-WARMUP_DURATION = 15  # 预热持续时间(秒)
+WARMUP_DURATION = 10  # 预热持续时间(秒)
 
 TEMPLATE_CODES = ["captcha-sms", "captcha-email", "captcha-im", "captcha-push"]
 
@@ -46,6 +56,19 @@ CHANNEL_TYPE_FOR_TEMPLATE = {
     "captcha-push": "PUSH",
 }
 # ─────────────────────────────────────────────────────────────────────────────
+
+
+def clear_send_record_table() -> int:
+    """连接项目数据库，删除 t_send_record 表，返回被删除集合中原有的文档数。"""
+    client = MongoClient(MONGODB_URI)
+    try:
+        db = client.get_default_database()
+        coll = db[SENDRECORD_COLLECTION]
+        count = coll.count_documents({})
+        coll.drop()
+        return count
+    finally:
+        client.close()
 
 
 def random_phone() -> str:
@@ -302,7 +325,7 @@ def print_final_report(results: list[dict], final: dict, stop_reason: str):
     print(f"  成功率:     {final['success_rate']:.2f}%")
     print(f"  平均 TPS:   {final['avg_tps']:.2f}")
     print()
-    print(f"  延迟统计 (ms):")
+    print("  延迟统计 (ms):")
     print(f"    平均:  {final['avg_latency']:.1f}")
     print(f"    P50:   {final['p50']:.1f}")
     print(f"    P95:   {final['p95']:.1f}")
@@ -352,6 +375,14 @@ async def run():
     connector = aiohttp.TCPConnector(limit=max_conn)
     timeout = aiohttp.ClientTimeout(total=60)
 
+    print("正在删除 sendrecord 表...")
+    try:
+        deleted = clear_send_record_table()
+        print(f"已删除 t_send_record 表 原有记录数 {deleted}")
+    except Exception as e:
+        print(f"删除 sendrecord 表失败: {e}")
+        sys.exit(1)
+
     async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
         print("正在登录...")
         token = await login(session)
@@ -370,15 +401,22 @@ async def run():
         print(f"起始并发:      {INITIAL_CONCURRENCY}")
         print(f"每轮持续:      {ROUND_DURATION}s")
         print(f"轮间暂停:      {PAUSE_BETWEEN_ROUNDS}s")
-        print(f"递增策略:      下一轮并发 = 上一轮TPS x {CONCURRENCY_STEP_RATIO:.0%}")
-        print(f"TPS 停止阈值:  并发数 x {TPS_THRESHOLD_RATIO:.0%}")
+        print(f"递增策略:      每轮并发固定增加 {CONCURRENCY_STEP_DELTA}")
+        print(f"饱和信号:      TPS < 当前并发数 x {SATURATION_CONCURRENCY_RATIO:.0%}")
         print("=" * 78)
 
         print()
-        print(f">>> 预热阶段  并发数 {WARMUP_CONCURRENCY}  持续 {WARMUP_DURATION}s（不计入评判）")
+        print(
+            f">>> 预热阶段  并发数 {WARMUP_CONCURRENCY}  持续 {WARMUP_DURATION}s（不计入评判）"
+        )
         warmup_result = await run_round(
-            session, endpoint, payload_templates, headers,
-            WARMUP_CONCURRENCY, WARMUP_DURATION, 0,
+            session,
+            endpoint,
+            payload_templates,
+            headers,
+            WARMUP_CONCURRENCY,
+            WARMUP_DURATION,
+            0,
         )
         print()
         print(
@@ -414,19 +452,18 @@ async def run():
             results.append(result)
             print_round_summary(result)
 
-            # 检查是否达到停止条件：TPS < 并发数 * 80%
-            tps_threshold = concurrency * TPS_THRESHOLD_RATIO
-            if result["avg_tps"] < tps_threshold:
+            # 饱和信号：当前 TPS < 当前并发数 x 90%
+            saturation_threshold = concurrency * SATURATION_CONCURRENCY_RATIO
+            if result["avg_tps"] < saturation_threshold:
                 stop_reason = (
                     f"第{round_num}轮 TPS({result['avg_tps']:.1f}) "
-                    f"< 阈值({tps_threshold:.1f} = 并发{concurrency} x {TPS_THRESHOLD_RATIO:.0%})"
+                    f"< 饱和阈值({saturation_threshold:.1f} = 并发{concurrency} x {SATURATION_CONCURRENCY_RATIO:.0%})"
                 )
                 print()
-                print(f">>> 触发停止条件: {stop_reason}")
+                print(f">>> 触发饱和信号: {stop_reason}")
                 break
 
-            # 下一轮并发数 = 本轮平均TPS * 125%
-            next_concurrency = int(result["avg_tps"] * CONCURRENCY_STEP_RATIO)
+            next_concurrency = concurrency + CONCURRENCY_STEP_DELTA
             print(
                 f"\n>>> 服务器扛住了(TPS {result['avg_tps']:.1f}) "
                 f"暂停{PAUSE_BETWEEN_ROUNDS}s后提升并发 {concurrency} -> {next_concurrency}"
