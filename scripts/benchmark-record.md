@@ -51,7 +51,7 @@
 
 **瓶颈**：每请求多条日志 MongoDB 每请求 3 次操作 日志 I/O 高并发下成为瓶颈
 
-### 优化 #1：精简日志输出
+### 优化 #1：减少日志+减少数据库操作
 
 **代码改进**：
 
@@ -82,21 +82,19 @@
 - 并发 1800 到 3400 区间 TPS 无明显增长 继续加并发仅增加排队延迟 P50 从 588ms 升至 1145ms
 - 对比基线峰值 2335（并发 2537）优化后峰值 3085 提升约 32%
 
-## 量级参考
+## TODO
 
-| 场景                               | TPS              | 状态   |
-| ---------------------------------- | ---------------- | ------ |
-| debug 随机 sleep 50-200ms 50 并发  | ~440             | 已实测 |
-| 固定 100ms 延迟 渐进至 2537 并发   | 2335 峰值        | 已实测 |
-| 连接池调大 maxPool=500 minPool=200 | 1669 不升反降    | 已实测 |
-| 连接池默认                         | 2160             | 已实测 |
-| 精简日志后 峰值（并发 1800）       | 3085             | 已实测 |
-| 减少 MongoDB 往返                  | 预估 3000-5000   | 待验证 |
-| 全链路优化 + 批量写入              | 预估 5000-15000+ | 待验证 |
+- 请求同步等待整任务完成：`SendHandler.buildAndSend` 使用 `Mono.fromRunnable(...).thenReturn(taskId)`，HTTP 响应时延和收件人数、下游通道耗时强绑定，高并发时容易把压力直接传到应用线程池。
+- Reactive 链路里存在阻塞点：`SendTaskConsumer.processTask` 对 `templateManager.fill(...)` 与 `channelManager.selectChannel(...)` 使用 `.block()`，高并发下会放大线程切换与阻塞等待成本。
+- 单任务内按收件人串行发送：`for (String recipient : recipients)` 串行调用 `sendChannel.send`，当单请求收件人较多时，任务耗时线性增长，吞吐受单任务长尾拖累。
+- 审计写入放大：每个收件人都 `CompletableFuture.runAsync` 一次，并在异步线程里 `sendRecordRepository.save(...).block()`；高并发会形成大量小写请求，Mongo 写入与线程调度双重放大。
+- 记录文档体积偏大：每条 `SendRecord` 重复保存 `params`、`recipients`、`renderedContent` 等字段，收件人越多写放大越明显，进一步挤占 Mongo 吞吐。
+- 每任务重复创建发送通道：`createChannel` 每次解析 `propertiesJson` 并构造 channel 实例，热点模板下存在重复初始化开销。
+- 模板渲染缺少编译缓存：`TemplateManager.render` 每次都 `mustacheFactory.compile`，在模板命中高的场景会产生不必要的重复编译成本。
 
-## 下一步优化方向
+**建议优先级**：
 
-1. 减少 MongoDB 往返：用 updateFirst/findAndModify 替代 findById + save 预估 TPS 3000-5000
-2. 批量写入 SendRecord：saveAll 或 write-behind 预估 TPS 5000+
-3. 全链路 Reactive：消除 block() 用 flatMap/map 组合
-4. 异步日志：Logback AsyncAppender
+- 高优先级：审计改批量写入（`saveAll` 或缓冲批写），并移除异步线程中的 `.block()`。
+- 中优先级：任务内收件人并行化（限流并发），避免单任务串行长尾。
+- 中优先级：缓存可复用的 channel 实例与 Mustache 编译结果，减少重复构建与解析成本。
+- 中优先级：精简 `SendRecord` 热路径字段，降单条写入体积。
