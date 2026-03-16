@@ -1,32 +1,3 @@
-# 性能优化记录
-
-本文档记录性能优化方向、压测结果及每次优化对应的代码改进。
-
-## 压测环境
-
-| 项目         | 配置                                                |
-| ------------ | --------------------------------------------------- |
-| 服务器       | 单机部署                                            |
-| 数据库       | MongoDB 默认连接池（maxPoolSize=100 minPoolSize=0） |
-| 模拟发送延迟 | 固定 100ms                                          |
-| 压测工具     | scripts/benchmark.py 渐进式加压                     |
-| 压测方式     | 起始并发逐轮递增 每轮持续 20s 轮间暂停 5s           |
-| 停止条件     | TPS < 当前并发数 × 90%（饱和信号）                  |
-
-## 优化方向与手段
-
-| 方向                | 手段                                                  | 状态   |
-| ------------------- | ----------------------------------------------------- | ------ |
-| 关掉 debug sleep    | 模拟发送改为固定 100ms 延迟                           | 已完成 |
-| 减少 MongoDB 往返   | 用 updateFirst/findAndModify 替代 findById + save     | 待实施 |
-| 批量写入 SendRecord | saveAll 或 write-behind 缓冲区                        | 待实施 |
-| 提高并发数          | 渐进式压测验证瓶颈                                    | 已完成 |
-| MongoDB 连接池      | 保持默认配置 实测调大反而降 TPS                       | 已完成 |
-| 精简日志            | 每任务一条汇总日志 删除中间过程 info                  | 已完成 |
-| Reactive 链路       | 消除 block() 用 flatMap/map 组合                      | 待实施 |
-| Kafka 路径          | 增加 partition、fetch.min.bytes、consumer concurrency | 待实施 |
-| 异步日志            | Logback AsyncAppender                                 | 待实施 |
-
 ## 压测结果
 
 ### 基线
