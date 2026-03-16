@@ -126,7 +126,7 @@ import { useI18n } from 'vue-i18n'
 import ChannelManagementLayout from '../components/channels/ChannelManagementLayout.vue'
 import PropertyEditor from '../components/channels/PropertyEditor.vue'
 import ChannelTestSendModal from '../components/channels/ChannelTestSendModal.vue'
-import { createChannel, fetchChannel, fetchChannelTypes, fetchEmailProtocols, updateChannel } from '../utils/channelApi'
+import { createChannel, fetchChannel, fetchChannelTypes, fetchEmailProtocols, fetchImTypes, updateChannel } from '../utils/channelApi'
 import { buildChannelTypeOptions, CHANNEL_TYPE_VALUES } from '../constants/channelTypes'
 import {
   createObjectRow,
@@ -270,8 +270,8 @@ const loadEmailProtocols = async () => {
 
 const loadImTypes = async () => {
   try {
-    // TODO: 将来可以从后端 API 获取 IM 类型列表
-    imTypes.value = getFallbackImTypes()
+    const data = await fetchImTypes()
+    imTypes.value = data || getFallbackImTypes()
   } catch (error) {
     imTypes.value = getFallbackImTypes()
   }
@@ -572,8 +572,8 @@ const applyImTypeSchema = (type, { preferExisting } = {}) => {
   const schema = findImTypeSchema(type)
   if (!schema) return
 
-  const requiredFields = (schema.fields || []).filter((field) => field.required)
-  propertyRows.value = mergeFlatRows(propertyRows.value, requiredFields, preferExisting)
+  const allFields = schema.fields || []
+  propertyRows.value = mergeFlatRows(propertyRows.value, allFields, preferExisting)
 }
 
 const applyPushTypeSchema = (type, { preferExisting } = {}) => {
@@ -707,8 +707,8 @@ const resolveSmsTypeValue = (value) => {
 }
 
 const buildImTypeRowsFromProperties = (schema, properties) => {
-  const requiredFields = (schema.fields || []).filter((field) => field.required)
-  return requiredFields.map((field) => {
+  const allFields = schema.fields || []
+  return allFields.map((field) => {
     const value = getImTypeFieldValue(properties, schema.propertyKey, field.key, field.defaultValue)
     return createPropertyRow({ key: field.key, value })
   })

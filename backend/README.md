@@ -44,36 +44,28 @@ docker run -d --name mongodb -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin 
 docker run -d --name kafka -p 9092:9092 apache/kafka:latest
 ```
 
----
+## Todo
 
-## 项目现状与关键缺口
+### P0 阻断
 
-本节记录当前实现状态与尚未完成的关键节点，便于排期与迭代。
+### P1 核心
 
-### 当前已实现
+- [ ] **Submit API 鉴权**：`/api/submit` 增加 API Key 机制，支持外部业务系统以服务身份调用，当前仅支持 JWT 用户认证。
+- [ ] **企业微信 IM 前端配置**：后端 `WechatWorkIMChannel` 已实现，前端通道配置表单（如 webhook URL）对照钉钉 IM 补齐。
 
-| 层级                  | 内容                                                                                                                                  |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| 前端 (Vue3)           | 登录页、通道管理、模板管理、用户管理、发送记录列表/详情、个人设置、深色模式                                                           |
-| 后端 (Spring WebFlux) | JWT 认证、用户 CRUD、通道 CRUD、模板 CRUD、Submit → Kafka → Send 全链路、Email/SMS/IM/Push 各渠道发送器、测试发送、Channel Debug 模拟 |
-| 基础设施              | MongoDB、Kafka、Caffeine 缓存、异步日志、请求追踪 ID、GraalVM Native、CI 流水线、压测脚本                                             |
+### P2 健壮性
 
-### 关键缺口（按优先级）
+- [ ] **Kafka 消费失败重试与 DLQ**：`SendTaskConsumer` 消费失败直接写 FAILED，需增加重试与死信队列，便于临时故障自动补偿。
+- [ ] **Kafka 消费路径优化**：增加 partition 数量、调优 `fetch.min.bytes`/`max.poll.records` 及 consumer concurrency，提升批量消费与并发。
 
-**P0 阻断**
+### P3 增强
 
-- **无 Docker Compose**：强依赖 MongoDB 与 Kafka，根目录无 `docker-compose.yml`，本地与 CI 需手动起库和消息队列，影响开发与联调。
+- [ ] **前端「手动发送」入口**：增加 Submit 页面，支持在控制台手动触发发送，便于演示与运营自测。
+- [ ] **通道选择策略**：`ChannelManager.selectChannel()` 支持权重、优先级或健康检查，替代当前纯随机选路。
 
-**P1 核心**
+### 性能
 
-- **Submit API 鉴权方式**：`/api/submit` 仅支持 JWT 用户认证，缺少 API Key 机制，不适合外部业务系统以服务身份调用通知网关。
-- **企业微信 IM 前端配置**：后端 `WechatWorkIMChannel` 已实现，前端通道配置表单（如 webhook URL）对企微的支持可能不完整，需对照钉钉 IM 配置补齐。
-
-**P2 健壮性**
-
-- **Kafka 消费失败无重试/DLQ**：`SendTaskConsumer` 消费失败直接写 FAILED，无死信队列或重试，网络或第三方临时故障无法自动补偿。
-
-**P3 增强**
-
-- **前端无「手动发送」入口**：无 Submit 页面，无法在控制台手动触发发送，仅适合纯 API 使用；若需演示或运营自测，可补发送页。
-- **通道选择策略**：`ChannelManager.selectChannel()` 当前为随机选取，无权重、优先级或健康检查，多通道时无法精细控制选路。
+- [ ] **减少 MongoDB 往返**：`updateRecordStatusAsync` 改为 `updateFirst`/`findAndModify` 一次完成状态更新，避免先 findById 再 save。
+- [ ] **批量写入 SendRecord**：考虑 `saveAll`、写缓冲或评估是否必须先写 PENDING，降低高并发下 MongoDB 写入压力。
+- [ ] **消除 reactive 链中的 block()**：发送链路改为全链路响应式组合（flatMap/map），避免在 WebFlux 中阻塞线程。
+- [ ] **减少日志 I/O**：高 TPS 下通过调高日志级别、AsyncAppender 或采样，降低日志写入瓶颈。

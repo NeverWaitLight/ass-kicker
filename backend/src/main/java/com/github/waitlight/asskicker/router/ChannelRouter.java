@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.router;
 
+import com.github.waitlight.asskicker.dto.channel.ImTypesResponse;
 import com.github.waitlight.asskicker.dto.channel.TestSendRequest;
 import com.github.waitlight.asskicker.handlers.ChannelHandler;
 import com.github.waitlight.asskicker.model.Channel;
@@ -151,6 +152,22 @@ public class ChannelRouter {
                                     @ApiResponse(responseCode = "429", description = "请求过于频繁")
                             }
                     )
+            ),
+            @RouterOperation(
+                    path = "/api/channels/im-types",
+                    method = RequestMethod.GET,
+                    beanClass = ChannelHandler.class,
+                    beanMethod = "listImTypes",
+                    operation = @Operation(
+                            operationId = "listImTypes",
+                            summary = "获取 IM 通道类型列表",
+                            tags = {"Channels"},
+                            responses = {
+                                    @ApiResponse(responseCode = "200", description = "成功",
+                                            content = @Content(schema = @Schema(implementation = ImTypesResponse.class))),
+                                    @ApiResponse(responseCode = "401", description = "未授权")
+                            }
+                    )
             )
     })
     public RouterFunction<ServerResponse> channelRoutes(ChannelHandler channelHandler) {
@@ -161,6 +178,8 @@ public class ChannelRouter {
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::listChannels)
                 .andRoute(RequestPredicates.GET("/api/channels/types")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::listChannelTypes)
+                .andRoute(RequestPredicates.GET("/api/channels/im-types")
+                        .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::listImTypes)
                 .andRoute(RequestPredicates.GET("/api/channels/{id}")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::getChannelById)
                 .andRoute(RequestPredicates.PUT("/api/channels/{id}")

@@ -32,6 +32,14 @@ export const fetchEmailProtocols = async () => {
   return response.json()
 }
 
+export const fetchImTypes = async () => {
+  const response = await apiFetch('/api/channels/im-types')
+  if (!response.ok) {
+    throw new Error(await response.text())
+  }
+  return response.json()
+}
+
 export const createChannel = async (payload) => {
   const response = await apiFetch('/api/channels', {
     method: 'POST',

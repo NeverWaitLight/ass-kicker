@@ -1,5 +1,8 @@
 package com.github.waitlight.asskicker.handlers;
 
+import com.github.waitlight.asskicker.dto.channel.ImTypeFieldInfo;
+import com.github.waitlight.asskicker.dto.channel.ImTypeInfo;
+import com.github.waitlight.asskicker.dto.channel.ImTypesResponse;
 import com.github.waitlight.asskicker.dto.channel.TestSendRequest;
 import com.github.waitlight.asskicker.model.Channel;
 import com.github.waitlight.asskicker.model.ChannelType;
@@ -141,6 +144,21 @@ public class ChannelHandler {
         return ServerResponse.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(types);
+    }
+
+    public Mono<ServerResponse> listImTypes(ServerRequest request) {
+        ImTypesResponse response = new ImTypesResponse(
+                "DINGTALK",
+                List.of(
+                        new ImTypeInfo("DINGTALK", "钉钉", "dingtalk",
+                                List.of(new ImTypeFieldInfo("webhookUrl", "Webhook URL", true, ""))),
+                        new ImTypeInfo("WECHAT_WORK", "企业微信", "wechatWork",
+                                List.of(new ImTypeFieldInfo("webhookUrl", "Webhook URL", true, "")))
+                )
+        );
+        return ServerResponse.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(response);
     }
 
     private Mono<Channel> validateChannel(Channel channel) {
