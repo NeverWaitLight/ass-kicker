@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-渐进式压测脚本 - 自动递增并发数直到服务器扛不住
+固定并发压测脚本
 
 依赖安装:
   pip install aiohttp pymongo
 
 使用示例:
-  python scripts/bench.py
+  python scripts/benchmark.py
 """
 
 import asyncio
@@ -14,7 +14,6 @@ import random
 import string
 import sys
 import time
-from collections import deque
 
 try:
     import aiohttp
@@ -38,12 +37,9 @@ LANGUAGE = "ZH_HANS"
 MONGODB_URI = "mongodb://admin:123456@localhost:27017/asskicker?authSource=admin"
 SENDRECORD_COLLECTION = "t_send_record"
 
-INITIAL_CONCURRENCY = 1600  # 起始并发数
+TEST_CONCURRENCIES = [1000, 2000, 3000, 4000]
 ROUND_DURATION = 20  # 每轮压测持续时间(秒)
 PAUSE_BETWEEN_ROUNDS = 5  # 轮次间暂停时间(秒)
-CONCURRENCY_STEP_DELTA = 200  # 每轮并发固定增加的数量
-SATURATION_CONCURRENCY_RATIO = 0.9  # TPS低于当前并发数的90%时视为饱和信号
-
 WARMUP_CONCURRENCY = 200  # 预热并发数
 WARMUP_DURATION = 10  # 预热持续时间(秒)
 
@@ -156,7 +152,6 @@ class BenchStats:
         self.success = 0
         self.failed = 0
         self.latencies: list[float] = []
-        self.tps_samples: deque[tuple[float, int]] = deque()
         self._lock = asyncio.Lock()
 
     async def record(self, success: bool, latency_ms: float):
@@ -167,13 +162,6 @@ class BenchStats:
             else:
                 self.failed += 1
             self.latencies.append(latency_ms)
-            self.tps_samples.append((time.monotonic(), 1))
-
-    def current_tps(self, window_sec: float = 1.0) -> float:
-        now = time.monotonic()
-        cutoff = now - window_sec
-        count = sum(1 for t, _ in self.tps_samples if t >= cutoff)
-        return count / window_sec
 
     def percentile(self, p: float) -> float:
         if not self.latencies:
@@ -182,10 +170,7 @@ class BenchStats:
         idx = min(int(len(sorted_lat) * p / 100), len(sorted_lat) - 1)
         return sorted_lat[idx]
 
-    def avg_latency(self) -> float:
-        return sum(self.latencies) / len(self.latencies) if self.latencies else 0.0
-
-    def avg_tps(self, duration_sec: float) -> float:
+    def actual_tps(self, duration_sec: float) -> float:
         return self.success / duration_sec if duration_sec > 0 else 0.0
 
 
@@ -230,108 +215,27 @@ async def worker(
         await stats.record(success, latency_ms)
 
 
-async def reporter(
-    stats: BenchStats,
-    concurrency: int,
-    round_num: int,
-    duration: int,
-    stop_event: asyncio.Event,
-):
-    start = time.monotonic()
-    while not stop_event.is_set():
-        await asyncio.sleep(1)
-        elapsed = time.monotonic() - start
-        remaining = max(0, duration - elapsed)
-        tps = stats.current_tps()
-        print(
-            f"\r  [第{round_num}轮 | 并发{concurrency}]  "
-            f"{elapsed:5.1f}s / {duration}s  |  "
-            f"完成 {stats.total:6d}  成功 {stats.success:6d}  失败 {stats.failed:4d}  |  "
-            f"实时TPS {tps:7.1f}  剩余 {remaining:4.0f}s",
-            end="",
-            flush=True,
-        )
-
-
-def format_round_result(
-    round_num: int, concurrency: int, stats: BenchStats, duration: float
-) -> dict:
-    avg_tps = stats.avg_tps(duration)
+def format_round_result(concurrency: int, stats: BenchStats, duration: float) -> dict:
+    actual_tps = stats.actual_tps(duration)
     return {
-        "round": round_num,
         "concurrency": concurrency,
-        "duration": duration,
-        "total": stats.total,
-        "success": stats.success,
-        "failed": stats.failed,
-        "success_rate": stats.success / stats.total * 100 if stats.total > 0 else 0,
-        "avg_tps": avg_tps,
-        "avg_latency": stats.avg_latency(),
+        "actual_tps": actual_tps,
         "p50": stats.percentile(50),
         "p95": stats.percentile(95),
         "p99": stats.percentile(99),
-        "max_latency": max(stats.latencies, default=0),
     }
 
 
-def print_round_summary(result: dict):
-    print()
-    print(
-        f"  -- 第{result['round']}轮小结 --  "
-        f"并发 {result['concurrency']}  "
-        f"TPS {result['avg_tps']:.1f}  "
-        f"成功率 {result['success_rate']:.1f}%  "
-        f"P95 {result['p95']:.1f}ms"
-    )
-
-
-def print_final_report(results: list[dict], final: dict, stop_reason: str):
-    print()
-    print("=" * 78)
-    print("  渐进式压测报告")
-    print("=" * 78)
-    print()
-    print(f"  停止原因:  {stop_reason}")
-    print()
-
-    print(
-        "  ┌────────┬────────┬──────────┬──────────┬──────────┬──────────┬──────────┐"
-    )
-    print(
-        "  │  轮次  │  并发  │   TPS    │  成功率  │  P50(ms) │  P95(ms) │  P99(ms) │"
-    )
-    print(
-        "  ├────────┼────────┼──────────┼──────────┼──────────┼──────────┼──────────┤"
-    )
-    for r in results:
+def print_result_table(results: list[dict]):
+    print("┌────────┬────────────┬──────────┬──────────┬──────────┐")
+    print("│  并发  │ 实际TPS    │  P50(ms) │  P95(ms) │  P99(ms) │")
+    print("├────────┼────────────┼──────────┼──────────┼──────────┤")
+    for result in results:
         print(
-            f"  │ {r['round']:^6} │ {r['concurrency']:^6} │ {r['avg_tps']:>8.1f} │ "
-            f"{r['success_rate']:>7.1f}% │ {r['p50']:>8.1f} │ {r['p95']:>8.1f} │ {r['p99']:>8.1f} │"
+            f"│ {result['concurrency']:>6} │ {result['actual_tps']:>10.1f} │ "
+            f"{result['p50']:>8.1f} │ {result['p95']:>8.1f} │ {result['p99']:>8.1f} │"
         )
-    print(
-        "  └────────┴────────┴──────────┴──────────┴──────────┴──────────┴──────────┘"
-    )
-
-    print()
-    print("-" * 78)
-    print("  最终轮次详情")
-    print("-" * 78)
-    print(f"  轮次:       第{final['round']}轮")
-    print(f"  并发数:     {final['concurrency']}")
-    print(f"  持续时间:   {final['duration']:.2f}s")
-    print(f"  总请求数:   {final['total']}")
-    print(f"  成功数:     {final['success']}")
-    print(f"  失败数:     {final['failed']}")
-    print(f"  成功率:     {final['success_rate']:.2f}%")
-    print(f"  平均 TPS:   {final['avg_tps']:.2f}")
-    print()
-    print("  延迟统计 (ms):")
-    print(f"    平均:  {final['avg_latency']:.1f}")
-    print(f"    P50:   {final['p50']:.1f}")
-    print(f"    P95:   {final['p95']:.1f}")
-    print(f"    P99:   {final['p99']:.1f}")
-    print(f"    最大:  {final['max_latency']:.1f}")
-    print("=" * 78)
+    print("└────────┴────────────┴──────────┴──────────┴──────────┘")
 
 
 async def run_round(
@@ -341,7 +245,6 @@ async def run_round(
     headers: dict,
     concurrency: int,
     duration: int,
-    round_num: int,
 ) -> dict:
     connector_limit = concurrency + 50
     session._connector._limit = connector_limit
@@ -355,9 +258,6 @@ async def run_round(
         )
         for _ in range(concurrency)
     ]
-    reporter_task = asyncio.create_task(
-        reporter(stats, concurrency, round_num, duration, stop_event)
-    )
 
     start = time.monotonic()
     await asyncio.sleep(duration)
@@ -365,81 +265,40 @@ async def run_round(
 
     stop_event.set()
     await asyncio.gather(*workers, return_exceptions=True)
-    reporter_task.cancel()
-
-    return format_round_result(round_num, concurrency, stats, actual_duration)
+    return format_round_result(concurrency, stats, actual_duration)
 
 
 async def run():
-    max_conn = 2000
+    max_conn = max(TEST_CONCURRENCIES) + 50
     connector = aiohttp.TCPConnector(limit=max_conn)
     timeout = aiohttp.ClientTimeout(total=60)
 
-    print("正在删除 sendrecord 表...")
     try:
-        deleted = clear_send_record_table()
-        print(f"已删除 t_send_record 表 原有记录数 {deleted}")
+        clear_send_record_table()
     except Exception as e:
         print(f"删除 sendrecord 表失败: {e}")
         sys.exit(1)
 
     async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
-        print("正在登录...")
         token = await login(session)
-        print("登录成功")
 
         type_to_id = {CHANNEL_TYPE_FOR_TEMPLATE[t]: "" for t in TEMPLATE_CODES}
         payload_templates = build_payloads(type_to_id)
         endpoint = f"{BASE_URL}/api/send"
         headers = {"Authorization": f"Bearer {token}"}
 
-        print()
-        print(f"压测目标:      {endpoint}")
-        print(f"模板列表:      {TEMPLATE_CODES}")
-        print(f"语言:          {LANGUAGE}")
-        print(f"预热并发:      {WARMUP_CONCURRENCY} x {WARMUP_DURATION}s")
-        print(f"起始并发:      {INITIAL_CONCURRENCY}")
-        print(f"每轮持续:      {ROUND_DURATION}s")
-        print(f"轮间暂停:      {PAUSE_BETWEEN_ROUNDS}s")
-        print(f"递增策略:      每轮并发固定增加 {CONCURRENCY_STEP_DELTA}")
-        print(f"饱和信号:      TPS < 当前并发数 x {SATURATION_CONCURRENCY_RATIO:.0%}")
-        print("=" * 78)
-
-        print()
-        print(
-            f">>> 预热阶段  并发数 {WARMUP_CONCURRENCY}  持续 {WARMUP_DURATION}s（不计入评判）"
-        )
-        warmup_result = await run_round(
+        await run_round(
             session,
             endpoint,
             payload_templates,
             headers,
             WARMUP_CONCURRENCY,
             WARMUP_DURATION,
-            0,
         )
-        print()
-        print(
-            f"  -- 预热完成 --  "
-            f"TPS {warmup_result['avg_tps']:.1f}  "
-            f"成功率 {warmup_result['success_rate']:.1f}%  "
-            f"P95 {warmup_result['p95']:.1f}ms"
-        )
-        print(f"\n>>> 预热结束 暂停{PAUSE_BETWEEN_ROUNDS}s后开始正式压测")
         await asyncio.sleep(PAUSE_BETWEEN_ROUNDS)
 
-        concurrency = INITIAL_CONCURRENCY
-        round_num = 0
         results: list[dict] = []
-        stop_reason = ""
-
-        while True:
-            round_num += 1
-            print()
-            print(
-                f">>> 第{round_num}轮开始  并发数 {concurrency}  持续 {ROUND_DURATION}s"
-            )
-
+        for index, concurrency in enumerate(TEST_CONCURRENCIES):
             result = await run_round(
                 session,
                 endpoint,
@@ -447,31 +306,12 @@ async def run():
                 headers,
                 concurrency,
                 ROUND_DURATION,
-                round_num,
             )
             results.append(result)
-            print_round_summary(result)
+            if index < len(TEST_CONCURRENCIES) - 1:
+                await asyncio.sleep(PAUSE_BETWEEN_ROUNDS)
 
-            # 饱和信号：当前 TPS < 当前并发数 x 90%
-            saturation_threshold = concurrency * SATURATION_CONCURRENCY_RATIO
-            if result["avg_tps"] < saturation_threshold:
-                stop_reason = (
-                    f"第{round_num}轮 TPS({result['avg_tps']:.1f}) "
-                    f"< 饱和阈值({saturation_threshold:.1f} = 并发{concurrency} x {SATURATION_CONCURRENCY_RATIO:.0%})"
-                )
-                print()
-                print(f">>> 触发饱和信号: {stop_reason}")
-                break
-
-            next_concurrency = concurrency + CONCURRENCY_STEP_DELTA
-            print(
-                f"\n>>> 服务器扛住了(TPS {result['avg_tps']:.1f}) "
-                f"暂停{PAUSE_BETWEEN_ROUNDS}s后提升并发 {concurrency} -> {next_concurrency}"
-            )
-            await asyncio.sleep(PAUSE_BETWEEN_ROUNDS)
-            concurrency = next_concurrency
-
-        print_final_report(results, results[-1], stop_reason)
+        print_result_table(results)
 
 
 def main():
