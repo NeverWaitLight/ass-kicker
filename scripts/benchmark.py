@@ -154,7 +154,9 @@ class BenchStats:
         self.latencies: list[float] = []
         self._lock = asyncio.Lock()
 
-    async def record(self, success: bool, latency_ms: float):
+    async def record(self, success: bool, latency_ms: float, finished_at: float, deadline: float):
+        if finished_at > deadline:
+            return
         async with self._lock:
             self.total += 1
             if success:
@@ -197,6 +199,7 @@ async def worker(
     headers: dict,
     stats: BenchStats,
     stop_event: asyncio.Event,
+    deadline: float,
 ):
     while not stop_event.is_set():
         tpl = random.choice(payload_templates)
@@ -211,8 +214,9 @@ async def worker(
                 success = resp.status == 200
         except Exception:
             success = False
-        latency_ms = (time.monotonic() - t0) * 1000
-        await stats.record(success, latency_ms)
+        finished_at = time.monotonic()
+        latency_ms = (finished_at - t0) * 1000
+        await stats.record(success, latency_ms, finished_at, deadline)
 
 
 def format_round_result(concurrency: int, stats: BenchStats, duration: float) -> dict:
@@ -251,15 +255,16 @@ async def run_round(
 
     stats = BenchStats()
     stop_event = asyncio.Event()
+    start = time.monotonic()
+    deadline = start + duration
 
     workers = [
         asyncio.create_task(
-            worker(session, endpoint, payload_templates, headers, stats, stop_event)
+            worker(session, endpoint, payload_templates, headers, stats, stop_event, deadline)
         )
         for _ in range(concurrency)
     ]
 
-    start = time.monotonic()
     await asyncio.sleep(duration)
     actual_duration = time.monotonic() - start
 
