@@ -1,20 +1,8 @@
 package com.github.waitlight.asskicker.manager;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channels.ChannelConfig;
 import com.github.waitlight.asskicker.channels.MsgReq;
 import com.github.waitlight.asskicker.channels.MsgResp;
-import com.github.waitlight.asskicker.channels.email.EmailChannelConfigConverter;
-import com.github.waitlight.asskicker.channels.email.EmailChannelFactory;
-import com.github.waitlight.asskicker.channels.im.IMChannelConfigConverter;
-import com.github.waitlight.asskicker.channels.im.IMChannelFactory;
-import com.github.waitlight.asskicker.channels.push.PushChannelConfigConverter;
-import com.github.waitlight.asskicker.channels.push.PushChannelFactory;
-import com.github.waitlight.asskicker.channels.sms.SmsChannelConfigConverter;
-import com.github.waitlight.asskicker.channels.sms.SmsChannelFactory;
 import com.github.waitlight.asskicker.model.Channel;
-import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.SendRecord;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
@@ -28,7 +16,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -41,21 +28,9 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class SendTaskExecutor implements org.springframework.beans.factory.DisposableBean {
 
-    private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE = new TypeReference<>() {
-    };
-
     private final TemplateManager templateManager;
     private final ChannelManager channelManager;
     private final SendRecordService sendRecordService;
-    private final EmailChannelFactory emailChannelFactory;
-    private final EmailChannelConfigConverter emailChannelConfigConverter;
-    private final IMChannelFactory imChannelFactory;
-    private final IMChannelConfigConverter imChannelConfigConverter;
-    private final PushChannelFactory pushChannelFactory;
-    private final PushChannelConfigConverter pushChannelConfigConverter;
-    private final SmsChannelFactory smsChannelFactory;
-    private final SmsChannelConfigConverter smsChannelConfigConverter;
-    private final ObjectMapper objectMapper;
 
     private ExecutorService taskExecutor;
 
@@ -133,7 +108,8 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
                 return;
             }
 
-            com.github.waitlight.asskicker.channels.Channel<?> sendChannel = createChannel(channelEntity);
+            com.github.waitlight.asskicker.channels.Channel<?> sendChannel = channelManager
+                    .resolveChannel(channelEntity);
             if (sendChannel == null) {
                 lastErrorCode = "CHANNEL_CREATE_FAILED";
                 lastErrorMessage = "Unsupported channel type: " + channelEntity.getType();
@@ -143,17 +119,13 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
                 return;
             }
 
-            try {
-                for (String recipient : recipients) {
-                    boolean success = processRecipient(task, renderedContent, channelEntity, sendChannel, recipient);
-                    if (success) {
-                        successCount++;
-                    } else {
-                        failureCount++;
-                    }
+            for (String recipient : recipients) {
+                boolean success = processRecipient(task, renderedContent, channelEntity, sendChannel, recipient);
+                if (success) {
+                    successCount++;
+                } else {
+                    failureCount++;
                 }
-            } finally {
-                closeChannel(sendChannel);
             }
         } catch (Exception ex) {
             lastErrorCode = "CONSUMER_ERROR";
@@ -280,53 +252,6 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
             return Collections.singletonList(null);
         }
         return normalized;
-    }
-
-    private com.github.waitlight.asskicker.channels.Channel<?> createChannel(Channel channelEntity) {
-        ChannelType type = channelEntity.getType();
-        Map<String, Object> properties = readProperties(channelEntity.getPropertiesJson());
-        if (type == ChannelType.EMAIL) {
-            ChannelConfig config = emailChannelConfigConverter.fromProperties(properties);
-            return emailChannelFactory.create(config);
-        }
-        if (type == ChannelType.IM) {
-            ChannelConfig config = imChannelConfigConverter.fromProperties(properties);
-            return imChannelFactory.create(config);
-        }
-        if (type == ChannelType.PUSH) {
-            ChannelConfig config = pushChannelConfigConverter.fromProperties(properties);
-            return pushChannelFactory.create(config);
-        }
-        if (type == ChannelType.SMS) {
-            ChannelConfig config = smsChannelConfigConverter.fromProperties(properties);
-            return smsChannelFactory.create(config);
-        }
-        return null;
-    }
-
-    private void closeChannel(com.github.waitlight.asskicker.channels.Channel<?> channel) {
-        if (channel instanceof AutoCloseable closeable) {
-            try {
-                closeable.close();
-            } catch (Exception ex) {
-                log.warn("SEND_CHANNEL_CLOSE_FAILED errorCode={} errorMessage={}",
-                        "CHANNEL_CLOSE_FAILED", messageOrDefault(ex.getMessage(), "Failed to close channel"));
-            }
-        }
-    }
-
-    private Map<String, Object> readProperties(String json) {
-        if (json == null || json.isBlank()) {
-            return new LinkedHashMap<>();
-        }
-        try {
-            return objectMapper.readValue(json, MAP_TYPE);
-        } catch (Exception ex) {
-            log.warn("SEND_CHANNEL_PROPERTIES_PARSE_FAILED errorCode={} errorMessage={}",
-                    "CHANNEL_PROPERTIES_PARSE_FAILED",
-                    messageOrDefault(ex.getMessage(), "Failed to parse channel properties"));
-            return new LinkedHashMap<>();
-        }
     }
 
     private String messageOrDefault(String message, String defaultMessage) {
