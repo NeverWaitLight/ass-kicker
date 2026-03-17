@@ -36,7 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -62,7 +62,6 @@ public class SendTaskConsumer implements DisposableBean {
     private final SmsChannelConfigConverter smsChannelConfigConverter;
     private final ObjectMapper objectMapper;
     private final ExecutorService taskExecutor;
-    private final ExecutorService auditExecutor;
 
     @Autowired
     public SendTaskConsumer(TemplateManager templateManager,
@@ -80,7 +79,7 @@ public class SendTaskConsumer implements DisposableBean {
         this(templateManager, channelManager, sendRecordRepository,
                 emailChannelFactory, emailChannelConfigConverter, imChannelFactory, imChannelConfigConverter,
                 pushChannelFactory, pushChannelConfigConverter, smsChannelFactory, smsChannelConfigConverter,
-                objectMapper, Executors.newVirtualThreadPerTaskExecutor(), Executors.newVirtualThreadPerTaskExecutor());
+                objectMapper, Executors.newVirtualThreadPerTaskExecutor());
     }
 
     SendTaskConsumer(TemplateManager templateManager,
@@ -95,8 +94,7 @@ public class SendTaskConsumer implements DisposableBean {
             SmsChannelFactory smsChannelFactory,
             SmsChannelConfigConverter smsChannelConfigConverter,
             ObjectMapper objectMapper,
-            ExecutorService taskExecutor,
-            ExecutorService auditExecutor) {
+            ExecutorService taskExecutor) {
         this.templateManager = templateManager;
         this.channelManager = channelManager;
         this.sendRecordRepository = sendRecordRepository;
@@ -110,7 +108,6 @@ public class SendTaskConsumer implements DisposableBean {
         this.smsChannelConfigConverter = smsChannelConfigConverter;
         this.objectMapper = objectMapper;
         this.taskExecutor = taskExecutor;
-        this.auditExecutor = auditExecutor;
     }
 
     @KafkaListener(topics = KafkaConfig.SEND_TASKS_TOPIC, containerFactory = "sendTaskListenerContainerFactory")
@@ -120,12 +117,16 @@ public class SendTaskConsumer implements DisposableBean {
             return;
         }
         try {
-            taskExecutor.submit(() -> processTask(task));
+            submitTask(task);
         } catch (RejectedExecutionException ex) {
             logger.error("SendTaskConsumer rejected taskId={} reason={}", task.getTaskId(), ex.getMessage());
-            markRecipientsFailedAsync(task, null, null, fallbackRecipients(task.getRecipients()),
+            markRecipientsFailed(task, null, null, fallbackRecipients(task.getRecipients()),
                     "TASK_REJECTED", messageOrDefault(ex.getMessage(), "Task executor rejected task"));
         }
+    }
+
+    public void submitTask(SendTask task) {
+        taskExecutor.submit(() -> processTask(task));
     }
 
     public void processTask(SendTask task) {
@@ -145,7 +146,7 @@ public class SendTaskConsumer implements DisposableBean {
                 failureCount = failureRecipients.size();
                 lastErrorCode = "INVALID_LANGUAGE";
                 lastErrorMessage = ex.getMessage();
-                markRecipientsFailedAsync(task, null, null, failureRecipients, lastErrorCode, lastErrorMessage);
+                markRecipientsFailed(task, null, null, failureRecipients, lastErrorCode, lastErrorMessage);
                 return;
             }
 
@@ -158,7 +159,7 @@ public class SendTaskConsumer implements DisposableBean {
                         : "TEMPLATE_NOT_FOUND";
                 lastErrorMessage = reason;
                 failureCount = failureRecipients.size();
-                markRecipientsFailedAsync(task, null, null, failureRecipients, lastErrorCode, lastErrorMessage);
+                markRecipientsFailed(task, null, null, failureRecipients, lastErrorCode, lastErrorMessage);
                 return;
             }
 
@@ -169,21 +170,21 @@ public class SendTaskConsumer implements DisposableBean {
                 lastErrorCode = "CHANNEL_NOT_FOUND";
                 lastErrorMessage = messageOrDefault(ex.getMessage(), "No available channel");
                 failureCount = failureRecipients.size();
-                markRecipientsFailedAsync(task, renderedContent, null, failureRecipients, lastErrorCode, lastErrorMessage);
+                markRecipientsFailed(task, renderedContent, null, failureRecipients, lastErrorCode, lastErrorMessage);
                 return;
             }
             if (channelEntity == null) {
                 lastErrorCode = "CHANNEL_NOT_FOUND";
                 lastErrorMessage = "No available channel for template: " + task.getTemplateCode();
                 failureCount = failureRecipients.size();
-                markRecipientsFailedAsync(task, renderedContent, null, failureRecipients, lastErrorCode, lastErrorMessage);
+                markRecipientsFailed(task, renderedContent, null, failureRecipients, lastErrorCode, lastErrorMessage);
                 return;
             }
             if (recipients.isEmpty()) {
                 lastErrorCode = "RECIPIENTS_EMPTY";
                 lastErrorMessage = "No valid recipients provided";
                 failureCount = failureRecipients.size();
-                markRecipientsFailedAsync(task, renderedContent, channelEntity, failureRecipients, lastErrorCode, lastErrorMessage);
+                markRecipientsFailed(task, renderedContent, channelEntity, failureRecipients, lastErrorCode, lastErrorMessage);
                 return;
             }
 
@@ -192,7 +193,7 @@ public class SendTaskConsumer implements DisposableBean {
                 lastErrorCode = "CHANNEL_CREATE_FAILED";
                 lastErrorMessage = "Unsupported channel type: " + channelEntity.getType();
                 failureCount = failureRecipients.size();
-                markRecipientsFailedAsync(task, renderedContent, channelEntity, failureRecipients, lastErrorCode, lastErrorMessage);
+                markRecipientsFailed(task, renderedContent, channelEntity, failureRecipients, lastErrorCode, lastErrorMessage);
                 return;
             }
 
@@ -212,7 +213,7 @@ public class SendTaskConsumer implements DisposableBean {
             lastErrorCode = "CONSUMER_ERROR";
             lastErrorMessage = messageOrDefault(ex.getMessage(), "Consumer execution failed");
             failureCount = failureRecipients.size();
-            markRecipientsFailedAsync(task, null, null, failureRecipients, lastErrorCode, lastErrorMessage);
+            markRecipientsFailed(task, null, null, failureRecipients, lastErrorCode, lastErrorMessage);
         } finally {
             long durationMs = Math.max(0L, Instant.now().toEpochMilli() - taskStartedAt);
             int totalCount = successCount + failureCount;
@@ -236,7 +237,7 @@ public class SendTaskConsumer implements DisposableBean {
         MsgResp response = sendMessage(task, renderedContent, channelEntity, sendChannel, recipient, sendStartedAt);
         SendRecordStatus finalStatus = response.isSuccess() ? SendRecordStatus.SUCCESS : SendRecordStatus.FAILED;
         long sentAt = Instant.now().toEpochMilli();
-        saveFinalRecordAsync(task, renderedContent, channelEntity, recipient, finalStatus,
+        saveFinalRecord(task, renderedContent, channelEntity, recipient, finalStatus,
                 response.getErrorCode(), response.getErrorMessage(), sentAt, sendStartedAt);
         return response.isSuccess();
     }
@@ -261,7 +262,7 @@ public class SendTaskConsumer implements DisposableBean {
         return response;
     }
 
-    private void markRecipientsFailedAsync(SendTask task,
+    private void markRecipientsFailed(SendTask task,
             String renderedContent,
             Channel channelEntity,
             List<String> recipients,
@@ -269,12 +270,12 @@ public class SendTaskConsumer implements DisposableBean {
             String errorMessage) {
         for (String recipient : recipients) {
             long failedAt = Instant.now().toEpochMilli();
-            saveFinalRecordAsync(task, renderedContent, channelEntity, recipient, SendRecordStatus.FAILED,
+            saveFinalRecord(task, renderedContent, channelEntity, recipient, SendRecordStatus.FAILED,
                     errorCode, errorMessage, failedAt, 0L);
         }
     }
 
-    private void saveFinalRecordAsync(SendTask task,
+    private void saveFinalRecord(SendTask task,
             String renderedContent,
             Channel channelEntity,
             String recipient,
@@ -283,22 +284,20 @@ public class SendTaskConsumer implements DisposableBean {
             String errorMessage,
             long sentAt,
             long startedAt) {
-        CompletableFuture.runAsync(() -> {
-            try {
-                SendRecord record = buildFinalRecord(task, renderedContent, channelEntity, recipient,
-                        status, errorCode, errorMessage, sentAt);
-                SendRecord saved = sendRecordRepository.save(record).block();
-                if (saved == null || saved.getId() == null) {
-                    logger.warn("SEND_RECORD_SAVE_FAILED taskId={} recipient={} status={} errorCode={} errorMessage={}",
-                            task.getTaskId(), recipient, SendRecordStatus.FAILED, "RECORD_SAVE_FAILED",
-                            "Failed to save send record");
-                }
-            } catch (Exception ex) {
+        try {
+            SendRecord record = buildFinalRecord(task, renderedContent, channelEntity, recipient,
+                    status, errorCode, errorMessage, sentAt);
+            SendRecord saved = sendRecordRepository.save(record).block();
+            if (saved == null || saved.getId() == null) {
                 logger.warn("SEND_RECORD_SAVE_FAILED taskId={} recipient={} status={} errorCode={} errorMessage={}",
                         task.getTaskId(), recipient, SendRecordStatus.FAILED, "RECORD_SAVE_FAILED",
-                        messageOrDefault(ex.getMessage(), "Failed to save send record"));
+                        "Failed to save send record");
             }
-        }, auditExecutor);
+        } catch (Exception ex) {
+            logger.warn("SEND_RECORD_SAVE_FAILED taskId={} recipient={} status={} errorCode={} errorMessage={}",
+                    task.getTaskId(), recipient, SendRecordStatus.FAILED, "RECORD_SAVE_FAILED",
+                    messageOrDefault(ex.getMessage(), "Failed to save send record"));
+        }
     }
 
     private SendRecord buildFinalRecord(SendTask task, String renderedContent, Channel channelEntity,
@@ -398,7 +397,6 @@ public class SendTaskConsumer implements DisposableBean {
     @Override
     public void destroy() {
         shutdownExecutor(taskExecutor, "taskExecutor");
-        shutdownExecutor(auditExecutor, "auditExecutor");
     }
 
     private void shutdownExecutor(ExecutorService executor, String name) {

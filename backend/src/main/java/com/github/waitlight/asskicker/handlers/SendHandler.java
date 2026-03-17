@@ -13,7 +13,6 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 import java.time.Instant;
 import java.util.Map;
@@ -55,8 +54,7 @@ public class SendHandler {
                 .recipients(body.recipients())
                 .submittedAt(Instant.now().toEpochMilli())
                 .build();
-        return Mono.fromRunnable(() -> sendTaskConsumer.processTask(task))
-                .subscribeOn(Schedulers.boundedElastic())
-                .thenReturn(taskId);
+        sendTaskConsumer.submitTask(task);
+        return Mono.just(taskId);
     }
 }
