@@ -1,7 +1,6 @@
 package com.github.waitlight.asskicker.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -32,7 +31,6 @@ public class Channel {
 
     @NotNull(message = "Channel type is required")
     @Field("type")
-    @Schema(description = "通道类型", allowableValues = {"SMS", "EMAIL", "IM", "PUSH"})
     private ChannelType type;
 
     @Size(max = 1000, message = "Description must not exceed 1000 characters")

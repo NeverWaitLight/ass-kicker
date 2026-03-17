@@ -4,13 +4,13 @@
 
 ## 技术栈
 
-Spring Boot 3.2 WebFlux、Java 21、R2DBC（PostgreSQL）、Spring Security（JWT）、SpringDoc OpenAPI。Web 层为 RouterFunction + Handler 函数式端点，数据层与 HTTP 客户端均为非阻塞反应式。
+Spring Boot 3.2 WebFlux、Java 21、R2DBC（PostgreSQL）、Spring Security（JWT）。Web 层为 RouterFunction + Handler 函数式端点，数据层与 HTTP 客户端均为非阻塞反应式。
 
 ## 模块与职责
 
-**config** 应用与基础设施配置。R2dbcConfig 提供 R2DBC 自定义类型转换（如 ChannelType 与库表互转）；OpenApiConfig 配置 Swagger/OpenAPI；NativeRuntimeHints 为 GraalVM 原生镜像提供反射等运行时提示。
+**config** 应用与基础设施配置。R2dbcConfig 提供 R2DBC 自定义类型转换（如 ChannelType 与库表互转）；NativeRuntimeHints 为 GraalVM 原生镜像提供反射等运行时提示。
 
-**router** 定义 HTTP 路由，将请求绑定到对应 Handler。包含 AuthRouter、ChannelRouter、HealthRouter、LanguageTemplateRouter、StatusRouter、TemplateRouter、UserRouter，均使用 WebFlux 的 RouterFunction 声明路由与 OpenAPI 注解。
+**router** 定义 HTTP 路由，将请求绑定到对应 Handler。包含 AuthRouter、ChannelRouter、HealthRouter、LanguageTemplateRouter、StatusRouter、TemplateRouter、UserRouter，均使用 WebFlux 的 RouterFunction 声明路由。
 
 **handlers** 处理具体请求，解析参数、调用 Service、构造 ServerResponse。AuthHandler 处理登录注册刷新令牌；ChannelHandler 处理渠道 CRUD 与测试发送；LanguageTemplateHandler、TemplateHandler 处理模板与多语言模板；UserHandler 处理用户管理。统一返回 Mono&lt;ServerResponse&gt;，与全链路反应式一致。
 

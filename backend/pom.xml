@@ -26,7 +26,6 @@
     <mapstruct.version>1.5.5.Final</mapstruct.version>
     <lombok.mapstruct.binding.version>0.2.0</lombok.mapstruct.binding.version>
     <!-- Third-party dependencies versions -->
-    <springdoc.version>2.3.0</springdoc.version>
     <jjwt.version>0.11.5</jjwt.version>
     <google-auth.version>1.28.0</google-auth.version>
     <aliyun-dysms.version>2.0.24</aliyun-dysms.version>
@@ -65,13 +64,6 @@
     <dependency>
       <groupId>org.springframework.kafka</groupId>
       <artifactId>spring-kafka</artifactId>
-    </dependency>
-
-    <!-- ==================== API Documentation ==================== -->
-    <dependency>
-      <groupId>org.springdoc</groupId>
-      <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
-      <version>${springdoc.version}</version>
     </dependency>
 
     <!-- ==================== JWT Authentication ==================== -->
