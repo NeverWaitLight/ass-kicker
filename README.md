@@ -1,5 +1,9 @@
 # Ass Kicker
 
+## TODO
+
+- [ ] 为 `/v1/send` 和 `/v1/submit` 接口增加限流功能
+
 ## 后端启动
 
 1. 准备 PostgreSQL 数据库并创建 `ass_kicker` 数据库。
