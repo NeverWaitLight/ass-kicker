@@ -19,7 +19,7 @@ import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.SendRecord;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
 import com.github.waitlight.asskicker.model.SendTask;
-import com.github.waitlight.asskicker.repository.SendRecordRepository;
+import com.github.waitlight.asskicker.service.SendRecordService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +46,7 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
 
     private final TemplateManager templateManager;
     private final ChannelManager channelManager;
-    private final SendRecordRepository sendRecordRepository;
+    private final SendRecordService sendRecordService;
     private final EmailChannelFactory emailChannelFactory;
     private final EmailChannelConfigConverter emailChannelConfigConverter;
     private final IMChannelFactory imChannelFactory;
@@ -234,12 +234,7 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
         try {
             SendRecord record = buildFinalRecord(task, renderedContent, channelEntity, recipient,
                     status, errorCode, errorMessage, sentAt);
-            SendRecord saved = sendRecordRepository.save(record).block();
-            if (saved == null || saved.getId() == null) {
-                log.warn("SEND_RECORD_SAVE_FAILED taskId={} recipient={} status={} errorCode={} errorMessage={}",
-                        task.getTaskId(), recipient, SendRecordStatus.FAILED, "RECORD_SAVE_FAILED",
-                        "Failed to save send record");
-            }
+            sendRecordService.writeRecord(record);
         } catch (Exception ex) {
             log.warn("SEND_RECORD_SAVE_FAILED taskId={} recipient={} status={} errorCode={} errorMessage={}",
                     task.getTaskId(), recipient, SendRecordStatus.FAILED, "RECORD_SAVE_FAILED",
