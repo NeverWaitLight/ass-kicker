@@ -8,7 +8,7 @@ Spring Boot 3.2 WebFlux、Java 21、R2DBC（PostgreSQL）、Spring Security（JW
 
 ## 模块与职责
 
-**config** 应用与基础设施配置。R2dbcConfig 提供 R2DBC 自定义类型转换（如 ChannelType 与库表互转）；NativeRuntimeHints 为 GraalVM 原生镜像提供反射等运行时提示。
+**config** 应用与基础设施配置。R2dbcConfig 提供 R2DBC 自定义类型转换（如 ChannelType 与库表互转）。
 
 **router** 定义 HTTP 路由，将请求绑定到对应 Handler。包含 AuthRouter、ChannelRouter、HealthRouter、LanguageTemplateRouter、StatusRouter、TemplateRouter、UserRouter，均使用 WebFlux 的 RouterFunction 声明路由。
 
