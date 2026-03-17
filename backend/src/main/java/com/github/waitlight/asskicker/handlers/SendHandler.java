@@ -3,7 +3,7 @@ package com.github.waitlight.asskicker.handlers;
 import com.github.waitlight.asskicker.dto.submit.SubmitRequest;
 import com.github.waitlight.asskicker.dto.submit.SubmitResponse;
 import com.github.waitlight.asskicker.model.SendTask;
-import com.github.waitlight.asskicker.mq.SendTaskConsumer;
+import com.github.waitlight.asskicker.manager.SendTaskExecutor;
 import org.springframework.core.codec.DecodingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,10 +21,10 @@ import java.util.UUID;
 @Component
 public class SendHandler {
 
-    private final SendTaskConsumer sendTaskConsumer;
+    private final SendTaskExecutor sendTaskExecutor;
 
-    public SendHandler(SendTaskConsumer sendTaskConsumer) {
-        this.sendTaskConsumer = sendTaskConsumer;
+    public SendHandler(SendTaskExecutor sendTaskExecutor) {
+        this.sendTaskExecutor = sendTaskExecutor;
     }
 
     public Mono<ServerResponse> send(ServerRequest request) {
@@ -54,7 +54,7 @@ public class SendHandler {
                 .recipients(body.recipients())
                 .submittedAt(Instant.now().toEpochMilli())
                 .build();
-        sendTaskConsumer.submitTask(task);
+        sendTaskExecutor.execute(task);
         return Mono.just(taskId);
     }
 }
