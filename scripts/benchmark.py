@@ -131,7 +131,7 @@ RECIPIENT_GENERATORS = {
 
 
 async def login(session: aiohttp.ClientSession) -> str:
-    url = f"{BASE_URL}/api/auth/login"
+    url = f"{BASE_URL}/v1/auth/login"
     payload = {"username": USERNAME, "password": PASSWORD}
     async with session.post(url, json=payload) as resp:
         if resp.status != 200:
@@ -289,7 +289,7 @@ async def run():
 
         type_to_id = {CHANNEL_TYPE_FOR_TEMPLATE[t]: "" for t in TEMPLATE_CODES}
         payload_templates = build_payloads(type_to_id)
-        endpoint = f"{BASE_URL}/api/send"
+        endpoint = f"{BASE_URL}/v1/send"
         headers = {"Authorization": f"Bearer {token}"}
 
         await run_round(

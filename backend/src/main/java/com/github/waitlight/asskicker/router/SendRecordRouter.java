@@ -15,9 +15,9 @@ public class SendRecordRouter {
     @Bean
     public RouterFunction<ServerResponse> sendRecordRoutes(SendRecordHandler sendRecordHandler) {
         return RouterFunctions
-                .route(RequestPredicates.GET("/api/send-records")
+                        .route(RequestPredicates.GET("/v1/send-records")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), sendRecordHandler::listRecords)
-                .andRoute(RequestPredicates.GET("/api/send-records/{id}")
+                        .andRoute(RequestPredicates.GET("/v1/send-records/{id}")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), sendRecordHandler::getRecordById);
     }
 }

@@ -15,7 +15,7 @@ public class SubmitRouter {
     @Bean
     public RouterFunction<ServerResponse> submitRoutes(SubmitHandler submitHandler) {
         return RouterFunctions
-                .route(RequestPredicates.POST("/api/submit")
+                .route(RequestPredicates.POST("/v1/submit")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), submitHandler::submit);
     }
 }

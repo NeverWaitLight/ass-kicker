@@ -19,9 +19,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * 验证 /api/send 流程中 TemplateServiceImpl 缓存是否生效
+ * 验证 /v1/send 流程中 TemplateServiceImpl 缓存是否生效
  *
- * send 流程：TemplateManager.fill() → findByCode() + getTemplateContentByLanguage()
+ * send 流程：TemplateManager.fill() → findByCode() +
+ * getTemplateContentByLanguage()
  * 两个方法都由 Caffeine AsyncLoadingCache 驱动，重复调用应只访问一次 Repository
  */
 class TemplateServiceImplCacheTest {

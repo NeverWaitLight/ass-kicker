@@ -15,13 +15,13 @@ public class AuthRouter {
     @Bean
     public RouterFunction<ServerResponse> authRoutes(AuthHandler authHandler) {
         return RouterFunctions
-                .route(RequestPredicates.POST("/api/auth/login")
+                        .route(RequestPredicates.POST("/v1/auth/login")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), authHandler::login)
-                .andRoute(RequestPredicates.POST("/api/auth/register")
+                        .andRoute(RequestPredicates.POST("/v1/auth/register")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), authHandler::register)
-                .andRoute(RequestPredicates.POST("/api/auth/refresh")
+                        .andRoute(RequestPredicates.POST("/v1/auth/refresh")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), authHandler::refresh)
-                .andRoute(RequestPredicates.GET("/api/auth/me")
+                        .andRoute(RequestPredicates.GET("/v1/auth/me")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), authHandler::me);
     }
 }

@@ -1,7 +1,7 @@
-import { apiFetch } from './api'
+import { apiFetch } from './v1'
 
 export const fetchChannels = async () => {
-  const response = await apiFetch('/api/channels')
+  const response = await apiFetch('/v1/channels')
   if (!response.ok) {
     throw new Error(await response.text())
   }
@@ -9,7 +9,7 @@ export const fetchChannels = async () => {
 }
 
 export const fetchChannel = async (id) => {
-  const response = await apiFetch(`/api/channels/${id}`)
+  const response = await apiFetch(`/v1/channels/${id}`)
   if (!response.ok) {
     throw new Error(await response.text())
   }
@@ -17,7 +17,7 @@ export const fetchChannel = async (id) => {
 }
 
 export const fetchChannelTypes = async () => {
-  const response = await apiFetch('/api/channels/types')
+  const response = await apiFetch('/v1/channels/types')
   if (!response.ok) {
     throw new Error(await response.text())
   }
@@ -25,7 +25,7 @@ export const fetchChannelTypes = async () => {
 }
 
 export const fetchEmailProtocols = async () => {
-  const response = await apiFetch('/api/channels/email-protocols')
+  const response = await apiFetch('/v1/channels/email-protocols')
   if (!response.ok) {
     throw new Error(await response.text())
   }
@@ -33,7 +33,7 @@ export const fetchEmailProtocols = async () => {
 }
 
 export const fetchImTypes = async () => {
-  const response = await apiFetch('/api/channels/im-types')
+  const response = await apiFetch('/v1/channels/im-types')
   if (!response.ok) {
     throw new Error(await response.text())
   }
@@ -41,7 +41,7 @@ export const fetchImTypes = async () => {
 }
 
 export const createChannel = async (payload) => {
-  const response = await apiFetch('/api/channels', {
+  const response = await apiFetch('/v1/channels', {
     method: 'POST',
     body: JSON.stringify(payload)
   })
@@ -52,7 +52,7 @@ export const createChannel = async (payload) => {
 }
 
 export const updateChannel = async (id, payload) => {
-  const response = await apiFetch(`/api/channels/${id}`, {
+  const response = await apiFetch(`/v1/channels/${id}`, {
     method: 'PUT',
     body: JSON.stringify(payload)
   })
@@ -63,7 +63,7 @@ export const updateChannel = async (id, payload) => {
 }
 
 export const deleteChannel = async (id) => {
-  const response = await apiFetch(`/api/channels/${id}`, {
+  const response = await apiFetch(`/v1/channels/${id}`, {
     method: 'DELETE'
   })
   if (!response.ok) {
@@ -73,7 +73,7 @@ export const deleteChannel = async (id) => {
 }
 
 export const testSendChannel = async (payload) => {
-  const response = await apiFetch('/api/channels/test-send', {
+  const response = await apiFetch('/v1/channels/test-send', {
     method: 'POST',
     body: JSON.stringify(payload)
   })

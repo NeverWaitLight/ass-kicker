@@ -4,7 +4,7 @@ import { syncAuth } from '../stores/auth'
 const refreshAccessToken = async () => {
   const refreshToken = getRefreshToken()
   if (!refreshToken) return false
-  const response = await fetch('/api/auth/refresh', {
+  const response = await fetch('/v1/auth/refresh', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refreshToken })

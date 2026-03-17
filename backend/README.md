@@ -50,7 +50,7 @@ docker run -d --name kafka -p 9092:9092 apache/kafka:latest
 
 ### P1 核心
 
-- [ ] **Submit API 鉴权**：`/api/submit` 增加 API Key 机制，支持外部业务系统以服务身份调用，当前仅支持 JWT 用户认证。
+- [ ] **Submit API 鉴权**：`/v1/submit` 增加 API Key 机制，支持外部业务系统以服务身份调用，当前仅支持 JWT 用户认证。
 - [ ] **企业微信 IM 前端配置**：后端 `WechatWorkIMChannel` 已实现，前端通道配置表单（如 webhook URL）对照钉钉 IM 补齐。
 
 ### P2 健壮性

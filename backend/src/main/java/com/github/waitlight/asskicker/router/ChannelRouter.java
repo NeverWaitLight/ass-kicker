@@ -15,20 +15,20 @@ public class ChannelRouter {
     @Bean
     public RouterFunction<ServerResponse> channelRoutes(ChannelHandler channelHandler) {
         return RouterFunctions
-                .route(RequestPredicates.POST("/api/channels")
+                        .route(RequestPredicates.POST("/v1/channels")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::createChannel)
-                .andRoute(RequestPredicates.GET("/api/channels")
+                        .andRoute(RequestPredicates.GET("/v1/channels")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::listChannels)
-                .andRoute(RequestPredicates.GET("/api/channels/types")
+                        .andRoute(RequestPredicates.GET("/v1/channels/types")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::listChannelTypes)
-                .andRoute(RequestPredicates.GET("/api/channels/im-types")
+                        .andRoute(RequestPredicates.GET("/v1/channels/im-types")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::listImTypes)
-                .andRoute(RequestPredicates.GET("/api/channels/{id}")
+                        .andRoute(RequestPredicates.GET("/v1/channels/{id}")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::getChannelById)
-                .andRoute(RequestPredicates.PUT("/api/channels/{id}")
+                        .andRoute(RequestPredicates.PUT("/v1/channels/{id}")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::updateChannel)
-                .andRoute(RequestPredicates.DELETE("/api/channels/{id}"), channelHandler::deleteChannel)
-                .andRoute(RequestPredicates.POST("/api/channels/test-send")
+                        .andRoute(RequestPredicates.DELETE("/v1/channels/{id}"), channelHandler::deleteChannel)
+                        .andRoute(RequestPredicates.POST("/v1/channels/test-send")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelHandler::testSend);
     }
 }

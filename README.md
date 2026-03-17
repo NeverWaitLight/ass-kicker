@@ -20,26 +20,26 @@ mvn spring-boot:run
 
 渠道接口需要携带登录后的 Bearer Token。
 
-- `POST /api/channels`
-- `GET /api/channels`
-- `GET /api/channels/{id}`
-- `PUT /api/channels/{id}`
-- `DELETE /api/channels/{id}`
+- `POST /v1/channels`
+- `GET /v1/channels`
+- `GET /v1/channels/{id}`
+- `PUT /v1/channels/{id}`
+- `DELETE /v1/channels/{id}`
 
 示例：
 
 ```bash
 # 注册并登录获取 accessToken
-curl -X POST http://localhost:8080/api/auth/register \
+curl -X POST http://localhost:8080/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"pass"}'
 
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST http://localhost:8080/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"pass"}'
 
 # 创建渠道（将 accessToken 替换为实际值）
-curl -X POST http://localhost:8080/api/channels \
+curl -X POST http://localhost:8080/v1/channels \
   -H "Authorization: Bearer <accessToken>" \
   -H "Content-Type: application/json" \
   -d '{

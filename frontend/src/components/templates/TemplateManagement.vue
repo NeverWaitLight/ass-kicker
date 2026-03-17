@@ -129,7 +129,7 @@ export default {
     // 加载模板列表
     const loadTemplates = async () => {
       try {
-        const response = await fetch('/api/templates');
+        const response = await fetch('/v1/templates');
         const data = await response.json();
         templates.value = data;
         filteredTemplates.value = [...data];
@@ -183,8 +183,8 @@ export default {
     const saveTemplate = async () => {
       try {
         const url = currentTemplate.value.id 
-          ? `/api/templates/${currentTemplate.value.id}` 
-          : '/api/templates';
+          ? `/v1/templates/${currentTemplate.value.id}` 
+          : '/v1/templates';
         const method = currentTemplate.value.id ? 'PUT' : 'POST';
         const payload = {
           name: currentTemplate.value.name,
@@ -215,7 +215,7 @@ export default {
     const deleteTemplate = async (id) => {
       if (confirm('确定要删除这个模板吗？')) {
         try {
-          const response = await fetch(`/api/templates/${id}`, {
+          const response = await fetch(`/v1/templates/${id}`, {
             method: 'DELETE'
           });
 

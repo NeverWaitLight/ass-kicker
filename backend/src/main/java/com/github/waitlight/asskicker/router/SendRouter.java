@@ -15,7 +15,7 @@ public class SendRouter {
     @Bean
     public RouterFunction<ServerResponse> sendRoutes(SendHandler sendHandler) {
         return RouterFunctions
-                .route(RequestPredicates.POST("/api/send")
+                .route(RequestPredicates.POST("/v1/send")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), sendHandler::send);
     }
 }

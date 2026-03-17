@@ -36,7 +36,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { message } from 'ant-design-vue'
-import { apiFetch } from '../utils/api'
+import { apiFetch } from '../utils/v1'
 import { setAuth } from '../utils/auth'
 import { currentUser, syncAuth } from '../stores/auth'
 
@@ -59,7 +59,7 @@ const submitUsername = async () => {
   }
   updatingName.value = true
   try {
-    const response = await apiFetch('/api/users/me', {
+    const response = await apiFetch('/v1/users/me', {
       method: 'PATCH',
       body: JSON.stringify({ username: usernameForm.username })
     })
@@ -85,7 +85,7 @@ const submitPassword = async () => {
   }
   updatingPassword.value = true
   try {
-    const response = await apiFetch('/api/users/me/password', {
+    const response = await apiFetch('/v1/users/me/password', {
       method: 'PUT',
       body: JSON.stringify(passwordForm)
     })

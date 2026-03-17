@@ -79,7 +79,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Modal, message } from 'ant-design-vue'
-import { apiFetch } from '../utils/api'
+import { apiFetch } from '../utils/v1'
 import { formatTimestamp } from '../utils/time'
 
 const users = ref([])
@@ -127,7 +127,7 @@ const loadUsers = async () => {
       size: pagination.size.toString(),
       keyword: keyword.value || ''
     })
-    const response = await apiFetch(`/api/users?${params.toString()}`)
+    const response = await apiFetch(`/v1/users?${params.toString()}`)
     if (!response.ok) {
       message.error(await response.text())
       return
@@ -162,7 +162,7 @@ const submitCreate = async () => {
   }
   creating.value = true
   try {
-    const response = await apiFetch('/api/users', {
+    const response = await apiFetch('/v1/users', {
       method: 'POST',
       body: JSON.stringify(createForm)
     })
@@ -193,7 +193,7 @@ const submitReset = async () => {
   }
   resetting.value = true
   try {
-    const response = await apiFetch(`/api/users/${resetForm.userId}/password`, {
+    const response = await apiFetch(`/v1/users/${resetForm.userId}/password`, {
       method: 'PUT',
       body: JSON.stringify({ newPassword: resetForm.newPassword })
     })
@@ -217,7 +217,7 @@ const confirmDelete = (record) => {
     okType: 'danger',
     cancelText: '取消',
     onOk: async () => {
-      const response = await apiFetch(`/api/users/${record.id}`, { method: 'DELETE' })
+      const response = await apiFetch(`/v1/users/${record.id}`, { method: 'DELETE' })
       if (!response.ok) {
         message.error(await response.text())
         return
