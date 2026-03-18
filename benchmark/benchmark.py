@@ -29,8 +29,7 @@ except ImportError:
 
 # ── 默认配置 ──────────────────────────────────────────────────────────────────
 BASE_URL = "http://localhost:8080"
-USERNAME = "admin"
-PASSWORD = "123456"
+API_KEY = "ak_5f9fe09cb50f4327989106318e95b876"
 LANGUAGE = "ZH_HANS"
 
 # 与 backend application.yml 一致
@@ -128,22 +127,6 @@ RECIPIENT_GENERATORS = {
     "captcha-im": random_im_id,
     "captcha-push": random_push_token,
 }
-
-
-async def login(session: aiohttp.ClientSession) -> str:
-    url = f"{BASE_URL}/v1/auth/login"
-    payload = {"username": USERNAME, "password": PASSWORD}
-    async with session.post(url, json=payload) as resp:
-        if resp.status != 200:
-            body = await resp.text()
-            print(f"登录失败 (HTTP {resp.status}): {body}")
-            sys.exit(1)
-        data = await resp.json()
-        token = data.get("accessToken") or data.get("access_token")
-        if not token:
-            print(f"登录响应中未找到 accessToken: {data}")
-            sys.exit(1)
-        return token
 
 
 class BenchStats:
@@ -285,12 +268,10 @@ async def run():
         sys.exit(1)
 
     async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
-        token = await login(session)
-
         type_to_id = {CHANNEL_TYPE_FOR_TEMPLATE[t]: "" for t in TEMPLATE_CODES}
         payload_templates = build_payloads(type_to_id)
         endpoint = f"{BASE_URL}/v1/send"
-        headers = {"Authorization": f"Bearer {token}"}
+        headers = {"Authorization": f"Bearer {API_KEY}"}
 
         await run_round(
             session,

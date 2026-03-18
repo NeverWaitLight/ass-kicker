@@ -38,7 +38,7 @@ Spring Boot 3.2 WebFlux、Java 21、R2DBC（PostgreSQL）、Spring Security（JW
 
 - [ ] 为 `/v1/send` 和 `/v1/submit` 接口增加限流功能
 - [ ] 发送失败时写延时队列
-- [ ] **Submit API 鉴权**：`/v1/submit` 增加 API Key 机制，支持外部业务系统以服务身份调用，当前仅支持 JWT 用户认证。
+- [x] **Submit API 鉴权**：`/v1/submit` 增加 API Key 机制，支持外部业务系统以服务身份调用，当前仅支持 JWT 用户认证。
 - [ ] **企业微信 IM 前端配置**：后端 `WechatWorkIMChannel` 已实现，前端通道配置表单（如 webhook URL）对照钉钉 IM 补齐。
 
 ### P2 健壮性

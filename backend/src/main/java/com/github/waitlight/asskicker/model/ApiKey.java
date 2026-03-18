@@ -1,0 +1,42 @@
+package com.github.waitlight.asskicker.model;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@Document(collection = "t_api_key")
+public class ApiKey {
+
+    @Id
+    private String id;
+
+    @Field("user_id")
+    private String userId;
+
+    @Field("name")
+    private String name;
+
+    @Field("key_hash")
+    private String keyHash;
+
+    @Field("key_prefix")
+    private String keyPrefix;
+
+    @Field("expires_at")
+    private Long expiresAt;
+
+    @Field("status")
+    private ApiKeyStatus status;
+
+    @Field("created_at")
+    private Long createdAt;
+
+    @Field("revoked_at")
+    private Long revokedAt;
+}

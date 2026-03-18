@@ -29,16 +29,84 @@
           </a-form>
         </a-card>
       </a-col>
+      <a-col :xs="24">
+        <a-card title="API Key 管理" bordered>
+          <a-form :model="apiKeyForm" layout="inline" style="margin-bottom: 16px">
+            <a-form-item label="备注名">
+              <a-input v-model:value="apiKeyForm.name" placeholder="可选" style="width: 160px" />
+            </a-form-item>
+            <a-form-item label="有效期">
+              <a-select v-model:value="apiKeyForm.expiry" style="width: 140px">
+                <a-select-option value="7">7 天</a-select-option>
+                <a-select-option value="30">30 天</a-select-option>
+                <a-select-option value="90">90 天</a-select-option>
+                <a-select-option value="">永不过期</a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item>
+              <a-button type="primary" :loading="creatingKey" @click="handleCreateApiKey">创建</a-button>
+            </a-form-item>
+          </a-form>
+
+          <a-table
+            :dataSource="apiKeys"
+            :columns="apiKeyColumns"
+            :loading="loadingKeys"
+            rowKey="id"
+            :pagination="false"
+            size="small"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'keyPrefix'">
+                <a-typography-text code>{{ record.keyPrefix }}...</a-typography-text>
+              </template>
+              <template v-else-if="column.key === 'expiresAt'">
+                {{ record.expiresAt ? new Date(record.expiresAt).toLocaleDateString() : '永不过期' }}
+              </template>
+              <template v-else-if="column.key === 'createdAt'">
+                {{ new Date(record.createdAt).toLocaleDateString() }}
+              </template>
+              <template v-else-if="column.key === 'action'">
+                <a-popconfirm title="确认销毁此 API Key？" ok-text="确认" cancel-text="取消" @confirm="handleRevokeApiKey(record.id)">
+                  <a-button type="link" danger size="small">销毁</a-button>
+                </a-popconfirm>
+              </template>
+            </template>
+          </a-table>
+        </a-card>
+      </a-col>
     </a-row>
+
+    <a-modal
+      v-model:open="newKeyModalVisible"
+      title="API Key 已创建"
+      :footer="null"
+      :maskClosable="false"
+    >
+      <a-alert
+        type="warning"
+        message="请妥善保存，此后再也无法查看完整 Key"
+        style="margin-bottom: 16px"
+        show-icon
+      />
+      <a-input-group compact>
+        <a-input :value="newKeyValue" readonly style="width: calc(100% - 80px)" />
+        <a-button @click="copyKey">复制</a-button>
+      </a-input-group>
+      <div style="margin-top: 16px; text-align: right">
+        <a-button type="primary" @click="newKeyModalVisible = false">我已保存</a-button>
+      </div>
+    </a-modal>
   </section>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { apiFetch } from '../utils/v1'
 import { setAuth } from '../utils/auth'
 import { currentUser, syncAuth } from '../stores/auth'
+import { createApiKey, listApiKeys, revokeApiKey } from '../utils/apiKeyApi'
 
 const usernameForm = reactive({
   username: currentUser.value?.username || ''
@@ -102,6 +170,71 @@ const submitPassword = async () => {
     updatingPassword.value = false
   }
 }
+
+const apiKeyForm = reactive({ name: '', expiry: '30' })
+const apiKeys = ref([])
+const loadingKeys = ref(false)
+const creatingKey = ref(false)
+const newKeyModalVisible = ref(false)
+const newKeyValue = ref('')
+
+const apiKeyColumns = [
+  { title: '备注名', dataIndex: 'name', key: 'name' },
+  { title: 'Key 前缀', key: 'keyPrefix' },
+  { title: '有效期至', key: 'expiresAt' },
+  { title: '创建时间', key: 'createdAt' },
+  { title: '操作', key: 'action' }
+]
+
+const loadApiKeys = async () => {
+  loadingKeys.value = true
+  try {
+    const data = await listApiKeys()
+    apiKeys.value = Array.isArray(data) ? data : []
+  } catch {
+    message.error('获取 API Key 列表失败')
+  } finally {
+    loadingKeys.value = false
+  }
+}
+
+const handleCreateApiKey = async () => {
+  creatingKey.value = true
+  try {
+    let expiresAt = null
+    if (apiKeyForm.expiry) {
+      expiresAt = Date.now() + Number(apiKeyForm.expiry) * 24 * 60 * 60 * 1000
+    }
+    const data = await createApiKey({ name: apiKeyForm.name || null, expiresAt })
+    newKeyValue.value = data.rawKey
+    newKeyModalVisible.value = true
+    apiKeyForm.name = ''
+    apiKeyForm.expiry = '30'
+    await loadApiKeys()
+  } catch (error) {
+    message.error('创建 API Key 失败')
+  } finally {
+    creatingKey.value = false
+  }
+}
+
+const handleRevokeApiKey = async (id) => {
+  try {
+    await revokeApiKey(id)
+    message.success('API Key 已销毁')
+    await loadApiKeys()
+  } catch {
+    message.error('销毁 API Key 失败')
+  }
+}
+
+const copyKey = () => {
+  navigator.clipboard.writeText(newKeyValue.value).then(() => {
+    message.success('已复制')
+  })
+}
+
+onMounted(loadApiKeys)
 </script>
 
 <style scoped>

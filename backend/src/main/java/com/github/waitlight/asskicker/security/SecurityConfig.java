@@ -1,8 +1,10 @@
 package com.github.waitlight.asskicker.security;
 
+import com.github.waitlight.asskicker.service.ApiKeyAuthService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
@@ -20,6 +22,47 @@ import org.springframework.security.web.server.context.NoOpServerSecurityContext
 public class SecurityConfig {
 
     @Bean
+    @Order(0)
+    public SecurityWebFilterChain sendSubmitFilterChain(ServerHttpSecurity http,
+                                                        JwtService jwtService,
+                                                        ApiKeyAuthService apiKeyAuthService) {
+        JwtReactiveAuthenticationManager jwtManager = new JwtReactiveAuthenticationManager(jwtService);
+        ApiKeyReactiveAuthenticationManager apiKeyManager = new ApiKeyReactiveAuthenticationManager(apiKeyAuthService);
+        OrReactiveAuthenticationManager combinedManager = new OrReactiveAuthenticationManager(jwtManager, apiKeyManager);
+
+        AuthenticationWebFilter combinedFilter = new AuthenticationWebFilter(combinedManager);
+        combinedFilter.setServerAuthenticationConverter(new CombinedServerAuthenticationConverter());
+        combinedFilter.setAuthenticationFailureHandler((exchange, ex) -> {
+            exchange.getExchange().getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getExchange().getResponse().setComplete();
+        });
+
+        return http
+                .securityMatcher(org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
+                        .pathMatchers("/v1/send", "/v1/submit"))
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
+                .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
+                .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
+                .authorizeExchange(exchanges -> exchanges
+                        .anyExchange().authenticated()
+                )
+                .addFilterAt(combinedFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((exchange, ex) -> {
+                            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                            return exchange.getResponse().setComplete();
+                        })
+                        .accessDeniedHandler((exchange, ex) -> {
+                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                            return exchange.getResponse().setComplete();
+                        })
+                )
+                .build();
+    }
+
+    @Bean
+    @Order(1)
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http, JwtService jwtService) {
         AuthenticationWebFilter jwtFilter = new AuthenticationWebFilter(new JwtReactiveAuthenticationManager(jwtService));
         jwtFilter.setServerAuthenticationConverter(new JwtServerAuthenticationConverter());
