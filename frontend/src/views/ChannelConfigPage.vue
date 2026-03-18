@@ -813,9 +813,9 @@ const getFallbackEmailProtocols = () => ({
       ]
     },
     {
-      protocol: 'HTTP_API',
+      protocol: 'HTTP',
       label: 'HTTP',
-      propertyKey: 'httpApi',
+      propertyKey: 'http',
       fields: [
         { key: 'baseUrl', label: 'API 基础地址', required: true, defaultValue: '' },
         { key: 'path', label: '发送路径', required: true, defaultValue: '' },

@@ -24,7 +24,7 @@ public class EmailChannelConfigConverter {
             "maxRetries", "retryDelay"
     );
 
-    private static final Set<String> HTTP_API_KEYS = Set.of(
+    private static final Set<String> HTTP_KEYS = Set.of(
             "baseUrl", "path", "apiKeyHeader", "apiKey",
             "from", "timeout", "maxRetries", "retryDelay"
     );
@@ -42,7 +42,7 @@ public class EmailChannelConfigConverter {
         EmailChannelType protocol = parseProtocol(resolveProtocolValue(safe));
 
         if (protocol == EmailChannelType.HTTP) {
-            Map<String, Object> httpValues = resolveProtocolValues(safe, HTTP_API_KEYS, "httpApi", "httpAPI", "http");
+            Map<String, Object> httpValues = resolveProtocolValues(safe, HTTP_KEYS, "http");
             normalizeDurationValues(httpValues, "timeout", "retryDelay");
             HttpEmailChannelConfig httpConfig = mapToConfig(httpValues, HttpEmailChannelConfig.class, "HTTP");
             ensurePositiveRetries(httpConfig.getMaxRetries(), "HTTP");
