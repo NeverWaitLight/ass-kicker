@@ -49,11 +49,8 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
     }
 
     void processTask(SendTask task) {
-        long taskStartedAt = Instant.now().toEpochMilli();
         List<String> recipients = normalizeRecipients(task.getRecipients());
         List<String> failureRecipients = recipients.isEmpty() ? Collections.singletonList(null) : recipients;
-        int successCount = 0;
-        int failureCount = 0;
         String lastErrorCode = null;
         String lastErrorMessage = null;
 
@@ -62,7 +59,6 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
             try {
                 language = Language.fromCode(task.getLanguageCode());
             } catch (IllegalArgumentException ex) {
-                failureCount = failureRecipients.size();
                 lastErrorCode = "INVALID_LANGUAGE";
                 lastErrorMessage = ex.getMessage();
                 markRecipientsFailed(task, null, null, failureRecipients, lastErrorCode, lastErrorMessage);
@@ -77,7 +73,6 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
                 lastErrorCode = reason.contains("Language template not found") ? "LANGUAGE_TEMPLATE_NOT_FOUND"
                         : "TEMPLATE_NOT_FOUND";
                 lastErrorMessage = reason;
-                failureCount = failureRecipients.size();
                 markRecipientsFailed(task, null, null, failureRecipients, lastErrorCode, lastErrorMessage);
                 return;
             }
@@ -88,21 +83,18 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
             } catch (Exception ex) {
                 lastErrorCode = "CHANNEL_NOT_FOUND";
                 lastErrorMessage = messageOrDefault(ex.getMessage(), "No available channel");
-                failureCount = failureRecipients.size();
                 markRecipientsFailed(task, renderedContent, null, failureRecipients, lastErrorCode, lastErrorMessage);
                 return;
             }
             if (channelEntity == null) {
                 lastErrorCode = "CHANNEL_NOT_FOUND";
                 lastErrorMessage = "No available channel for template: " + task.getTemplateCode();
-                failureCount = failureRecipients.size();
                 markRecipientsFailed(task, renderedContent, null, failureRecipients, lastErrorCode, lastErrorMessage);
                 return;
             }
             if (recipients.isEmpty()) {
                 lastErrorCode = "RECIPIENTS_EMPTY";
                 lastErrorMessage = "No valid recipients provided";
-                failureCount = failureRecipients.size();
                 markRecipientsFailed(task, renderedContent, channelEntity, failureRecipients, lastErrorCode,
                         lastErrorMessage);
                 return;
@@ -113,38 +105,18 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
             if (sendChannel == null) {
                 lastErrorCode = "CHANNEL_CREATE_FAILED";
                 lastErrorMessage = "Unsupported channel type: " + channelEntity.getType();
-                failureCount = failureRecipients.size();
                 markRecipientsFailed(task, renderedContent, channelEntity, failureRecipients, lastErrorCode,
                         lastErrorMessage);
                 return;
             }
 
             for (String recipient : recipients) {
-                boolean success = processRecipient(task, renderedContent, channelEntity, sendChannel, recipient);
-                if (success) {
-                    successCount++;
-                } else {
-                    failureCount++;
-                }
+                processRecipient(task, renderedContent, channelEntity, sendChannel, recipient);
             }
         } catch (Exception ex) {
             lastErrorCode = "CONSUMER_ERROR";
             lastErrorMessage = messageOrDefault(ex.getMessage(), "Consumer execution failed");
-            failureCount = failureRecipients.size();
             markRecipientsFailed(task, null, null, failureRecipients, lastErrorCode, lastErrorMessage);
-        } finally {
-            long durationMs = Math.max(0L, Instant.now().toEpochMilli() - taskStartedAt);
-            int totalCount = successCount + failureCount;
-            SendRecordStatus overallStatus = successCount > 0 ? SendRecordStatus.SUCCESS : SendRecordStatus.FAILED;
-            if (overallStatus == SendRecordStatus.FAILED) {
-                log.warn(
-                        "SEND_TASK_COMPLETED taskId={} total={} success={} failed={} status={} errorCode={} errorMessage={} durationMs={}",
-                        task.getTaskId(), totalCount, successCount, failureCount, overallStatus,
-                        lastErrorCode, lastErrorMessage, durationMs);
-            } else {
-                log.info("SEND_TASK_COMPLETED taskId={} total={} success={} failed={} status={} durationMs={}",
-                        task.getTaskId(), totalCount, successCount, failureCount, overallStatus, durationMs);
-            }
         }
     }
 
