@@ -51,8 +51,8 @@ Spring Boot 3.2 WebFlux、Java 21、R2DBC（PostgreSQL）、Spring Security（JW
 
 ### 性能
 
-- [ ] **减少 MongoDB 往返**：`updateRecordStatusAsync` 改为 `updateFirst`/`findAndModify` 一次完成状态更新，避免先 findById 再 save。
-- [ ] **批量写入 SendRecord**：考虑 `saveAll`、写缓冲或评估是否必须先写 PENDING，降低高并发下 MongoDB 写入压力。
+- [x] **减少 MongoDB 往返**：`updateRecordStatusAsync` 改为 `updateFirst`/`findAndModify` 一次完成状态更新，避免先 findById 再 save。
+- [x] **批量写入 SendRecord**：考虑 `saveAll`、写缓冲或评估是否必须先写 PENDING，降低高并发下 MongoDB 写入压力。
 - [ ] **消除 reactive 链中的 block()**：发送链路改为全链路响应式组合（flatMap/map），避免在 WebFlux 中阻塞线程。
 - [ ] **减少日志 I/O**：高 TPS 下通过调高日志级别、AsyncAppender 或采样，降低日志写入瓶颈。
 
