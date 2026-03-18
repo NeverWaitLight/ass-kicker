@@ -32,6 +32,11 @@ Spring Boot 3.2 WebFlux、Java 21、R2DBC（PostgreSQL）、Spring Security（JW
 
 **logging** 请求链路与日志上下文。RequestIdFilter 为请求注入或传递请求 ID；MdcContextLifterConfiguration 将 Reactor Context 中的信息放入 MDC，便于日志追踪。
 
+## TODO
+
+- [ ] 为 `/v1/send` 和 `/v1/submit` 接口增加限流功能
+- [ ] 发送失败时写延时队列
+
 ### MongoDB
 
 ```sh

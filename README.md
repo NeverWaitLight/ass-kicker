@@ -2,7 +2,8 @@
 
 ## TODO
 
-- [ ] 为 `/v1/send` 和 `/v1/submit` 接口增加限流功能
+- [后端待办事项](backend/README.md#todo)
+- [前端待办事项](frontend/README.md#todo)
 
 ## 后端启动
 
