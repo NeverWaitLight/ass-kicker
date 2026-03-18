@@ -71,11 +71,11 @@ import { fetchChannels } from '../utils/channelApi'
 import { submitSendTask } from '../utils/submitApi'
 
 const LANGUAGE_OPTIONS = [
-  { label: '简体中文', value: 'ZH_HANS' },
-  { label: '繁体中文', value: 'ZH_HANT' },
-  { label: 'English', value: 'EN' },
-  { label: 'Français', value: 'FR' },
-  { label: 'Deutsch', value: 'DE' }
+  { label: '简体中文', value: 'zh-CN' },
+  { label: '繁体中文', value: 'zh-TW' },
+  { label: 'English', value: 'en' },
+  { label: 'Français', value: 'fr' },
+  { label: 'Deutsch', value: 'de' }
 ]
 
 const form = ref({

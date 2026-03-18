@@ -1,8 +1,11 @@
 package com.github.waitlight.asskicker.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum Language {
-    ZH_HANS("zh-Hans", "简体中文"),
-    ZH_HANT("zh-Hant", "繁体中文"),
+    ZH_CN("zh-CN", "简体中文"),
+    ZH_TW("zh-TW", "繁体中文"),
     EN("en", "English"),
     FR("fr", "Français"),
     DE("de", "Deutsch");
@@ -15,6 +18,7 @@ public enum Language {
         this.displayName = displayName;
     }
 
+    @JsonValue
     public String getCode() {
         return code;
     }
@@ -23,9 +27,14 @@ public enum Language {
         return displayName;
     }
 
+    @JsonCreator
     public static Language fromCode(String code) {
+        if (code == null || code.isBlank()) {
+            return null;
+        }
+        String normalized = code.trim();
         for (Language lang : values()) {
-            if (lang.code.equalsIgnoreCase(code)) {
+            if (lang.code.equalsIgnoreCase(normalized)) {
                 return lang;
             }
         }

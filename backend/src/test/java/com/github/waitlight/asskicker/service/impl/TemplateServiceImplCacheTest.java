@@ -94,25 +94,25 @@ class TemplateServiceImplCacheTest {
     @Test
     void getTemplateContentByLanguage_differentLanguageKeys_cachedIndependently() {
         LanguageTemplate ltEn = new LanguageTemplate("id-1", Language.EN, "Hello {{name}}");
-        LanguageTemplate ltZh = new LanguageTemplate("id-1", Language.ZH_HANS, "你好 {{name}}");
+        LanguageTemplate ltZh = new LanguageTemplate("id-1", Language.ZH_CN, "你好 {{name}}");
         when(languageTemplateRepository.findByTemplateIdAndLanguage("id-1", Language.EN))
                 .thenReturn(Mono.just(ltEn));
-        when(languageTemplateRepository.findByTemplateIdAndLanguage("id-1", Language.ZH_HANS))
+        when(languageTemplateRepository.findByTemplateIdAndLanguage("id-1", Language.ZH_CN))
                 .thenReturn(Mono.just(ltZh));
 
         StepVerifier.create(templateService.getTemplateContentByLanguage("id-1", Language.EN))
                 .expectNext(ltEn).verifyComplete();
-        StepVerifier.create(templateService.getTemplateContentByLanguage("id-1", Language.ZH_HANS))
+        StepVerifier.create(templateService.getTemplateContentByLanguage("id-1", Language.ZH_CN))
                 .expectNext(ltZh).verifyComplete();
 
         // 再次调用，均命中缓存
         StepVerifier.create(templateService.getTemplateContentByLanguage("id-1", Language.EN))
                 .expectNext(ltEn).verifyComplete();
-        StepVerifier.create(templateService.getTemplateContentByLanguage("id-1", Language.ZH_HANS))
+        StepVerifier.create(templateService.getTemplateContentByLanguage("id-1", Language.ZH_CN))
                 .expectNext(ltZh).verifyComplete();
 
         verify(languageTemplateRepository, times(1)).findByTemplateIdAndLanguage("id-1", Language.EN);
-        verify(languageTemplateRepository, times(1)).findByTemplateIdAndLanguage("id-1", Language.ZH_HANS);
+        verify(languageTemplateRepository, times(1)).findByTemplateIdAndLanguage("id-1", Language.ZH_CN);
     }
 
     @Test

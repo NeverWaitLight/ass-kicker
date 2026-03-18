@@ -200,8 +200,8 @@ const channelTypeOptions = CHANNEL_TYPE_VALUES.map((v) => ({
 const channelTypeLabel = (value) => CHANNEL_TYPE_LABELS['zh-CN'][value] || value
 
 const LANGUAGES = [
-  { code: 'zh-Hans', displayName: '简体中文' },
-  { code: 'zh-Hant', displayName: '繁体中文' },
+  { code: 'zh-CN', displayName: '简体中文' },
+  { code: 'zh-TW', displayName: '繁体中文' },
   { code: 'en', displayName: 'English' },
   { code: 'fr', displayName: 'Français' },
   { code: 'de', displayName: 'Deutsch' }
@@ -212,7 +212,7 @@ const router = useRouter()
 
 const pageLoading = ref(false)
 const template = ref({})
-const activeTab = ref('zh-Hans')
+const activeTab = ref('zh-CN')
 
 const infoEditing = ref(false)
 const infoSaving = ref(false)

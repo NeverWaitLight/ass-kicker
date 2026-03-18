@@ -30,7 +30,7 @@ except ImportError:
 # ── 默认配置 ──────────────────────────────────────────────────────────────────
 BASE_URL = "http://localhost:8080"
 API_KEY = "ak_5f9fe09cb50f4327989106318e95b876"
-LANGUAGE = "ZH_HANS"
+LANGUAGE = "zh-CN"
 
 # 与 backend application.yml 一致
 MONGODB_URI = "mongodb://admin:123456@localhost:27017/asskicker?authSource=admin"
