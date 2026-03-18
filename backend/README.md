@@ -1,5 +1,3 @@
-# Backend
-
 本后端项目要实现的是基于 Spring 的全反应式链路。
 
 ## 技术栈
@@ -34,27 +32,12 @@ Spring Boot 3.2 WebFlux、Java 21、R2DBC（PostgreSQL）、Spring Security（JW
 
 ## TODO
 
-- [ ] 为 `/v1/send` 和 `/v1/submit` 接口增加限流功能
-- [ ] 发送失败时写延时队列
-
-### MongoDB
-
-```sh
-docker run -d --name mongodb -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=123456 mongo:latest
-```
-
-### Kafka
-
-```sh
-docker run -d --name kafka -p 9092:9092 apache/kafka:latest
-```
-
-## Todo
-
 ### P0 阻断
 
 ### P1 核心
 
+- [ ] 为 `/v1/send` 和 `/v1/submit` 接口增加限流功能
+- [ ] 发送失败时写延时队列
 - [ ] **Submit API 鉴权**：`/v1/submit` 增加 API Key 机制，支持外部业务系统以服务身份调用，当前仅支持 JWT 用户认证。
 - [ ] **企业微信 IM 前端配置**：后端 `WechatWorkIMChannel` 已实现，前端通道配置表单（如 webhook URL）对照钉钉 IM 补齐。
 
@@ -74,3 +57,15 @@ docker run -d --name kafka -p 9092:9092 apache/kafka:latest
 - [ ] **批量写入 SendRecord**：考虑 `saveAll`、写缓冲或评估是否必须先写 PENDING，降低高并发下 MongoDB 写入压力。
 - [ ] **消除 reactive 链中的 block()**：发送链路改为全链路响应式组合（flatMap/map），避免在 WebFlux 中阻塞线程。
 - [ ] **减少日志 I/O**：高 TPS 下通过调高日志级别、AsyncAppender 或采样，降低日志写入瓶颈。
+
+### MongoDB
+
+```sh
+docker run -d --name mongodb -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=123456 mongo:latest
+```
+
+### Kafka
+
+```sh
+docker run -d --name kafka -p 9092:9092 apache/kafka:latest
+```
