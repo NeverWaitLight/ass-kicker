@@ -14,16 +14,6 @@
       </a-space>
     </template>
 
-    <a-alert
-      v-if="pageError"
-      type="error"
-      :message="pageError"
-      show-icon
-      closable
-      @close="pageError = ''"
-      style="margin-bottom: 16px"
-    />
-
     <a-result
       v-if="denied"
       status="403"
@@ -151,7 +141,6 @@ const form = reactive({
 
 const loading = ref(false)
 const saving = ref(false)
-const pageError = ref('')
 
 const propertyRows = ref([createPropertyRow()])
 const rowInvalidIds = ref(new Set())
@@ -288,7 +277,6 @@ const loadSmsTypes = () => {
 const loadChannel = async () => {
   if (!isEdit.value) return
   loading.value = true
-  pageError.value = ''
   try {
     const data = await fetchChannel(route.params.id)
     form.id = data.id
@@ -327,7 +315,7 @@ const loadChannel = async () => {
       propertyRows.value = propertiesToRows(data.properties)
     }
   } catch (error) {
-    pageError.value = error?.message || '获取通道信息失败'
+    message.error(error?.message || '获取通道信息失败')
   } finally {
     loading.value = false
   }

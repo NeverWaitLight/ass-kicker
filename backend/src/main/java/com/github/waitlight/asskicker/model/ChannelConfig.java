@@ -18,8 +18,8 @@ import java.util.Map;
 @Getter
 @Setter
 @NoArgsConstructor
-@Document(collection = "t_channel")
-public class Channel {
+@Document(collection = "t_channel_config")
+public class ChannelConfig {
 
     @Id
     private String id;

@@ -50,15 +50,6 @@
           </a-space>
         </a-form-item>
       </a-form>
-      <a-alert
-        v-if="lastTaskId"
-        type="success"
-        :message="`任务已提交，任务ID: ${lastTaskId}`"
-        show-icon
-        closable
-        style="margin-top: 16px"
-        @close="lastTaskId = ''"
-      />
     </a-card>
   </section>
 </template>
@@ -90,7 +81,6 @@ const channels = ref([])
 const templatesLoading = ref(false)
 const channelsLoading = ref(false)
 const submitLoading = ref(false)
-const lastTaskId = ref('')
 
 const templateOptions = computed(() =>
   templates.value.map((t) => ({ label: t.name || t.code, value: t.code }))
@@ -167,7 +157,6 @@ async function onSubmit() {
       channelId,
       recipients: recipientList
     })
-    lastTaskId.value = data.taskId || ''
     message.success('任务已提交，任务ID: ' + (data.taskId || ''))
   } catch (e) {
     message.error('提交失败: ' + (e.message || String(e)))

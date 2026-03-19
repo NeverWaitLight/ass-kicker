@@ -17,16 +17,6 @@
       </div>
     </div>
 
-    <a-alert
-      v-if="error"
-      type="error"
-      :message="error"
-      show-icon
-      closable
-      @close="error = ''"
-      style="margin-bottom: 16px"
-    />
-
     <a-table
       :columns="columns"
       :data-source="filteredTemplates"
@@ -160,7 +150,6 @@ const channelTypeOptions = CHANNEL_TYPE_VALUES.map((v) => ({
 const channelTypeLabel = (value) => CHANNEL_TYPE_LABELS['zh-CN'][value] || value
 
 const loading = ref(false)
-const error = ref('')
 const templates = ref([])
 const searchText = ref('')
 const formRef = ref(null)
@@ -224,12 +213,11 @@ const handleTableChange = (pager) => {
 
 const loadTemplates = async () => {
   loading.value = true
-  error.value = ''
   try {
     templates.value = await fetchTemplates()
     pagination.total = templates.value.length
   } catch (e) {
-    error.value = e?.message || '获取模板列表失败'
+    message.error(e?.message || '获取模板列表失败')
   } finally {
     loading.value = false
   }

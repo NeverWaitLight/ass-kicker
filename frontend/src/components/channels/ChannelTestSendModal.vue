@@ -38,23 +38,6 @@
             发送
           </a-button>
         </div>
-
-        <a-alert
-          v-if="errorMessage"
-          type="error"
-          :message="errorMessage"
-          show-icon
-          closable
-          @close="errorMessage = ''"
-          style="margin-top: 12px"
-        />
-        <a-alert
-          v-if="result"
-          :type="result.success ? 'success' : 'error'"
-          :message="resultMessage"
-          show-icon
-          style="margin-top: 12px"
-        />
       </div>
     </a-spin>
   </a-modal>
@@ -83,8 +66,6 @@ const content = ref('')
 const targetError = ref('')
 const contentError = ref('')
 const typeError = ref('')
-const errorMessage = ref('')
-const result = ref(null)
 const testing = ref(false)
 const { t, te } = useI18n()
 
@@ -123,8 +104,6 @@ const resetState = () => {
   targetError.value = ''
   contentError.value = ''
   typeError.value = ''
-  errorMessage.value = ''
-  result.value = null
 }
 
 watch(
@@ -145,8 +124,6 @@ const validate = () => {
 
 const submitTestSend = async () => {
   if (sendDisabled.value) return
-  errorMessage.value = ''
-  result.value = null
   if (!validate()) {
     message.warning('请先完善测试发送信息')
     return
@@ -160,14 +137,13 @@ const submitTestSend = async () => {
       properties: props.properties || {}
     }
     const response = await testSendChannel(payload)
-    result.value = response
     if (response?.success) {
       message.success('测试发送成功')
     } else {
       message.error(response?.errorMessage || '测试发送失败')
     }
   } catch (error) {
-    errorMessage.value = error?.message || '测试发送失败'
+    message.error(error?.message || '测试发送失败')
   } finally {
     testing.value = false
   }
@@ -176,14 +152,6 @@ const submitTestSend = async () => {
 const handleCancel = () => {
   emit('cancel')
 }
-
-const resultMessage = computed(() => {
-  if (!result.value) return ''
-  if (result.value.success) {
-    return result.value.messageId ? `测试发送成功，消息ID：${result.value.messageId}` : '测试发送成功'
-  }
-  return result.value.errorMessage || '测试发送失败'
-})
 </script>
 
 <style scoped>

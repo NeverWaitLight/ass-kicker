@@ -4,10 +4,10 @@ import com.github.waitlight.asskicker.dto.channel.ImTypeFieldInfo;
 import com.github.waitlight.asskicker.dto.channel.ImTypeInfo;
 import com.github.waitlight.asskicker.dto.channel.ImTypesResponse;
 import com.github.waitlight.asskicker.dto.channel.TestSendRequest;
-import com.github.waitlight.asskicker.model.Channel;
+import com.github.waitlight.asskicker.model.ChannelConfig;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.security.UserPrincipal;
-import com.github.waitlight.asskicker.service.ChannelService;
+import com.github.waitlight.asskicker.service.ChannelConfigService;
 import org.springframework.core.codec.DecodingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -26,20 +26,20 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 @Component
-public class ChannelHandler {
+public class ChannelConfigHandler {
 
-    private final ChannelService channelService;
+    private final ChannelConfigService channelConfigService;
     private static final String CHANNEL_TYPE_ERROR = "通道类型必须为SMS、EMAIL、IM、PUSH";
     private static final String TEST_SEND_FAILED_MESSAGE = "测试发送失败";
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
     private static final Pattern SMS_PHONE_PATTERN = Pattern.compile("^1[3-9]\\d{9}$");
 
-    public ChannelHandler(ChannelService channelService) {
-        this.channelService = channelService;
+    public ChannelConfigHandler(ChannelConfigService channelConfigService) {
+        this.channelConfigService = channelConfigService;
     }
 
     public Mono<ServerResponse> createChannel(ServerRequest request) {
-        return request.bodyToMono(Channel.class)
+        return request.bodyToMono(ChannelConfig.class)
                 .onErrorMap(ServerWebInputException.class,
                         ex -> new ResponseStatusException(HttpStatus.BAD_REQUEST, CHANNEL_TYPE_ERROR))
                 .onErrorMap(DecodingException.class,
@@ -48,7 +48,7 @@ public class ChannelHandler {
                         ex -> new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage()))
                 .map(this::sanitizeChannel)
                 .flatMap(this::validateChannel)
-                .flatMap(channelService::createChannel)
+                .flatMap(channelConfigService::createChannel)
                 .flatMap(channel -> ServerResponse.status(HttpStatus.CREATED)
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(channel))
@@ -61,7 +61,7 @@ public class ChannelHandler {
     public Mono<ServerResponse> listChannels(ServerRequest request) {
         return ServerResponse.ok()
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(channelService.listChannels(), Channel.class)
+                .body(channelConfigService.listChannels(), ChannelConfig.class)
                 .onErrorResume(ResponseStatusException.class, ex ->
                         ServerResponse.status(ex.getStatusCode())
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -70,7 +70,7 @@ public class ChannelHandler {
 
     public Mono<ServerResponse> getChannelById(ServerRequest request) {
         String id = request.pathVariable("id");
-        return channelService.getChannelById(id)
+        return channelConfigService.getChannelById(id)
                 .flatMap(channel -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(channel))
@@ -83,7 +83,7 @@ public class ChannelHandler {
 
     public Mono<ServerResponse> updateChannel(ServerRequest request) {
         String id = request.pathVariable("id");
-        return request.bodyToMono(Channel.class)
+        return request.bodyToMono(ChannelConfig.class)
                 .onErrorMap(ServerWebInputException.class,
                         ex -> new ResponseStatusException(HttpStatus.BAD_REQUEST, CHANNEL_TYPE_ERROR))
                 .onErrorMap(DecodingException.class,
@@ -92,7 +92,7 @@ public class ChannelHandler {
                         ex -> new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage()))
                 .map(this::sanitizeChannel)
                 .flatMap(this::validateChannel)
-                .flatMap(body -> channelService.updateChannel(id, body))
+                .flatMap(body -> channelConfigService.updateChannel(id, body))
                 .flatMap(channel -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(channel))
@@ -105,7 +105,7 @@ public class ChannelHandler {
 
     public Mono<ServerResponse> deleteChannel(ServerRequest request) {
         String id = request.pathVariable("id");
-        return channelService.deleteChannel(id)
+        return channelConfigService.deleteChannel(id)
                 .then(ServerResponse.noContent().build())
                 .onErrorResume(ResponseStatusException.class, ex ->
                         ServerResponse.status(ex.getStatusCode())
@@ -127,7 +127,7 @@ public class ChannelHandler {
                         .onErrorMap(IllegalArgumentException.class,
                                 ex -> new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage()))
                         .map(this::sanitizeTestSend)
-                        .flatMap(body -> channelService.testSend(body, principal)))
+                        .flatMap(body -> channelConfigService.testSend(body, principal)))
                 .flatMap(response -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(response))
@@ -161,21 +161,21 @@ public class ChannelHandler {
                 .bodyValue(response);
     }
 
-    private Mono<Channel> validateChannel(Channel channel) {
-        if (channel == null) {
+    private Mono<ChannelConfig> validateChannel(ChannelConfig channelConfig) {
+        if (channelConfig == null) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "通道数据不能为空"));
         }
-        if (channel.getName() == null || channel.getName().isBlank()) {
+        if (channelConfig.getName() == null || channelConfig.getName().isBlank()) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "通道名称不能为空"));
         }
-        if (channel.getType() == null) {
+        if (channelConfig.getType() == null) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "通道类型不能为空"));
         }
-        if (channel.getProperties() == null) {
-            channel.setProperties(new LinkedHashMap<>());
+        if (channelConfig.getProperties() == null) {
+            channelConfig.setProperties(new LinkedHashMap<>());
         }
-        validateProperties(channel.getProperties(), "properties");
-        return Mono.just(channel);
+        validateProperties(channelConfig.getProperties(), "properties");
+        return Mono.just(channelConfig);
     }
 
     private void validateProperties(Map<String, Object> properties, String path) {
@@ -217,8 +217,8 @@ public class ChannelHandler {
         return result;
     }
 
-    private Channel sanitizeChannel(Channel input) {
-        Channel sanitized = new Channel();
+    private ChannelConfig sanitizeChannel(ChannelConfig input) {
+        ChannelConfig sanitized = new ChannelConfig();
         if (input == null) {
             return sanitized;
         }

@@ -2,11 +2,8 @@ package com.github.waitlight.asskicker.manager;
 
 import com.github.waitlight.asskicker.channels.MsgReq;
 import com.github.waitlight.asskicker.channels.MsgResp;
-import com.github.waitlight.asskicker.model.Channel;
-import com.github.waitlight.asskicker.model.Language;
-import com.github.waitlight.asskicker.model.SendRecord;
-import com.github.waitlight.asskicker.model.SendRecordStatus;
-import com.github.waitlight.asskicker.model.SendTask;
+import com.github.waitlight.asskicker.model.*;
+import com.github.waitlight.asskicker.model.ChannelConfig;
 import com.github.waitlight.asskicker.service.SendRecordService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -77,16 +74,16 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
                 return;
             }
 
-            Channel channelEntity;
+            ChannelConfig channelConfigEntity;
             try {
-                channelEntity = channelManager.selectChannel(task.getTemplateCode()).block();
+                channelConfigEntity = channelManager.selectChannel(task.getTemplateCode()).block();
             } catch (Exception ex) {
                 lastErrorCode = "CHANNEL_NOT_FOUND";
                 lastErrorMessage = messageOrDefault(ex.getMessage(), "No available channel");
                 markRecipientsFailed(task, renderedContent, null, failureRecipients, lastErrorCode, lastErrorMessage);
                 return;
             }
-            if (channelEntity == null) {
+            if (channelConfigEntity == null) {
                 lastErrorCode = "CHANNEL_NOT_FOUND";
                 lastErrorMessage = "No available channel for template: " + task.getTemplateCode();
                 markRecipientsFailed(task, renderedContent, null, failureRecipients, lastErrorCode, lastErrorMessage);
@@ -95,23 +92,23 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
             if (recipients.isEmpty()) {
                 lastErrorCode = "RECIPIENTS_EMPTY";
                 lastErrorMessage = "No valid recipients provided";
-                markRecipientsFailed(task, renderedContent, channelEntity, failureRecipients, lastErrorCode,
+                markRecipientsFailed(task, renderedContent, channelConfigEntity, failureRecipients, lastErrorCode,
                         lastErrorMessage);
                 return;
             }
 
             com.github.waitlight.asskicker.channels.Channel<?> sendChannel = channelManager
-                    .resolveChannel(channelEntity);
+                    .resolveChannel(channelConfigEntity);
             if (sendChannel == null) {
                 lastErrorCode = "CHANNEL_CREATE_FAILED";
-                lastErrorMessage = "Unsupported channel type: " + channelEntity.getType();
-                markRecipientsFailed(task, renderedContent, channelEntity, failureRecipients, lastErrorCode,
+                lastErrorMessage = "Unsupported channel type: " + channelConfigEntity.getType();
+                markRecipientsFailed(task, renderedContent, channelConfigEntity, failureRecipients, lastErrorCode,
                         lastErrorMessage);
                 return;
             }
 
             for (String recipient : recipients) {
-                processRecipient(task, renderedContent, channelEntity, sendChannel, recipient);
+                processRecipient(task, renderedContent, channelConfigEntity, sendChannel, recipient);
             }
         } catch (Exception ex) {
             lastErrorCode = "CONSUMER_ERROR";
@@ -121,20 +118,20 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
     }
 
     private boolean processRecipient(SendTask task, String renderedContent,
-            Channel channelEntity,
+            ChannelConfig channelConfigEntity,
             com.github.waitlight.asskicker.channels.Channel<?> sendChannel,
             String recipient) {
         long sendStartedAt = Instant.now().toEpochMilli();
-        MsgResp response = sendMessage(task, renderedContent, channelEntity, sendChannel, recipient, sendStartedAt);
+        MsgResp response = sendMessage(task, renderedContent, channelConfigEntity, sendChannel, recipient, sendStartedAt);
         SendRecordStatus finalStatus = response.isSuccess() ? SendRecordStatus.SUCCESS : SendRecordStatus.FAILED;
         long sentAt = Instant.now().toEpochMilli();
-        saveFinalRecord(task, renderedContent, channelEntity, recipient, finalStatus,
+        saveFinalRecord(task, renderedContent, channelConfigEntity, recipient, finalStatus,
                 response.getErrorCode(), response.getErrorMessage(), sentAt, sendStartedAt);
         return response.isSuccess();
     }
 
     private MsgResp sendMessage(SendTask task, String renderedContent,
-            Channel channelEntity,
+            ChannelConfig channelConfigEntity,
             com.github.waitlight.asskicker.channels.Channel<?> sendChannel,
             String recipient,
             long sendStartedAt) {
@@ -142,7 +139,7 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
                 .recipient(recipient)
                 .subject("")
                 .content(renderedContent)
-                .attributes(Map.of("senderType", channelEntity.getType().name()))
+                .attributes(Map.of("senderType", channelConfigEntity.getType().name()))
                 .build();
         MsgResp response;
         try {
@@ -155,20 +152,20 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
 
     private void markRecipientsFailed(SendTask task,
             String renderedContent,
-            Channel channelEntity,
+            ChannelConfig channelConfigEntity,
             List<String> recipients,
             String errorCode,
             String errorMessage) {
         for (String recipient : recipients) {
             long failedAt = Instant.now().toEpochMilli();
-            saveFinalRecord(task, renderedContent, channelEntity, recipient, SendRecordStatus.FAILED,
+            saveFinalRecord(task, renderedContent, channelConfigEntity, recipient, SendRecordStatus.FAILED,
                     errorCode, errorMessage, failedAt, 0L);
         }
     }
 
     private void saveFinalRecord(SendTask task,
             String renderedContent,
-            Channel channelEntity,
+            ChannelConfig channelConfigEntity,
             String recipient,
             SendRecordStatus status,
             String errorCode,
@@ -176,7 +173,7 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
             long sentAt,
             long startedAt) {
         try {
-            SendRecord record = buildFinalRecord(task, renderedContent, channelEntity, recipient,
+            SendRecord record = buildFinalRecord(task, renderedContent, channelConfigEntity, recipient,
                     status, errorCode, errorMessage, sentAt);
             sendRecordService.writeRecord(record);
         } catch (Exception ex) {
@@ -186,20 +183,20 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
         }
     }
 
-    private SendRecord buildFinalRecord(SendTask task, String renderedContent, Channel channelEntity,
+    private SendRecord buildFinalRecord(SendTask task, String renderedContent, ChannelConfig channelConfigEntity,
             String recipient, SendRecordStatus status, String errorCode, String errorMessage, long sentAt) {
         SendRecord record = new SendRecord();
         record.setTaskId(task.getTaskId());
         record.setTemplateCode(task.getTemplateCode());
         record.setLanguageCode(task.getLanguageCode());
         record.setParams(task.getParams());
-        record.setChannelId(channelEntity != null ? channelEntity.getId() : null);
+        record.setChannelId(channelConfigEntity != null ? channelConfigEntity.getId() : null);
         record.setRecipients(task.getRecipients());
         record.setRecipient(recipient);
         record.setSubmittedAt(task.getSubmittedAt());
         record.setRenderedContent(renderedContent);
-        record.setChannelType(channelEntity != null ? channelEntity.getType() : null);
-        record.setChannelName(channelEntity != null ? channelEntity.getName() : null);
+        record.setChannelType(channelConfigEntity != null ? channelConfigEntity.getType() : null);
+        record.setChannelName(channelConfigEntity != null ? channelConfigEntity.getName() : null);
         record.setStatus(status);
         record.setErrorCode(status == SendRecordStatus.SUCCESS ? null : errorCode);
         record.setErrorMessage(status == SendRecordStatus.SUCCESS ? null : errorMessage);

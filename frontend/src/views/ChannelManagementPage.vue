@@ -17,16 +17,6 @@
       </a-tooltip>
     </template>
 
-    <a-alert
-      v-if="channelError"
-      type="error"
-      :message="channelError"
-      show-icon
-      closable
-      @close="channelError = ''"
-      style="margin-bottom: 16px"
-    />
-
     <a-result v-if="denied" status="403" title="暂无权限" sub-title="请联系管理员开通通道权限。">
       <template #extra>
         <a-tooltip title="返回首页">
@@ -81,7 +71,6 @@ import { fetchChannel, fetchChannels, deleteChannel } from '../utils/channelApi'
 import {
   channelList,
   channelLoading,
-  channelError,
   channelPagination,
   channelSearch,
   channelDeleteState,
@@ -137,12 +126,11 @@ watch(filteredChannels, (value) => {
 
 const loadChannels = async () => {
   channelLoading.value = true
-  channelError.value = ''
   try {
     const data = await fetchChannels()
     setChannelList(data)
   } catch (error) {
-    channelError.value = error?.message || '获取通道列表失败'
+    message.error(error?.message || '获取通道列表失败')
   } finally {
     channelLoading.value = false
   }

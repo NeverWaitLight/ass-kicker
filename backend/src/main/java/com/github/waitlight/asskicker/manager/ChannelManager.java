@@ -2,7 +2,6 @@ package com.github.waitlight.asskicker.manager;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channels.ChannelConfig;
 import com.github.waitlight.asskicker.channels.email.EmailChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.email.EmailChannelFactory;
 import com.github.waitlight.asskicker.channels.im.IMChannelConfigConverter;
@@ -11,9 +10,9 @@ import com.github.waitlight.asskicker.channels.push.PushChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.push.PushChannelFactory;
 import com.github.waitlight.asskicker.channels.sms.SmsChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.sms.SmsChannelFactory;
-import com.github.waitlight.asskicker.model.Channel;
+import com.github.waitlight.asskicker.model.ChannelConfig;
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.service.ChannelService;
+import com.github.waitlight.asskicker.service.ChannelConfigService;
 import com.github.waitlight.asskicker.service.TemplateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +37,7 @@ public class ChannelManager implements DisposableBean {
     };
 
     private final TemplateService templateService;
-    private final ChannelService channelService;
+    private final ChannelConfigService channelConfigService;
     private final EmailChannelFactory emailChannelFactory;
     private final EmailChannelConfigConverter emailChannelConfigConverter;
     private final IMChannelFactory imChannelFactory;
@@ -51,7 +50,7 @@ public class ChannelManager implements DisposableBean {
 
     private final ConcurrentHashMap<String, com.github.waitlight.asskicker.channels.Channel<?>> channelCache = new ConcurrentHashMap<>();
 
-    public Mono<Channel> selectChannel(String templateCode) {
+    public Mono<ChannelConfig> selectChannel(String templateCode) {
         return templateService.findByCode(templateCode)
                 .switchIfEmpty(Mono.error(
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Template not found: " + templateCode)))
@@ -61,40 +60,40 @@ public class ChannelManager implements DisposableBean {
                         return Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND,
                                 "Template has no applicable channel types: " + templateCode));
                     }
-                    return channelService.findByTypes(types)
+                    return channelConfigService.findByTypes(types)
                             .collectList()
                             .flatMap(channels -> {
                                 if (channels.isEmpty()) {
                                     return Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND,
                                             "No available channel for types: " + types));
                                 }
-                                Channel selected = channels.get(ThreadLocalRandom.current().nextInt(channels.size()));
+                                ChannelConfig selected = channels.get(ThreadLocalRandom.current().nextInt(channels.size()));
                                 return Mono.just(selected);
                             });
                 });
     }
 
-    public com.github.waitlight.asskicker.channels.Channel<?> resolveChannel(Channel channelEntity) {
-        return channelCache.computeIfAbsent(channelEntity.getId(), id -> buildChannel(channelEntity));
+    public com.github.waitlight.asskicker.channels.Channel<?> resolveChannel(ChannelConfig channelConfigEntity) {
+        return channelCache.computeIfAbsent(channelConfigEntity.getId(), id -> buildChannel(channelConfigEntity));
     }
 
-    private com.github.waitlight.asskicker.channels.Channel<?> buildChannel(Channel channelEntity) {
-        ChannelType type = channelEntity.getType();
-        Map<String, Object> properties = readProperties(channelEntity.getPropertiesJson());
+    private com.github.waitlight.asskicker.channels.Channel<?> buildChannel(ChannelConfig channelConfigEntity) {
+        ChannelType type = channelConfigEntity.getType();
+        Map<String, Object> properties = readProperties(channelConfigEntity.getPropertiesJson());
         if (type == ChannelType.EMAIL) {
-            ChannelConfig config = emailChannelConfigConverter.fromProperties(properties);
+            com.github.waitlight.asskicker.channels.ChannelConfig config = emailChannelConfigConverter.fromProperties(properties);
             return emailChannelFactory.create(config);
         }
         if (type == ChannelType.IM) {
-            ChannelConfig config = imChannelConfigConverter.fromProperties(properties);
+            com.github.waitlight.asskicker.channels.ChannelConfig config = imChannelConfigConverter.fromProperties(properties);
             return imChannelFactory.create(config);
         }
         if (type == ChannelType.PUSH) {
-            ChannelConfig config = pushChannelConfigConverter.fromProperties(properties);
+            com.github.waitlight.asskicker.channels.ChannelConfig config = pushChannelConfigConverter.fromProperties(properties);
             return pushChannelFactory.create(config);
         }
         if (type == ChannelType.SMS) {
-            ChannelConfig config = smsChannelConfigConverter.fromProperties(properties);
+            com.github.waitlight.asskicker.channels.ChannelConfig config = smsChannelConfigConverter.fromProperties(properties);
             return smsChannelFactory.create(config);
         }
         return null;

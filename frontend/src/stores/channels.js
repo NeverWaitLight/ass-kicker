@@ -2,7 +2,6 @@ import { reactive, ref } from 'vue'
 
 export const channelList = ref([])
 export const channelLoading = ref(false)
-export const channelError = ref('')
 
 export const channelPagination = reactive({
   page: 1,

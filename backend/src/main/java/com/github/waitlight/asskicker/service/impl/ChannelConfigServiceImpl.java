@@ -3,11 +3,11 @@ package com.github.waitlight.asskicker.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
-import com.github.waitlight.asskicker.channels.ChannelConfig;
 import com.github.waitlight.asskicker.channels.MsgReq;
 import com.github.waitlight.asskicker.channels.MsgResp;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.dto.channel.TestSendRequest;
+import com.github.waitlight.asskicker.model.ChannelConfig;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.security.UserPrincipal;
@@ -19,9 +19,8 @@ import com.github.waitlight.asskicker.channels.push.PushChannelFactory;
 import com.github.waitlight.asskicker.channels.push.PushChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.sms.SmsChannelFactory;
 import com.github.waitlight.asskicker.channels.sms.SmsChannelConfigConverter;
-import com.github.waitlight.asskicker.model.Channel;
-import com.github.waitlight.asskicker.repository.ChannelRepository;
-import com.github.waitlight.asskicker.service.ChannelService;
+import com.github.waitlight.asskicker.repository.ChannelConfigRepository;
+import com.github.waitlight.asskicker.service.ChannelConfigService;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,14 +40,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-public class ChannelServiceImpl implements ChannelService {
+public class ChannelConfigServiceImpl implements ChannelConfigService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ChannelServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(ChannelConfigServiceImpl.class);
     private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE =
             new TypeReference<>() {
             };
 
-    private final ChannelRepository channelRepository;
+    private final ChannelConfigRepository channelConfigRepository;
     private final ObjectMapper objectMapper;
     private final EmailChannelFactory emailChannelFactory;
     private final EmailChannelConfigConverter emailChannelConfigConverter;
@@ -60,23 +59,23 @@ public class ChannelServiceImpl implements ChannelService {
     private final SmsChannelConfigConverter smsChannelConfigConverter;
     private final CaffeineCacheConfig caffeineCacheConfig;
 
-    private AsyncLoadingCache<String, Optional<Channel>> channelByIdCache;
-    private AsyncLoadingCache<String, List<Channel>> channelListCache;
+    private AsyncLoadingCache<String, Optional<ChannelConfig>> channelByIdCache;
+    private AsyncLoadingCache<String, List<ChannelConfig>> channelListCache;
 
     private static final String ALL_CHANNELS_KEY = "all";
 
-    public ChannelServiceImpl(ChannelRepository channelRepository,
-                              ObjectMapper objectMapper,
-                              EmailChannelFactory emailChannelFactory,
-                              EmailChannelConfigConverter emailChannelConfigConverter,
-                              IMChannelFactory imChannelFactory,
-                              IMChannelConfigConverter imChannelConfigConverter,
-                              PushChannelFactory pushChannelFactory,
-                              PushChannelConfigConverter pushChannelConfigConverter,
-                              SmsChannelFactory smsChannelFactory,
-                              SmsChannelConfigConverter smsChannelConfigConverter,
-                              CaffeineCacheConfig caffeineCacheConfig) {
-        this.channelRepository = channelRepository;
+    public ChannelConfigServiceImpl(ChannelConfigRepository channelConfigRepository,
+                                    ObjectMapper objectMapper,
+                                    EmailChannelFactory emailChannelFactory,
+                                    EmailChannelConfigConverter emailChannelConfigConverter,
+                                    IMChannelFactory imChannelFactory,
+                                    IMChannelConfigConverter imChannelConfigConverter,
+                                    PushChannelFactory pushChannelFactory,
+                                    PushChannelConfigConverter pushChannelConfigConverter,
+                                    SmsChannelFactory smsChannelFactory,
+                                    SmsChannelConfigConverter smsChannelConfigConverter,
+                                    CaffeineCacheConfig caffeineCacheConfig) {
+        this.channelConfigRepository = channelConfigRepository;
         this.objectMapper = objectMapper;
         this.emailChannelFactory = emailChannelFactory;
         this.emailChannelConfigConverter = emailChannelConfigConverter;
@@ -92,64 +91,64 @@ public class ChannelServiceImpl implements ChannelService {
     @PostConstruct
     void initCaches() {
         channelByIdCache = caffeineCacheConfig.buildCache((id, executor) ->
-                channelRepository.findById(id)
+                channelConfigRepository.findById(id)
                         .map(this::enrichChannel)
                         .map(Optional::of)
                         .defaultIfEmpty(Optional.empty())
                         .toFuture());
 
         channelListCache = caffeineCacheConfig.buildCache((key, executor) ->
-                channelRepository.findAll()
+                channelConfigRepository.findAll()
                         .map(this::enrichChannel)
                         .collectList()
                         .toFuture());
     }
 
     @Override
-    public Mono<Channel> createChannel(Channel channel) {
-        Channel toSave = new Channel();
+    public Mono<ChannelConfig> createChannel(ChannelConfig channelConfig) {
+        ChannelConfig toSave = new ChannelConfig();
         toSave.setId(null);
-        toSave.setName(channel.getName());
-        toSave.setType(channel.getType());
-        toSave.setDescription(channel.getDescription());
+        toSave.setName(channelConfig.getName());
+        toSave.setType(channelConfig.getType());
+        toSave.setDescription(channelConfig.getDescription());
         long timestamp = Instant.now().toEpochMilli();
         toSave.setCreatedAt(timestamp);
         toSave.setUpdatedAt(timestamp);
-        Map<String, Object> properties = normalizeProperties(channel.getProperties());
+        Map<String, Object> properties = normalizeProperties(channelConfig.getProperties());
         toSave.setPropertiesJson(writeProperties(properties));
-        return channelRepository.save(toSave)
+        return channelConfigRepository.save(toSave)
                 .map(this::enrichChannel)
                 .doOnSuccess(saved -> channelListCache.synchronous().invalidate(ALL_CHANNELS_KEY));
     }
 
     @Override
-    public Mono<Channel> getChannelById(String id) {
+    public Mono<ChannelConfig> getChannelById(String id) {
         return Mono.fromFuture(channelByIdCache.get(id))
                 .flatMap(opt -> opt.map(Mono::just).orElseGet(Mono::empty));
     }
 
     @Override
-    public Flux<Channel> listChannels() {
+    public Flux<ChannelConfig> listChannels() {
         return Mono.fromFuture(channelListCache.get(ALL_CHANNELS_KEY))
                 .flatMapMany(Flux::fromIterable);
     }
 
     @Override
-    public Flux<Channel> findByTypes(List<ChannelType> types) {
+    public Flux<ChannelConfig> findByTypes(List<ChannelType> types) {
         return listChannels().filter(ch -> types.contains(ch.getType()));
     }
 
     @Override
-    public Mono<Channel> updateChannel(String id, Channel channel) {
-        return channelRepository.findById(id)
+    public Mono<ChannelConfig> updateChannel(String id, ChannelConfig channelConfig) {
+        return channelConfigRepository.findById(id)
                 .flatMap(existing -> {
-                    existing.setName(channel.getName());
-                    existing.setType(channel.getType());
-                    existing.setDescription(channel.getDescription());
+                    existing.setName(channelConfig.getName());
+                    existing.setType(channelConfig.getType());
+                    existing.setDescription(channelConfig.getDescription());
                     existing.setUpdatedAt(Instant.now().toEpochMilli());
-                    Map<String, Object> properties = normalizeProperties(channel.getProperties());
+                    Map<String, Object> properties = normalizeProperties(channelConfig.getProperties());
                     existing.setPropertiesJson(writeProperties(properties));
-                    return channelRepository.save(existing)
+                    return channelConfigRepository.save(existing)
                             .doOnSuccess(saved -> {
                                 channelByIdCache.synchronous().invalidate(id);
                                 channelListCache.synchronous().invalidate(ALL_CHANNELS_KEY);
@@ -160,7 +159,7 @@ public class ChannelServiceImpl implements ChannelService {
 
     @Override
     public Mono<Void> deleteChannel(String id) {
-        return channelRepository.deleteById(id)
+        return channelConfigRepository.deleteById(id)
                 .doOnSuccess(v -> {
                     channelByIdCache.synchronous().invalidate(id);
                     channelListCache.synchronous().invalidate(ALL_CHANNELS_KEY);
@@ -196,7 +195,7 @@ public class ChannelServiceImpl implements ChannelService {
         return Mono.fromCallable(() -> {
             try {
                 if (request.type() == ChannelType.EMAIL) {
-                    ChannelConfig config = emailChannelConfigConverter.fromProperties(request.properties());
+                    com.github.waitlight.asskicker.channels.ChannelConfig config = emailChannelConfigConverter.fromProperties(request.properties());
                     com.github.waitlight.asskicker.channels.Channel<?> channel = emailChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
@@ -218,7 +217,7 @@ public class ChannelServiceImpl implements ChannelService {
                     }
                 }
                 if (request.type() == ChannelType.IM) {
-                    ChannelConfig config = imChannelConfigConverter.fromProperties(request.properties());
+                    com.github.waitlight.asskicker.channels.ChannelConfig config = imChannelConfigConverter.fromProperties(request.properties());
                     com.github.waitlight.asskicker.channels.Channel<?> channel = imChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
@@ -240,7 +239,7 @@ public class ChannelServiceImpl implements ChannelService {
                     }
                 }
                 if (request.type() == ChannelType.PUSH) {
-                    ChannelConfig config = pushChannelConfigConverter.fromProperties(request.properties());
+                    com.github.waitlight.asskicker.channels.ChannelConfig config = pushChannelConfigConverter.fromProperties(request.properties());
                     com.github.waitlight.asskicker.channels.Channel<?> channel = pushChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
@@ -262,7 +261,7 @@ public class ChannelServiceImpl implements ChannelService {
                     }
                 }
                 if (request.type() == ChannelType.SMS) {
-                    ChannelConfig config = smsChannelConfigConverter.fromProperties(request.properties());
+                    com.github.waitlight.asskicker.channels.ChannelConfig config = smsChannelConfigConverter.fromProperties(request.properties());
                     com.github.waitlight.asskicker.channels.Channel<?> channel = smsChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
@@ -329,10 +328,10 @@ public class ChannelServiceImpl implements ChannelService {
         }
     }
 
-    private Channel enrichChannel(Channel channel) {
-        Map<String, Object> properties = readProperties(channel.getPropertiesJson());
-        channel.setProperties(properties);
-        return channel;
+    private ChannelConfig enrichChannel(ChannelConfig channelConfig) {
+        Map<String, Object> properties = readProperties(channelConfig.getPropertiesJson());
+        channelConfig.setProperties(properties);
+        return channelConfig;
     }
 
     private Map<String, Object> normalizeProperties(Map<String, Object> properties) {

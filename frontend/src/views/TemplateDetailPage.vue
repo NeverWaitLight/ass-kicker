@@ -115,16 +115,6 @@
             :tab="getLangTabTitle(lang)"
           >
             <div class="lang-tab-body">
-              <a-alert
-                v-if="langErrors[lang.code]"
-                type="error"
-                :message="langErrors[lang.code]"
-                show-icon
-                closable
-                @close="langErrors[lang.code] = ''"
-                style="margin-bottom: 12px"
-              />
-
               <a-textarea
                 v-model:value="langContents[lang.code]"
                 :placeholder="contentPlaceholder(lang)"
@@ -246,7 +236,6 @@ const originalContents = reactive({})
 const dirtyLangs = ref(new Set())
 const savingLangs = ref(new Set())
 const deletingLangs = ref(new Set())
-const langErrors = reactive({})
 
 const deleteLangModal = reactive({ open: false, loading: false, lang: null })
 
@@ -341,14 +330,13 @@ const saveLangContent = async (lang) => {
     try {
       JSON.parse(content)
     } catch {
-      langErrors[lang.code] = '内容不是合法的 JSON，请检查格式后重试'
+      message.warning('内容不是合法的 JSON，请检查格式后重试')
       return
     }
   }
   const newSaving = new Set(savingLangs.value)
   newSaving.add(lang.code)
   savingLangs.value = newSaving
-  langErrors[lang.code] = ''
   try {
     await saveLanguageContent(route.params.id, lang.code, content)
     originalContents[lang.code] = langContents[lang.code]
@@ -357,7 +345,7 @@ const saveLangContent = async (lang) => {
     dirtyLangs.value = newDirty
     message.success(`${lang.displayName} 内容已保存`)
   } catch (e) {
-    langErrors[lang.code] = e?.message || '保存失败'
+    message.error(e?.message || '保存失败')
   } finally {
     const newSaving2 = new Set(savingLangs.value)
     newSaving2.delete(lang.code)
