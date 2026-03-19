@@ -19,17 +19,6 @@ import java.util.stream.Collectors;
 @Component
 public class EmailChannelSpecConverter {
 
-    private static final Set<String> SMTP_KEYS = Set.of(
-            "host", "port", "username", "password",
-            "sslEnabled", "from", "connectionTimeout", "readTimeout",
-            "maxRetries", "retryDelay"
-    );
-
-    private static final Set<String> HTTP_KEYS = Set.of(
-            "baseUrl", "path", "apiKeyHeader", "apiKey",
-            "from", "timeout", "maxRetries", "retryDelay"
-    );
-
     private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
     private final ObjectMapper objectMapper;
@@ -50,7 +39,7 @@ public class EmailChannelSpecConverter {
         EmailChannelType protocol = parseProtocol(resolveProtocolValue(safe));
 
         if (protocol == EmailChannelType.HTTP) {
-            Map<String, Object> httpValues = resolveProtocolValues(safe, HTTP_KEYS, "http");
+            Map<String, Object> httpValues = resolveProtocolValues(safe, "http");
             normalizeDurationValues(httpValues, "timeout", "retryDelay");
             HttpEmailChannelSpec httpConfig = mapToConfig(httpValues, HttpEmailChannelSpec.class, "HTTP");
             ensurePositiveRetries(httpConfig.getMaxRetries(), "HTTP");
@@ -58,7 +47,7 @@ public class EmailChannelSpecConverter {
             return httpConfig;
         }
 
-        Map<String, Object> smtpValues = resolveProtocolValues(safe, SMTP_KEYS, "smtp", "SMTP");
+        Map<String, Object> smtpValues = resolveProtocolValues(safe, "smtp", "SMTP");
         normalizeDurationValues(smtpValues, "connectionTimeout", "readTimeout", "retryDelay");
         SmtpEmailChannelSpec smtpConfig = mapToConfig(smtpValues, SmtpEmailChannelSpec.class, "SMTP");
         ensurePositiveRetries(smtpConfig.getMaxRetries(), "SMTP");
@@ -75,7 +64,6 @@ public class EmailChannelSpecConverter {
     }
 
     private Map<String, Object> resolveProtocolValues(Map<String, Object> root,
-                                                      Set<String> allowedKeys,
                                                       String... nestedAliases) {
         Map<String, Object> nested = new LinkedHashMap<>();
         for (String alias : nestedAliases) {
@@ -84,16 +72,17 @@ public class EmailChannelSpecConverter {
                 break;
             }
         }
-        return mergeProtocolValues(nested, root, allowedKeys);
+        return mergeProtocolValues(nested, root);
     }
 
     private Map<String, Object> mergeProtocolValues(Map<String, Object> nested,
-                                                    Map<String, Object> root,
-                                                    Set<String> allowedKeys) {
+                                                    Map<String, Object> root) {
         Map<String, Object> result = new LinkedHashMap<>(nested);
-        for (String key : allowedKeys) {
-            if ((!result.containsKey(key) || result.get(key) == null) && root.containsKey(key)) {
-                result.put(key, root.get(key));
+        for (Map.Entry<String, Object> entry : root.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            if ((!result.containsKey(key) || result.get(key) == null) && value != null) {
+                result.put(key, value);
             }
         }
         return result;

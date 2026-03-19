@@ -21,15 +21,6 @@ import java.util.stream.Collectors;
 @Component
 public class IMChannelSpecConverter {
 
-    private static final Set<String> DINGTALK_KEYS = Set.of(
-            "webhookUrl", "accessToken", "secret",
-            "timeout", "maxRetries", "retryDelay"
-    );
-
-    private static final Set<String> WECHAT_WORK_KEYS = Set.of(
-            "webhookUrl", "timeout", "maxRetries", "retryDelay"
-    );
-
     private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
     private final ObjectMapper objectMapper;
@@ -50,7 +41,7 @@ public class IMChannelSpecConverter {
         IMChannelType senderType = parseProtocol(resolveProtocolValue(safe));
 
         if (senderType == IMChannelType.DINGTALK) {
-            Map<String, Object> dingTalkValues = resolveProtocolValues(safe, DINGTALK_KEYS, "dingTalk", "dingtalk");
+            Map<String, Object> dingTalkValues = resolveProtocolValues(safe, "dingTalk", "dingtalk");
             DingTalkIMChannelSpec dingTalk = mapToConfig(dingTalkValues, DingTalkIMChannelSpec.class, "DINGTALK");
             applyDingTalkDerivedFields(dingTalk);
             ensurePositiveRetries(dingTalk.getMaxRetries(), "DINGTALK");
@@ -59,7 +50,7 @@ public class IMChannelSpecConverter {
         }
 
         if (senderType == IMChannelType.WECHAT_WORK) {
-            Map<String, Object> wechatWorkValues = resolveProtocolValues(safe, WECHAT_WORK_KEYS, "wechatWork", "wechat_work");
+            Map<String, Object> wechatWorkValues = resolveProtocolValues(safe, "wechatWork", "wechat_work");
             WeComIMChannelSpec wechatWork = mapToConfig(wechatWorkValues, WeComIMChannelSpec.class, "WECHAT_WORK");
             ensurePositiveRetries(wechatWork.getMaxRetries(), "WECHAT_WORK");
             validateConfig(wechatWork, "WECHAT_WORK");
@@ -92,7 +83,6 @@ public class IMChannelSpecConverter {
     }
 
     private Map<String, Object> resolveProtocolValues(Map<String, Object> root,
-                                                      Set<String> allowedKeys,
                                                       String... nestedAliases) {
         Map<String, Object> nested = new LinkedHashMap<>();
         for (String alias : nestedAliases) {
@@ -101,16 +91,17 @@ public class IMChannelSpecConverter {
                 break;
             }
         }
-        return mergeProtocolValues(nested, root, allowedKeys);
+        return mergeProtocolValues(nested, root);
     }
 
     private Map<String, Object> mergeProtocolValues(Map<String, Object> nested,
-                                                    Map<String, Object> root,
-                                                    Set<String> allowedKeys) {
+                                                    Map<String, Object> root) {
         Map<String, Object> result = new LinkedHashMap<>(nested);
-        for (String key : allowedKeys) {
-            if ((!result.containsKey(key) || result.get(key) == null) && root.containsKey(key)) {
-                result.put(key, root.get(key));
+        for (Map.Entry<String, Object> entry : root.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            if ((!result.containsKey(key) || result.get(key) == null) && value != null) {
+                result.put(key, value);
             }
         }
         return result;

@@ -19,16 +19,6 @@ import java.util.stream.Collectors;
 @Component
 public class SmsChannelSpecConverter {
 
-    private static final Set<String> ALIYUN_KEYS = Set.of(
-            "accessKeyId", "accessKeySecret", "signName", "templateCode", "templateParamKey",
-            "regionId", "timeout", "maxRetries", "retryDelay"
-    );
-
-    private static final Set<String> TENCENT_KEYS = Set.of(
-            "secretId", "secretKey", "sdkAppId", "signName", "templateId",
-            "region", "timeout", "maxRetries", "retryDelay"
-    );
-
     private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
     private final ObjectMapper objectMapper;
@@ -49,7 +39,7 @@ public class SmsChannelSpecConverter {
         SmsChannelType smsType = parseProtocol(resolveProtocolValue(safe));
 
         if (smsType == SmsChannelType.ALIYUN) {
-            Map<String, Object> aliyunValues = resolveProtocolValues(safe, ALIYUN_KEYS, "aliyun", "ALIYUN");
+            Map<String, Object> aliyunValues = resolveProtocolValues(safe, "aliyun", "ALIYUN");
             normalizeDurationValues(aliyunValues, "timeout", "retryDelay");
             AliyunSmsChannelSpec aliyun = mapToConfig(aliyunValues, AliyunSmsChannelSpec.class, "ALIYUN");
             ensureNonNegativeRetries(aliyun.getMaxRetries(), "ALIYUN");
@@ -58,7 +48,7 @@ public class SmsChannelSpecConverter {
         }
 
         if (smsType == SmsChannelType.TENCENT) {
-            Map<String, Object> tencentValues = resolveProtocolValues(safe, TENCENT_KEYS, "tencent", "TENCENT");
+            Map<String, Object> tencentValues = resolveProtocolValues(safe, "tencent", "TENCENT");
             normalizeDurationValues(tencentValues, "timeout", "retryDelay");
             TencentSmsChannelSpec tencent = mapToConfig(tencentValues, TencentSmsChannelSpec.class, "TENCENT");
             ensureNonNegativeRetries(tencent.getMaxRetries(), "TENCENT");
@@ -78,7 +68,6 @@ public class SmsChannelSpecConverter {
     }
 
     private Map<String, Object> resolveProtocolValues(Map<String, Object> root,
-                                                      Set<String> allowedKeys,
                                                       String... nestedAliases) {
         Map<String, Object> nested = new LinkedHashMap<>();
         for (String alias : nestedAliases) {
@@ -87,16 +76,17 @@ public class SmsChannelSpecConverter {
                 break;
             }
         }
-        return mergeProtocolValues(nested, root, allowedKeys);
+        return mergeProtocolValues(nested, root);
     }
 
     private Map<String, Object> mergeProtocolValues(Map<String, Object> nested,
-                                                    Map<String, Object> root,
-                                                    Set<String> allowedKeys) {
+                                                    Map<String, Object> root) {
         Map<String, Object> result = new LinkedHashMap<>(nested);
-        for (String key : allowedKeys) {
-            if ((!result.containsKey(key) || result.get(key) == null) && root.containsKey(key)) {
-                result.put(key, root.get(key));
+        for (Map.Entry<String, Object> entry : root.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            if ((!result.containsKey(key) || result.get(key) == null) && value != null) {
+                result.put(key, value);
             }
         }
         return result;

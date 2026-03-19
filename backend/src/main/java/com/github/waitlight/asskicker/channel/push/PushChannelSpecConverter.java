@@ -19,15 +19,6 @@ import java.util.stream.Collectors;
 @Component
 public class PushChannelSpecConverter {
 
-    private static final Set<String> APNS_KEYS = Set.of(
-            "teamId", "keyId", "bundleId", "p8KeyContent", "p8KeyPath",
-            "production", "timeout", "maxRetries", "retryDelay"
-    );
-
-    private static final Set<String> FCM_KEYS = Set.of(
-            "serviceAccountJson", "projectId", "timeout", "maxRetries", "retryDelay"
-    );
-
     private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
     private final ObjectMapper objectMapper;
@@ -48,7 +39,7 @@ public class PushChannelSpecConverter {
         PushChannelType pushType = parseProtocol(resolveProtocolValue(safe));
 
         if (pushType == PushChannelType.APNS) {
-            Map<String, Object> apnsValues = resolveProtocolValues(safe, APNS_KEYS, "apns", "APNS");
+            Map<String, Object> apnsValues = resolveProtocolValues(safe, "apns", "APNS");
             normalizeDurationValues(apnsValues, "timeout", "retryDelay");
             APNsPushChannelSpec apns = mapToConfig(apnsValues, APNsPushChannelSpec.class, "APNS");
             ensureNonNegativeRetries(apns.getMaxRetries(), "APNS");
@@ -58,7 +49,7 @@ public class PushChannelSpecConverter {
         }
 
         if (pushType == PushChannelType.FCM) {
-            Map<String, Object> fcmValues = resolveProtocolValues(safe, FCM_KEYS, "fcm", "FCM");
+            Map<String, Object> fcmValues = resolveProtocolValues(safe, "fcm", "FCM");
             normalizeDurationValues(fcmValues, "timeout", "retryDelay");
             FCMPushChannelSpec fcm = mapToConfig(fcmValues, FCMPushChannelSpec.class, "FCM");
             ensureNonNegativeRetries(fcm.getMaxRetries(), "FCM");
@@ -78,7 +69,6 @@ public class PushChannelSpecConverter {
     }
 
     private Map<String, Object> resolveProtocolValues(Map<String, Object> root,
-                                                      Set<String> allowedKeys,
                                                       String... nestedAliases) {
         Map<String, Object> nested = new LinkedHashMap<>();
         for (String alias : nestedAliases) {
@@ -87,16 +77,17 @@ public class PushChannelSpecConverter {
                 break;
             }
         }
-        return mergeProtocolValues(nested, root, allowedKeys);
+        return mergeProtocolValues(nested, root);
     }
 
     private Map<String, Object> mergeProtocolValues(Map<String, Object> nested,
-                                                    Map<String, Object> root,
-                                                    Set<String> allowedKeys) {
+                                                    Map<String, Object> root) {
         Map<String, Object> result = new LinkedHashMap<>(nested);
-        for (String key : allowedKeys) {
-            if ((!result.containsKey(key) || result.get(key) == null) && root.containsKey(key)) {
-                result.put(key, root.get(key));
+        for (Map.Entry<String, Object> entry : root.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            if ((!result.containsKey(key) || result.get(key) == null) && value != null) {
+                result.put(key, value);
             }
         }
         return result;
