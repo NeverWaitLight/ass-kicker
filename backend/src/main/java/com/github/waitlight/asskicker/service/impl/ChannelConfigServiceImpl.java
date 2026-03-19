@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.ChannelProperties;
+import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
@@ -13,11 +13,6 @@ import com.github.waitlight.asskicker.model.ChannelConfig;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.security.UserPrincipal;
-import com.github.waitlight.asskicker.channel.ChannelFactory;
-import com.github.waitlight.asskicker.channel.email.EmailChannelConfigConverter;
-import com.github.waitlight.asskicker.channel.im.IMChannelConfigConverter;
-import com.github.waitlight.asskicker.channel.push.PushChannelConfigConverter;
-import com.github.waitlight.asskicker.channel.sms.SmsChannelConfigConverter;
 import com.github.waitlight.asskicker.repository.ChannelConfigRepository;
 import com.github.waitlight.asskicker.service.ChannelConfigService;
 import jakarta.annotation.PostConstruct;
@@ -49,10 +44,6 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
     private final ChannelConfigRepository channelConfigRepository;
     private final ObjectMapper objectMapper;
     private final ChannelFactory channelFactory;
-    private final EmailChannelConfigConverter emailChannelConfigConverter;
-    private final IMChannelConfigConverter imChannelConfigConverter;
-    private final PushChannelConfigConverter pushChannelConfigConverter;
-    private final SmsChannelConfigConverter smsChannelConfigConverter;
     private final CaffeineCacheConfig caffeineCacheConfig;
 
     private AsyncLoadingCache<String, Optional<ChannelConfig>> channelByIdCache;
@@ -63,18 +54,10 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
     public ChannelConfigServiceImpl(ChannelConfigRepository channelConfigRepository,
                                     ObjectMapper objectMapper,
                                     ChannelFactory channelFactory,
-                                    EmailChannelConfigConverter emailChannelConfigConverter,
-                                    IMChannelConfigConverter imChannelConfigConverter,
-                                    PushChannelConfigConverter pushChannelConfigConverter,
-                                    SmsChannelConfigConverter smsChannelConfigConverter,
                                     CaffeineCacheConfig caffeineCacheConfig) {
         this.channelConfigRepository = channelConfigRepository;
         this.objectMapper = objectMapper;
         this.channelFactory = channelFactory;
-        this.emailChannelConfigConverter = emailChannelConfigConverter;
-        this.imChannelConfigConverter = imChannelConfigConverter;
-        this.pushChannelConfigConverter = pushChannelConfigConverter;
-        this.smsChannelConfigConverter = smsChannelConfigConverter;
         this.caffeineCacheConfig = caffeineCacheConfig;
     }
 
@@ -184,78 +167,13 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
     private Mono<MsgResp> sendWithRequest(TestSendRequest request, String protocol) {
         return Mono.fromCallable(() -> {
             try {
-                if (request.type() == ChannelType.EMAIL) {
-                    ChannelProperties config = emailChannelConfigConverter.fromProperties(request.properties());
-                    Channel<?> channel = channelFactory.create(config);
+                if (request.type() == ChannelType.EMAIL || request.type() == ChannelType.IM
+                        || request.type() == ChannelType.PUSH || request.type() == ChannelType.SMS) {
+                    Channel<?> channel = channelFactory.create(request.type(), request.properties());
+                    String subject = request.type() == ChannelType.SMS ? "" : "测试消息";
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
-                            .subject("测试消息")
-                            .content(request.content())
-                            .attributes(Map.of("senderType", request.type().name()))
-                            .build();
-                    try {
-                        logger.info("SECURITY_TEST_SEND_SENDER_READY type={} protocol={} sender={}",
-                                request.type(), protocol, channel.getClass().getSimpleName());
-                        logger.info("SECURITY_TEST_SEND_EXEC type={} protocol={} target={}",
-                                request.type(), protocol, request.target());
-                        MsgResp response = channel.send(messageRequest);
-                        logger.info("SECURITY_TEST_SEND_PROVIDER_RESULT type={} protocol={} success={} messageId={} errorCode={}",
-                                request.type(), protocol, response.isSuccess(), response.getMessageId(), response.getErrorCode());
-                        return response;
-                    } finally {
-                        closeChannel(channel);
-                    }
-                }
-                if (request.type() == ChannelType.IM) {
-                    ChannelProperties config = imChannelConfigConverter.fromProperties(request.properties());
-                    Channel<?> channel = channelFactory.create(config);
-                    MsgReq messageRequest = MsgReq.builder()
-                            .recipient(request.target())
-                            .subject("测试消息")
-                            .content(request.content())
-                            .attributes(Map.of("senderType", request.type().name()))
-                            .build();
-                    try {
-                        logger.info("SECURITY_TEST_SEND_SENDER_READY type={} protocol={} sender={}",
-                                request.type(), protocol, channel.getClass().getSimpleName());
-                        logger.info("SECURITY_TEST_SEND_EXEC type={} protocol={} target={}",
-                                request.type(), protocol, request.target());
-                        MsgResp response = channel.send(messageRequest);
-                        logger.info("SECURITY_TEST_SEND_PROVIDER_RESULT type={} protocol={} success={} messageId={} errorCode={}",
-                                request.type(), protocol, response.isSuccess(), response.getMessageId(), response.getErrorCode());
-                        return response;
-                    } finally {
-                        closeChannel(channel);
-                    }
-                }
-                if (request.type() == ChannelType.PUSH) {
-                    ChannelProperties config = pushChannelConfigConverter.fromProperties(request.properties());
-                    Channel<?> channel = channelFactory.create(config);
-                    MsgReq messageRequest = MsgReq.builder()
-                            .recipient(request.target())
-                            .subject("测试消息")
-                            .content(request.content())
-                            .attributes(Map.of("senderType", request.type().name()))
-                            .build();
-                    try {
-                        logger.info("SECURITY_TEST_SEND_SENDER_READY type={} protocol={} sender={}",
-                                request.type(), protocol, channel.getClass().getSimpleName());
-                        logger.info("SECURITY_TEST_SEND_EXEC type={} protocol={} target={}",
-                                request.type(), protocol, request.target());
-                        MsgResp response = channel.send(messageRequest);
-                        logger.info("SECURITY_TEST_SEND_PROVIDER_RESULT type={} protocol={} success={} messageId={} errorCode={}",
-                                request.type(), protocol, response.isSuccess(), response.getMessageId(), response.getErrorCode());
-                        return response;
-                    } finally {
-                        closeChannel(channel);
-                    }
-                }
-                if (request.type() == ChannelType.SMS) {
-                    ChannelProperties config = smsChannelConfigConverter.fromProperties(request.properties());
-                    Channel<?> channel = channelFactory.create(config);
-                    MsgReq messageRequest = MsgReq.builder()
-                            .recipient(request.target())
-                            .subject("")
+                            .subject(subject)
                             .content(request.content())
                             .attributes(Map.of("senderType", request.type().name()))
                             .build();
