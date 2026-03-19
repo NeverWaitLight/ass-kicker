@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.channel.sms;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.ChannelSpec;
 import jakarta.validation.ConstraintViolation;
@@ -28,12 +29,19 @@ public class SmsChannelSpecConverter {
             "region", "timeout", "maxRetries", "retryDelay"
     );
 
+    private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE = new TypeReference<>() {};
+
     private final ObjectMapper objectMapper;
     private final Validator validator;
 
     public SmsChannelSpecConverter(ObjectMapper objectMapper, Validator validator) {
         this.objectMapper = objectMapper;
         this.validator = validator;
+    }
+
+    public ChannelSpec fromPropertiesJson(String json) {
+        Map<String, Object> properties = parsePropertiesJson(json);
+        return fromProperties(properties);
     }
 
     public ChannelSpec fromProperties(Map<String, Object> properties) {
@@ -169,6 +177,17 @@ public class SmsChannelSpecConverter {
             return SmsChannelType.valueOf(normalized);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "SMS protocol is not supported: " + normalized);
+        }
+    }
+
+    private Map<String, Object> parsePropertiesJson(String json) {
+        if (json == null || json.isBlank()) {
+            return new LinkedHashMap<>();
+        }
+        try {
+            return objectMapper.readValue(json, MAP_TYPE);
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Failed to parse channel properties: " + ex.getMessage(), ex);
         }
     }
 

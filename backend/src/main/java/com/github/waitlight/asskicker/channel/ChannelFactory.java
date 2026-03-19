@@ -1,7 +1,5 @@
 package com.github.waitlight.asskicker.channel;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.email.EmailChannelSpecConverter;
 import com.github.waitlight.asskicker.channel.email.HttpEmailChannel;
 import com.github.waitlight.asskicker.channel.email.HttpEmailChannelSpec;
@@ -36,20 +34,16 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ChannelFactory {
 
-    private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE = new TypeReference<>() {
-    };
-
     private final WebClient sharedWebClient;
     private final ChannelDebugProperties debugProperties;
-    private final ObjectMapper objectMapper;
     private final EmailChannelSpecConverter emailChannelSpecConverter;
     private final IMChannelSpecConverter imChannelSpecConverter;
     private final PushChannelSpecConverter pushChannelSpecConverter;
     private final SmsChannelSpecConverter smsChannelSpecConverter;
 
     public Channel<?> create(ChannelEntity channelEntity) {
-        Map<String, Object> properties = getPropertiesFromEntity(channelEntity);
-        return create(channelEntity.getType(), properties);
+        ChannelSpec spec = toSpecFromEntity(channelEntity);
+        return create(spec);
     }
 
     public Channel<?> create(ChannelType type, Map<String, Object> properties) {
@@ -85,6 +79,16 @@ public class ChannelFactory {
         throw new IllegalArgumentException("Unsupported channel spec: " + spec);
     }
 
+    private ChannelSpec toSpecFromEntity(ChannelEntity channelEntity) {
+        String json = channelEntity.getPropertiesJson();
+        return switch (channelEntity.getType()) {
+            case EMAIL -> emailChannelSpecConverter.fromPropertiesJson(json);
+            case IM -> imChannelSpecConverter.fromPropertiesJson(json);
+            case PUSH -> pushChannelSpecConverter.fromPropertiesJson(json);
+            case SMS -> smsChannelSpecConverter.fromPropertiesJson(json);
+        };
+    }
+
     private ChannelSpec toSpec(ChannelType type, Map<String, Object> properties) {
         Map<String, Object> safe = properties != null ? properties : new LinkedHashMap<>();
         if (type == ChannelType.EMAIL) {
@@ -100,24 +104,5 @@ public class ChannelFactory {
             return smsChannelSpecConverter.fromProperties(safe);
         }
         throw new IllegalArgumentException("Unsupported channel type: " + type);
-    }
-
-    private Map<String, Object> getPropertiesFromEntity(ChannelEntity channelEntity) {
-        Map<String, Object> properties = channelEntity.getProperties();
-        if (properties != null && !properties.isEmpty()) {
-            return properties;
-        }
-        return readProperties(channelEntity.getPropertiesJson());
-    }
-
-    private Map<String, Object> readProperties(String json) {
-        if (json == null || json.isBlank()) {
-            return new LinkedHashMap<>();
-        }
-        try {
-            return objectMapper.readValue(json, MAP_TYPE);
-        } catch (Exception ex) {
-            throw new IllegalArgumentException("Failed to parse channel properties: " + ex.getMessage(), ex);
-        }
     }
 }
