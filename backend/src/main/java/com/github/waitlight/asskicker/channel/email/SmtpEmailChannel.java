@@ -1,0 +1,97 @@
+package com.github.waitlight.asskicker.channel.email;
+
+import com.github.waitlight.asskicker.channel.ChannelDebugSimulator;
+import com.github.waitlight.asskicker.channel.MsgReq;
+import com.github.waitlight.asskicker.channel.MsgResp;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.mail.MailException;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
+import java.util.Properties;
+
+public class SmtpEmailChannel extends EmailChannel<SmtpEmailChannelProperty> {
+
+    private final ChannelDebugSimulator debugSimulator;
+    private final JavaMailSender mailSender;
+
+    public SmtpEmailChannel(SmtpEmailChannelProperty config, ChannelDebugSimulator debugSimulator) {
+        super(config);
+        this.debugSimulator = debugSimulator;
+        this.mailSender = debugSimulator.isEnabled() ? null : buildJavaMailChannel(config);
+    }
+
+    private JavaMailSender buildJavaMailChannel(SmtpEmailChannelProperty config) {
+        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        mailSender.setHost(config.getHost());
+        mailSender.setPort(config.getPort());
+        mailSender.setUsername(config.getUsername());
+        mailSender.setPassword(config.getPassword());
+        String protocol = config.getProtocol().name().toLowerCase(Locale.ROOT);
+        mailSender.setProtocol(protocol);
+        mailSender.setDefaultEncoding(StandardCharsets.UTF_8.name());
+
+        Properties javaMailProperties = mailSender.getJavaMailProperties();
+        javaMailProperties.put("mail.transport.protocol", protocol);
+        javaMailProperties.put("mail.smtp.auth", "true");
+        javaMailProperties.put("mail.smtp.connectiontimeout", String.valueOf(config.getConnectionTimeout().toMillis()));
+        javaMailProperties.put("mail.smtp.timeout", String.valueOf(config.getReadTimeout().toMillis()));
+        javaMailProperties.put("mail.smtp.writetimeout", String.valueOf(config.getReadTimeout().toMillis()));
+        if (config.isSslEnabled()) {
+            javaMailProperties.put("mail.smtp.ssl.enable", "true");
+            javaMailProperties.put("mail.smtp.ssl.trust", config.getHost());
+        }
+        return mailSender;
+    }
+
+    @Override
+    public MsgResp send(MsgReq request) {
+        if (request == null) {
+            return MsgResp.failure("INVALID_REQUEST", "Message request is null");
+        }
+        if (debugSimulator.isEnabled()) {
+            return debugSimulator.simulate(getClass().getSimpleName());
+        }
+
+        int attempts = 0;
+        Exception lastException = null;
+
+        while (attempts <= config.getMaxRetries()) {
+            try {
+                MimeMessage message = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
+                helper.setFrom(String.valueOf(resolveFrom()));
+                helper.setTo(String.valueOf(request.getRecipient()));
+                helper.setSubject(String.valueOf(request.getSubject()));
+                helper.setText(String.valueOf(request.getContent()), false);
+                mailSender.send(message);
+                return MsgResp.success(message.getMessageID());
+            } catch (MailException | MessagingException ex) {
+                lastException = ex;
+                attempts++;
+                if (attempts <= config.getMaxRetries()) {
+                    try {
+                        Thread.sleep(config.getRetryDelay().toMillis());
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        return MsgResp.failure("MAIL_SEND_INTERRUPTED", ie.getMessage());
+                    }
+                }
+            }
+        }
+
+        return MsgResp.failure("MAIL_SEND_FAILED", lastException != null ? lastException.getMessage() : "Unknown error after " + attempts + " attempts");
+    }
+
+    private String resolveFrom() {
+        if (config.getFrom() != null && !config.getFrom().isBlank()) {
+            return config.getFrom();
+        }
+        return config.getUsername();
+    }
+
+}

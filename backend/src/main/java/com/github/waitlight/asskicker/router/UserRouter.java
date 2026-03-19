@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.router;
 
-import com.github.waitlight.asskicker.handlers.UserHandler;
+import com.github.waitlight.asskicker.handler.UserHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;

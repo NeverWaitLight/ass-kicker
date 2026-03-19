@@ -1,8 +1,8 @@
 package com.github.waitlight.asskicker.manager;
 
-import com.github.waitlight.asskicker.channels.Channel;
-import com.github.waitlight.asskicker.channels.MsgReq;
-import com.github.waitlight.asskicker.channels.MsgResp;
+import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.MsgReq;
+import com.github.waitlight.asskicker.channel.MsgResp;
 import com.github.waitlight.asskicker.model.*;
 import com.github.waitlight.asskicker.model.ChannelConfig;
 import com.github.waitlight.asskicker.service.SendRecordService;

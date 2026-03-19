@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.service;
 
-import com.github.waitlight.asskicker.channels.MsgResp;
+import com.github.waitlight.asskicker.channel.MsgResp;
 import com.github.waitlight.asskicker.dto.channel.TestSendRequest;
 import com.github.waitlight.asskicker.model.ChannelConfig;
 import com.github.waitlight.asskicker.model.ChannelType;
