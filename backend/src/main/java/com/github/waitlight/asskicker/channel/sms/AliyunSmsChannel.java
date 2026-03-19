@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.channel.sms;
 
+import com.github.waitlight.asskicker.channel.Channel;
 import com.aliyun.dysmsapi20170525.Client;
 import com.aliyun.dysmsapi20170525.models.SendSmsRequest;
 import com.aliyun.dysmsapi20170525.models.SendSmsResponse;
@@ -15,7 +16,7 @@ import java.util.Map;
 /**
  * 阿里云短信通道，直接发送完整内容（单变量模板）。
  */
-public class AliyunSmsChannel extends SmsChannel<AliyunSmsChannelProperties> {
+public class AliyunSmsChannel extends Channel<AliyunSmsChannelProperties> {
 
     public AliyunSmsChannel(AliyunSmsChannelProperties config, ChannelDebugProperties debugProperties) {
         super(config, debugProperties);

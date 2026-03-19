@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.channel.im;
 
+import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
 import com.github.waitlight.asskicker.config.ChannelDebugProperties;
@@ -17,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-public class DingTalkIMChannel extends IMChannel<DingTalkIMChannelProperties> {
+public class DingTalkIMChannel extends Channel<DingTalkIMChannelProperties> {
 
     private final WebClient client;
 

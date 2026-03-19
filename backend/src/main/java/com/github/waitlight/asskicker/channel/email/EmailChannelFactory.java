@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.channel.email;
 
+import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelProperties;
 import com.github.waitlight.asskicker.config.ChannelDebugProperties;
 import org.springframework.stereotype.Component;
@@ -16,7 +17,7 @@ public class EmailChannelFactory {
         this.debugProperties = debugProperties;
     }
 
-    public EmailChannel<?> create(ChannelProperties config) {
+    public Channel<?> create(ChannelProperties config) {
         if (config instanceof HttpEmailChannelProperties http) {
             return new HttpEmailChannel(http, sharedWebClient, debugProperties);
         }

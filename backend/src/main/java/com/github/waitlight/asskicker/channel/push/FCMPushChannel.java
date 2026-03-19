@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.channel.push;
 
+import com.github.waitlight.asskicker.channel.Channel;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.MsgReq;
@@ -24,7 +25,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * 谷歌 FCM HTTP v1 推送通道。
  */
-public class FCMPushChannel extends PushChannel<FCMPushChannelProperties> {
+public class FCMPushChannel extends Channel<FCMPushChannelProperties> {
 
     private static final String FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
     private static final String FCM_SEND_URL = "https://fcm.googleapis.com/v1/projects/%s/messages:send";

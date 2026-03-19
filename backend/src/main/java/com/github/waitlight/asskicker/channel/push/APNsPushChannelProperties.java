@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.channel.push;
 
+import com.github.waitlight.asskicker.channel.ChannelProperties;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -10,7 +11,7 @@ import java.time.Duration;
 
 @Getter
 @Setter
-public class APNsPushChannelProperties extends PushChannelProperties {
+public class APNsPushChannelProperties implements ChannelProperties {
 
     @NotBlank
     private String teamId;
@@ -38,8 +39,4 @@ public class APNsPushChannelProperties extends PushChannelProperties {
 
     @NotNull
     private Duration retryDelay = Duration.ofSeconds(1);
-
-    public APNsPushChannelProperties() {
-        super("APNS");
-    }
 }

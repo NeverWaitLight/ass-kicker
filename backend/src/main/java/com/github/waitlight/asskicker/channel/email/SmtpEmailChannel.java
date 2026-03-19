@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.channel.email;
 
+import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
 import com.github.waitlight.asskicker.config.ChannelDebugProperties;
@@ -11,10 +12,9 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
 import java.util.Properties;
 
-public class SmtpEmailChannel extends EmailChannel<SmtpEmailChannelProperties> {
+public class SmtpEmailChannel extends Channel<SmtpEmailChannelProperties> {
 
     private final JavaMailSender mailSender;
 
@@ -29,7 +29,7 @@ public class SmtpEmailChannel extends EmailChannel<SmtpEmailChannelProperties> {
         mailSender.setPort(config.getPort());
         mailSender.setUsername(config.getUsername());
         mailSender.setPassword(config.getPassword());
-        String protocol = config.getProtocol().name().toLowerCase(Locale.ROOT);
+        String protocol = "smtp";
         mailSender.setProtocol(protocol);
         mailSender.setDefaultEncoding(StandardCharsets.UTF_8.name());
 

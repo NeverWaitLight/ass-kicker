@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.channel.im;
 
+import com.github.waitlight.asskicker.channel.ChannelProperties;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -10,7 +11,7 @@ import java.time.Duration;
 
 @Getter
 @Setter
-public class DingTalkIMChannelProperties extends IMChannelProperties {
+public class DingTalkIMChannelProperties implements ChannelProperties {
 
     @NotBlank
     private String webhookUrl;
@@ -28,8 +29,4 @@ public class DingTalkIMChannelProperties extends IMChannelProperties {
 
     @NotNull
     private Duration retryDelay = Duration.ofSeconds(1);
-
-    public DingTalkIMChannelProperties() {
-        super("DINGTALK");
-    }
 }

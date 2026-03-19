@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.channel.push;
 
+import com.github.waitlight.asskicker.channel.ChannelProperties;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -10,7 +11,7 @@ import java.time.Duration;
 
 @Getter
 @Setter
-public class FCMPushChannelProperties extends PushChannelProperties {
+public class FCMPushChannelProperties implements ChannelProperties {
 
     /**
      * 服务账号 JSON 文件路径或 JSON 字符串内容
@@ -31,8 +32,4 @@ public class FCMPushChannelProperties extends PushChannelProperties {
 
     @NotNull
     private Duration retryDelay = Duration.ofSeconds(1);
-
-    public FCMPushChannelProperties() {
-        super("FCM");
-    }
 }

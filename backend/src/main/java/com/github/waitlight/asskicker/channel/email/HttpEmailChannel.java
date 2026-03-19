@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.channel.email;
 
+import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
 import com.github.waitlight.asskicker.config.ChannelDebugProperties;
@@ -16,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-public class HttpEmailChannel extends EmailChannel<HttpEmailChannelProperties> {
+public class HttpEmailChannel extends Channel<HttpEmailChannelProperties> {
 
     private final WebClient client;
 

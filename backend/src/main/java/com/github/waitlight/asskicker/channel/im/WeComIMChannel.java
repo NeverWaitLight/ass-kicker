@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.channel.im;
 
+import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
 import com.github.waitlight.asskicker.config.ChannelDebugProperties;
@@ -18,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-public class WeComIMChannel extends IMChannel<WeComIMChannelProperties> {
+public class WeComIMChannel extends Channel<WeComIMChannelProperties> {
 
     private final WebClient client;
 

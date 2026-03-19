@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.channel.sms;
 
+import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
 import com.github.waitlight.asskicker.config.ChannelDebugProperties;
@@ -13,7 +14,7 @@ import com.tencentcloudapi.sms.v20210111.models.SendStatus;
 /**
  * 腾讯云短信通道，直接发送完整内容（单变量模板）。
  */
-public class TencentSmsChannel extends SmsChannel<TencentSmsChannelProperties> {
+public class TencentSmsChannel extends Channel<TencentSmsChannelProperties> {
 
     public TencentSmsChannel(TencentSmsChannelProperties config, ChannelDebugProperties debugProperties) {
         super(config, debugProperties);

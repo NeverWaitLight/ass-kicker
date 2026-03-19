@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.channel.push;
 
+import com.github.waitlight.asskicker.channel.Channel;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
@@ -28,7 +29,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * 苹果 APNs HTTP/2 推送通道。
  */
-public class APNsPushChannel extends PushChannel<APNsPushChannelProperties> {
+public class APNsPushChannel extends Channel<APNsPushChannelProperties> {
 
     private static final String APNS_PRODUCTION_HOST = "api.push.apple.com";
     private static final String APNS_SANDBOX_HOST = "api.sandbox.push.apple.com";
