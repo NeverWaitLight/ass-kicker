@@ -2,7 +2,7 @@ package com.github.waitlight.asskicker.service;
 
 import com.github.waitlight.asskicker.channel.MsgResp;
 import com.github.waitlight.asskicker.dto.channel.TestSendRequest;
-import com.github.waitlight.asskicker.model.ChannelConfig;
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import reactor.core.publisher.Flux;
@@ -10,16 +10,16 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-public interface ChannelConfigService {
-    Mono<ChannelConfig> createChannel(ChannelConfig channelConfig);
+public interface ChannelEntityService {
+    Mono<ChannelEntity> createChannel(ChannelEntity channelEntity);
 
-    Mono<ChannelConfig> getChannelById(String id);
+    Mono<ChannelEntity> getChannelById(String id);
 
-    Flux<ChannelConfig> listChannels();
+    Flux<ChannelEntity> listChannels();
 
-    Flux<ChannelConfig> findByTypes(List<ChannelType> types);
+    Flux<ChannelEntity> findByTypes(List<ChannelType> types);
 
-    Mono<ChannelConfig> updateChannel(String id, ChannelConfig channelConfig);
+    Mono<ChannelEntity> updateChannel(String id, ChannelEntity channelEntity);
 
     Mono<Void> deleteChannel(String id);
 

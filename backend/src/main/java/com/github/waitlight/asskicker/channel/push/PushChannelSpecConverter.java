@@ -1,7 +1,7 @@
-package com.github.waitlight.asskicker.channel.email;
+package com.github.waitlight.asskicker.channel.push;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.ChannelProperties;
+import com.github.waitlight.asskicker.channel.ChannelSpec;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.springframework.http.HttpStatus;
@@ -16,46 +16,49 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
-public class EmailChannelConfigConverter {
+public class PushChannelSpecConverter {
 
-    private static final Set<String> SMTP_KEYS = Set.of(
-            "host", "port", "username", "password",
-            "sslEnabled", "from", "connectionTimeout", "readTimeout",
-            "maxRetries", "retryDelay"
+    private static final Set<String> APNS_KEYS = Set.of(
+            "teamId", "keyId", "bundleId", "p8KeyContent", "p8KeyPath",
+            "production", "timeout", "maxRetries", "retryDelay"
     );
 
-    private static final Set<String> HTTP_KEYS = Set.of(
-            "baseUrl", "path", "apiKeyHeader", "apiKey",
-            "from", "timeout", "maxRetries", "retryDelay"
+    private static final Set<String> FCM_KEYS = Set.of(
+            "serviceAccountJson", "projectId", "timeout", "maxRetries", "retryDelay"
     );
 
     private final ObjectMapper objectMapper;
     private final Validator validator;
 
-    public EmailChannelConfigConverter(ObjectMapper objectMapper, Validator validator) {
+    public PushChannelSpecConverter(ObjectMapper objectMapper, Validator validator) {
         this.objectMapper = objectMapper;
         this.validator = validator;
     }
 
-    public ChannelProperties fromProperties(Map<String, Object> properties) {
+    public ChannelSpec fromProperties(Map<String, Object> properties) {
         Map<String, Object> safe = normalizeProperties(properties);
-        EmailChannelType protocol = parseProtocol(resolveProtocolValue(safe));
+        PushChannelType pushType = parseProtocol(resolveProtocolValue(safe));
 
-        if (protocol == EmailChannelType.HTTP) {
-            Map<String, Object> httpValues = resolveProtocolValues(safe, HTTP_KEYS, "http");
-            normalizeDurationValues(httpValues, "timeout", "retryDelay");
-            HttpEmailChannelProperties httpConfig = mapToConfig(httpValues, HttpEmailChannelProperties.class, "HTTP");
-            ensurePositiveRetries(httpConfig.getMaxRetries(), "HTTP");
-            validateConfig(httpConfig, "HTTP");
-            return httpConfig;
+        if (pushType == PushChannelType.APNS) {
+            Map<String, Object> apnsValues = resolveProtocolValues(safe, APNS_KEYS, "apns", "APNS");
+            normalizeDurationValues(apnsValues, "timeout", "retryDelay");
+            APNsPushChannelSpec apns = mapToConfig(apnsValues, APNsPushChannelSpec.class, "APNS");
+            ensureNonNegativeRetries(apns.getMaxRetries(), "APNS");
+            validateApnsBusinessRules(apns);
+            validateConfig(apns, "APNS");
+            return apns;
         }
 
-        Map<String, Object> smtpValues = resolveProtocolValues(safe, SMTP_KEYS, "smtp", "SMTP");
-        normalizeDurationValues(smtpValues, "connectionTimeout", "readTimeout", "retryDelay");
-        SmtpEmailChannelProperties smtpConfig = mapToConfig(smtpValues, SmtpEmailChannelProperties.class, "SMTP");
-        ensurePositiveRetries(smtpConfig.getMaxRetries(), "SMTP");
-        validateConfig(smtpConfig, "SMTP");
-        return smtpConfig;
+        if (pushType == PushChannelType.FCM) {
+            Map<String, Object> fcmValues = resolveProtocolValues(safe, FCM_KEYS, "fcm", "FCM");
+            normalizeDurationValues(fcmValues, "timeout", "retryDelay");
+            FCMPushChannelSpec fcm = mapToConfig(fcmValues, FCMPushChannelSpec.class, "FCM");
+            ensureNonNegativeRetries(fcm.getMaxRetries(), "FCM");
+            validateConfig(fcm, "FCM");
+            return fcm;
+        }
+
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported Push protocol type");
     }
 
     private Object resolveProtocolValue(Map<String, Object> safe) {
@@ -129,6 +132,22 @@ public class EmailChannelConfigConverter {
         }
     }
 
+    private void validateApnsBusinessRules(APNsPushChannelSpec apns) {
+        String p8KeyContent = apns.getP8KeyContent();
+        String p8KeyPath = apns.getP8KeyPath();
+        boolean contentBlank = p8KeyContent == null || p8KeyContent.trim().isEmpty();
+        boolean pathBlank = p8KeyPath == null || p8KeyPath.trim().isEmpty();
+        if (contentBlank && pathBlank) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "APNS requires p8KeyContent or p8KeyPath");
+        }
+    }
+
+    private void ensureNonNegativeRetries(int maxRetries, String protocol) {
+        if (maxRetries < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, protocol + " maxRetries must be greater than or equal to 0");
+        }
+    }
+
     private <T> T mapToConfig(Map<String, Object> values, Class<T> targetType, String protocol) {
         try {
             return objectMapper.convertValue(values, targetType);
@@ -148,24 +167,18 @@ public class EmailChannelConfigConverter {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, protocol + " config validation failed: " + message);
     }
 
-    private void ensurePositiveRetries(int maxRetries, String protocol) {
-        if (maxRetries <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, protocol + " maxRetries must be greater than 0");
-        }
-    }
-
-    private EmailChannelType parseProtocol(Object value) {
+    private PushChannelType parseProtocol(Object value) {
         if (value == null) {
-            return null;
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Push protocol type cannot be blank");
         }
         String normalized = String.valueOf(value).trim().toUpperCase(Locale.ROOT);
         if (normalized.isBlank()) {
-            return null;
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Push protocol type cannot be blank");
         }
         try {
-            return EmailChannelType.valueOf(normalized);
+            return PushChannelType.valueOf(normalized);
         } catch (IllegalArgumentException ex) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email protocol is not supported: " + normalized);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Push protocol is not supported: " + normalized);
         }
     }
 

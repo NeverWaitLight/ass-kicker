@@ -8,15 +8,15 @@ Spring Boot 3.2 WebFlux、Java 21、R2DBC（PostgreSQL）、Spring Security（JW
 
 **config** 应用与基础设施配置。R2dbcConfig 提供 R2DBC 自定义类型转换（如 ChannelType 与库表互转）。
 
-**router** 定义 HTTP 路由，将请求绑定到对应 Handler。包含 AuthRouter、ChannelRouter、HealthRouter、LanguageTemplateRouter、StatusRouter、TemplateRouter、UserRouter，均使用 WebFlux 的 RouterFunction 声明路由。
+**router** 定义 HTTP 路由，将请求绑定到对应 Handler。包含 AuthRouter、ChannelEntityRouter、HealthRouter、LanguageTemplateRouter、StatusRouter、TemplateRouter、UserRouter，均使用 WebFlux 的 RouterFunction 声明路由。
 
-**handlers** 处理具体请求，解析参数、调用 Service、构造 ServerResponse。AuthHandler 处理登录注册刷新令牌；ChannelHandler 处理渠道 CRUD 与测试发送；LanguageTemplateHandler、TemplateHandler 处理模板与多语言模板；UserHandler 处理用户管理。统一返回 Mono&lt;ServerResponse&gt;，与全链路反应式一致。
+**handlers** 处理具体请求，解析参数、调用 Service、构造 ServerResponse。AuthHandler 处理登录注册刷新令牌；ChannelEntityHandler 处理渠道 CRUD 与测试发送；LanguageTemplateHandler、TemplateHandler 处理模板与多语言模板；UserHandler 处理用户管理。统一返回 Mono&lt;ServerResponse&gt;，与全链路反应式一致。
 
-**service / service.impl** 业务逻辑层。AuthService 负责认证与 JWT；ChannelService 渠道的增删改查与配置，以及测试发送（按 type+properties 组装 ChannelConfig、调用 channels 包内 Factory 创建 Channel 并 send）；LanguageTemplateService、TemplateService 模板与多语言模板；UserService 用户与密码。
+**service / service.impl** 业务逻辑层。AuthService 负责认证与 JWT；ChannelEntityService 渠道的增删改查与配置，以及测试发送（按 type+properties 组装 ChannelEntity、调用 channels 包内 Factory 创建 Channel 并 send）；LanguageTemplateService、TemplateService 模板与多语言模板；UserService 用户与密码。
 
 **repository** 数据访问层，基于 Spring Data R2DBC。SenderRepository、LanguageTemplateRepository、TemplateRepository、UserRepository 等提供反应式 CRUD 与查询；RegistrationLock、PostgresRegistrationLock 提供注册等场景的分布式锁。
 
-**model** 领域实体与枚举。Channel、ChannelType、Template、LanguageTemplate、Language、User、UserStatus、UserRole 等，与 R2DBC 表结构对应。
+**model** 领域实体与枚举。ChannelEntity、ChannelType、Template、LanguageTemplate、Language、User、UserStatus、UserRole 等，与 R2DBC 表结构对应。
 
 **dto** 请求与响应 DTO。按子包划分：auth（登录、注册、刷新、Token 响应）、channel（如测试发送请求）、user（分页、创建、更新用户名、改密、重置密码等）。
 
@@ -29,6 +29,16 @@ Spring Boot 3.2 WebFlux、Java 21、R2DBC（PostgreSQL）、Spring Security（JW
 **security** 认证与授权。JwtService、JwtProperties、JwtPayload、JwtTokenType 负责 JWT 签发与解析；JwtServerAuthenticationConverter、JwtReactiveAuthenticationManager 将请求转为 Spring Security 的 Authentication；UserPrincipal 当前用户主体；SecurityConfig 配置需认证/放行的路径与反应式安全链。
 
 **logging** 请求链路与日志上下文。RequestIdFilter 为请求注入或传递请求 ID；MdcContextLifterConfiguration 将 Reactor Context 中的信息放入 MDC，便于日志追踪。
+
+## 命名规范
+
+通道相关概念采用 Entity / Spec / Channel 三层命名，避免 Config 与 Properties 语义混淆：
+
+- **Entity**：持久层实体，对应 MongoDB 文档。如 `ChannelEntity` 存储通道元数据（name、type、description）及 properties 原始 JSON。
+- **Spec**：运行时规格接口，描述通道发送所需的具体参数结构。如 `ChannelSpec`、`HttpEmailChannelSpec`，由 Entity 的 properties 解析得到，作为 Channel 的构造参数。
+- **Channel**：抽象发送器，持有一个 `ChannelSpec` 实现，执行 `send` 逻辑。
+
+数据流：ChannelEntity → properties Map → *ChannelSpecConverter.fromProperties() → ChannelSpec 实现类 → Channel(spec) → doSend()
 
 ## TODO
 

@@ -19,12 +19,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-public class WeComIMChannel extends Channel<WeComIMChannelProperties> {
+public class WeComIMChannel extends Channel<WeComIMChannelSpec> {
 
     private final WebClient client;
 
-    public WeComIMChannel(WeComIMChannelProperties config, WebClient webClient, ChannelDebugProperties debugProperties) {
-        super(config, debugProperties);
+    public WeComIMChannel(WeComIMChannelSpec spec, WebClient webClient, ChannelDebugProperties debugProperties) {
+        super(spec, debugProperties);
         this.client = webClient;
     }
 
@@ -60,7 +60,7 @@ public class WeComIMChannel extends Channel<WeComIMChannelProperties> {
             return MsgResp.failure("INVALID_REQUEST", "Message request is null");
         }
         try {
-            String webhookUrl = config.getWebhookUrl();
+            String webhookUrl = spec.getWebhookUrl();
             String content = buildMessageContent(request);
             content = truncateToUtf8Bytes(content, 2048);
 
@@ -77,8 +77,8 @@ public class WeComIMChannel extends Channel<WeComIMChannelProperties> {
                     .body(BodyInserters.fromValue(body))
                     .retrieve()
                     .bodyToMono(WechatWorkResponse.class)
-                    .timeout(config.getTimeout())
-                    .retryWhen(Retry.fixedDelay(config.getMaxRetries(), config.getRetryDelay())
+                    .timeout(spec.getTimeout())
+                    .retryWhen(Retry.fixedDelay(spec.getMaxRetries(), spec.getRetryDelay())
                             .filter(this::isRetryableException))
                     .onErrorResume(WebClientResponseException.class, ex ->
                             Mono.error(new RuntimeException(

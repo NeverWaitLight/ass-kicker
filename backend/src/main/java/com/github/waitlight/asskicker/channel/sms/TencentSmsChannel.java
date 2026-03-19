@@ -14,10 +14,10 @@ import com.tencentcloudapi.sms.v20210111.models.SendStatus;
 /**
  * 腾讯云短信通道，直接发送完整内容（单变量模板）。
  */
-public class TencentSmsChannel extends Channel<TencentSmsChannelProperties> {
+public class TencentSmsChannel extends Channel<TencentSmsChannelSpec> {
 
-    public TencentSmsChannel(TencentSmsChannelProperties config, ChannelDebugProperties debugProperties) {
-        super(config, debugProperties);
+    public TencentSmsChannel(TencentSmsChannelSpec spec, ChannelDebugProperties debugProperties) {
+        super(spec, debugProperties);
     }
 
     @Override
@@ -31,17 +31,17 @@ public class TencentSmsChannel extends Channel<TencentSmsChannelProperties> {
         }
         String content = request.getContent() != null ? request.getContent() : "";
         try {
-            Credential credential = new Credential(config.getSecretId(), config.getSecretKey());
-            SmsClient client = new SmsClient(credential, config.getRegion());
+            Credential credential = new Credential(spec.getSecretId(), spec.getSecretKey());
+            SmsClient client = new SmsClient(credential, spec.getRegion());
 
             SendSmsRequest sendReq = new SendSmsRequest();
             sendReq.setPhoneNumberSet(new String[]{phone});
-            sendReq.setSmsSdkAppId(config.getSdkAppId());
-            sendReq.setSignName(config.getSignName());
-            sendReq.setTemplateId(config.getTemplateId());
+            sendReq.setSmsSdkAppId(spec.getSdkAppId());
+            sendReq.setSignName(spec.getSignName());
+            sendReq.setTemplateId(spec.getTemplateId());
             sendReq.setTemplateParamSet(new String[]{content});
 
-            int retries = config.getMaxRetries();
+            int retries = spec.getMaxRetries();
             Exception lastEx = null;
             for (int i = 0; i <= retries; i++) {
                 try {
@@ -61,7 +61,7 @@ public class TencentSmsChannel extends Channel<TencentSmsChannelProperties> {
                     lastEx = e;
                     if (i < retries && isRetryable(e)) {
                         try {
-                            Thread.sleep(config.getRetryDelay().toMillis());
+                            Thread.sleep(spec.getRetryDelay().toMillis());
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
                             return MsgResp.failure("SEND_INTERRUPTED", ie.getMessage());

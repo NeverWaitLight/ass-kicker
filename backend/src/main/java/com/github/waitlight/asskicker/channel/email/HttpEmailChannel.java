@@ -17,12 +17,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-public class HttpEmailChannel extends Channel<HttpEmailChannelProperties> {
+public class HttpEmailChannel extends Channel<HttpEmailChannelSpec> {
 
     private final WebClient client;
 
-    public HttpEmailChannel(HttpEmailChannelProperties config, WebClient webClient, ChannelDebugProperties debugProperties) {
-        super(config, debugProperties);
+    public HttpEmailChannel(HttpEmailChannelSpec spec, WebClient webClient, ChannelDebugProperties debugProperties) {
+        super(spec, debugProperties);
         this.client = webClient;
     }
 
@@ -33,21 +33,21 @@ public class HttpEmailChannel extends Channel<HttpEmailChannelProperties> {
         }
         try {
             Map<String, Object> body = buildRequestBody(request);
-            String fullUri = UriComponentsBuilder.fromHttpUrl(config.getBaseUrl())
-                    .path(config.getPath().startsWith("/") ? config.getPath() : "/" + config.getPath())
+            String fullUri = UriComponentsBuilder.fromHttpUrl(spec.getBaseUrl())
+                    .path(spec.getPath().startsWith("/") ? spec.getPath() : "/" + spec.getPath())
                     .build()
                     .toUriString();
 
             String messageId = client
                     .post()
                     .uri(fullUri)
-                    .header(config.getApiKeyHeader(), config.getApiKey())
+                    .header(spec.getApiKeyHeader(), spec.getApiKey())
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(BodyInserters.fromValue(body))
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(config.getTimeout())
-                    .retryWhen(Retry.fixedDelay(config.getMaxRetries(), config.getRetryDelay())
+                    .timeout(spec.getTimeout())
+                    .retryWhen(Retry.fixedDelay(spec.getMaxRetries(), spec.getRetryDelay())
                             .filter(this::isRetryableException))
                     .onErrorResume(WebClientResponseException.class, ex ->
                             Mono.error(new RuntimeException(
@@ -68,8 +68,8 @@ public class HttpEmailChannel extends Channel<HttpEmailChannelProperties> {
         body.put("subject", String.valueOf(request.getSubject()));
         body.put("content", String.valueOf(request.getContent()));
 
-        if (config.getFrom() != null && !config.getFrom().isBlank()) {
-            body.put("from", config.getFrom());
+        if (spec.getFrom() != null && !spec.getFrom().isBlank()) {
+            body.put("from", spec.getFrom());
         }
 
         if (request.getAttributes() != null) {

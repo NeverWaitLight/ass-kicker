@@ -19,7 +19,7 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 @Document(collection = "t_channel_config")
-public class ChannelConfig {
+public class ChannelEntity {
 
     @Id
     private String id;

@@ -25,7 +25,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * 谷歌 FCM HTTP v1 推送通道。
  */
-public class FCMPushChannel extends Channel<FCMPushChannelProperties> {
+public class FCMPushChannel extends Channel<FCMPushChannelSpec> {
 
     private static final String FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
     private static final String FCM_SEND_URL = "https://fcm.googleapis.com/v1/projects/%s/messages:send";
@@ -33,8 +33,8 @@ public class FCMPushChannel extends Channel<FCMPushChannelProperties> {
     private final WebClient client;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public FCMPushChannel(FCMPushChannelProperties config, WebClient webClient, ChannelDebugProperties debugProperties) {
-        super(config, debugProperties);
+    public FCMPushChannel(FCMPushChannelSpec spec, WebClient webClient, ChannelDebugProperties debugProperties) {
+        super(spec, debugProperties);
         this.client = webClient;
     }
 
@@ -72,8 +72,8 @@ public class FCMPushChannel extends Channel<FCMPushChannelProperties> {
                     .body(BodyInserters.fromValue(body))
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(config.getTimeout())
-                    .retryWhen(Retry.fixedDelay(config.getMaxRetries(), config.getRetryDelay())
+                    .timeout(spec.getTimeout())
+                    .retryWhen(Retry.fixedDelay(spec.getMaxRetries(), spec.getRetryDelay())
                             .filter(this::isRetryableException))
                     .onErrorResume(WebClientResponseException.class, ex ->
                             Mono.error(new RuntimeException(
@@ -96,10 +96,10 @@ public class FCMPushChannel extends Channel<FCMPushChannelProperties> {
     }
 
     private String resolveProjectId() throws Exception {
-        if (config.getProjectId() != null && !config.getProjectId().isBlank()) {
-            return config.getProjectId();
+        if (spec.getProjectId() != null && !spec.getProjectId().isBlank()) {
+            return spec.getProjectId();
         }
-        JsonNode root = objectMapper.readTree(config.getServiceAccountJson());
+        JsonNode root = objectMapper.readTree(spec.getServiceAccountJson());
         JsonNode projectId = root.get("project_id");
         if (projectId != null && projectId.isTextual()) {
             return projectId.asText();
@@ -109,7 +109,7 @@ public class FCMPushChannel extends Channel<FCMPushChannelProperties> {
 
     private String getAccessToken() throws Exception {
         GoogleCredentials credentials = GoogleCredentials
-                .fromStream(new ByteArrayInputStream(config.getServiceAccountJson().getBytes(StandardCharsets.UTF_8)))
+                .fromStream(new ByteArrayInputStream(spec.getServiceAccountJson().getBytes(StandardCharsets.UTF_8)))
                 .createScoped(List.of(FCM_SCOPE));
         credentials.refreshIfExpired();
         return credentials.getAccessToken().getTokenValue();

@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.channel.im;
 
-import com.github.waitlight.asskicker.channel.ChannelProperties;
+import com.github.waitlight.asskicker.channel.ChannelSpec;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -11,15 +11,10 @@ import java.time.Duration;
 
 @Getter
 @Setter
-public class DingTalkIMChannelProperties implements ChannelProperties {
+public class WeComIMChannelSpec implements ChannelSpec {
 
     @NotBlank
     private String webhookUrl;
-
-    // access_token 从 webhookUrl 中提取，不需要用户单独配置
-    private String accessToken;
-
-    private String secret;
 
     @NotNull
     private Duration timeout = Duration.ofSeconds(5);

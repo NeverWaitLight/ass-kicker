@@ -18,12 +18,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-public class DingTalkIMChannel extends Channel<DingTalkIMChannelProperties> {
+public class DingTalkIMChannel extends Channel<DingTalkIMChannelSpec> {
 
     private final WebClient client;
 
-    public DingTalkIMChannel(DingTalkIMChannelProperties config, WebClient webClient, ChannelDebugProperties debugProperties) {
-        super(config, debugProperties);
+    public DingTalkIMChannel(DingTalkIMChannelSpec spec, WebClient webClient, ChannelDebugProperties debugProperties) {
+        super(spec, debugProperties);
         this.client = webClient;
     }
 
@@ -40,7 +40,7 @@ public class DingTalkIMChannel extends Channel<DingTalkIMChannelProperties> {
         }
         try {
             // 使用完整的 webhookUrl（已包含 access_token）
-            String webhookUrl = config.getWebhookUrl();
+            String webhookUrl = spec.getWebhookUrl();
 
             // 构建请求体：{"msgtype": "text", "text": {"content": "xxx"}}
             Map<String, Object> body = new HashMap<>();
@@ -56,8 +56,8 @@ public class DingTalkIMChannel extends Channel<DingTalkIMChannelProperties> {
                     .body(BodyInserters.fromValue(body))
                     .retrieve()
                     .bodyToMono(DingTalkResponse.class)
-                    .timeout(config.getTimeout())
-                    .retryWhen(Retry.fixedDelay(config.getMaxRetries(), config.getRetryDelay())
+                    .timeout(spec.getTimeout())
+                    .retryWhen(Retry.fixedDelay(spec.getMaxRetries(), spec.getRetryDelay())
                             .filter(this::isRetryableException))
                     .onErrorResume(WebClientResponseException.class, ex ->
                             Mono.error(new RuntimeException(

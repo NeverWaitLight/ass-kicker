@@ -14,21 +14,21 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
-public class SmtpEmailChannel extends Channel<SmtpEmailChannelProperties> {
+public class SmtpEmailChannel extends Channel<SmtpEmailChannelSpec> {
 
     private final JavaMailSender mailSender;
 
-    public SmtpEmailChannel(SmtpEmailChannelProperties config, ChannelDebugProperties debugProperties) {
-        super(config, debugProperties);
-        this.mailSender = debugProperties.isEnabled() ? null : buildJavaMailChannel(config);
+    public SmtpEmailChannel(SmtpEmailChannelSpec spec, ChannelDebugProperties debugProperties) {
+        super(spec, debugProperties);
+        this.mailSender = debugProperties.isEnabled() ? null : buildJavaMailChannel(spec);
     }
 
-    private JavaMailSender buildJavaMailChannel(SmtpEmailChannelProperties config) {
+    private JavaMailSender buildJavaMailChannel(SmtpEmailChannelSpec spec) {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
-        mailSender.setHost(config.getHost());
-        mailSender.setPort(config.getPort());
-        mailSender.setUsername(config.getUsername());
-        mailSender.setPassword(config.getPassword());
+        mailSender.setHost(spec.getHost());
+        mailSender.setPort(spec.getPort());
+        mailSender.setUsername(spec.getUsername());
+        mailSender.setPassword(spec.getPassword());
         String protocol = "smtp";
         mailSender.setProtocol(protocol);
         mailSender.setDefaultEncoding(StandardCharsets.UTF_8.name());
@@ -36,12 +36,12 @@ public class SmtpEmailChannel extends Channel<SmtpEmailChannelProperties> {
         Properties javaMailProperties = mailSender.getJavaMailProperties();
         javaMailProperties.put("mail.transport.protocol", protocol);
         javaMailProperties.put("mail.smtp.auth", "true");
-        javaMailProperties.put("mail.smtp.connectiontimeout", String.valueOf(config.getConnectionTimeout().toMillis()));
-        javaMailProperties.put("mail.smtp.timeout", String.valueOf(config.getReadTimeout().toMillis()));
-        javaMailProperties.put("mail.smtp.writetimeout", String.valueOf(config.getReadTimeout().toMillis()));
-        if (config.isSslEnabled()) {
+        javaMailProperties.put("mail.smtp.connectiontimeout", String.valueOf(spec.getConnectionTimeout().toMillis()));
+        javaMailProperties.put("mail.smtp.timeout", String.valueOf(spec.getReadTimeout().toMillis()));
+        javaMailProperties.put("mail.smtp.writetimeout", String.valueOf(spec.getReadTimeout().toMillis()));
+        if (spec.isSslEnabled()) {
             javaMailProperties.put("mail.smtp.ssl.enable", "true");
-            javaMailProperties.put("mail.smtp.ssl.trust", config.getHost());
+            javaMailProperties.put("mail.smtp.ssl.trust", spec.getHost());
         }
         return mailSender;
     }
@@ -55,7 +55,7 @@ public class SmtpEmailChannel extends Channel<SmtpEmailChannelProperties> {
         int attempts = 0;
         Exception lastException = null;
 
-        while (attempts <= config.getMaxRetries()) {
+        while (attempts <= spec.getMaxRetries()) {
             try {
                 MimeMessage message = mailSender.createMimeMessage();
                 MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
@@ -68,9 +68,9 @@ public class SmtpEmailChannel extends Channel<SmtpEmailChannelProperties> {
             } catch (MailException | MessagingException ex) {
                 lastException = ex;
                 attempts++;
-                if (attempts <= config.getMaxRetries()) {
+                if (attempts <= spec.getMaxRetries()) {
                     try {
-                        Thread.sleep(config.getRetryDelay().toMillis());
+                        Thread.sleep(spec.getRetryDelay().toMillis());
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                         return MsgResp.failure("MAIL_SEND_INTERRUPTED", ie.getMessage());
@@ -83,10 +83,10 @@ public class SmtpEmailChannel extends Channel<SmtpEmailChannelProperties> {
     }
 
     private String resolveFrom() {
-        if (config.getFrom() != null && !config.getFrom().isBlank()) {
-            return config.getFrom();
+        if (spec.getFrom() != null && !spec.getFrom().isBlank()) {
+            return spec.getFrom();
         }
-        return config.getUsername();
+        return spec.getUsername();
     }
 
 }

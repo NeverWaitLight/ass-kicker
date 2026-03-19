@@ -4,7 +4,7 @@ import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
 import com.github.waitlight.asskicker.model.*;
-import com.github.waitlight.asskicker.model.ChannelConfig;
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.service.SendRecordService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -76,16 +76,16 @@ public class SendTaskExecutor implements DisposableBean {
                 return;
             }
 
-            ChannelConfig channelConfigEntity;
+            ChannelEntity channelEntity;
             try {
-                channelConfigEntity = channelManager.selectChannel(task.getTemplateCode()).block();
+                channelEntity = channelManager.selectChannel(task.getTemplateCode()).block();
             } catch (Exception ex) {
                 lastErrorCode = "CHANNEL_NOT_FOUND";
                 lastErrorMessage = messageOrDefault(ex.getMessage(), "No available channel");
                 markRecipientsFailed(task, renderedContent, null, failureRecipients, lastErrorCode, lastErrorMessage);
                 return;
             }
-            if (channelConfigEntity == null) {
+            if (channelEntity == null) {
                 lastErrorCode = "CHANNEL_NOT_FOUND";
                 lastErrorMessage = "No available channel for template: " + task.getTemplateCode();
                 markRecipientsFailed(task, renderedContent, null, failureRecipients, lastErrorCode, lastErrorMessage);
@@ -94,23 +94,23 @@ public class SendTaskExecutor implements DisposableBean {
             if (recipients.isEmpty()) {
                 lastErrorCode = "RECIPIENTS_EMPTY";
                 lastErrorMessage = "No valid recipients provided";
-                markRecipientsFailed(task, renderedContent, channelConfigEntity, failureRecipients, lastErrorCode,
+                markRecipientsFailed(task, renderedContent, channelEntity, failureRecipients, lastErrorCode,
                         lastErrorMessage);
                 return;
             }
 
             Channel<?> sendChannel = channelManager
-                    .resolveChannel(channelConfigEntity);
+                    .resolveChannel(channelEntity);
             if (sendChannel == null) {
                 lastErrorCode = "CHANNEL_CREATE_FAILED";
-                lastErrorMessage = "Unsupported channel type: " + channelConfigEntity.getType();
-                markRecipientsFailed(task, renderedContent, channelConfigEntity, failureRecipients, lastErrorCode,
+                lastErrorMessage = "Unsupported channel type: " + channelEntity.getType();
+                markRecipientsFailed(task, renderedContent, channelEntity, failureRecipients, lastErrorCode,
                         lastErrorMessage);
                 return;
             }
 
             for (String recipient : recipients) {
-                processRecipient(task, renderedContent, channelConfigEntity, sendChannel, recipient);
+                processRecipient(task, renderedContent, channelEntity, sendChannel, recipient);
             }
         } catch (Exception ex) {
             lastErrorCode = "CONSUMER_ERROR";
@@ -120,21 +120,21 @@ public class SendTaskExecutor implements DisposableBean {
     }
 
     private boolean processRecipient(SendTask task, String renderedContent,
-            ChannelConfig channelConfigEntity,
+            ChannelEntity channelEntity,
             Channel<?> sendChannel,
             String recipient) {
         long sendStartedAt = Instant.now().toEpochMilli();
-        MsgResp response = sendMessage(task, renderedContent, channelConfigEntity, sendChannel, recipient,
+        MsgResp response = sendMessage(task, renderedContent, channelEntity, sendChannel, recipient,
                 sendStartedAt);
         SendRecordStatus finalStatus = response.isSuccess() ? SendRecordStatus.SUCCESS : SendRecordStatus.FAILED;
         long sentAt = Instant.now().toEpochMilli();
-        saveFinalRecord(task, renderedContent, channelConfigEntity, recipient, finalStatus,
+        saveFinalRecord(task, renderedContent, channelEntity, recipient, finalStatus,
                 response.getErrorCode(), response.getErrorMessage(), sentAt, sendStartedAt);
         return response.isSuccess();
     }
 
     private MsgResp sendMessage(SendTask task, String renderedContent,
-            ChannelConfig channelConfigEntity,
+            ChannelEntity channelEntity,
             Channel<?> sendChannel,
             String recipient,
             long sendStartedAt) {
@@ -142,7 +142,7 @@ public class SendTaskExecutor implements DisposableBean {
                 .recipient(recipient)
                 .subject("")
                 .content(renderedContent)
-                .attributes(Map.of("senderType", channelConfigEntity.getType().name()))
+                .attributes(Map.of("senderType", channelEntity.getType().name()))
                 .build();
         MsgResp response;
         try {
@@ -155,20 +155,20 @@ public class SendTaskExecutor implements DisposableBean {
 
     private void markRecipientsFailed(SendTask task,
             String renderedContent,
-            ChannelConfig channelConfigEntity,
+            ChannelEntity channelEntity,
             List<String> recipients,
             String errorCode,
             String errorMessage) {
         for (String recipient : recipients) {
             long failedAt = Instant.now().toEpochMilli();
-            saveFinalRecord(task, renderedContent, channelConfigEntity, recipient, SendRecordStatus.FAILED,
+            saveFinalRecord(task, renderedContent, channelEntity, recipient, SendRecordStatus.FAILED,
                     errorCode, errorMessage, failedAt, 0L);
         }
     }
 
     private void saveFinalRecord(SendTask task,
             String renderedContent,
-            ChannelConfig channelConfigEntity,
+            ChannelEntity channelEntity,
             String recipient,
             SendRecordStatus status,
             String errorCode,
@@ -176,7 +176,7 @@ public class SendTaskExecutor implements DisposableBean {
             long sentAt,
             long startedAt) {
         try {
-            SendRecord record = buildFinalRecord(task, renderedContent, channelConfigEntity, recipient,
+            SendRecord record = buildFinalRecord(task, renderedContent, channelEntity, recipient,
                     status, errorCode, errorMessage, sentAt);
             sendRecordService.writeRecord(record);
         } catch (Exception ex) {
@@ -186,20 +186,20 @@ public class SendTaskExecutor implements DisposableBean {
         }
     }
 
-    private SendRecord buildFinalRecord(SendTask task, String renderedContent, ChannelConfig channelConfigEntity,
+    private SendRecord buildFinalRecord(SendTask task, String renderedContent, ChannelEntity channelEntity,
             String recipient, SendRecordStatus status, String errorCode, String errorMessage, long sentAt) {
         SendRecord record = new SendRecord();
         record.setTaskId(task.getTaskId());
         record.setTemplateCode(task.getTemplateCode());
         record.setLanguageCode(task.getLanguageCode());
         record.setParams(task.getParams());
-        record.setChannelId(channelConfigEntity != null ? channelConfigEntity.getId() : null);
+        record.setChannelId(channelEntity != null ? channelEntity.getId() : null);
         record.setRecipients(task.getRecipients());
         record.setRecipient(recipient);
         record.setSubmittedAt(task.getSubmittedAt());
         record.setRenderedContent(renderedContent);
-        record.setChannelType(channelConfigEntity != null ? channelConfigEntity.getType() : null);
-        record.setChannelName(channelConfigEntity != null ? channelConfigEntity.getName() : null);
+        record.setChannelType(channelEntity != null ? channelEntity.getType() : null);
+        record.setChannelName(channelEntity != null ? channelEntity.getName() : null);
         record.setStatus(status);
         record.setErrorCode(status == SendRecordStatus.SUCCESS ? null : errorCode);
         record.setErrorMessage(status == SendRecordStatus.SUCCESS ? null : errorMessage);

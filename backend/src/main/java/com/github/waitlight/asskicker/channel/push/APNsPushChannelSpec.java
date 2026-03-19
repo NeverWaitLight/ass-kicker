@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.channel.push;
 
-import com.github.waitlight.asskicker.channel.ChannelProperties;
+import com.github.waitlight.asskicker.channel.ChannelSpec;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -11,18 +11,25 @@ import java.time.Duration;
 
 @Getter
 @Setter
-public class FCMPushChannelProperties implements ChannelProperties {
+public class APNsPushChannelSpec implements ChannelSpec {
 
-    /**
-     * 服务账号 JSON 文件路径或 JSON 字符串内容
-     */
     @NotBlank
-    private String serviceAccountJson;
+    private String teamId;
+
+    @NotBlank
+    private String keyId;
+
+    @NotBlank
+    private String bundleId;
 
     /**
-     * 可选，若未设置则从 serviceAccountJson 中解析 project_id
+     * p8 私钥内容（推荐）或通过 p8KeyPath 指定文件路径
      */
-    private String projectId;
+    private String p8KeyContent;
+
+    private String p8KeyPath;
+
+    private boolean production = true;
 
     @NotNull
     private Duration timeout = Duration.ofSeconds(10);

@@ -29,7 +29,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * 苹果 APNs HTTP/2 推送通道。
  */
-public class APNsPushChannel extends Channel<APNsPushChannelProperties> {
+public class APNsPushChannel extends Channel<APNsPushChannelSpec> {
 
     private static final String APNS_PRODUCTION_HOST = "api.push.apple.com";
     private static final String APNS_SANDBOX_HOST = "api.sandbox.push.apple.com";
@@ -37,8 +37,8 @@ public class APNsPushChannel extends Channel<APNsPushChannelProperties> {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public APNsPushChannel(APNsPushChannelProperties config, ChannelDebugProperties debugProperties) {
-        super(config, debugProperties);
+    public APNsPushChannel(APNsPushChannelSpec spec, ChannelDebugProperties debugProperties) {
+        super(spec, debugProperties);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class APNsPushChannel extends Channel<APNsPushChannelProperties> {
         try {
             PrivateKey key = loadPrivateKey();
             String jwt = buildJwt(key);
-            String host = config.isProduction() ? APNS_PRODUCTION_HOST : APNS_SANDBOX_HOST;
+            String host = spec.isProduction() ? APNS_PRODUCTION_HOST : APNS_SANDBOX_HOST;
             String url = "https://" + host + APNS_PATH_PREFIX + token;
 
             Map<String, Object> aps = new HashMap<>();
@@ -75,15 +75,15 @@ public class APNsPushChannel extends Channel<APNsPushChannelProperties> {
             HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("authorization", "bearer " + jwt)
-                    .header("apns-topic", config.getBundleId())
+                    .header("apns-topic", spec.getBundleId())
                     .header("apns-push-type", "alert")
                     .header("apns-priority", "10")
                     .header("Content-Type", "application/json")
-                    .timeout(config.getTimeout())
+                    .timeout(spec.getTimeout())
                     .POST(HttpRequest.BodyPublishers.ofByteArray(bodyBytes))
                     .build();
 
-            int retries = config.getMaxRetries();
+            int retries = spec.getMaxRetries();
             Exception lastEx = null;
             for (int i = 0; i <= retries; i++) {
                 try {
@@ -100,7 +100,7 @@ public class APNsPushChannel extends Channel<APNsPushChannelProperties> {
                     lastEx = e;
                     if (i < retries && isRetryable(e)) {
                         try {
-                            Thread.sleep(config.getRetryDelay().toMillis());
+                            Thread.sleep(spec.getRetryDelay().toMillis());
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
                             return MsgResp.failure("SEND_INTERRUPTED", ie.getMessage());
@@ -119,9 +119,9 @@ public class APNsPushChannel extends Channel<APNsPushChannelProperties> {
     }
 
     private PrivateKey loadPrivateKey() throws Exception {
-        String content = config.getP8KeyContent();
+        String content = spec.getP8KeyContent();
         if (content == null || content.isBlank()) {
-            String path = config.getP8KeyPath();
+            String path = spec.getP8KeyPath();
             if (path == null || path.isBlank()) {
                 throw new IllegalStateException("APNs p8KeyContent or p8KeyPath is required");
             }
@@ -139,8 +139,8 @@ public class APNsPushChannel extends Channel<APNsPushChannelProperties> {
     private String buildJwt(PrivateKey key) {
         long now = System.currentTimeMillis() / 1000;
         return Jwts.builder()
-                .setHeaderParam("kid", config.getKeyId())
-                .setIssuer(config.getTeamId())
+                .setHeaderParam("kid", spec.getKeyId())
+                .setIssuer(spec.getTeamId())
                 .setIssuedAt(new Date(now * 1000))
                 .setExpiration(new Date((now + 3600) * 1000))
                 .signWith(key, SignatureAlgorithm.ES256)

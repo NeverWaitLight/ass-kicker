@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.channel.email;
 
-import com.github.waitlight.asskicker.channel.ChannelProperties;
+import com.github.waitlight.asskicker.channel.ChannelSpec;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -11,24 +11,29 @@ import java.time.Duration;
 
 @Getter
 @Setter
-public class HttpEmailChannelProperties implements ChannelProperties {
+public class SmtpEmailChannelSpec implements ChannelSpec {
 
     @NotBlank
-    private String baseUrl;
+    private String host;
+
+    @Min(1)
+    private int port = 465;
 
     @NotBlank
-    private String path;
+    private String username;
 
     @NotBlank
-    private String apiKeyHeader = "Authorization";
+    private String password;
 
-    @NotBlank
-    private String apiKey;
+    private boolean sslEnabled = true;
 
     private String from;
 
     @NotNull
-    private Duration timeout = Duration.ofSeconds(5);
+    private Duration connectionTimeout = Duration.ofSeconds(5);
+
+    @NotNull
+    private Duration readTimeout = Duration.ofSeconds(10);
 
     @Min(0)
     private int maxRetries = 3;

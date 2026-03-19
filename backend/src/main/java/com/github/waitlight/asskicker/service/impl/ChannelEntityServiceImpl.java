@@ -9,12 +9,12 @@ import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.dto.channel.TestSendRequest;
-import com.github.waitlight.asskicker.model.ChannelConfig;
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.security.UserPrincipal;
-import com.github.waitlight.asskicker.repository.ChannelConfigRepository;
-import com.github.waitlight.asskicker.service.ChannelConfigService;
+import com.github.waitlight.asskicker.repository.ChannelEntityRepository;
+import com.github.waitlight.asskicker.service.ChannelEntityService;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,28 +34,28 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-public class ChannelConfigServiceImpl implements ChannelConfigService {
+public class ChannelEntityServiceImpl implements ChannelEntityService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ChannelConfigServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(ChannelEntityServiceImpl.class);
     private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE =
             new TypeReference<>() {
             };
 
-    private final ChannelConfigRepository channelConfigRepository;
+    private final ChannelEntityRepository channelEntityRepository;
     private final ObjectMapper objectMapper;
     private final ChannelFactory channelFactory;
     private final CaffeineCacheConfig caffeineCacheConfig;
 
-    private AsyncLoadingCache<String, Optional<ChannelConfig>> channelByIdCache;
-    private AsyncLoadingCache<String, List<ChannelConfig>> channelListCache;
+    private AsyncLoadingCache<String, Optional<ChannelEntity>> channelByIdCache;
+    private AsyncLoadingCache<String, List<ChannelEntity>> channelListCache;
 
     private static final String ALL_CHANNELS_KEY = "all";
 
-    public ChannelConfigServiceImpl(ChannelConfigRepository channelConfigRepository,
+    public ChannelEntityServiceImpl(ChannelEntityRepository channelEntityRepository,
                                     ObjectMapper objectMapper,
                                     ChannelFactory channelFactory,
                                     CaffeineCacheConfig caffeineCacheConfig) {
-        this.channelConfigRepository = channelConfigRepository;
+        this.channelEntityRepository = channelEntityRepository;
         this.objectMapper = objectMapper;
         this.channelFactory = channelFactory;
         this.caffeineCacheConfig = caffeineCacheConfig;
@@ -64,64 +64,64 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
     @PostConstruct
     void initCaches() {
         channelByIdCache = caffeineCacheConfig.buildCache((id, executor) ->
-                channelConfigRepository.findById(id)
+                channelEntityRepository.findById(id)
                         .map(this::enrichChannel)
                         .map(Optional::of)
                         .defaultIfEmpty(Optional.empty())
                         .toFuture());
 
         channelListCache = caffeineCacheConfig.buildCache((key, executor) ->
-                channelConfigRepository.findAll()
+                channelEntityRepository.findAll()
                         .map(this::enrichChannel)
                         .collectList()
                         .toFuture());
     }
 
     @Override
-    public Mono<ChannelConfig> createChannel(ChannelConfig channelConfig) {
-        ChannelConfig toSave = new ChannelConfig();
+    public Mono<ChannelEntity> createChannel(ChannelEntity channelEntity) {
+        ChannelEntity toSave = new ChannelEntity();
         toSave.setId(null);
-        toSave.setName(channelConfig.getName());
-        toSave.setType(channelConfig.getType());
-        toSave.setDescription(channelConfig.getDescription());
+        toSave.setName(channelEntity.getName());
+        toSave.setType(channelEntity.getType());
+        toSave.setDescription(channelEntity.getDescription());
         long timestamp = Instant.now().toEpochMilli();
         toSave.setCreatedAt(timestamp);
         toSave.setUpdatedAt(timestamp);
-        Map<String, Object> properties = normalizeProperties(channelConfig.getProperties());
+        Map<String, Object> properties = normalizeProperties(channelEntity.getProperties());
         toSave.setPropertiesJson(writeProperties(properties));
-        return channelConfigRepository.save(toSave)
+        return channelEntityRepository.save(toSave)
                 .map(this::enrichChannel)
                 .doOnSuccess(saved -> channelListCache.synchronous().invalidate(ALL_CHANNELS_KEY));
     }
 
     @Override
-    public Mono<ChannelConfig> getChannelById(String id) {
+    public Mono<ChannelEntity> getChannelById(String id) {
         return Mono.fromFuture(channelByIdCache.get(id))
                 .flatMap(opt -> opt.map(Mono::just).orElseGet(Mono::empty));
     }
 
     @Override
-    public Flux<ChannelConfig> listChannels() {
+    public Flux<ChannelEntity> listChannels() {
         return Mono.fromFuture(channelListCache.get(ALL_CHANNELS_KEY))
                 .flatMapMany(Flux::fromIterable);
     }
 
     @Override
-    public Flux<ChannelConfig> findByTypes(List<ChannelType> types) {
+    public Flux<ChannelEntity> findByTypes(List<ChannelType> types) {
         return listChannels().filter(ch -> types.contains(ch.getType()));
     }
 
     @Override
-    public Mono<ChannelConfig> updateChannel(String id, ChannelConfig channelConfig) {
-        return channelConfigRepository.findById(id)
+    public Mono<ChannelEntity> updateChannel(String id, ChannelEntity channelEntity) {
+        return channelEntityRepository.findById(id)
                 .flatMap(existing -> {
-                    existing.setName(channelConfig.getName());
-                    existing.setType(channelConfig.getType());
-                    existing.setDescription(channelConfig.getDescription());
+                    existing.setName(channelEntity.getName());
+                    existing.setType(channelEntity.getType());
+                    existing.setDescription(channelEntity.getDescription());
                     existing.setUpdatedAt(Instant.now().toEpochMilli());
-                    Map<String, Object> properties = normalizeProperties(channelConfig.getProperties());
+                    Map<String, Object> properties = normalizeProperties(channelEntity.getProperties());
                     existing.setPropertiesJson(writeProperties(properties));
-                    return channelConfigRepository.save(existing)
+                    return channelEntityRepository.save(existing)
                             .doOnSuccess(saved -> {
                                 channelByIdCache.synchronous().invalidate(id);
                                 channelListCache.synchronous().invalidate(ALL_CHANNELS_KEY);
@@ -132,7 +132,7 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
 
     @Override
     public Mono<Void> deleteChannel(String id) {
-        return channelConfigRepository.deleteById(id)
+        return channelEntityRepository.deleteById(id)
                 .doOnSuccess(v -> {
                     channelByIdCache.synchronous().invalidate(id);
                     channelListCache.synchronous().invalidate(ALL_CHANNELS_KEY);
@@ -236,10 +236,10 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
         }
     }
 
-    private ChannelConfig enrichChannel(ChannelConfig channelConfig) {
-        Map<String, Object> properties = readProperties(channelConfig.getPropertiesJson());
-        channelConfig.setProperties(properties);
-        return channelConfig;
+    private ChannelEntity enrichChannel(ChannelEntity channelEntity) {
+        Map<String, Object> properties = readProperties(channelEntity.getPropertiesJson());
+        channelEntity.setProperties(properties);
+        return channelEntity;
     }
 
     private Map<String, Object> normalizeProperties(Map<String, Object> properties) {

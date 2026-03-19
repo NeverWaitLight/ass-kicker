@@ -2,9 +2,9 @@ package com.github.waitlight.asskicker.manager;
 
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelFactory;
-import com.github.waitlight.asskicker.model.ChannelConfig;
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.service.ChannelConfigService;
+import com.github.waitlight.asskicker.service.ChannelEntityService;
 import com.github.waitlight.asskicker.service.TemplateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,12 +24,12 @@ import java.util.concurrent.ThreadLocalRandom;
 public class ChannelManager implements DisposableBean {
 
     private final TemplateService templateService;
-    private final ChannelConfigService channelConfigService;
+    private final ChannelEntityService channelEntityService;
     private final ChannelFactory channelFactory;
 
     private final ConcurrentHashMap<String, Channel<?>> channelCache = new ConcurrentHashMap<>();
 
-    public Mono<ChannelConfig> selectChannel(String templateCode) {
+    public Mono<ChannelEntity> selectChannel(String templateCode) {
         return templateService.findByCode(templateCode)
                 .switchIfEmpty(Mono.error(
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Template not found: " + templateCode)))
@@ -39,21 +39,21 @@ public class ChannelManager implements DisposableBean {
                         return Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND,
                                 "Template has no applicable channel types: " + templateCode));
                     }
-                    return channelConfigService.findByTypes(types)
+                    return channelEntityService.findByTypes(types)
                             .collectList()
                             .flatMap(channels -> {
                                 if (channels.isEmpty()) {
                                     return Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND,
                                             "No available channel for types: " + types));
                                 }
-                                ChannelConfig selected = channels.get(ThreadLocalRandom.current().nextInt(channels.size()));
+                                ChannelEntity selected = channels.get(ThreadLocalRandom.current().nextInt(channels.size()));
                                 return Mono.just(selected);
                             });
                 });
     }
 
-    public Channel<?> resolveChannel(ChannelConfig channelConfig) {
-        return channelCache.computeIfAbsent(channelConfig.getId(), id -> channelFactory.create(channelConfig));
+    public Channel<?> resolveChannel(ChannelEntity channelEntity) {
+        return channelCache.computeIfAbsent(channelEntity.getId(), id -> channelFactory.create(channelEntity));
     }
 
     @Override

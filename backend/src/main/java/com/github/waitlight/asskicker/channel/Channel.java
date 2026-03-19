@@ -4,13 +4,13 @@ import com.github.waitlight.asskicker.config.ChannelDebugProperties;
 
 import java.util.UUID;
 
-public abstract class Channel<C extends ChannelProperties> {
+public abstract class Channel<C extends ChannelSpec> {
 
-    protected final C config;
+    protected final C spec;
     protected final ChannelDebugProperties debugProperties;
 
-    public Channel(C config, ChannelDebugProperties debugProperties) {
-        this.config = config;
+    public Channel(C spec, ChannelDebugProperties debugProperties) {
+        this.spec = spec;
         this.debugProperties = debugProperties;
     }
 

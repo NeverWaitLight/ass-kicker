@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.channel.sms;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.ChannelProperties;
+import com.github.waitlight.asskicker.channel.ChannelSpec;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.springframework.http.HttpStatus;
@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
-public class SmsChannelConfigConverter {
+public class SmsChannelSpecConverter {
 
     private static final Set<String> ALIYUN_KEYS = Set.of(
             "accessKeyId", "accessKeySecret", "signName", "templateCode", "templateParamKey",
@@ -31,19 +31,19 @@ public class SmsChannelConfigConverter {
     private final ObjectMapper objectMapper;
     private final Validator validator;
 
-    public SmsChannelConfigConverter(ObjectMapper objectMapper, Validator validator) {
+    public SmsChannelSpecConverter(ObjectMapper objectMapper, Validator validator) {
         this.objectMapper = objectMapper;
         this.validator = validator;
     }
 
-    public ChannelProperties fromProperties(Map<String, Object> properties) {
+    public ChannelSpec fromProperties(Map<String, Object> properties) {
         Map<String, Object> safe = normalizeProperties(properties);
         SmsChannelType smsType = parseProtocol(resolveProtocolValue(safe));
 
         if (smsType == SmsChannelType.ALIYUN) {
             Map<String, Object> aliyunValues = resolveProtocolValues(safe, ALIYUN_KEYS, "aliyun", "ALIYUN");
             normalizeDurationValues(aliyunValues, "timeout", "retryDelay");
-            AliyunSmsChannelProperties aliyun = mapToConfig(aliyunValues, AliyunSmsChannelProperties.class, "ALIYUN");
+            AliyunSmsChannelSpec aliyun = mapToConfig(aliyunValues, AliyunSmsChannelSpec.class, "ALIYUN");
             ensureNonNegativeRetries(aliyun.getMaxRetries(), "ALIYUN");
             validateConfig(aliyun, "ALIYUN");
             return aliyun;
@@ -52,7 +52,7 @@ public class SmsChannelConfigConverter {
         if (smsType == SmsChannelType.TENCENT) {
             Map<String, Object> tencentValues = resolveProtocolValues(safe, TENCENT_KEYS, "tencent", "TENCENT");
             normalizeDurationValues(tencentValues, "timeout", "retryDelay");
-            TencentSmsChannelProperties tencent = mapToConfig(tencentValues, TencentSmsChannelProperties.class, "TENCENT");
+            TencentSmsChannelSpec tencent = mapToConfig(tencentValues, TencentSmsChannelSpec.class, "TENCENT");
             ensureNonNegativeRetries(tencent.getMaxRetries(), "TENCENT");
             validateConfig(tencent, "TENCENT");
             return tencent;

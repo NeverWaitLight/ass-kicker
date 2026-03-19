@@ -16,10 +16,10 @@ import java.util.Map;
 /**
  * 阿里云短信通道，直接发送完整内容（单变量模板）。
  */
-public class AliyunSmsChannel extends Channel<AliyunSmsChannelProperties> {
+public class AliyunSmsChannel extends Channel<AliyunSmsChannelSpec> {
 
-    public AliyunSmsChannel(AliyunSmsChannelProperties config, ChannelDebugProperties debugProperties) {
-        super(config, debugProperties);
+    public AliyunSmsChannel(AliyunSmsChannelSpec spec, ChannelDebugProperties debugProperties) {
+        super(spec, debugProperties);
     }
 
     @Override
@@ -34,27 +34,27 @@ public class AliyunSmsChannel extends Channel<AliyunSmsChannelProperties> {
         String content = request.getContent() != null ? request.getContent() : "";
         try {
             Config apiConfig = new Config()
-                    .setAccessKeyId(config.getAccessKeyId())
-                    .setAccessKeySecret(config.getAccessKeySecret())
-                    .setRegionId(config.getRegionId())
+                    .setAccessKeyId(spec.getAccessKeyId())
+                    .setAccessKeySecret(spec.getAccessKeySecret())
+                    .setRegionId(spec.getRegionId())
                     .setEndpoint("dysmsapi.aliyuncs.com");
-            apiConfig.setReadTimeout((int) config.getTimeout().toMillis());
-            apiConfig.setConnectTimeout((int) Math.min(10000, config.getTimeout().toMillis()));
+            apiConfig.setReadTimeout((int) spec.getTimeout().toMillis());
+            apiConfig.setConnectTimeout((int) Math.min(10000, spec.getTimeout().toMillis()));
             Client client = new Client(apiConfig);
 
-            String templateParamKey = config.getTemplateParamKey() != null && !config.getTemplateParamKey().isBlank()
-                    ? config.getTemplateParamKey() : "content";
+            String templateParamKey = spec.getTemplateParamKey() != null && !spec.getTemplateParamKey().isBlank()
+                    ? spec.getTemplateParamKey() : "content";
             Map<String, String> paramMap = new HashMap<>();
             paramMap.put(templateParamKey, content);
             String templateParamJson = com.aliyun.teautil.Common.toJSONString(paramMap);
 
             SendSmsRequest sendReq = new SendSmsRequest()
                     .setPhoneNumbers(phone)
-                    .setSignName(config.getSignName())
-                    .setTemplateCode(config.getTemplateCode())
+                    .setSignName(spec.getSignName())
+                    .setTemplateCode(spec.getTemplateCode())
                     .setTemplateParam(templateParamJson);
 
-            int retries = config.getMaxRetries();
+            int retries = spec.getMaxRetries();
             Exception lastEx = null;
             for (int i = 0; i <= retries; i++) {
                 try {
@@ -73,7 +73,7 @@ public class AliyunSmsChannel extends Channel<AliyunSmsChannelProperties> {
                     lastEx = e;
                     if (i < retries && isRetryable(e)) {
                         try {
-                            Thread.sleep(config.getRetryDelay().toMillis());
+                            Thread.sleep(spec.getRetryDelay().toMillis());
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
                             return MsgResp.failure("SEND_INTERRUPTED", ie.getMessage());
