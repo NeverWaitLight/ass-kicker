@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.channel.push;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.ChannelProperty;
+import com.github.waitlight.asskicker.channel.ChannelProperties;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.springframework.http.HttpStatus;
@@ -35,14 +35,14 @@ public class PushChannelConfigConverter {
         this.validator = validator;
     }
 
-    public ChannelProperty fromProperties(Map<String, Object> properties) {
+    public ChannelProperties fromProperties(Map<String, Object> properties) {
         Map<String, Object> safe = normalizeProperties(properties);
         PushChannelType pushType = parseProtocol(resolveProtocolValue(safe));
 
         if (pushType == PushChannelType.APNS) {
             Map<String, Object> apnsValues = resolveProtocolValues(safe, APNS_KEYS, "apns", "APNS");
             normalizeDurationValues(apnsValues, "timeout", "retryDelay");
-            APNsPushChannelProperty apns = mapToConfig(apnsValues, APNsPushChannelProperty.class, "APNS");
+            APNsPushChannelProperties apns = mapToConfig(apnsValues, APNsPushChannelProperties.class, "APNS");
             ensureNonNegativeRetries(apns.getMaxRetries(), "APNS");
             validateApnsBusinessRules(apns);
             validateConfig(apns, "APNS");
@@ -52,7 +52,7 @@ public class PushChannelConfigConverter {
         if (pushType == PushChannelType.FCM) {
             Map<String, Object> fcmValues = resolveProtocolValues(safe, FCM_KEYS, "fcm", "FCM");
             normalizeDurationValues(fcmValues, "timeout", "retryDelay");
-            FCMPushChannelProperty fcm = mapToConfig(fcmValues, FCMPushChannelProperty.class, "FCM");
+            FCMPushChannelProperties fcm = mapToConfig(fcmValues, FCMPushChannelProperties.class, "FCM");
             ensureNonNegativeRetries(fcm.getMaxRetries(), "FCM");
             validateConfig(fcm, "FCM");
             return fcm;
@@ -132,7 +132,7 @@ public class PushChannelConfigConverter {
         }
     }
 
-    private void validateApnsBusinessRules(APNsPushChannelProperty apns) {
+    private void validateApnsBusinessRules(APNsPushChannelProperties apns) {
         String p8KeyContent = apns.getP8KeyContent();
         String p8KeyPath = apns.getP8KeyPath();
         boolean contentBlank = p8KeyContent == null || p8KeyContent.trim().isEmpty();

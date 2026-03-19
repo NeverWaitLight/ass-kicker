@@ -1,5 +1,5 @@
 package com.github.waitlight.asskicker.channel;
 
-public interface ChannelProperty {
+public interface ChannelProperties {
 
 }

@@ -1,8 +1,8 @@
 package com.github.waitlight.asskicker.channel.im;
 
-import com.github.waitlight.asskicker.channel.ChannelDebugSimulator;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
+import com.github.waitlight.asskicker.config.ChannelDebugProperties;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.http.MediaType;
@@ -18,15 +18,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-public class WeComIMChannel extends IMChannel<WeComIMChannelProperty> {
+public class WeComIMChannel extends IMChannel<WeComIMChannelProperties> {
 
     private final WebClient client;
-    private final ChannelDebugSimulator debugSimulator;
 
-    public WeComIMChannel(WeComIMChannelProperty config, WebClient webClient, ChannelDebugSimulator debugSimulator) {
-        super(config);
+    public WeComIMChannel(WeComIMChannelProperties config, WebClient webClient, ChannelDebugProperties debugProperties) {
+        super(config, debugProperties);
         this.client = webClient;
-        this.debugSimulator = debugSimulator;
     }
 
     /**
@@ -56,12 +54,9 @@ public class WeComIMChannel extends IMChannel<WeComIMChannelProperty> {
      * @return 发送结果
      */
     @Override
-    public MsgResp send(MsgReq request) {
+    protected MsgResp doSend(MsgReq request) {
         if (request == null) {
             return MsgResp.failure("INVALID_REQUEST", "Message request is null");
-        }
-        if (debugSimulator.isEnabled()) {
-            return debugSimulator.simulate(getClass().getSimpleName());
         }
         try {
             String webhookUrl = config.getWebhookUrl();

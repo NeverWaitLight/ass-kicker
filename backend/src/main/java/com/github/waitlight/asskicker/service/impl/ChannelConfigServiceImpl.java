@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.ChannelProperty;
+import com.github.waitlight.asskicker.channel.ChannelProperties;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
@@ -197,7 +197,7 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
         return Mono.fromCallable(() -> {
             try {
                 if (request.type() == ChannelType.EMAIL) {
-                    ChannelProperty config = emailChannelConfigConverter.fromProperties(request.properties());
+                    ChannelProperties config = emailChannelConfigConverter.fromProperties(request.properties());
                     Channel<?> channel = emailChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
@@ -219,7 +219,7 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
                     }
                 }
                 if (request.type() == ChannelType.IM) {
-                    ChannelProperty config = imChannelConfigConverter.fromProperties(request.properties());
+                    ChannelProperties config = imChannelConfigConverter.fromProperties(request.properties());
                     Channel<?> channel = imChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
@@ -241,7 +241,7 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
                     }
                 }
                 if (request.type() == ChannelType.PUSH) {
-                    ChannelProperty config = pushChannelConfigConverter.fromProperties(request.properties());
+                    ChannelProperties config = pushChannelConfigConverter.fromProperties(request.properties());
                     Channel<?> channel = pushChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
@@ -263,7 +263,7 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
                     }
                 }
                 if (request.type() == ChannelType.SMS) {
-                    ChannelProperty config = smsChannelConfigConverter.fromProperties(request.properties());
+                    ChannelProperties config = smsChannelConfigConverter.fromProperties(request.properties());
                     Channel<?> channel = smsChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())

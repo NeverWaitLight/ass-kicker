@@ -1,9 +1,9 @@
 package com.github.waitlight.asskicker.channel.push;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.ChannelDebugSimulator;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
+import com.github.waitlight.asskicker.config.ChannelDebugProperties;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
@@ -28,31 +28,26 @@ import java.util.concurrent.TimeoutException;
 /**
  * 苹果 APNs HTTP/2 推送通道。
  */
-public class APNsPushChannel extends PushChannel<APNsPushChannelProperty> {
+public class APNsPushChannel extends PushChannel<APNsPushChannelProperties> {
 
     private static final String APNS_PRODUCTION_HOST = "api.push.apple.com";
     private static final String APNS_SANDBOX_HOST = "api.sandbox.push.apple.com";
     private static final String APNS_PATH_PREFIX = "/3/device/";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final ChannelDebugSimulator debugSimulator;
 
-    public APNsPushChannel(APNsPushChannelProperty config, ChannelDebugSimulator debugSimulator) {
-        super(config);
-        this.debugSimulator = debugSimulator;
+    public APNsPushChannel(APNsPushChannelProperties config, ChannelDebugProperties debugProperties) {
+        super(config, debugProperties);
     }
 
     @Override
-    public MsgResp send(MsgReq request) {
+    protected MsgResp doSend(MsgReq request) {
         if (request == null) {
             return MsgResp.failure("INVALID_REQUEST", "Message request is null");
         }
         String token = request.getRecipient();
         if (token == null || token.isBlank()) {
             return MsgResp.failure("INVALID_REQUEST", "Device token is required");
-        }
-        if (debugSimulator.isEnabled()) {
-            return debugSimulator.simulate(getClass().getSimpleName());
         }
         try {
             PrivateKey key = loadPrivateKey();

@@ -1,8 +1,8 @@
 package com.github.waitlight.asskicker.channel.im;
 
 import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.ChannelDebugSimulator;
-import com.github.waitlight.asskicker.channel.ChannelProperty;
+import com.github.waitlight.asskicker.channel.ChannelProperties;
+import com.github.waitlight.asskicker.config.ChannelDebugProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -10,19 +10,19 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class IMChannelFactory {
 
     private final WebClient sharedWebClient;
-    private final ChannelDebugSimulator debugSimulator;
+    private final ChannelDebugProperties debugProperties;
 
-    public IMChannelFactory(WebClient sharedWebClient, ChannelDebugSimulator debugSimulator) {
+    public IMChannelFactory(WebClient sharedWebClient, ChannelDebugProperties debugProperties) {
         this.sharedWebClient = sharedWebClient;
-        this.debugSimulator = debugSimulator;
+        this.debugProperties = debugProperties;
     }
 
-    public Channel<?> create(ChannelProperty config) {
-        if (config instanceof DingTalkIMChannelProperty dingTalk) {
-            return new DingTalkIMChannel(dingTalk, sharedWebClient, debugSimulator);
+    public Channel<?> create(ChannelProperties config) {
+        if (config instanceof DingTalkIMChannelProperties dingTalk) {
+            return new DingTalkIMChannel(dingTalk, sharedWebClient, debugProperties);
         }
-        if (config instanceof WeComIMChannelProperty wechatWork) {
-            return new WeComIMChannel(wechatWork, sharedWebClient, debugSimulator);
+        if (config instanceof WeComIMChannelProperties wechatWork) {
+            return new WeComIMChannel(wechatWork, sharedWebClient, debugProperties);
         }
 
         throw new IllegalArgumentException("Unsupported IM sender config: " + config);

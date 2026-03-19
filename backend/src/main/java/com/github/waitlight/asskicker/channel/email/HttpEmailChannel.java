@@ -1,8 +1,8 @@
 package com.github.waitlight.asskicker.channel.email;
 
-import com.github.waitlight.asskicker.channel.ChannelDebugSimulator;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
+import com.github.waitlight.asskicker.config.ChannelDebugProperties;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -16,24 +16,19 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-public class HttpEmailChannel extends EmailChannel<HttpEmailChannelProperty> {
+public class HttpEmailChannel extends EmailChannel<HttpEmailChannelProperties> {
 
     private final WebClient client;
-    private final ChannelDebugSimulator debugSimulator;
 
-    public HttpEmailChannel(HttpEmailChannelProperty config, WebClient webClient, ChannelDebugSimulator debugSimulator) {
-        super(config);
+    public HttpEmailChannel(HttpEmailChannelProperties config, WebClient webClient, ChannelDebugProperties debugProperties) {
+        super(config, debugProperties);
         this.client = webClient;
-        this.debugSimulator = debugSimulator;
     }
 
     @Override
-    public MsgResp send(MsgReq request) {
+    protected MsgResp doSend(MsgReq request) {
         if (request == null) {
             return MsgResp.failure("INVALID_REQUEST", "Message request is null");
-        }
-        if (debugSimulator.isEnabled()) {
-            return debugSimulator.simulate(getClass().getSimpleName());
         }
         try {
             Map<String, Object> body = buildRequestBody(request);

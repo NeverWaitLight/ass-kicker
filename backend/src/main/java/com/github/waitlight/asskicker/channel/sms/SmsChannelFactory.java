@@ -1,25 +1,25 @@
 package com.github.waitlight.asskicker.channel.sms;
 
 import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.ChannelDebugSimulator;
-import com.github.waitlight.asskicker.channel.ChannelProperty;
+import com.github.waitlight.asskicker.channel.ChannelProperties;
+import com.github.waitlight.asskicker.config.ChannelDebugProperties;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SmsChannelFactory {
 
-    private final ChannelDebugSimulator debugSimulator;
+    private final ChannelDebugProperties debugProperties;
 
-    public SmsChannelFactory(ChannelDebugSimulator debugSimulator) {
-        this.debugSimulator = debugSimulator;
+    public SmsChannelFactory(ChannelDebugProperties debugProperties) {
+        this.debugProperties = debugProperties;
     }
 
-    public Channel<?> create(ChannelProperty config) {
-        if (config instanceof AliyunSmsChannelProperty aliyun) {
-            return new AliyunSmsChannel(aliyun, debugSimulator);
+    public Channel<?> create(ChannelProperties config) {
+        if (config instanceof AliyunSmsChannelProperties aliyun) {
+            return new AliyunSmsChannel(aliyun, debugProperties);
         }
-        if (config instanceof TencentSmsChannelProperty tencent) {
-            return new TencentSmsChannel(tencent, debugSimulator);
+        if (config instanceof TencentSmsChannelProperties tencent) {
+            return new TencentSmsChannel(tencent, debugProperties);
         }
         throw new IllegalArgumentException("Unsupported SMS channel config: " + config);
     }

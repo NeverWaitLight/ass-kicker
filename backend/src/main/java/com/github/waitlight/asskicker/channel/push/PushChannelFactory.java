@@ -1,8 +1,8 @@
 package com.github.waitlight.asskicker.channel.push;
 
 import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.ChannelDebugSimulator;
-import com.github.waitlight.asskicker.channel.ChannelProperty;
+import com.github.waitlight.asskicker.channel.ChannelProperties;
+import com.github.waitlight.asskicker.config.ChannelDebugProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -10,19 +10,19 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class PushChannelFactory {
 
     private final WebClient sharedWebClient;
-    private final ChannelDebugSimulator debugSimulator;
+    private final ChannelDebugProperties debugProperties;
 
-    public PushChannelFactory(WebClient sharedWebClient, ChannelDebugSimulator debugSimulator) {
+    public PushChannelFactory(WebClient sharedWebClient, ChannelDebugProperties debugProperties) {
         this.sharedWebClient = sharedWebClient;
-        this.debugSimulator = debugSimulator;
+        this.debugProperties = debugProperties;
     }
 
-    public Channel<?> create(ChannelProperty config) {
-        if (config instanceof APNsPushChannelProperty apns) {
-            return new APNsPushChannel(apns, debugSimulator);
+    public Channel<?> create(ChannelProperties config) {
+        if (config instanceof APNsPushChannelProperties apns) {
+            return new APNsPushChannel(apns, debugProperties);
         }
-        if (config instanceof FCMPushChannelProperty fcm) {
-            return new FCMPushChannel(fcm, sharedWebClient, debugSimulator);
+        if (config instanceof FCMPushChannelProperties fcm) {
+            return new FCMPushChannel(fcm, sharedWebClient, debugProperties);
         }
         throw new IllegalArgumentException("Unsupported push channel config: " + config);
     }

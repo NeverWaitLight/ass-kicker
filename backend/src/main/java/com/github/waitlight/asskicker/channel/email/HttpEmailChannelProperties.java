@@ -10,7 +10,7 @@ import java.time.Duration;
 
 @Getter
 @Setter
-public class HttpEmailChannelProperty extends EmailChannelProperty {
+public class HttpEmailChannelProperties extends EmailChannelProperties {
 
     @NotBlank
     private String baseUrl;
@@ -35,7 +35,7 @@ public class HttpEmailChannelProperty extends EmailChannelProperty {
     @NotNull
     private Duration retryDelay = Duration.ofSeconds(1);
 
-    public HttpEmailChannelProperty() {
+    public HttpEmailChannelProperties() {
         super(EmailChannelType.HTTP);
     }
 }

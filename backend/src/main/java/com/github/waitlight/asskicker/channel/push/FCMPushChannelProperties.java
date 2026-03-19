@@ -10,25 +10,18 @@ import java.time.Duration;
 
 @Getter
 @Setter
-public class APNsPushChannelProperty extends PushChannelProperty {
-
-    @NotBlank
-    private String teamId;
-
-    @NotBlank
-    private String keyId;
-
-    @NotBlank
-    private String bundleId;
+public class FCMPushChannelProperties extends PushChannelProperties {
 
     /**
-     * p8 私钥内容（推荐）或通过 p8KeyPath 指定文件路径
+     * 服务账号 JSON 文件路径或 JSON 字符串内容
      */
-    private String p8KeyContent;
+    @NotBlank
+    private String serviceAccountJson;
 
-    private String p8KeyPath;
-
-    private boolean production = true;
+    /**
+     * 可选，若未设置则从 serviceAccountJson 中解析 project_id
+     */
+    private String projectId;
 
     @NotNull
     private Duration timeout = Duration.ofSeconds(10);
@@ -39,7 +32,7 @@ public class APNsPushChannelProperty extends PushChannelProperty {
     @NotNull
     private Duration retryDelay = Duration.ofSeconds(1);
 
-    public APNsPushChannelProperty() {
-        super("APNS");
+    public FCMPushChannelProperties() {
+        super("FCM");
     }
 }

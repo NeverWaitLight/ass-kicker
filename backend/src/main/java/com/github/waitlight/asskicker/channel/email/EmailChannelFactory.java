@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.channel.email;
 
-import com.github.waitlight.asskicker.channel.ChannelDebugSimulator;
-import com.github.waitlight.asskicker.channel.ChannelProperty;
+import com.github.waitlight.asskicker.channel.ChannelProperties;
+import com.github.waitlight.asskicker.config.ChannelDebugProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -9,19 +9,19 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class EmailChannelFactory {
 
     private final WebClient sharedWebClient;
-    private final ChannelDebugSimulator debugSimulator;
+    private final ChannelDebugProperties debugProperties;
 
-    public EmailChannelFactory(WebClient sharedWebClient, ChannelDebugSimulator debugSimulator) {
+    public EmailChannelFactory(WebClient sharedWebClient, ChannelDebugProperties debugProperties) {
         this.sharedWebClient = sharedWebClient;
-        this.debugSimulator = debugSimulator;
+        this.debugProperties = debugProperties;
     }
 
-    public EmailChannel<?> create(ChannelProperty config) {
-        if (config instanceof HttpEmailChannelProperty http) {
-            return new HttpEmailChannel(http, sharedWebClient, debugSimulator);
+    public EmailChannel<?> create(ChannelProperties config) {
+        if (config instanceof HttpEmailChannelProperties http) {
+            return new HttpEmailChannel(http, sharedWebClient, debugProperties);
         }
-        if (config instanceof SmtpEmailChannelProperty smtp) {
-            return new SmtpEmailChannel(smtp, debugSimulator);
+        if (config instanceof SmtpEmailChannelProperties smtp) {
+            return new SmtpEmailChannel(smtp, debugProperties);
         }
 
         throw new IllegalArgumentException("Unsupported email sender property: " + config);

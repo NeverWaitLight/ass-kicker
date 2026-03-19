@@ -10,7 +10,7 @@ import java.time.Duration;
 
 @Getter
 @Setter
-public class AliyunSmsChannelProperty extends SmsChannelProperty {
+public class AliyunSmsChannelProperties extends SmsChannelProperties {
 
     @NotBlank
     private String accessKeyId;
@@ -43,7 +43,7 @@ public class AliyunSmsChannelProperty extends SmsChannelProperty {
     @NotNull
     private Duration retryDelay = Duration.ofSeconds(1);
 
-    public AliyunSmsChannelProperty() {
+    public AliyunSmsChannelProperties() {
         super("ALIYUN");
     }
 }

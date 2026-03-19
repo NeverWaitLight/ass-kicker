@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.channel.sms;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.ChannelProperty;
+import com.github.waitlight.asskicker.channel.ChannelProperties;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.springframework.http.HttpStatus;
@@ -36,14 +36,14 @@ public class SmsChannelConfigConverter {
         this.validator = validator;
     }
 
-    public ChannelProperty fromProperties(Map<String, Object> properties) {
+    public ChannelProperties fromProperties(Map<String, Object> properties) {
         Map<String, Object> safe = normalizeProperties(properties);
         SmsChannelType smsType = parseProtocol(resolveProtocolValue(safe));
 
         if (smsType == SmsChannelType.ALIYUN) {
             Map<String, Object> aliyunValues = resolveProtocolValues(safe, ALIYUN_KEYS, "aliyun", "ALIYUN");
             normalizeDurationValues(aliyunValues, "timeout", "retryDelay");
-            AliyunSmsChannelProperty aliyun = mapToConfig(aliyunValues, AliyunSmsChannelProperty.class, "ALIYUN");
+            AliyunSmsChannelProperties aliyun = mapToConfig(aliyunValues, AliyunSmsChannelProperties.class, "ALIYUN");
             ensureNonNegativeRetries(aliyun.getMaxRetries(), "ALIYUN");
             validateConfig(aliyun, "ALIYUN");
             return aliyun;
@@ -52,7 +52,7 @@ public class SmsChannelConfigConverter {
         if (smsType == SmsChannelType.TENCENT) {
             Map<String, Object> tencentValues = resolveProtocolValues(safe, TENCENT_KEYS, "tencent", "TENCENT");
             normalizeDurationValues(tencentValues, "timeout", "retryDelay");
-            TencentSmsChannelProperty tencent = mapToConfig(tencentValues, TencentSmsChannelProperty.class, "TENCENT");
+            TencentSmsChannelProperties tencent = mapToConfig(tencentValues, TencentSmsChannelProperties.class, "TENCENT");
             ensureNonNegativeRetries(tencent.getMaxRetries(), "TENCENT");
             validateConfig(tencent, "TENCENT");
             return tencent;

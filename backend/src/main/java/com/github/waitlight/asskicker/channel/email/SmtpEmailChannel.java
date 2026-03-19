@@ -1,8 +1,8 @@
 package com.github.waitlight.asskicker.channel.email;
 
-import com.github.waitlight.asskicker.channel.ChannelDebugSimulator;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
+import com.github.waitlight.asskicker.config.ChannelDebugProperties;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.mail.MailException;
@@ -14,18 +14,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Properties;
 
-public class SmtpEmailChannel extends EmailChannel<SmtpEmailChannelProperty> {
+public class SmtpEmailChannel extends EmailChannel<SmtpEmailChannelProperties> {
 
-    private final ChannelDebugSimulator debugSimulator;
     private final JavaMailSender mailSender;
 
-    public SmtpEmailChannel(SmtpEmailChannelProperty config, ChannelDebugSimulator debugSimulator) {
-        super(config);
-        this.debugSimulator = debugSimulator;
-        this.mailSender = debugSimulator.isEnabled() ? null : buildJavaMailChannel(config);
+    public SmtpEmailChannel(SmtpEmailChannelProperties config, ChannelDebugProperties debugProperties) {
+        super(config, debugProperties);
+        this.mailSender = debugProperties.isEnabled() ? null : buildJavaMailChannel(config);
     }
 
-    private JavaMailSender buildJavaMailChannel(SmtpEmailChannelProperty config) {
+    private JavaMailSender buildJavaMailChannel(SmtpEmailChannelProperties config) {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost(config.getHost());
         mailSender.setPort(config.getPort());
@@ -49,12 +47,9 @@ public class SmtpEmailChannel extends EmailChannel<SmtpEmailChannelProperty> {
     }
 
     @Override
-    public MsgResp send(MsgReq request) {
+    protected MsgResp doSend(MsgReq request) {
         if (request == null) {
             return MsgResp.failure("INVALID_REQUEST", "Message request is null");
-        }
-        if (debugSimulator.isEnabled()) {
-            return debugSimulator.simulate(getClass().getSimpleName());
         }
 
         int attempts = 0;

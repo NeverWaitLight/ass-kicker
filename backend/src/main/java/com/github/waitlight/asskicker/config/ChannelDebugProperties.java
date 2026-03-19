@@ -1,9 +1,13 @@
 package com.github.waitlight.asskicker.config;
 
 import jakarta.validation.constraints.Min;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
+@Getter
+@Setter
 @Validated
 @ConfigurationProperties(prefix = "ass-kicker.channel.debug")
 public class ChannelDebugProperties {
@@ -12,20 +16,4 @@ public class ChannelDebugProperties {
 
     @Min(0)
     private int sleepMs = 100;
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
-
-    public int getSleepMs() {
-        return sleepMs;
-    }
-
-    public void setSleepMs(int sleepMs) {
-        this.sleepMs = sleepMs;
-    }
 }

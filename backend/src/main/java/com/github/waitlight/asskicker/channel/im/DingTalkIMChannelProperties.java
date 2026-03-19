@@ -10,7 +10,7 @@ import java.time.Duration;
 
 @Getter
 @Setter
-public class DingTalkIMChannelProperty extends IMChannelProperty {
+public class DingTalkIMChannelProperties extends IMChannelProperties {
 
     @NotBlank
     private String webhookUrl;
@@ -29,7 +29,7 @@ public class DingTalkIMChannelProperty extends IMChannelProperty {
     @NotNull
     private Duration retryDelay = Duration.ofSeconds(1);
 
-    public DingTalkIMChannelProperty() {
+    public DingTalkIMChannelProperties() {
         super("DINGTALK");
     }
 }

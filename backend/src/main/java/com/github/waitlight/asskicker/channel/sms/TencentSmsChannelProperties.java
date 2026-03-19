@@ -10,7 +10,7 @@ import java.time.Duration;
 
 @Getter
 @Setter
-public class TencentSmsChannelProperty extends SmsChannelProperty {
+public class TencentSmsChannelProperties extends SmsChannelProperties {
 
     @NotBlank
     private String secretId;
@@ -41,7 +41,7 @@ public class TencentSmsChannelProperty extends SmsChannelProperty {
     @NotNull
     private Duration retryDelay = Duration.ofSeconds(1);
 
-    public TencentSmsChannelProperty() {
+    public TencentSmsChannelProperties() {
         super("TENCENT");
     }
 }

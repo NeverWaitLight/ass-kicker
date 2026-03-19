@@ -1,8 +1,8 @@
 package com.github.waitlight.asskicker.channel.sms;
 
-import com.github.waitlight.asskicker.channel.ChannelDebugSimulator;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
+import com.github.waitlight.asskicker.config.ChannelDebugProperties;
 import com.tencentcloudapi.common.Credential;
 import com.tencentcloudapi.common.exception.TencentCloudSDKException;
 import com.tencentcloudapi.sms.v20210111.SmsClient;
@@ -13,17 +13,14 @@ import com.tencentcloudapi.sms.v20210111.models.SendStatus;
 /**
  * 腾讯云短信通道，直接发送完整内容（单变量模板）。
  */
-public class TencentSmsChannel extends SmsChannel<TencentSmsChannelProperty> {
+public class TencentSmsChannel extends SmsChannel<TencentSmsChannelProperties> {
 
-    private final ChannelDebugSimulator debugSimulator;
-
-    public TencentSmsChannel(TencentSmsChannelProperty config, ChannelDebugSimulator debugSimulator) {
-        super(config);
-        this.debugSimulator = debugSimulator;
+    public TencentSmsChannel(TencentSmsChannelProperties config, ChannelDebugProperties debugProperties) {
+        super(config, debugProperties);
     }
 
     @Override
-    public MsgResp send(MsgReq request) {
+    protected MsgResp doSend(MsgReq request) {
         if (request == null) {
             return MsgResp.failure("INVALID_REQUEST", "Message request is null");
         }
@@ -32,9 +29,6 @@ public class TencentSmsChannel extends SmsChannel<TencentSmsChannelProperty> {
             return MsgResp.failure("INVALID_REQUEST", "手机号不能为空");
         }
         String content = request.getContent() != null ? request.getContent() : "";
-        if (debugSimulator.isEnabled()) {
-            return debugSimulator.simulate(getClass().getSimpleName());
-        }
         try {
             Credential credential = new Credential(config.getSecretId(), config.getSecretKey());
             SmsClient client = new SmsClient(credential, config.getRegion());

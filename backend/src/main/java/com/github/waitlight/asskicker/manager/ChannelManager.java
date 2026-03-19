@@ -3,7 +3,7 @@ package com.github.waitlight.asskicker.manager;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.ChannelProperty;
+import com.github.waitlight.asskicker.channel.ChannelProperties;
 import com.github.waitlight.asskicker.channel.email.EmailChannelConfigConverter;
 import com.github.waitlight.asskicker.channel.email.EmailChannelFactory;
 import com.github.waitlight.asskicker.channel.im.IMChannelConfigConverter;
@@ -83,19 +83,19 @@ public class ChannelManager implements DisposableBean {
         ChannelType type = channelConfigEntity.getType();
         Map<String, Object> properties = readProperties(channelConfigEntity.getPropertiesJson());
         if (type == ChannelType.EMAIL) {
-            ChannelProperty config = emailChannelConfigConverter.fromProperties(properties);
+            ChannelProperties config = emailChannelConfigConverter.fromProperties(properties);
             return emailChannelFactory.create(config);
         }
         if (type == ChannelType.IM) {
-            ChannelProperty config = imChannelConfigConverter.fromProperties(properties);
+            ChannelProperties config = imChannelConfigConverter.fromProperties(properties);
             return imChannelFactory.create(config);
         }
         if (type == ChannelType.PUSH) {
-            ChannelProperty config = pushChannelConfigConverter.fromProperties(properties);
+            ChannelProperties config = pushChannelConfigConverter.fromProperties(properties);
             return pushChannelFactory.create(config);
         }
         if (type == ChannelType.SMS) {
-            ChannelProperty config = smsChannelConfigConverter.fromProperties(properties);
+            ChannelProperties config = smsChannelConfigConverter.fromProperties(properties);
             return smsChannelFactory.create(config);
         }
         return null;

@@ -2,9 +2,9 @@ package com.github.waitlight.asskicker.channel.push;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.ChannelDebugSimulator;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
+import com.github.waitlight.asskicker.config.ChannelDebugProperties;
 import com.google.auth.oauth2.GoogleCredentials;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -24,32 +24,27 @@ import java.util.concurrent.TimeoutException;
 /**
  * 谷歌 FCM HTTP v1 推送通道。
  */
-public class FCMPushChannel extends PushChannel<FCMPushChannelProperty> {
+public class FCMPushChannel extends PushChannel<FCMPushChannelProperties> {
 
     private static final String FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
     private static final String FCM_SEND_URL = "https://fcm.googleapis.com/v1/projects/%s/messages:send";
 
     private final WebClient client;
-    private final ChannelDebugSimulator debugSimulator;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public FCMPushChannel(FCMPushChannelProperty config, WebClient webClient, ChannelDebugSimulator debugSimulator) {
-        super(config);
+    public FCMPushChannel(FCMPushChannelProperties config, WebClient webClient, ChannelDebugProperties debugProperties) {
+        super(config, debugProperties);
         this.client = webClient;
-        this.debugSimulator = debugSimulator;
     }
 
     @Override
-    public MsgResp send(MsgReq request) {
+    protected MsgResp doSend(MsgReq request) {
         if (request == null) {
             return MsgResp.failure("INVALID_REQUEST", "Message request is null");
         }
         String token = request.getRecipient();
         if (token == null || token.isBlank()) {
             return MsgResp.failure("INVALID_REQUEST", "FCM token is required");
-        }
-        if (debugSimulator.isEnabled()) {
-            return debugSimulator.simulate(getClass().getSimpleName());
         }
         try {
             String projectId = resolveProjectId();

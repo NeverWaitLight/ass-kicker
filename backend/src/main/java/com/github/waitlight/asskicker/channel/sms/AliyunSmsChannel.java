@@ -5,9 +5,9 @@ import com.aliyun.dysmsapi20170525.models.SendSmsRequest;
 import com.aliyun.dysmsapi20170525.models.SendSmsResponse;
 import com.aliyun.dysmsapi20170525.models.SendSmsResponseBody;
 import com.aliyun.teaopenapi.models.Config;
-import com.github.waitlight.asskicker.channel.ChannelDebugSimulator;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
+import com.github.waitlight.asskicker.config.ChannelDebugProperties;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,17 +15,14 @@ import java.util.Map;
 /**
  * 阿里云短信通道，直接发送完整内容（单变量模板）。
  */
-public class AliyunSmsChannel extends SmsChannel<AliyunSmsChannelProperty> {
+public class AliyunSmsChannel extends SmsChannel<AliyunSmsChannelProperties> {
 
-    private final ChannelDebugSimulator debugSimulator;
-
-    public AliyunSmsChannel(AliyunSmsChannelProperty config, ChannelDebugSimulator debugSimulator) {
-        super(config);
-        this.debugSimulator = debugSimulator;
+    public AliyunSmsChannel(AliyunSmsChannelProperties config, ChannelDebugProperties debugProperties) {
+        super(config, debugProperties);
     }
 
     @Override
-    public MsgResp send(MsgReq request) {
+    protected MsgResp doSend(MsgReq request) {
         if (request == null) {
             return MsgResp.failure("INVALID_REQUEST", "Message request is null");
         }
@@ -34,9 +31,6 @@ public class AliyunSmsChannel extends SmsChannel<AliyunSmsChannelProperty> {
             return MsgResp.failure("INVALID_REQUEST", "手机号不能为空");
         }
         String content = request.getContent() != null ? request.getContent() : "";
-        if (debugSimulator.isEnabled()) {
-            return debugSimulator.simulate(getClass().getSimpleName());
-        }
         try {
             Config apiConfig = new Config()
                     .setAccessKeyId(config.getAccessKeyId())
