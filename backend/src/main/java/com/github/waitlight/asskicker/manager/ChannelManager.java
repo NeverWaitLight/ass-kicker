@@ -4,14 +4,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelProperties;
+import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.channel.email.EmailChannelConfigConverter;
-import com.github.waitlight.asskicker.channel.email.EmailChannelFactory;
 import com.github.waitlight.asskicker.channel.im.IMChannelConfigConverter;
-import com.github.waitlight.asskicker.channel.im.IMChannelFactory;
 import com.github.waitlight.asskicker.channel.push.PushChannelConfigConverter;
-import com.github.waitlight.asskicker.channel.push.PushChannelFactory;
 import com.github.waitlight.asskicker.channel.sms.SmsChannelConfigConverter;
-import com.github.waitlight.asskicker.channel.sms.SmsChannelFactory;
 import com.github.waitlight.asskicker.model.ChannelConfig;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.service.ChannelConfigService;
@@ -40,13 +37,10 @@ public class ChannelManager implements DisposableBean {
 
     private final TemplateService templateService;
     private final ChannelConfigService channelConfigService;
-    private final EmailChannelFactory emailChannelFactory;
+    private final ChannelFactory channelFactory;
     private final EmailChannelConfigConverter emailChannelConfigConverter;
-    private final IMChannelFactory imChannelFactory;
     private final IMChannelConfigConverter imChannelConfigConverter;
-    private final PushChannelFactory pushChannelFactory;
     private final PushChannelConfigConverter pushChannelConfigConverter;
-    private final SmsChannelFactory smsChannelFactory;
     private final SmsChannelConfigConverter smsChannelConfigConverter;
     private final ObjectMapper objectMapper;
 
@@ -84,19 +78,19 @@ public class ChannelManager implements DisposableBean {
         Map<String, Object> properties = readProperties(channelConfigEntity.getPropertiesJson());
         if (type == ChannelType.EMAIL) {
             ChannelProperties config = emailChannelConfigConverter.fromProperties(properties);
-            return emailChannelFactory.create(config);
+            return channelFactory.create(config);
         }
         if (type == ChannelType.IM) {
             ChannelProperties config = imChannelConfigConverter.fromProperties(properties);
-            return imChannelFactory.create(config);
+            return channelFactory.create(config);
         }
         if (type == ChannelType.PUSH) {
             ChannelProperties config = pushChannelConfigConverter.fromProperties(properties);
-            return pushChannelFactory.create(config);
+            return channelFactory.create(config);
         }
         if (type == ChannelType.SMS) {
             ChannelProperties config = smsChannelConfigConverter.fromProperties(properties);
-            return smsChannelFactory.create(config);
+            return channelFactory.create(config);
         }
         return null;
     }
