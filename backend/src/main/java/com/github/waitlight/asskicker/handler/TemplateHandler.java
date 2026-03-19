@@ -4,8 +4,8 @@ import com.github.waitlight.asskicker.dto.template.FillTemplateRequest;
 import com.github.waitlight.asskicker.dto.template.FillTemplateResponse;
 import com.github.waitlight.asskicker.manager.TemplateManager;
 import com.github.waitlight.asskicker.model.Language;
-import com.github.waitlight.asskicker.model.LanguageTemplate;
-import com.github.waitlight.asskicker.model.Template;
+import com.github.waitlight.asskicker.model.LanguageTemplateEntity;
+import com.github.waitlight.asskicker.model.TemplateEntity;
 import com.github.waitlight.asskicker.service.TemplateService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -29,7 +29,7 @@ public class TemplateHandler {
     }
 
     public Mono<ServerResponse> createTemplate(ServerRequest request) {
-        return request.bodyToMono(Template.class)
+        return request.bodyToMono(TemplateEntity.class)
                 .map(this::sanitizeTemplate)
                 .flatMap(template -> templateService.createTemplate(template))
                 .flatMap(template -> ServerResponse.ok()
@@ -72,7 +72,7 @@ public class TemplateHandler {
 
     public Mono<ServerResponse> updateTemplate(ServerRequest request) {
         String id = request.pathVariable("id");
-        return request.bodyToMono(Template.class)
+        return request.bodyToMono(TemplateEntity.class)
                 .map(this::sanitizeTemplate)
                 .flatMap(template -> templateService.updateTemplate(id, template))
                 .flatMap(template -> ServerResponse.ok()
@@ -143,7 +143,7 @@ public class TemplateHandler {
         String templateId = request.pathVariable("templateId");
         return ServerResponse.ok()
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(templateService.getAllTemplateContentsByTemplateId(templateId), LanguageTemplate.class)
+                .body(templateService.getAllTemplateContentsByTemplateId(templateId), LanguageTemplateEntity.class)
                 .onErrorResume(throwable -> {
                     System.err.println("Error retrieving all template contents: " + throwable.getMessage());
                     return ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -168,7 +168,7 @@ public class TemplateHandler {
     public Mono<ServerResponse> listTemplates(ServerRequest request) {
         return ServerResponse.ok()
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(templateService.findAll(0, Integer.MAX_VALUE), Template.class)
+                .body(templateService.findAll(0, Integer.MAX_VALUE), TemplateEntity.class)
                 .onErrorResume(throwable -> {
                     System.err.println("Error listing templates: " + throwable.getMessage());
                     return ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -180,8 +180,8 @@ public class TemplateHandler {
         return ServerResponse.badRequest().build();
     }
 
-    private Template sanitizeTemplate(Template input) {
-        Template sanitized = new Template();
+    private TemplateEntity sanitizeTemplate(TemplateEntity input) {
+        TemplateEntity sanitized = new TemplateEntity();
         if (input == null) {
             return sanitized;
         }

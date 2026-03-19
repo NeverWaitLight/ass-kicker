@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.repository;
 
-import com.github.waitlight.asskicker.model.ApiKey;
+import com.github.waitlight.asskicker.model.ApiKeyEntity;
 import com.github.waitlight.asskicker.model.ApiKeyStatus;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import org.springframework.stereotype.Repository;
@@ -8,9 +8,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
-public interface ApiKeyRepository extends ReactiveMongoRepository<ApiKey, String> {
+public interface ApiKeyRepository extends ReactiveMongoRepository<ApiKeyEntity, String> {
 
-    Mono<ApiKey> findByKeyPrefix(String keyPrefix);
+    Mono<ApiKeyEntity> findByKeyPrefix(String keyPrefix);
 
-    Flux<ApiKey> findByUserIdAndStatus(String userId, ApiKeyStatus status);
+    Flux<ApiKeyEntity> findByUserIdAndStatus(String userId, ApiKeyStatus status);
 }

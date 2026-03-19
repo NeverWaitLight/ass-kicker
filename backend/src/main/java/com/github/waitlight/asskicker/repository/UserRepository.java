@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.repository;
 
-import com.github.waitlight.asskicker.model.User;
+import com.github.waitlight.asskicker.model.UserEntity;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -11,16 +11,16 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
-public interface UserRepository extends ReactiveMongoRepository<User, String>, UserRepositoryCustom {
+public interface UserRepository extends ReactiveMongoRepository<UserEntity, String>, UserRepositoryCustom {
 
-    Mono<User> findByUsername(String username);
+    Mono<UserEntity> findByUsername(String username);
 
     Mono<Boolean> existsByUsername(String username);
 }
 
 interface UserRepositoryCustom {
 
-    Flux<User> findPage(String keyword, int limit, int offset);
+    Flux<UserEntity> findPage(String keyword, int limit, int offset);
 
     Mono<Long> count(String keyword);
 }
@@ -34,17 +34,17 @@ class UserRepositoryCustomImpl implements UserRepositoryCustom {
     }
 
     @Override
-    public Flux<User> findPage(String keyword, int limit, int offset) {
+    public Flux<UserEntity> findPage(String keyword, int limit, int offset) {
         Query query = buildQuery(keyword);
         query.with(Sort.by(Sort.Direction.DESC, "_id"));
         query.skip(offset).limit(limit);
-        return mongoTemplate.find(query, User.class);
+        return mongoTemplate.find(query, UserEntity.class);
     }
 
     @Override
     public Mono<Long> count(String keyword) {
         Query query = buildQuery(keyword);
-        return mongoTemplate.count(query, User.class);
+        return mongoTemplate.count(query, UserEntity.class);
     }
 
     private Query buildQuery(String keyword) {

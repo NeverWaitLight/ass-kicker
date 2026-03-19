@@ -17,7 +17,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @Document(collection = "t_template")
-public class Template {
+public class TemplateEntity {
 
     @Id
     private String id;
@@ -49,9 +49,9 @@ public class Template {
     private Long updatedAt;
 
     @Transient
-    private List<LanguageTemplate> languageTemplates = new ArrayList<>();
+    private List<LanguageTemplateEntity> languageTemplates = new ArrayList<>();
 
-    public Template(String name, String code, String description) {
+    public TemplateEntity(String name, String code, String description) {
         this.name = name;
         this.code = code;
         this.description = description;

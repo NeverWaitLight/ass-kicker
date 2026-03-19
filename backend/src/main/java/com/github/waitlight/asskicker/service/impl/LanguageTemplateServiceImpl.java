@@ -3,7 +3,7 @@ package com.github.waitlight.asskicker.service.impl;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.model.Language;
-import com.github.waitlight.asskicker.model.LanguageTemplate;
+import com.github.waitlight.asskicker.model.LanguageTemplateEntity;
 import com.github.waitlight.asskicker.repository.LanguageTemplateRepository;
 import com.github.waitlight.asskicker.service.LanguageTemplateService;
 import jakarta.annotation.PostConstruct;
@@ -20,7 +20,7 @@ public class LanguageTemplateServiceImpl implements LanguageTemplateService {
     private final LanguageTemplateRepository languageTemplateRepository;
     private final CaffeineCacheConfig caffeineCacheConfig;
 
-    private AsyncLoadingCache<String, Optional<LanguageTemplate>> ltByTemplateIdAndLanguageCache;
+    private AsyncLoadingCache<String, Optional<LanguageTemplateEntity>> ltByTemplateIdAndLanguageCache;
 
     public LanguageTemplateServiceImpl(LanguageTemplateRepository languageTemplateRepository,
                                        CaffeineCacheConfig caffeineCacheConfig) {
@@ -41,19 +41,19 @@ public class LanguageTemplateServiceImpl implements LanguageTemplateService {
     }
 
     @Override
-    public Flux<LanguageTemplate> findAllByTemplateId(String templateId) {
+    public Flux<LanguageTemplateEntity> findAllByTemplateId(String templateId) {
         return languageTemplateRepository.findByTemplateId(templateId);
     }
 
     @Override
-    public Mono<LanguageTemplate> findByTemplateIdAndLanguage(String templateId, Language language) {
+    public Mono<LanguageTemplateEntity> findByTemplateIdAndLanguage(String templateId, Language language) {
         String key = templateId + ":" + language.name();
         return Mono.fromFuture(ltByTemplateIdAndLanguageCache.get(key))
                 .flatMap(opt -> opt.map(Mono::just).orElseGet(Mono::empty));
     }
 
     @Override
-    public Mono<LanguageTemplate> save(LanguageTemplate languageTemplate) {
+    public Mono<LanguageTemplateEntity> save(LanguageTemplateEntity languageTemplate) {
         languageTemplate.setId(null);
         long timestamp = Instant.now().toEpochMilli();
         languageTemplate.setCreatedAt(timestamp);
@@ -62,7 +62,7 @@ public class LanguageTemplateServiceImpl implements LanguageTemplateService {
     }
 
     @Override
-    public Mono<LanguageTemplate> update(String id, LanguageTemplate languageTemplate) {
+    public Mono<LanguageTemplateEntity> update(String id, LanguageTemplateEntity languageTemplate) {
         return languageTemplateRepository.findById(id)
                 .flatMap(existingLT -> {
                     Language oldLanguage = existingLT.getLanguage();

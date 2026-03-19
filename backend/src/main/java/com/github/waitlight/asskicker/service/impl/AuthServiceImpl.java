@@ -5,7 +5,7 @@ import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.auth.LoginRequest;
 import com.github.waitlight.asskicker.dto.auth.TokenResponse;
-import com.github.waitlight.asskicker.model.User;
+import com.github.waitlight.asskicker.model.UserEntity;
 import com.github.waitlight.asskicker.model.UserStatus;
 import com.github.waitlight.asskicker.repository.UserRepository;
 import com.github.waitlight.asskicker.security.JwtService;
@@ -29,8 +29,8 @@ public class AuthServiceImpl implements AuthService {
     private final UserConverter userMapStructer;
     private final CaffeineCacheConfig caffeineCacheConfig;
 
-    private AsyncLoadingCache<String, Optional<User>> userByUsernameCache;
-    private AsyncLoadingCache<String, Optional<User>> userByIdCache;
+    private AsyncLoadingCache<String, Optional<UserEntity>> userByUsernameCache;
+    private AsyncLoadingCache<String, Optional<UserEntity>> userByIdCache;
 
     public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
             JwtService jwtService, UserConverter userMapStructer,

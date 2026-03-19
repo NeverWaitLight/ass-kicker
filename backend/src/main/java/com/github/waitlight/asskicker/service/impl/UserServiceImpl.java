@@ -5,7 +5,7 @@ import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.auth.RegisterRequest;
 import com.github.waitlight.asskicker.dto.user.*;
-import com.github.waitlight.asskicker.model.User;
+import com.github.waitlight.asskicker.model.UserEntity;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.model.UserStatus;
 import com.github.waitlight.asskicker.repository.UserRepository;
@@ -29,8 +29,8 @@ public class UserServiceImpl implements UserService {
     private final UserConverter userMapStructer;
     private final CaffeineCacheConfig caffeineCacheConfig;
 
-    private AsyncLoadingCache<String, Optional<User>> userByIdCache;
-    private AsyncLoadingCache<String, Optional<User>> userByUsernameCache;
+    private AsyncLoadingCache<String, Optional<UserEntity>> userByIdCache;
+    private AsyncLoadingCache<String, Optional<UserEntity>> userByUsernameCache;
 
     public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
                            UserConverter userMapStructer, CaffeineCacheConfig caffeineCacheConfig) {
@@ -66,7 +66,7 @@ public class UserServiceImpl implements UserService {
                     if (cached.isPresent()) {
                         return Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "用户名已存在"));
                     }
-                    User user = new User();
+                    UserEntity user = new UserEntity();
                     long now = Instant.now().toEpochMilli();
                     user.setUsername(username);
                     user.setPasswordHash(passwordEncoder.encode(request.password()));
@@ -92,7 +92,7 @@ public class UserServiceImpl implements UserService {
                     return userRepository.count();
                 })
                 .flatMap(count -> {
-                    User user = new User();
+                    UserEntity user = new UserEntity();
                     long now = Instant.now().toEpochMilli();
                     user.setUsername(username);
                     user.setPasswordHash(passwordEncoder.encode(request.password()));

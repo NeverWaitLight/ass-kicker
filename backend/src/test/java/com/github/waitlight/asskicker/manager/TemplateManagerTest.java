@@ -4,8 +4,8 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import com.github.waitlight.asskicker.model.Language;
-import com.github.waitlight.asskicker.model.LanguageTemplate;
-import com.github.waitlight.asskicker.model.Template;
+import com.github.waitlight.asskicker.model.LanguageTemplateEntity;
+import com.github.waitlight.asskicker.model.TemplateEntity;
 import com.github.waitlight.asskicker.service.TemplateService;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
@@ -32,9 +32,9 @@ class TemplateManagerTest {
         TemplateManager templateManager = new TemplateManager(templateService, mustacheFactory,
                 Caffeine.newBuilder().build());
 
-        Template template = new Template("Test", "tpl-code", "desc");
+        TemplateEntity template = new TemplateEntity("Test", "tpl-code", "desc");
         template.setId("tpl-1");
-        LanguageTemplate languageTemplate = new LanguageTemplate("tpl-1", Language.EN, "Hello {{name}}");
+        LanguageTemplateEntity languageTemplate = new LanguageTemplateEntity("tpl-1", Language.EN, "Hello {{name}}");
 
         when(templateService.findByCode("tpl-code")).thenReturn(Mono.just(template));
         when(templateService.getTemplateContentByLanguage("tpl-1", Language.EN)).thenReturn(Mono.just(languageTemplate));
@@ -68,10 +68,10 @@ class TemplateManagerTest {
         TemplateManager templateManager = new TemplateManager(templateService, mustacheFactory,
                 Caffeine.newBuilder().build());
 
-        Template template = new Template("Test", "tpl-code", "desc");
+        TemplateEntity template = new TemplateEntity("Test", "tpl-code", "desc");
         template.setId("tpl-1");
-        LanguageTemplate firstLanguageTemplate = new LanguageTemplate("tpl-1", Language.EN, "Hello {{name}}");
-        LanguageTemplate secondLanguageTemplate = new LanguageTemplate("tpl-1", Language.EN, "Hi {{name}}");
+        LanguageTemplateEntity firstLanguageTemplate = new LanguageTemplateEntity("tpl-1", Language.EN, "Hello {{name}}");
+        LanguageTemplateEntity secondLanguageTemplate = new LanguageTemplateEntity("tpl-1", Language.EN, "Hi {{name}}");
 
         when(templateService.findByCode("tpl-code")).thenReturn(Mono.just(template));
         when(templateService.getTemplateContentByLanguage("tpl-1", Language.EN))

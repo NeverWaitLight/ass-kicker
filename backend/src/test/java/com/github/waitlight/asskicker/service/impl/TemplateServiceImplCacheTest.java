@@ -3,8 +3,8 @@ package com.github.waitlight.asskicker.service.impl;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.config.CaffeineCacheProperties;
 import com.github.waitlight.asskicker.model.Language;
-import com.github.waitlight.asskicker.model.LanguageTemplate;
-import com.github.waitlight.asskicker.model.Template;
+import com.github.waitlight.asskicker.model.LanguageTemplateEntity;
+import com.github.waitlight.asskicker.model.TemplateEntity;
 import com.github.waitlight.asskicker.repository.LanguageTemplateRepository;
 import com.github.waitlight.asskicker.repository.TemplateRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +48,7 @@ class TemplateServiceImplCacheTest {
 
     @Test
     void findByCode_secondCallShouldHitCache() {
-        Template template = new Template("Test", "tpl-code", "desc");
+        TemplateEntity template = new TemplateEntity("Test", "tpl-code", "desc");
         template.setId("id-1");
         when(templateRepository.findByCode("tpl-code")).thenReturn(Mono.just(template));
 
@@ -75,7 +75,7 @@ class TemplateServiceImplCacheTest {
 
     @Test
     void getTemplateContentByLanguage_secondCallShouldHitCache() {
-        LanguageTemplate lt = new LanguageTemplate("id-1", Language.EN, "Hello {{name}}");
+        LanguageTemplateEntity lt = new LanguageTemplateEntity("id-1", Language.EN, "Hello {{name}}");
         lt.setId("lt-1");
         when(languageTemplateRepository.findByTemplateIdAndLanguage("id-1", Language.EN))
                 .thenReturn(Mono.just(lt));
@@ -93,8 +93,8 @@ class TemplateServiceImplCacheTest {
 
     @Test
     void getTemplateContentByLanguage_differentLanguageKeys_cachedIndependently() {
-        LanguageTemplate ltEn = new LanguageTemplate("id-1", Language.EN, "Hello {{name}}");
-        LanguageTemplate ltZh = new LanguageTemplate("id-1", Language.ZH_CN, "你好 {{name}}");
+        LanguageTemplateEntity ltEn = new LanguageTemplateEntity("id-1", Language.EN, "Hello {{name}}");
+        LanguageTemplateEntity ltZh = new LanguageTemplateEntity("id-1", Language.ZH_CN, "你好 {{name}}");
         when(languageTemplateRepository.findByTemplateIdAndLanguage("id-1", Language.EN))
                 .thenReturn(Mono.just(ltEn));
         when(languageTemplateRepository.findByTemplateIdAndLanguage("id-1", Language.ZH_CN))
@@ -117,7 +117,7 @@ class TemplateServiceImplCacheTest {
 
     @Test
     void updateTemplate_shouldInvalidateFindByCodeCache() {
-        Template original = new Template("Old", "tpl-code", "desc");
+        TemplateEntity original = new TemplateEntity("Old", "tpl-code", "desc");
         original.setId("id-1");
         when(templateRepository.findByCode("tpl-code")).thenReturn(Mono.just(original));
 
@@ -128,7 +128,7 @@ class TemplateServiceImplCacheTest {
         verify(templateRepository, times(1)).findByCode("tpl-code");
 
         // 执行更新，触发缓存失效
-        Template payload = new Template("New", "tpl-code", "desc");
+        TemplateEntity payload = new TemplateEntity("New", "tpl-code", "desc");
         when(templateRepository.findById("id-1")).thenReturn(Mono.just(original));
         when(templateRepository.save(any())).thenReturn(Mono.just(original));
         StepVerifier.create(templateService.updateTemplate("id-1", payload))
@@ -144,7 +144,7 @@ class TemplateServiceImplCacheTest {
 
     @Test
     void deleteTemplate_shouldInvalidateFindByCodeAndFindByIdCaches() {
-        Template template = new Template("Test", "tpl-code", "desc");
+        TemplateEntity template = new TemplateEntity("Test", "tpl-code", "desc");
         template.setId("id-1");
         when(templateRepository.findByCode("tpl-code")).thenReturn(Mono.just(template));
         when(templateRepository.findById("id-1")).thenReturn(Mono.just(template));
@@ -176,9 +176,9 @@ class TemplateServiceImplCacheTest {
 
     @Test
     void saveTemplateContentByLanguage_shouldInvalidateLanguageTemplateCache() {
-        Template template = new Template("Test", "tpl-code", "desc");
+        TemplateEntity template = new TemplateEntity("Test", "tpl-code", "desc");
         template.setId("id-1");
-        LanguageTemplate lt = new LanguageTemplate("id-1", Language.EN, "Hello {{name}}");
+        LanguageTemplateEntity lt = new LanguageTemplateEntity("id-1", Language.EN, "Hello {{name}}");
         lt.setId("lt-1");
 
         when(templateRepository.findById("id-1")).thenReturn(Mono.just(template));

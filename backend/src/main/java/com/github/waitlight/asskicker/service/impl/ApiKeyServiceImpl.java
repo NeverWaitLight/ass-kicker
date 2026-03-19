@@ -3,7 +3,7 @@ package com.github.waitlight.asskicker.service.impl;
 import com.github.waitlight.asskicker.dto.apikey.ApiKeyView;
 import com.github.waitlight.asskicker.dto.apikey.CreateApiKeyRequest;
 import com.github.waitlight.asskicker.dto.apikey.CreateApiKeyResponse;
-import com.github.waitlight.asskicker.model.ApiKey;
+import com.github.waitlight.asskicker.model.ApiKeyEntity;
 import com.github.waitlight.asskicker.model.ApiKeyStatus;
 import com.github.waitlight.asskicker.repository.ApiKeyRepository;
 import com.github.waitlight.asskicker.service.ApiKeyAuthService;
@@ -34,7 +34,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         String keyHash = passwordEncoder.encode(raw);
         long now = Instant.now().toEpochMilli();
 
-        ApiKey apiKey = new ApiKey();
+        ApiKeyEntity apiKey = new ApiKeyEntity();
         apiKey.setUserId(userId);
         apiKey.setName(request.name());
         apiKey.setKeyHash(keyHash);

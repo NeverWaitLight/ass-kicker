@@ -10,33 +10,30 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Getter
 @Setter
 @NoArgsConstructor
-@Document(collection = "t_api_key")
-public class ApiKey {
+@Document(collection = "t_user")
+public class UserEntity {
 
     @Id
     private String id;
 
-    @Field("user_id")
-    private String userId;
+    @Field("username")
+    private String username;
 
-    @Field("name")
-    private String name;
+    @Field("password_hash")
+    private String passwordHash;
 
-    @Field("key_hash")
-    private String keyHash;
-
-    @Field("key_prefix")
-    private String keyPrefix;
-
-    @Field("expires_at")
-    private Long expiresAt;
+    @Field("role")
+    private UserRole role;
 
     @Field("status")
-    private ApiKeyStatus status;
+    private UserStatus status;
 
     @Field("created_at")
     private Long createdAt;
 
-    @Field("revoked_at")
-    private Long revokedAt;
+    @Field("updated_at")
+    private Long updatedAt;
+
+    @Field("last_login_at")
+    private Long lastLoginAt;
 }

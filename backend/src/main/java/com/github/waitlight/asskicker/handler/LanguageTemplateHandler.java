@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.handler;
 
 import com.github.waitlight.asskicker.model.Language;
-import com.github.waitlight.asskicker.model.LanguageTemplate;
+import com.github.waitlight.asskicker.model.LanguageTemplateEntity;
 import com.github.waitlight.asskicker.service.LanguageTemplateService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,7 +24,7 @@ public class LanguageTemplateHandler {
         String templateId = request.pathVariable("templateId");
         return ServerResponse.ok()
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(languageTemplateService.findAllByTemplateId(templateId), LanguageTemplate.class)
+                .body(languageTemplateService.findAllByTemplateId(templateId), LanguageTemplateEntity.class)
                 .onErrorResume(throwable -> {
                     System.err.println("Error retrieving language templates: " + throwable.getMessage());
                     return ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -54,7 +54,7 @@ public class LanguageTemplateHandler {
     }
 
     public Mono<ServerResponse> createLanguageTemplate(ServerRequest request) {
-        return request.bodyToMono(LanguageTemplate.class)
+        return request.bodyToMono(LanguageTemplateEntity.class)
                 .flatMap(languageTemplate -> languageTemplateService.save(languageTemplate))
                 .flatMap(content -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
@@ -68,7 +68,7 @@ public class LanguageTemplateHandler {
 
     public Mono<ServerResponse> updateLanguageTemplate(ServerRequest request) {
         String id = request.pathVariable("id");
-        return request.bodyToMono(LanguageTemplate.class)
+        return request.bodyToMono(LanguageTemplateEntity.class)
                 .flatMap(languageTemplate -> languageTemplateService.update(id, languageTemplate))
                 .flatMap(content -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)

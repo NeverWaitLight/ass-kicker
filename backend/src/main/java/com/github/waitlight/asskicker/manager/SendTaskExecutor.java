@@ -176,7 +176,7 @@ public class SendTaskExecutor implements DisposableBean {
             long sentAt,
             long startedAt) {
         try {
-            SendRecord record = buildFinalRecord(task, renderedContent, channelEntity, recipient,
+            SendRecordEntity record = buildFinalRecord(task, renderedContent, channelEntity, recipient,
                     status, errorCode, errorMessage, sentAt);
             sendRecordService.writeRecord(record);
         } catch (Exception ex) {
@@ -186,9 +186,9 @@ public class SendTaskExecutor implements DisposableBean {
         }
     }
 
-    private SendRecord buildFinalRecord(SendTask task, String renderedContent, ChannelEntity channelEntity,
+    private SendRecordEntity buildFinalRecord(SendTask task, String renderedContent, ChannelEntity channelEntity,
             String recipient, SendRecordStatus status, String errorCode, String errorMessage, long sentAt) {
-        SendRecord record = new SendRecord();
+        SendRecordEntity record = new SendRecordEntity();
         record.setTaskId(task.getTaskId());
         record.setTemplateCode(task.getTemplateCode());
         record.setLanguageCode(task.getLanguageCode());

@@ -13,7 +13,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Setter
 @NoArgsConstructor
 @Document(collection = "t_language_template")
-public class LanguageTemplate {
+public class LanguageTemplateEntity {
 
     @Id
     private String id;
@@ -36,7 +36,7 @@ public class LanguageTemplate {
     @Field("updated_at")
     private Long updatedAt;
 
-    public LanguageTemplate(String templateId, Language language, String content) {
+    public LanguageTemplateEntity(String templateId, Language language, String content) {
         this.templateId = templateId;
         this.language = language;
         this.content = content;

@@ -4,7 +4,7 @@ import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.dto.sendrecord.SendRecordPageResponse;
 import com.github.waitlight.asskicker.dto.sendrecord.SendRecordView;
-import com.github.waitlight.asskicker.model.SendRecord;
+import com.github.waitlight.asskicker.model.SendRecordEntity;
 import com.github.waitlight.asskicker.repository.SendRecordRepository;
 import com.github.waitlight.asskicker.service.SendRecordService;
 import jakarta.annotation.PostConstruct;
@@ -35,7 +35,7 @@ public class SendRecordServiceImpl implements SendRecordService, DisposableBean 
     @Value("${send-record.flush-interval-ms:5000}")
     private long flushIntervalMs;
 
-    private final List<SendRecord> buffer = Collections.synchronizedList(new ArrayList<>());
+    private final List<SendRecordEntity> buffer = Collections.synchronizedList(new ArrayList<>());
 
     private AsyncLoadingCache<String, Optional<SendRecordView>> recordByIdCache;
 
@@ -80,8 +80,8 @@ public class SendRecordServiceImpl implements SendRecordService, DisposableBean 
     }
 
     @Override
-    public void writeRecord(SendRecord record) {
-        List<SendRecord> toFlush = null;
+    public void writeRecord(SendRecordEntity record) {
+        List<SendRecordEntity> toFlush = null;
         synchronized (buffer) {
             buffer.add(record);
             if (buffer.size() >= bufferSize) {
@@ -96,7 +96,7 @@ public class SendRecordServiceImpl implements SendRecordService, DisposableBean 
 
     @Scheduled(fixedDelayString = "${send-record.flush-interval-ms:5000}")
     public void flushScheduled() {
-        List<SendRecord> toFlush = null;
+        List<SendRecordEntity> toFlush = null;
         synchronized (buffer) {
             if (buffer.isEmpty()) {
                 return;
@@ -111,7 +111,7 @@ public class SendRecordServiceImpl implements SendRecordService, DisposableBean 
 
     @Override
     public void destroy() {
-        List<SendRecord> toFlush;
+        List<SendRecordEntity> toFlush;
         synchronized (buffer) {
             toFlush = new ArrayList<>(buffer);
             buffer.clear();
@@ -123,13 +123,13 @@ public class SendRecordServiceImpl implements SendRecordService, DisposableBean 
         }
     }
 
-    private void flushAsync(List<SendRecord> batch) {
+    private void flushAsync(List<SendRecordEntity> batch) {
         sendRecordRepository.saveAll(batch)
                 .doOnError(e -> log.error("SEND_RECORD_BATCH_SAVE_FAILED size={} error={}", batch.size(), e.getMessage()))
                 .subscribe();
     }
 
-    private SendRecordView toView(SendRecord r) {
+    private SendRecordView toView(SendRecordEntity r) {
         return new SendRecordView(
                 r.getId(),
                 r.getTaskId(),

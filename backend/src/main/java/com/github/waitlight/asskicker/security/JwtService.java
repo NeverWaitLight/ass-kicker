@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.security;
 
-import com.github.waitlight.asskicker.model.User;
+import com.github.waitlight.asskicker.model.UserEntity;
 import com.github.waitlight.asskicker.model.UserRole;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -32,11 +32,11 @@ public class JwtService {
         this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateAccessToken(User user) {
+    public String generateAccessToken(UserEntity user) {
         return generateToken(user, JwtTokenType.ACCESS, properties.getAccessTokenTtl());
     }
 
-    public String generateRefreshToken(User user) {
+    public String generateRefreshToken(UserEntity user) {
         return generateToken(user, JwtTokenType.REFRESH, properties.getRefreshTokenTtl());
     }
 
@@ -48,7 +48,7 @@ public class JwtService {
         return parseToken(token, JwtTokenType.REFRESH);
     }
 
-    private String generateToken(User user, JwtTokenType tokenType, Duration ttl) {
+    private String generateToken(UserEntity user, JwtTokenType tokenType, Duration ttl) {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(ttl);
         return Jwts.builder()

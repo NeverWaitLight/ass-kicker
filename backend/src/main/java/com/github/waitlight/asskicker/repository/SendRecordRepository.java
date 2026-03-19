@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.repository;
 
-import com.github.waitlight.asskicker.model.SendRecord;
+import com.github.waitlight.asskicker.model.SendRecordEntity;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -11,14 +11,14 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
-public interface SendRecordRepository extends ReactiveMongoRepository<SendRecord, String>, SendRecordRepositoryCustom {
+public interface SendRecordRepository extends ReactiveMongoRepository<SendRecordEntity, String>, SendRecordRepositoryCustom {
 
-    Flux<SendRecord> findByTaskId(String taskId);
+    Flux<SendRecordEntity> findByTaskId(String taskId);
 }
 
 interface SendRecordRepositoryCustom {
 
-    Flux<SendRecord> findPage(int limit, int offset, String recipient, String channelType);
+    Flux<SendRecordEntity> findPage(int limit, int offset, String recipient, String channelType);
 
     Mono<Long> countAll(String recipient, String channelType);
 }
@@ -32,16 +32,16 @@ class SendRecordRepositoryCustomImpl implements SendRecordRepositoryCustom {
     }
 
     @Override
-    public Flux<SendRecord> findPage(int limit, int offset, String recipient, String channelType) {
+    public Flux<SendRecordEntity> findPage(int limit, int offset, String recipient, String channelType) {
         Query query = buildListQuery(recipient, channelType);
         query.with(Sort.by(Sort.Direction.DESC, "sentAt"));
         query.skip(offset).limit(limit);
-        return mongoTemplate.find(query, SendRecord.class);
+        return mongoTemplate.find(query, SendRecordEntity.class);
     }
 
     @Override
     public Mono<Long> countAll(String recipient, String channelType) {
-        return mongoTemplate.count(buildListQuery(recipient, channelType), SendRecord.class);
+        return mongoTemplate.count(buildListQuery(recipient, channelType), SendRecordEntity.class);
     }
 
     private Query buildListQuery(String recipient, String channelType) {

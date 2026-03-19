@@ -2,7 +2,7 @@ package com.github.waitlight.asskicker.service;
 
 import com.github.waitlight.asskicker.dto.sendrecord.SendRecordPageResponse;
 import com.github.waitlight.asskicker.dto.sendrecord.SendRecordView;
-import com.github.waitlight.asskicker.model.SendRecord;
+import com.github.waitlight.asskicker.model.SendRecordEntity;
 import reactor.core.publisher.Mono;
 
 public interface SendRecordService {
@@ -11,5 +11,5 @@ public interface SendRecordService {
 
     Mono<SendRecordView> getById(String id);
 
-    void writeRecord(SendRecord record);
+    void writeRecord(SendRecordEntity record);
 }

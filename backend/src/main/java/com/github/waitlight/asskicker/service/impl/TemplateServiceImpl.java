@@ -3,8 +3,8 @@ package com.github.waitlight.asskicker.service.impl;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.model.Language;
-import com.github.waitlight.asskicker.model.LanguageTemplate;
-import com.github.waitlight.asskicker.model.Template;
+import com.github.waitlight.asskicker.model.LanguageTemplateEntity;
+import com.github.waitlight.asskicker.model.TemplateEntity;
 import com.github.waitlight.asskicker.repository.LanguageTemplateRepository;
 import com.github.waitlight.asskicker.repository.TemplateRepository;
 import com.github.waitlight.asskicker.service.TemplateService;
@@ -25,9 +25,9 @@ public class TemplateServiceImpl implements TemplateService {
     private final LanguageTemplateRepository languageTemplateRepository;
     private final CaffeineCacheConfig caffeineCacheConfig;
 
-    private AsyncLoadingCache<String, Optional<Template>> templateByIdCache;
-    private AsyncLoadingCache<String, Optional<Template>> templateByCodeCache;
-    private AsyncLoadingCache<String, Optional<LanguageTemplate>> languageTemplateCache;
+    private AsyncLoadingCache<String, Optional<TemplateEntity>> templateByIdCache;
+    private AsyncLoadingCache<String, Optional<TemplateEntity>> templateByCodeCache;
+    private AsyncLoadingCache<String, Optional<LanguageTemplateEntity>> languageTemplateCache;
 
     @PostConstruct
     void initCaches() {
@@ -52,7 +52,7 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public Flux<Template> findAll(int page, int size) {
+    public Flux<TemplateEntity> findAll(int page, int size) {
         if (page < 0 || size <= 0) {
             return Flux.empty();
         }
@@ -63,19 +63,19 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public Mono<Template> findById(String id) {
+    public Mono<TemplateEntity> findById(String id) {
         return Mono.fromFuture(templateByIdCache.get(id))
                 .flatMap(opt -> opt.map(Mono::just).orElseGet(Mono::empty));
     }
 
     @Override
-    public Mono<Template> findByCode(String code) {
+    public Mono<TemplateEntity> findByCode(String code) {
         return Mono.fromFuture(templateByCodeCache.get(code))
                 .flatMap(opt -> opt.map(Mono::just).orElseGet(Mono::empty));
     }
 
     @Override
-    public Mono<Template> createTemplate(Template template) {
+    public Mono<TemplateEntity> createTemplate(TemplateEntity template) {
         template.setId(null);
         long timestamp = Instant.now().toEpochMilli();
         template.setCreatedAt(timestamp);
@@ -84,7 +84,7 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public Mono<Template> updateTemplate(String id, Template template) {
+    public Mono<TemplateEntity> updateTemplate(String id, TemplateEntity template) {
         return templateRepository.findById(id)
                 .flatMap(existingTemplate -> {
                     String oldCode = existingTemplate.getCode();
@@ -114,19 +114,19 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public Mono<Template> getTemplateById(String id) {
+    public Mono<TemplateEntity> getTemplateById(String id) {
         return findById(id);
     }
 
     @Override
-    public Mono<LanguageTemplate> getTemplateContentByLanguage(String templateId, Language language) {
+    public Mono<LanguageTemplateEntity> getTemplateContentByLanguage(String templateId, Language language) {
         String key = templateId + ":" + language.name();
         return Mono.fromFuture(languageTemplateCache.get(key))
                 .flatMap(opt -> opt.map(Mono::just).orElseGet(Mono::empty));
     }
 
     @Override
-    public Mono<LanguageTemplate> saveTemplateContentByLanguage(String templateId, Language language, String content) {
+    public Mono<LanguageTemplateEntity> saveTemplateContentByLanguage(String templateId, Language language, String content) {
         return templateRepository.findById(templateId)
                 .flatMap(ignored -> languageTemplateRepository.findByTemplateIdAndLanguage(templateId, language)
                         .flatMap(existingLT -> {
@@ -136,7 +136,7 @@ public class TemplateServiceImpl implements TemplateService {
                         })
                         .switchIfEmpty(Mono.defer(() -> {
                             long timestamp = Instant.now().toEpochMilli();
-                            LanguageTemplate created = new LanguageTemplate(templateId, language, content);
+                            LanguageTemplateEntity created = new LanguageTemplateEntity(templateId, language, content);
                             created.setCreatedAt(timestamp);
                             created.setUpdatedAt(timestamp);
                             return languageTemplateRepository.save(created);
@@ -146,7 +146,7 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public Flux<LanguageTemplate> getAllTemplateContentsByTemplateId(String templateId) {
+    public Flux<LanguageTemplateEntity> getAllTemplateContentsByTemplateId(String templateId) {
         return languageTemplateRepository.findByTemplateId(templateId);
     }
 
