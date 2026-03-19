@@ -1,7 +1,9 @@
 package com.github.waitlight.asskicker.channels.email;
 
+import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import org.springframework.http.MediaType;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -88,8 +90,8 @@ public class HttpEmailChannel extends EmailChannel<HttpEmailChannelConfig> {
             // Only retry on server errors (5xx) and rate limiting (429), NOT on auth errors (401/403)
             return status == 429 || status == 503 || (status >= 500 && status < 600);
         }
-        return ex instanceof java.net.ConnectException
-                || ex instanceof java.util.concurrent.TimeoutException;
+        return ex instanceof ConnectException
+                || ex instanceof TimeoutException;
     }
 
     private String categorizeError(Exception ex) {
@@ -97,10 +99,10 @@ public class HttpEmailChannel extends EmailChannel<HttpEmailChannelConfig> {
         if (responseEx != null) {
             return categorizeHttpStatus(responseEx.getStatusCode().value());
         }
-        if (findCause(ex, java.net.ConnectException.class) != null) {
+        if (findCause(ex, ConnectException.class) != null) {
             return "CONNECTION_FAILED";
         }
-        if (findCause(ex, java.util.concurrent.TimeoutException.class) != null) {
+        if (findCause(ex, TimeoutException.class) != null) {
             return "TIMEOUT";
         }
         return "MAIL_SEND_FAILED";

@@ -12,8 +12,10 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
+import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 public class DingTalkIMChannel extends IMChannel<DingTalkIMChannelConfig> {
 
@@ -106,8 +108,8 @@ public class DingTalkIMChannel extends IMChannel<DingTalkIMChannelConfig> {
             // 仅在服务端错误（5xx）和限流（429）时重试，认证错误（401/403）不重试
             return status == 429 || status == 503 || (status >= 500 && status < 600);
         }
-        return ex instanceof java.net.ConnectException
-                || ex instanceof java.util.concurrent.TimeoutException;
+        return ex instanceof ConnectException
+                || ex instanceof TimeoutException;
     }
 
     /**
@@ -118,10 +120,10 @@ public class DingTalkIMChannel extends IMChannel<DingTalkIMChannelConfig> {
         if (responseEx != null) {
             return categorizeHttpStatus(responseEx.getStatusCode().value());
         }
-        if (findCause(ex, java.net.ConnectException.class) != null) {
+        if (findCause(ex, ConnectException.class) != null) {
             return "CONNECTION_FAILED";
         }
-        if (findCause(ex, java.util.concurrent.TimeoutException.class) != null) {
+        if (findCause(ex, TimeoutException.class) != null) {
             return "TIMEOUT";
         }
         return "DINGTALK_SEND_FAILED";

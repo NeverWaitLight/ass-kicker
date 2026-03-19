@@ -3,6 +3,7 @@ package com.github.waitlight.asskicker.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
+import com.github.waitlight.asskicker.channels.Channel;
 import com.github.waitlight.asskicker.channels.MsgReq;
 import com.github.waitlight.asskicker.channels.MsgResp;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
@@ -196,7 +197,7 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
             try {
                 if (request.type() == ChannelType.EMAIL) {
                     com.github.waitlight.asskicker.channels.ChannelConfig config = emailChannelConfigConverter.fromProperties(request.properties());
-                    com.github.waitlight.asskicker.channels.Channel<?> channel = emailChannelFactory.create(config);
+                    Channel<?> channel = emailChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
                             .subject("测试消息")
@@ -218,7 +219,7 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
                 }
                 if (request.type() == ChannelType.IM) {
                     com.github.waitlight.asskicker.channels.ChannelConfig config = imChannelConfigConverter.fromProperties(request.properties());
-                    com.github.waitlight.asskicker.channels.Channel<?> channel = imChannelFactory.create(config);
+                    Channel<?> channel = imChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
                             .subject("测试消息")
@@ -240,7 +241,7 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
                 }
                 if (request.type() == ChannelType.PUSH) {
                     com.github.waitlight.asskicker.channels.ChannelConfig config = pushChannelConfigConverter.fromProperties(request.properties());
-                    com.github.waitlight.asskicker.channels.Channel<?> channel = pushChannelFactory.create(config);
+                    Channel<?> channel = pushChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
                             .subject("测试消息")
@@ -262,7 +263,7 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
                 }
                 if (request.type() == ChannelType.SMS) {
                     com.github.waitlight.asskicker.channels.ChannelConfig config = smsChannelConfigConverter.fromProperties(request.properties());
-                    com.github.waitlight.asskicker.channels.Channel<?> channel = smsChannelFactory.create(config);
+                    Channel<?> channel = smsChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
                             .subject("")
@@ -318,7 +319,7 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
         return upper;
     }
 
-    private void closeChannel(com.github.waitlight.asskicker.channels.Channel<?> channel) {
+    private void closeChannel(Channel<?> channel) {
         if (channel instanceof AutoCloseable closeable) {
             try {
                 closeable.close();

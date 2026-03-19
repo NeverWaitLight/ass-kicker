@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.handlers;
 
+import com.github.waitlight.asskicker.dto.apikey.ApiKeyView;
 import com.github.waitlight.asskicker.dto.apikey.CreateApiKeyRequest;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.service.ApiKeyService;
@@ -41,7 +42,7 @@ public class ApiKeyHandler {
                 .map(auth -> (UserPrincipal) auth.getPrincipal())
                 .flatMap(principal -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
-                        .body(apiKeyService.listApiKeys(principal.userId()), com.github.waitlight.asskicker.dto.apikey.ApiKeyView.class))
+                        .body(apiKeyService.listApiKeys(principal.userId()), ApiKeyView.class))
                 .onErrorResume(ResponseStatusException.class, ex ->
                         ServerResponse.status(ex.getStatusCode())
                                 .contentType(MediaType.APPLICATION_JSON)

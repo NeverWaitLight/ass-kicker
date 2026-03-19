@@ -14,7 +14,9 @@ import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 import java.io.ByteArrayInputStream;
+import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeoutException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,8 +124,8 @@ public class FCMPushChannel extends PushChannel<FCMPushChannelConfig> {
             int status = responseEx.getStatusCode().value();
             return status == 429 || status == 503 || (status >= 500 && status < 600);
         }
-        return ex instanceof java.net.ConnectException
-                || ex instanceof java.util.concurrent.TimeoutException;
+        return ex instanceof ConnectException
+                || ex instanceof TimeoutException;
     }
 
     private String categorizeError(Exception ex) {
@@ -131,10 +133,10 @@ public class FCMPushChannel extends PushChannel<FCMPushChannelConfig> {
         if (responseEx != null) {
             return categorizeHttpStatus(responseEx.getStatusCode().value());
         }
-        if (findCause(ex, java.net.ConnectException.class) != null) {
+        if (findCause(ex, ConnectException.class) != null) {
             return "CONNECTION_FAILED";
         }
-        if (findCause(ex, java.util.concurrent.TimeoutException.class) != null) {
+        if (findCause(ex, TimeoutException.class) != null) {
             return "TIMEOUT";
         }
         return "FCM_SEND_FAILED";

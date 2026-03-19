@@ -2,6 +2,7 @@ package com.github.waitlight.asskicker.manager;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.waitlight.asskicker.channels.Channel;
 import com.github.waitlight.asskicker.channels.email.EmailChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.email.EmailChannelFactory;
 import com.github.waitlight.asskicker.channels.im.IMChannelConfigConverter;
@@ -48,7 +49,7 @@ public class ChannelManager implements DisposableBean {
     private final SmsChannelConfigConverter smsChannelConfigConverter;
     private final ObjectMapper objectMapper;
 
-    private final ConcurrentHashMap<String, com.github.waitlight.asskicker.channels.Channel<?>> channelCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Channel<?>> channelCache = new ConcurrentHashMap<>();
 
     public Mono<ChannelConfig> selectChannel(String templateCode) {
         return templateService.findByCode(templateCode)
@@ -73,11 +74,11 @@ public class ChannelManager implements DisposableBean {
                 });
     }
 
-    public com.github.waitlight.asskicker.channels.Channel<?> resolveChannel(ChannelConfig channelConfigEntity) {
+    public Channel<?> resolveChannel(ChannelConfig channelConfigEntity) {
         return channelCache.computeIfAbsent(channelConfigEntity.getId(), id -> buildChannel(channelConfigEntity));
     }
 
-    private com.github.waitlight.asskicker.channels.Channel<?> buildChannel(ChannelConfig channelConfigEntity) {
+    private Channel<?> buildChannel(ChannelConfig channelConfigEntity) {
         ChannelType type = channelConfigEntity.getType();
         Map<String, Object> properties = readProperties(channelConfigEntity.getPropertiesJson());
         if (type == ChannelType.EMAIL) {

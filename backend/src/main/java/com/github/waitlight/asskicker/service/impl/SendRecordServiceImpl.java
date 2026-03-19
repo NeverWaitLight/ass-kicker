@@ -9,6 +9,7 @@ import com.github.waitlight.asskicker.repository.SendRecordRepository;
 import com.github.waitlight.asskicker.service.SendRecordService;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,7 +24,7 @@ import java.util.Optional;
 
 @Service
 @Slf4j
-public class SendRecordServiceImpl implements SendRecordService, org.springframework.beans.factory.DisposableBean {
+public class SendRecordServiceImpl implements SendRecordService, DisposableBean {
 
     private final SendRecordRepository sendRecordRepository;
     private final CaffeineCacheConfig caffeineCacheConfig;

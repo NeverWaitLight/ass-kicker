@@ -6,6 +6,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Configuration;
 
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
@@ -38,7 +40,7 @@ public class CaffeineCacheConfig {
      * 创建带雪崩防护的 AsyncLoadingCache
      */
     public <K, V> AsyncLoadingCache<K, V> buildCache(
-            BiFunction<K, java.util.concurrent.Executor, java.util.concurrent.CompletableFuture<V>> loader) {
+            BiFunction<K, Executor, CompletableFuture<V>> loader) {
         return Caffeine.newBuilder()
                 .maximumSize(properties.getMaximumSize())
                 .expireAfterWrite(jitteredExpireMinutes(), TimeUnit.MINUTES)

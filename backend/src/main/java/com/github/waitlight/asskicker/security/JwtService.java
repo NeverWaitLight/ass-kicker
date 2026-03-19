@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 
@@ -47,7 +48,7 @@ public class JwtService {
         return parseToken(token, JwtTokenType.REFRESH);
     }
 
-    private String generateToken(User user, JwtTokenType tokenType, java.time.Duration ttl) {
+    private String generateToken(User user, JwtTokenType tokenType, Duration ttl) {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(ttl);
         return Jwts.builder()

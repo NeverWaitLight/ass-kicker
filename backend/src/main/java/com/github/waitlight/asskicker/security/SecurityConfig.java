@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
+import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 
 @Configuration(proxyBeanMethods = false)
 @EnableWebFluxSecurity
@@ -38,8 +39,7 @@ public class SecurityConfig {
         });
 
         return http
-                .securityMatcher(org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
-                        .pathMatchers("/v1/send", "/v1/submit"))
+                .securityMatcher(ServerWebExchangeMatchers.pathMatchers("/v1/send", "/v1/submit"))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
                 .formLogin(ServerHttpSecurity.FormLoginSpec::disable)

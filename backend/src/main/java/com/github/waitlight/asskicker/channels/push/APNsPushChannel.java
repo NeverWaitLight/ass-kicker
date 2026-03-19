@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Date;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -144,8 +145,8 @@ public class APNsPushChannel extends PushChannel<APNsPushChannelConfig> {
         return Jwts.builder()
                 .setHeaderParam("kid", config.getKeyId())
                 .setIssuer(config.getTeamId())
-                .setIssuedAt(new java.util.Date(now * 1000))
-                .setExpiration(new java.util.Date((now + 3600) * 1000))
+                .setIssuedAt(new Date(now * 1000))
+                .setExpiration(new Date((now + 3600) * 1000))
                 .signWith(key, SignatureAlgorithm.ES256)
                 .compact();
     }

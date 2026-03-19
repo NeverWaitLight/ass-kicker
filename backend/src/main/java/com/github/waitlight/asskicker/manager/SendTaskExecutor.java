@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.manager;
 
+import com.github.waitlight.asskicker.channels.Channel;
 import com.github.waitlight.asskicker.channels.MsgReq;
 import com.github.waitlight.asskicker.channels.MsgResp;
 import com.github.waitlight.asskicker.model.*;
@@ -8,6 +9,7 @@ import com.github.waitlight.asskicker.service.SendRecordService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -23,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class SendTaskExecutor implements org.springframework.beans.factory.DisposableBean {
+public class SendTaskExecutor implements DisposableBean {
 
     private final TemplateManager templateManager;
     private final ChannelManager channelManager;
@@ -97,7 +99,7 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
                 return;
             }
 
-            com.github.waitlight.asskicker.channels.Channel<?> sendChannel = channelManager
+            Channel<?> sendChannel = channelManager
                     .resolveChannel(channelConfigEntity);
             if (sendChannel == null) {
                 lastErrorCode = "CHANNEL_CREATE_FAILED";
@@ -119,10 +121,11 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
 
     private boolean processRecipient(SendTask task, String renderedContent,
             ChannelConfig channelConfigEntity,
-            com.github.waitlight.asskicker.channels.Channel<?> sendChannel,
+            Channel<?> sendChannel,
             String recipient) {
         long sendStartedAt = Instant.now().toEpochMilli();
-        MsgResp response = sendMessage(task, renderedContent, channelConfigEntity, sendChannel, recipient, sendStartedAt);
+        MsgResp response = sendMessage(task, renderedContent, channelConfigEntity, sendChannel, recipient,
+                sendStartedAt);
         SendRecordStatus finalStatus = response.isSuccess() ? SendRecordStatus.SUCCESS : SendRecordStatus.FAILED;
         long sentAt = Instant.now().toEpochMilli();
         saveFinalRecord(task, renderedContent, channelConfigEntity, recipient, finalStatus,
@@ -132,7 +135,7 @@ public class SendTaskExecutor implements org.springframework.beans.factory.Dispo
 
     private MsgResp sendMessage(SendTask task, String renderedContent,
             ChannelConfig channelConfigEntity,
-            com.github.waitlight.asskicker.channels.Channel<?> sendChannel,
+            Channel<?> sendChannel,
             String recipient,
             long sendStartedAt) {
         MsgReq request = MsgReq.builder()
