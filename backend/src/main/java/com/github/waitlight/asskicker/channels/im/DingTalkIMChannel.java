@@ -17,12 +17,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-public class DingTalkIMChannel extends IMChannel<DingTalkIMChannelConfig> {
+public class DingTalkIMChannel extends IMChannel<DingTalkIMChannelProperty> {
 
     private final WebClient client;
     private final ChannelDebugSimulator debugSimulator;
 
-    public DingTalkIMChannel(DingTalkIMChannelConfig config, WebClient webClient, ChannelDebugSimulator debugSimulator) {
+    public DingTalkIMChannel(DingTalkIMChannelProperty config, WebClient webClient, ChannelDebugSimulator debugSimulator) {
         super(config);
         this.client = webClient;
         this.debugSimulator = debugSimulator;

@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.channels.sms;
+package com.github.waitlight.asskicker.channels.push;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -10,27 +10,25 @@ import java.time.Duration;
 
 @Getter
 @Setter
-public class TencentSmsChannelConfig extends SmsChannelConfig {
+public class APNsPushChannelProperty extends PushChannelProperty {
 
     @NotBlank
-    private String secretId;
+    private String teamId;
 
     @NotBlank
-    private String secretKey;
+    private String keyId;
 
     @NotBlank
-    private String sdkAppId;
-
-    @NotBlank
-    private String signName;
+    private String bundleId;
 
     /**
-     * 单变量模板 ID，模板参数传单元素数组 [全文内容]
+     * p8 私钥内容（推荐）或通过 p8KeyPath 指定文件路径
      */
-    @NotBlank
-    private String templateId;
+    private String p8KeyContent;
 
-    private String region = "ap-guangzhou";
+    private String p8KeyPath;
+
+    private boolean production = true;
 
     @NotNull
     private Duration timeout = Duration.ofSeconds(10);
@@ -41,7 +39,7 @@ public class TencentSmsChannelConfig extends SmsChannelConfig {
     @NotNull
     private Duration retryDelay = Duration.ofSeconds(1);
 
-    public TencentSmsChannelConfig() {
-        super("TENCENT");
+    public APNsPushChannelProperty() {
+        super("APNS");
     }
 }

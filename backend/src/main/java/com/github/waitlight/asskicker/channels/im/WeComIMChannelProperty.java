@@ -10,7 +10,7 @@ import java.time.Duration;
 
 @Getter
 @Setter
-public class WechatWorkIMChannelConfig extends IMChannelConfig {
+public class WeComIMChannelProperty extends IMChannelProperty {
 
     @NotBlank
     private String webhookUrl;
@@ -24,7 +24,7 @@ public class WechatWorkIMChannelConfig extends IMChannelConfig {
     @NotNull
     private Duration retryDelay = Duration.ofSeconds(1);
 
-    public WechatWorkIMChannelConfig() {
+    public WeComIMChannelProperty() {
         super("WECHAT_WORK");
     }
 }

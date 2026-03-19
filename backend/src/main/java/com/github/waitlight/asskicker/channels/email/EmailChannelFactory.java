@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.github.waitlight.asskicker.channels.ChannelDebugSimulator;
-import com.github.waitlight.asskicker.channels.ChannelConfig;
+import com.github.waitlight.asskicker.channels.ChannelProperty;
 
 @Component
 public class EmailChannelFactory {
@@ -17,11 +17,11 @@ public class EmailChannelFactory {
         this.debugSimulator = debugSimulator;
     }
 
-    public EmailChannel<?> create(ChannelConfig config) {
-        if (config instanceof HttpEmailChannelConfig http) {
+    public EmailChannel<?> create(ChannelProperty config) {
+        if (config instanceof HttpEmailChannelProperty http) {
             return new HttpEmailChannel(http, sharedWebClient, debugSimulator);
         }
-        if (config instanceof SmtpEmailChannelConfig smtp) {
+        if (config instanceof SmtpEmailChannelProperty smtp) {
             return new SmtpEmailChannel(smtp, debugSimulator);
         }
 

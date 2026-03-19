@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * 谷歌 FCM HTTP v1 推送通道。
  */
-public class FCMPushChannel extends PushChannel<FCMPushChannelConfig> {
+public class FCMPushChannel extends PushChannel<FCMPushChannelProperty> {
 
     private static final String FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
     private static final String FCM_SEND_URL = "https://fcm.googleapis.com/v1/projects/%s/messages:send";
@@ -33,7 +33,7 @@ public class FCMPushChannel extends PushChannel<FCMPushChannelConfig> {
     private final ChannelDebugSimulator debugSimulator;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public FCMPushChannel(FCMPushChannelConfig config, WebClient webClient, ChannelDebugSimulator debugSimulator) {
+    public FCMPushChannel(FCMPushChannelProperty config, WebClient webClient, ChannelDebugSimulator debugSimulator) {
         super(config);
         this.client = webClient;
         this.debugSimulator = debugSimulator;

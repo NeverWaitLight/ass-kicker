@@ -28,7 +28,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * 苹果 APNs HTTP/2 推送通道。
  */
-public class APNsPushChannel extends PushChannel<APNsPushChannelConfig> {
+public class APNsPushChannel extends PushChannel<APNsPushChannelProperty> {
 
     private static final String APNS_PRODUCTION_HOST = "api.push.apple.com";
     private static final String APNS_SANDBOX_HOST = "api.sandbox.push.apple.com";
@@ -37,7 +37,7 @@ public class APNsPushChannel extends PushChannel<APNsPushChannelConfig> {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ChannelDebugSimulator debugSimulator;
 
-    public APNsPushChannel(APNsPushChannelConfig config, ChannelDebugSimulator debugSimulator) {
+    public APNsPushChannel(APNsPushChannelProperty config, ChannelDebugSimulator debugSimulator) {
         super(config);
         this.debugSimulator = debugSimulator;
     }

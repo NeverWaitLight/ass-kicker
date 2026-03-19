@@ -10,29 +10,27 @@ import java.time.Duration;
 
 @Getter
 @Setter
-public class AliyunSmsChannelConfig extends SmsChannelConfig {
+public class TencentSmsChannelProperty extends SmsChannelProperty {
 
     @NotBlank
-    private String accessKeyId;
+    private String secretId;
 
     @NotBlank
-    private String accessKeySecret;
+    private String secretKey;
+
+    @NotBlank
+    private String sdkAppId;
 
     @NotBlank
     private String signName;
 
     /**
-     * 单变量模板编码，如变量名为 content 则 TemplateParam 传 {"content": "全文"}
+     * 单变量模板 ID，模板参数传单元素数组 [全文内容]
      */
     @NotBlank
-    private String templateCode;
+    private String templateId;
 
-    /**
-     * 模板中唯一变量的名称，用于直接发送完整内容，默认 content
-     */
-    private String templateParamKey = "content";
-
-    private String regionId = "cn-hangzhou";
+    private String region = "ap-guangzhou";
 
     @NotNull
     private Duration timeout = Duration.ofSeconds(10);
@@ -43,7 +41,7 @@ public class AliyunSmsChannelConfig extends SmsChannelConfig {
     @NotNull
     private Duration retryDelay = Duration.ofSeconds(1);
 
-    public AliyunSmsChannelConfig() {
-        super("ALIYUN");
+    public TencentSmsChannelProperty() {
+        super("TENCENT");
     }
 }

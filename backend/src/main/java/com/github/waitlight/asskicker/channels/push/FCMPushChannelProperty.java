@@ -10,7 +10,7 @@ import java.time.Duration;
 
 @Getter
 @Setter
-public class FCMPushChannelConfig extends PushChannelConfig {
+public class FCMPushChannelProperty extends PushChannelProperty {
 
     /**
      * 服务账号 JSON 文件路径或 JSON 字符串内容
@@ -32,7 +32,7 @@ public class FCMPushChannelConfig extends PushChannelConfig {
     @NotNull
     private Duration retryDelay = Duration.ofSeconds(1);
 
-    public FCMPushChannelConfig() {
+    public FCMPushChannelProperty() {
         super("FCM");
     }
 }

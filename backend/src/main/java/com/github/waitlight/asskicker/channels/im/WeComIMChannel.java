@@ -18,12 +18,12 @@ import java.util.HashMap;
 import java.util.concurrent.TimeoutException;
 import java.util.Map;
 
-public class WechatWorkIMChannel extends IMChannel<WechatWorkIMChannelConfig> {
+public class WeComIMChannel extends IMChannel<WeComIMChannelProperty> {
 
     private final WebClient client;
     private final ChannelDebugSimulator debugSimulator;
 
-    public WechatWorkIMChannel(WechatWorkIMChannelConfig config, WebClient webClient, ChannelDebugSimulator debugSimulator) {
+    public WeComIMChannel(WeComIMChannelProperty config, WebClient webClient, ChannelDebugSimulator debugSimulator) {
         super(config);
         this.client = webClient;
         this.debugSimulator = debugSimulator;

@@ -13,11 +13,11 @@ import com.tencentcloudapi.sms.v20210111.models.SendStatus;
 /**
  * 腾讯云短信通道，直接发送完整内容（单变量模板）。
  */
-public class TencentSmsChannel extends SmsChannel<TencentSmsChannelConfig> {
+public class TencentSmsChannel extends SmsChannel<TencentSmsChannelProperty> {
 
     private final ChannelDebugSimulator debugSimulator;
 
-    public TencentSmsChannel(TencentSmsChannelConfig config, ChannelDebugSimulator debugSimulator) {
+    public TencentSmsChannel(TencentSmsChannelProperty config, ChannelDebugSimulator debugSimulator) {
         super(config);
         this.debugSimulator = debugSimulator;
     }

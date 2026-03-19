@@ -18,12 +18,12 @@ import com.github.waitlight.asskicker.channels.ChannelDebugSimulator;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
-public class HttpEmailChannel extends EmailChannel<HttpEmailChannelConfig> {
+public class HttpEmailChannel extends EmailChannel<HttpEmailChannelProperty> {
 
     private final WebClient client;
     private final ChannelDebugSimulator debugSimulator;
 
-    public HttpEmailChannel(HttpEmailChannelConfig config, WebClient webClient, ChannelDebugSimulator debugSimulator) {
+    public HttpEmailChannel(HttpEmailChannelProperty config, WebClient webClient, ChannelDebugSimulator debugSimulator) {
         super(config);
         this.client = webClient;
         this.debugSimulator = debugSimulator;

@@ -3,6 +3,7 @@ package com.github.waitlight.asskicker.manager;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channels.Channel;
+import com.github.waitlight.asskicker.channels.ChannelProperty;
 import com.github.waitlight.asskicker.channels.email.EmailChannelConfigConverter;
 import com.github.waitlight.asskicker.channels.email.EmailChannelFactory;
 import com.github.waitlight.asskicker.channels.im.IMChannelConfigConverter;
@@ -82,19 +83,19 @@ public class ChannelManager implements DisposableBean {
         ChannelType type = channelConfigEntity.getType();
         Map<String, Object> properties = readProperties(channelConfigEntity.getPropertiesJson());
         if (type == ChannelType.EMAIL) {
-            com.github.waitlight.asskicker.channels.ChannelConfig config = emailChannelConfigConverter.fromProperties(properties);
+            ChannelProperty config = emailChannelConfigConverter.fromProperties(properties);
             return emailChannelFactory.create(config);
         }
         if (type == ChannelType.IM) {
-            com.github.waitlight.asskicker.channels.ChannelConfig config = imChannelConfigConverter.fromProperties(properties);
+            ChannelProperty config = imChannelConfigConverter.fromProperties(properties);
             return imChannelFactory.create(config);
         }
         if (type == ChannelType.PUSH) {
-            com.github.waitlight.asskicker.channels.ChannelConfig config = pushChannelConfigConverter.fromProperties(properties);
+            ChannelProperty config = pushChannelConfigConverter.fromProperties(properties);
             return pushChannelFactory.create(config);
         }
         if (type == ChannelType.SMS) {
-            com.github.waitlight.asskicker.channels.ChannelConfig config = smsChannelConfigConverter.fromProperties(properties);
+            ChannelProperty config = smsChannelConfigConverter.fromProperties(properties);
             return smsChannelFactory.create(config);
         }
         return null;

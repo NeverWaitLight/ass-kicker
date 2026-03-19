@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.channels.sms;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channels.ChannelConfig;
+import com.github.waitlight.asskicker.channels.ChannelProperty;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.springframework.http.HttpStatus;
@@ -36,14 +36,14 @@ public class SmsChannelConfigConverter {
         this.validator = validator;
     }
 
-    public ChannelConfig fromProperties(Map<String, Object> properties) {
+    public ChannelProperty fromProperties(Map<String, Object> properties) {
         Map<String, Object> safe = normalizeProperties(properties);
         SmsChannelType smsType = parseProtocol(resolveProtocolValue(safe));
 
         if (smsType == SmsChannelType.ALIYUN) {
             Map<String, Object> aliyunValues = resolveProtocolValues(safe, ALIYUN_KEYS, "aliyun", "ALIYUN");
             normalizeDurationValues(aliyunValues, "timeout", "retryDelay");
-            AliyunSmsChannelConfig aliyun = mapToConfig(aliyunValues, AliyunSmsChannelConfig.class, "ALIYUN");
+            AliyunSmsChannelProperty aliyun = mapToConfig(aliyunValues, AliyunSmsChannelProperty.class, "ALIYUN");
             ensureNonNegativeRetries(aliyun.getMaxRetries(), "ALIYUN");
             validateConfig(aliyun, "ALIYUN");
             return aliyun;
@@ -52,7 +52,7 @@ public class SmsChannelConfigConverter {
         if (smsType == SmsChannelType.TENCENT) {
             Map<String, Object> tencentValues = resolveProtocolValues(safe, TENCENT_KEYS, "tencent", "TENCENT");
             normalizeDurationValues(tencentValues, "timeout", "retryDelay");
-            TencentSmsChannelConfig tencent = mapToConfig(tencentValues, TencentSmsChannelConfig.class, "TENCENT");
+            TencentSmsChannelProperty tencent = mapToConfig(tencentValues, TencentSmsChannelProperty.class, "TENCENT");
             ensureNonNegativeRetries(tencent.getMaxRetries(), "TENCENT");
             validateConfig(tencent, "TENCENT");
             return tencent;

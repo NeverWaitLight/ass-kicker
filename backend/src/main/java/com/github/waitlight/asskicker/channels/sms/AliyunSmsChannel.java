@@ -15,11 +15,11 @@ import java.util.Map;
 /**
  * 阿里云短信通道，直接发送完整内容（单变量模板）。
  */
-public class AliyunSmsChannel extends SmsChannel<AliyunSmsChannelConfig> {
+public class AliyunSmsChannel extends SmsChannel<AliyunSmsChannelProperty> {
 
     private final ChannelDebugSimulator debugSimulator;
 
-    public AliyunSmsChannel(AliyunSmsChannelConfig config, ChannelDebugSimulator debugSimulator) {
+    public AliyunSmsChannel(AliyunSmsChannelProperty config, ChannelDebugSimulator debugSimulator) {
         super(config);
         this.debugSimulator = debugSimulator;
     }

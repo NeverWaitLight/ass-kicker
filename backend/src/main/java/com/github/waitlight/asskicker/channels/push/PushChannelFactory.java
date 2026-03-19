@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.channels.push;
 
 import com.github.waitlight.asskicker.channels.Channel;
-import com.github.waitlight.asskicker.channels.ChannelConfig;
+import com.github.waitlight.asskicker.channels.ChannelProperty;
 import com.github.waitlight.asskicker.channels.ChannelDebugSimulator;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -17,11 +17,11 @@ public class PushChannelFactory {
         this.debugSimulator = debugSimulator;
     }
 
-    public Channel<?> create(ChannelConfig config) {
-        if (config instanceof APNsPushChannelConfig apns) {
+    public Channel<?> create(ChannelProperty config) {
+        if (config instanceof APNsPushChannelProperty apns) {
             return new APNsPushChannel(apns, debugSimulator);
         }
-        if (config instanceof FCMPushChannelConfig fcm) {
+        if (config instanceof FCMPushChannelProperty fcm) {
             return new FCMPushChannel(fcm, sharedWebClient, debugSimulator);
         }
         throw new IllegalArgumentException("Unsupported push channel config: " + config);

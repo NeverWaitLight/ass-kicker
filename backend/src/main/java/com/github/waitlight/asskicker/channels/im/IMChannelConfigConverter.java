@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.channels.im;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channels.ChannelConfig;
+import com.github.waitlight.asskicker.channels.ChannelProperty;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.springframework.http.HttpStatus;
@@ -37,13 +37,13 @@ public class IMChannelConfigConverter {
         this.validator = validator;
     }
 
-    public ChannelConfig fromProperties(Map<String, Object> properties) {
+    public ChannelProperty fromProperties(Map<String, Object> properties) {
         Map<String, Object> safe = normalizeProperties(properties);
         IMChannelType senderType = parseProtocol(resolveProtocolValue(safe));
 
         if (senderType == IMChannelType.DINGTALK) {
             Map<String, Object> dingTalkValues = resolveProtocolValues(safe, DINGTALK_KEYS, "dingTalk", "dingtalk");
-            DingTalkIMChannelConfig dingTalk = mapToConfig(dingTalkValues, DingTalkIMChannelConfig.class, "DINGTALK");
+            DingTalkIMChannelProperty dingTalk = mapToConfig(dingTalkValues, DingTalkIMChannelProperty.class, "DINGTALK");
             applyDingTalkDerivedFields(dingTalk);
             ensurePositiveRetries(dingTalk.getMaxRetries(), "DINGTALK");
             validateConfig(dingTalk, "DINGTALK");
@@ -52,7 +52,7 @@ public class IMChannelConfigConverter {
 
         if (senderType == IMChannelType.WECHAT_WORK) {
             Map<String, Object> wechatWorkValues = resolveProtocolValues(safe, WECHAT_WORK_KEYS, "wechatWork", "wechat_work");
-            WechatWorkIMChannelConfig wechatWork = mapToConfig(wechatWorkValues, WechatWorkIMChannelConfig.class, "WECHAT_WORK");
+            WeComIMChannelProperty wechatWork = mapToConfig(wechatWorkValues, WeComIMChannelProperty.class, "WECHAT_WORK");
             ensurePositiveRetries(wechatWork.getMaxRetries(), "WECHAT_WORK");
             validateConfig(wechatWork, "WECHAT_WORK");
             return wechatWork;
@@ -69,7 +69,7 @@ public class IMChannelConfigConverter {
         return protocolValue;
     }
 
-    private void applyDingTalkDerivedFields(DingTalkIMChannelConfig dingTalk) {
+    private void applyDingTalkDerivedFields(DingTalkIMChannelProperty dingTalk) {
         String accessToken = extractAccessToken(dingTalk.getWebhookUrl());
         if (accessToken.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "钉钉 Webhook URL 缺少 access_token");

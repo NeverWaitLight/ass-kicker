@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.channels;
 
-public abstract class Channel<C extends ChannelConfig> {
+public abstract class Channel<C extends ChannelProperty> {
 
     protected final C config;
 

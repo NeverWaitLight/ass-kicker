@@ -10,29 +10,24 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class SmtpEmailChannelConfig extends EmailChannelConfig {
+public class HttpEmailChannelProperty extends EmailChannelProperty {
 
     @NotBlank
-    private String host;
-
-    @Min(1)
-    private int port = 465;
+    private String baseUrl;
 
     @NotBlank
-    private String username;
+    private String path;
 
     @NotBlank
-    private String password;
+    private String apiKeyHeader = "Authorization";
 
-    private boolean sslEnabled = true;
+    @NotBlank
+    private String apiKey;
 
     private String from;
 
     @NotNull
-    private Duration connectionTimeout = Duration.ofSeconds(5);
-
-    @NotNull
-    private Duration readTimeout = Duration.ofSeconds(10);
+    private Duration timeout = Duration.ofSeconds(5);
 
     @Min(0)
     private int maxRetries = 3;
@@ -40,7 +35,7 @@ public class SmtpEmailChannelConfig extends EmailChannelConfig {
     @NotNull
     private Duration retryDelay = Duration.ofSeconds(1);
 
-    public SmtpEmailChannelConfig() {
-        super(EmailChannelType.SMTP);
+    public HttpEmailChannelProperty() {
+        super(EmailChannelType.HTTP);
     }
 }

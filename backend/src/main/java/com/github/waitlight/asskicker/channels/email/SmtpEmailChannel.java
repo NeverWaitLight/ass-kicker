@@ -16,18 +16,18 @@ import com.github.waitlight.asskicker.channels.ChannelDebugSimulator;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
-public class SmtpEmailChannel extends EmailChannel<SmtpEmailChannelConfig> {
+public class SmtpEmailChannel extends EmailChannel<SmtpEmailChannelProperty> {
 
     private final ChannelDebugSimulator debugSimulator;
     private final JavaMailSender mailSender;
 
-    public SmtpEmailChannel(SmtpEmailChannelConfig config, ChannelDebugSimulator debugSimulator) {
+    public SmtpEmailChannel(SmtpEmailChannelProperty config, ChannelDebugSimulator debugSimulator) {
         super(config);
         this.debugSimulator = debugSimulator;
         this.mailSender = debugSimulator.isEnabled() ? null : buildJavaMailChannel(config);
     }
 
-    private JavaMailSender buildJavaMailChannel(SmtpEmailChannelConfig config) {
+    private JavaMailSender buildJavaMailChannel(SmtpEmailChannelProperty config) {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost(config.getHost());
         mailSender.setPort(config.getPort());

@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.channels.im;
 
 import com.github.waitlight.asskicker.channels.Channel;
-import com.github.waitlight.asskicker.channels.ChannelConfig;
+import com.github.waitlight.asskicker.channels.ChannelProperty;
 import com.github.waitlight.asskicker.channels.ChannelDebugSimulator;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -17,12 +17,12 @@ public class IMChannelFactory {
         this.debugSimulator = debugSimulator;
     }
 
-    public Channel<?> create(ChannelConfig config) {
-        if (config instanceof DingTalkIMChannelConfig dingTalk) {
+    public Channel<?> create(ChannelProperty config) {
+        if (config instanceof DingTalkIMChannelProperty dingTalk) {
             return new DingTalkIMChannel(dingTalk, sharedWebClient, debugSimulator);
         }
-        if (config instanceof WechatWorkIMChannelConfig wechatWork) {
-            return new WechatWorkIMChannel(wechatWork, sharedWebClient, debugSimulator);
+        if (config instanceof WeComIMChannelProperty wechatWork) {
+            return new WeComIMChannel(wechatWork, sharedWebClient, debugSimulator);
         }
 
         throw new IllegalArgumentException("Unsupported IM sender config: " + config);

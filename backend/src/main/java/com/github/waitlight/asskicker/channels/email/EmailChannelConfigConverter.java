@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.channels.email;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channels.ChannelConfig;
+import com.github.waitlight.asskicker.channels.ChannelProperty;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.springframework.http.HttpStatus;
@@ -37,14 +37,14 @@ public class EmailChannelConfigConverter {
         this.validator = validator;
     }
 
-    public ChannelConfig fromProperties(Map<String, Object> properties) {
+    public ChannelProperty fromProperties(Map<String, Object> properties) {
         Map<String, Object> safe = normalizeProperties(properties);
         EmailChannelType protocol = parseProtocol(resolveProtocolValue(safe));
 
         if (protocol == EmailChannelType.HTTP) {
             Map<String, Object> httpValues = resolveProtocolValues(safe, HTTP_KEYS, "http");
             normalizeDurationValues(httpValues, "timeout", "retryDelay");
-            HttpEmailChannelConfig httpConfig = mapToConfig(httpValues, HttpEmailChannelConfig.class, "HTTP");
+            HttpEmailChannelProperty httpConfig = mapToConfig(httpValues, HttpEmailChannelProperty.class, "HTTP");
             ensurePositiveRetries(httpConfig.getMaxRetries(), "HTTP");
             validateConfig(httpConfig, "HTTP");
             return httpConfig;
@@ -52,7 +52,7 @@ public class EmailChannelConfigConverter {
 
         Map<String, Object> smtpValues = resolveProtocolValues(safe, SMTP_KEYS, "smtp", "SMTP");
         normalizeDurationValues(smtpValues, "connectionTimeout", "readTimeout", "retryDelay");
-        SmtpEmailChannelConfig smtpConfig = mapToConfig(smtpValues, SmtpEmailChannelConfig.class, "SMTP");
+        SmtpEmailChannelProperty smtpConfig = mapToConfig(smtpValues, SmtpEmailChannelProperty.class, "SMTP");
         ensurePositiveRetries(smtpConfig.getMaxRetries(), "SMTP");
         validateConfig(smtpConfig, "SMTP");
         return smtpConfig;

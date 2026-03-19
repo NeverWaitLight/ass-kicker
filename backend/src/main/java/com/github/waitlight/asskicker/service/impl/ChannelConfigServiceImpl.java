@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.channels.Channel;
+import com.github.waitlight.asskicker.channels.ChannelProperty;
 import com.github.waitlight.asskicker.channels.MsgReq;
 import com.github.waitlight.asskicker.channels.MsgResp;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
@@ -196,7 +197,7 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
         return Mono.fromCallable(() -> {
             try {
                 if (request.type() == ChannelType.EMAIL) {
-                    com.github.waitlight.asskicker.channels.ChannelConfig config = emailChannelConfigConverter.fromProperties(request.properties());
+                    ChannelProperty config = emailChannelConfigConverter.fromProperties(request.properties());
                     Channel<?> channel = emailChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
@@ -218,7 +219,7 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
                     }
                 }
                 if (request.type() == ChannelType.IM) {
-                    com.github.waitlight.asskicker.channels.ChannelConfig config = imChannelConfigConverter.fromProperties(request.properties());
+                    ChannelProperty config = imChannelConfigConverter.fromProperties(request.properties());
                     Channel<?> channel = imChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
@@ -240,7 +241,7 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
                     }
                 }
                 if (request.type() == ChannelType.PUSH) {
-                    com.github.waitlight.asskicker.channels.ChannelConfig config = pushChannelConfigConverter.fromProperties(request.properties());
+                    ChannelProperty config = pushChannelConfigConverter.fromProperties(request.properties());
                     Channel<?> channel = pushChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
@@ -262,7 +263,7 @@ public class ChannelConfigServiceImpl implements ChannelConfigService {
                     }
                 }
                 if (request.type() == ChannelType.SMS) {
-                    com.github.waitlight.asskicker.channels.ChannelConfig config = smsChannelConfigConverter.fromProperties(request.properties());
+                    ChannelProperty config = smsChannelConfigConverter.fromProperties(request.properties());
                     Channel<?> channel = smsChannelFactory.create(config);
                     MsgReq messageRequest = MsgReq.builder()
                             .recipient(request.target())
