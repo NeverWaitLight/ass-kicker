@@ -33,6 +33,9 @@
           <a-tag v-if="record.channelType" color="blue">{{ channelTypeLabel(record.channelType) }}</a-tag>
           <span v-else class="text-muted">-</span>
         </template>
+        <template v-else-if="column.key === 'attributes'">
+          <span class="text-muted">{{ formatAttributesSummary(record.attributes) }}</span>
+        </template>
         <template v-else-if="column.key === 'createdAt'">
           {{ formatTimestamp(record.createdAt) }}
         </template>
@@ -90,6 +93,19 @@
             :maxlength="1000"
             show-count
           />
+        </a-form-item>
+        <a-form-item label="扩展属性" name="attributes">
+          <p class="form-hint">可选 如邮件或推送的主题等 键值均为文本</p>
+          <div
+            v-for="(row, idx) in attributeRows"
+            :key="idx"
+            class="attr-row"
+          >
+            <a-input v-model:value="row.key" placeholder="键 如 subject" allow-clear />
+            <a-input v-model:value="row.value" placeholder="值" allow-clear />
+            <a-button type="text" danger @click="removeAttributeRow(idx)">移除</a-button>
+          </div>
+          <a-button type="dashed" block class="attr-add" @click="addAttributeRow">添加一行</a-button>
         </a-form-item>
       </a-form>
     </a-modal>
@@ -168,6 +184,47 @@ const formData = reactive({
   channelType: undefined
 })
 
+const attributeRows = ref([{ key: '', value: '' }])
+
+const attributesToRows = (attrs) => {
+  if (!attrs || typeof attrs !== 'object') {
+    return [{ key: '', value: '' }]
+  }
+  const keys = Object.keys(attrs)
+  if (keys.length === 0) {
+    return [{ key: '', value: '' }]
+  }
+  return keys.map((k) => ({ key: k, value: attrs[k] ?? '' }))
+}
+
+const rowsToAttributesPayload = (rows) => {
+  const out = {}
+  for (const r of rows) {
+    const k = (r.key || '').trim()
+    if (k) {
+      out[k] = r.value ?? ''
+    }
+  }
+  return Object.keys(out).length > 0 ? out : null
+}
+
+const formatAttributesSummary = (attrs) => {
+  const n = attrs && typeof attrs === 'object' ? Object.keys(attrs).length : 0
+  return n > 0 ? `${n} 项` : '-'
+}
+
+const addAttributeRow = () => {
+  attributeRows.value.push({ key: '', value: '' })
+}
+
+const removeAttributeRow = (idx) => {
+  if (attributeRows.value.length <= 1) {
+    attributeRows.value = [{ key: '', value: '' }]
+    return
+  }
+  attributeRows.value.splice(idx, 1)
+}
+
 const formRules = {
   name: [{ required: true, message: '请输入模板名称', trigger: 'blur' }],
   code: [{ required: true, message: '请输入模板编码', trigger: 'blur' }]
@@ -177,6 +234,7 @@ const columns = [
   { title: '名称', dataIndex: 'name', key: 'name', ellipsis: true },
   { title: '编码', dataIndex: 'code', key: 'code', ellipsis: true },
   { title: '通道类型', key: 'channelType', width: 180 },
+  { title: '扩展属性', key: 'attributes', width: 100 },
   { title: '描述', dataIndex: 'description', key: 'description', ellipsis: true },
   { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180 },
   { title: '操作', key: 'actions', width: 180, fixed: 'right' }
@@ -217,6 +275,7 @@ const openCreate = () => {
   formData.code = ''
   formData.description = ''
   formData.channelType = undefined
+  attributeRows.value = [{ key: '', value: '' }]
   formModal.isEdit = false
   formModal.editId = null
   formModal.open = true
@@ -227,6 +286,7 @@ const openEdit = (record) => {
   formData.code = record.code
   formData.description = record.description || ''
   formData.channelType = record.channelType
+  attributeRows.value = attributesToRows(record.attributes)
   formModal.isEdit = true
   formModal.editId = record.id
   formModal.open = true
@@ -249,7 +309,8 @@ const submitForm = async () => {
       name: formData.name,
       code: formData.code,
       description: formData.description,
-      channelType: formData.channelType
+      channelType: formData.channelType,
+      attributes: rowsToAttributesPayload(attributeRows.value)
     }
     if (formModal.isEdit) {
       await updateTemplate(formModal.editId, payload)
@@ -323,6 +384,27 @@ onMounted(loadTemplates)
   gap: 12px;
 }
 
+.form-hint {
+  margin: 0 0 8px;
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.attr-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.attr-row .ant-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.attr-add {
+  margin-top: 4px;
+}
 
 @media (max-width: 768px) {
   .template-header {

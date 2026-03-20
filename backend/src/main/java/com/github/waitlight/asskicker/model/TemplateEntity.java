@@ -11,7 +11,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -38,6 +40,9 @@ public class TemplateEntity {
 
     @Field("channel_type")
     private ChannelType channelType;
+
+    @Field("attributes")
+    private Map<String, String> attributes = new LinkedHashMap<>();
 
     @Field("created_at")
     private Long createdAt;

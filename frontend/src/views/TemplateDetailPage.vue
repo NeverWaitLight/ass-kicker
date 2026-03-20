@@ -42,6 +42,19 @@
             <span v-else class="desc-empty">未设置</span>
           </a-descriptions-item>
           <a-descriptions-item label="描述" :span="2">{{ template.description || '-' }}</a-descriptions-item>
+          <a-descriptions-item label="扩展属性" :span="2">
+            <template v-if="attributeEntries.length">
+              <a-table
+                size="small"
+                :pagination="false"
+                :columns="attributeTableColumns"
+                :data-source="attributeEntries"
+                row-key="key"
+                class="attr-readonly-table"
+              />
+            </template>
+            <span v-else class="desc-empty">无</span>
+          </a-descriptions-item>
           <a-descriptions-item label="创建时间">{{ formatTimestamp(template.createdAt) }}</a-descriptions-item>
           <a-descriptions-item label="更新时间">{{ formatTimestamp(template.updatedAt) }}</a-descriptions-item>
         </a-descriptions>
@@ -84,6 +97,19 @@
               :maxlength="1000"
               show-count
             />
+          </a-form-item>
+          <a-form-item label="扩展属性" name="attributes">
+            <p class="form-hint">可选 如邮件或推送的主题等 键值均为文本</p>
+            <div
+              v-for="(row, idx) in infoAttributeRows"
+              :key="idx"
+              class="attr-row"
+            >
+              <a-input v-model:value="row.key" placeholder="键 如 subject" allow-clear />
+              <a-input v-model:value="row.value" placeholder="值" allow-clear />
+              <a-button type="text" danger @click="removeInfoAttributeRow(idx)">移除</a-button>
+            </div>
+            <a-button type="dashed" block class="attr-add" @click="addInfoAttributeRow">添加一行</a-button>
           </a-form-item>
           <div class="info-meta">
             <span>创建时间：{{ formatTimestamp(template.createdAt) }}</span>
@@ -156,7 +182,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { formatTimestamp } from '../utils/time'
@@ -201,6 +227,54 @@ const infoForm = reactive({
   description: '',
   channelType: undefined
 })
+
+const infoAttributeRows = ref([{ key: '', value: '' }])
+
+const attributeTableColumns = [
+  { title: '键', dataIndex: 'key', key: 'key', ellipsis: true },
+  { title: '值', dataIndex: 'value', key: 'value', ellipsis: true }
+]
+
+const attributeEntries = computed(() => {
+  const a = template.value?.attributes
+  if (!a || typeof a !== 'object') return []
+  return Object.keys(a).map((k) => ({ key: k, value: a[k] ?? '' }))
+})
+
+const attributesToRows = (attrs) => {
+  if (!attrs || typeof attrs !== 'object') {
+    return [{ key: '', value: '' }]
+  }
+  const keys = Object.keys(attrs)
+  if (keys.length === 0) {
+    return [{ key: '', value: '' }]
+  }
+  return keys.map((k) => ({ key: k, value: attrs[k] ?? '' }))
+}
+
+const rowsToAttributesPayload = (rows) => {
+  const out = {}
+  for (const r of rows) {
+    const k = (r.key || '').trim()
+    if (k) {
+      out[k] = r.value ?? ''
+    }
+  }
+  return Object.keys(out).length > 0 ? out : null
+}
+
+const addInfoAttributeRow = () => {
+  infoAttributeRows.value.push({ key: '', value: '' })
+}
+
+const removeInfoAttributeRow = (idx) => {
+  if (infoAttributeRows.value.length <= 1) {
+    infoAttributeRows.value = [{ key: '', value: '' }]
+    return
+  }
+  infoAttributeRows.value.splice(idx, 1)
+}
+
 const infoRules = {
   name: [{ required: true, message: '请输入模板名称', trigger: 'blur' }]
 }
@@ -233,6 +307,7 @@ const loadTemplate = async () => {
     infoForm.code = t.code
     infoForm.description = t.description || ''
     infoForm.channelType = t.channelType
+    infoAttributeRows.value = attributesToRows(t.attributes)
 
     const contents = await fetchTemplateContents(id)
     LANGUAGES.forEach((lang) => {
@@ -254,6 +329,7 @@ const loadTemplate = async () => {
 }
 
 const startInfoEdit = () => {
+  infoAttributeRows.value = attributesToRows(template.value.attributes)
   infoEditing.value = true
 }
 
@@ -262,6 +338,7 @@ const cancelInfoEdit = () => {
   infoForm.code = template.value.code
   infoForm.description = template.value.description || ''
   infoForm.channelType = template.value.channelType
+  infoAttributeRows.value = attributesToRows(template.value.attributes)
   infoEditing.value = false
   infoFormRef.value?.clearValidate()
 }
@@ -278,7 +355,8 @@ const saveInfo = async () => {
       name: infoForm.name,
       code: infoForm.code,
       description: infoForm.description,
-      channelType: infoForm.channelType
+      channelType: infoForm.channelType,
+      attributes: rowsToAttributesPayload(infoAttributeRows.value)
     })
     template.value = updated
     infoEditing.value = false
@@ -452,5 +530,31 @@ onMounted(loadTemplate)
 .unsaved-hint {
   font-size: 12px;
   color: #faad14;
+}
+
+.form-hint {
+  margin: 0 0 8px;
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.attr-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.attr-row .ant-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.attr-add {
+  margin-top: 4px;
+}
+
+.attr-readonly-table {
+  margin: 0;
 }
 </style>

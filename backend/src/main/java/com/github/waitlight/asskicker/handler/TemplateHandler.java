@@ -15,6 +15,7 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -189,6 +190,11 @@ public class TemplateHandler {
         sanitized.setCode(input.getCode());
         sanitized.setDescription(input.getDescription());
         sanitized.setChannelType(input.getChannelType());
+        if (input.getAttributes() != null) {
+            sanitized.setAttributes(new LinkedHashMap<>(input.getAttributes()));
+        } else {
+            sanitized.setAttributes(null);
+        }
         return sanitized;
     }
 }
