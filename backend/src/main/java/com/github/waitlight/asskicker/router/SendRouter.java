@@ -18,4 +18,11 @@ public class SendRouter {
                 .route(RequestPredicates.POST("/v1/send")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), sendHandler::send);
     }
+
+    @Bean
+    public RouterFunction<ServerResponse> submitRoutes(SendHandler sendHandler) {
+        return RouterFunctions
+                .route(RequestPredicates.POST("/v1/submit")
+                        .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), sendHandler::submit);
+    }
 }
