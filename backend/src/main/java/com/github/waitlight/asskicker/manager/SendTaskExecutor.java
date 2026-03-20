@@ -3,12 +3,12 @@ package com.github.waitlight.asskicker.manager;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
+import com.github.waitlight.asskicker.dto.send.SendRequest;
 import com.github.waitlight.asskicker.dto.template.FilledTemplateResult;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.SendRecordEntity;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
-import com.github.waitlight.asskicker.model.SendTask;
 import com.github.waitlight.asskicker.service.SendRecordService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -51,16 +51,16 @@ public class SendTaskExecutor implements DisposableBean {
      *
      * @param task
      */
-    public void submit(SendTask task) {
+    public void submit(SendRequest task) {
         taskExecutor.submit(() -> process(task));
     }
 
-    public void handleRejectedTask(SendTask task, String reason) {
+    public void handleRejectedTask(SendRequest task, String reason) {
         markRecipientsFailed(
                 task,
                 null,
                 null,
-                fallbackRecipients(task.getRecipients()),
+                fallbackRecipients(task.recipients()),
                 "TASK_REJECTED",
                 messageOrDefault(reason, "Task executor rejected task"));
     }
@@ -70,14 +70,14 @@ public class SendTaskExecutor implements DisposableBean {
      *
      * @param task
      */
-    private void process(SendTask task) {
-        List<String> recipients = normalizeRecipients(task.getRecipients());
+    private void process(SendRequest task) {
+        List<String> recipients = normalizeRecipients(task.recipients());
         List<String> failureRecipients = recipients.isEmpty() ? Collections.singletonList(null) : recipients;
         String lastErrorCode = null;
         String lastErrorMessage = null;
 
         try {
-            Language language = task.getLanguage();
+            Language language = task.language();
             if (language == null) {
                 lastErrorCode = "INVALID_LANGUAGE";
                 lastErrorMessage = "Language is required";
@@ -89,7 +89,7 @@ public class SendTaskExecutor implements DisposableBean {
             final FilledTemplateResult filledResult;
             try {
                 filledResult = templateManager
-                        .fill(task.getTemplateCode(), language, task.getParams())
+                        .fill(task.templateCode(), language, task.params())
                         .block();
             } catch (ResponseStatusException ex) {
                 String reason = ex.getReason() != null ? ex.getReason() : "";
@@ -120,7 +120,7 @@ public class SendTaskExecutor implements DisposableBean {
 
             if (channelType == null) {
                 lastErrorCode = "CHANNEL_NOT_FOUND";
-                lastErrorMessage = "Template has no channel type: " + task.getTemplateCode();
+                lastErrorMessage = "Template has no channel type: " + task.templateCode();
                 markRecipientsFailed(
                         task,
                         renderedContent,
@@ -168,7 +168,7 @@ public class SendTaskExecutor implements DisposableBean {
     }
 
     private boolean processRecipient(
-            SendTask task,
+            SendRequest task,
             String renderedContent,
             ChannelType channelType,
             Channel<?> sendChannel,
@@ -192,7 +192,7 @@ public class SendTaskExecutor implements DisposableBean {
     }
 
     private MsgResp sendMessage(
-            SendTask task,
+            SendRequest task,
             String renderedContent,
             Channel<?> sendChannel,
             String recipient,
@@ -209,7 +209,7 @@ public class SendTaskExecutor implements DisposableBean {
     }
 
     private void markRecipientsFailed(
-            SendTask task,
+            SendRequest task,
             String renderedContent,
             ChannelType channelType,
             List<String> recipients,
@@ -231,7 +231,7 @@ public class SendTaskExecutor implements DisposableBean {
     }
 
     private void saveFinalRecord(
-            SendTask task,
+            SendRequest task,
             String renderedContent,
             ChannelType channelType,
             String recipient,
@@ -254,7 +254,7 @@ public class SendTaskExecutor implements DisposableBean {
         } catch (Exception ex) {
             log.warn(
                     "SEND_RECORD_SAVE_FAILED taskId={} recipient={} status={} errorCode={} errorMessage={}",
-                    task.getTaskId(),
+                    task.taskId(),
                     recipient,
                     SendRecordStatus.FAILED,
                     "RECORD_SAVE_FAILED",
@@ -263,7 +263,7 @@ public class SendTaskExecutor implements DisposableBean {
     }
 
     private SendRecordEntity buildFinalRecord(
-            SendTask task,
+            SendRequest task,
             String renderedContent,
             ChannelType channelType,
             String recipient,
@@ -272,13 +272,13 @@ public class SendTaskExecutor implements DisposableBean {
             String errorMessage,
             long sentAt) {
         SendRecordEntity record = new SendRecordEntity();
-        record.setTaskId(task.getTaskId());
-        record.setTemplateCode(task.getTemplateCode());
+        record.setTaskId(task.taskId());
+        record.setTemplateCode(task.templateCode());
         record.setLanguageCode(
-                task.getLanguage() != null ? task.getLanguage().getCode() : null);
-        record.setParams(task.getParams());
+                task.language() != null ? task.language().getCode() : null);
+        record.setParams(task.params());
         record.setRecipient(recipient);
-        record.setSubmittedAt(task.getSubmittedAt());
+        record.setSubmittedAt(task.submittedAt());
         record.setRenderedContent(renderedContent);
         record.setChannelType(channelType);
         record.setStatus(status);

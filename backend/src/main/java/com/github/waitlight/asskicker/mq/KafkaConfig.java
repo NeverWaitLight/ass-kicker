@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.mq;
 
-import com.github.waitlight.asskicker.model.SendTask;
+import com.github.waitlight.asskicker.dto.send.SendRequest;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -39,7 +39,7 @@ public class KafkaConfig {
     }
 
     @Bean
-    public ProducerFactory<String, SendTask> sendTaskProducerFactory() {
+    public ProducerFactory<String, SendRequest> sendTaskProducerFactory() {
         Map<String, Object> config = new HashMap<>();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -48,26 +48,28 @@ public class KafkaConfig {
     }
 
     @Bean
-    public KafkaTemplate<String, SendTask> kafkaTemplate(ProducerFactory<String, SendTask> sendTaskProducerFactory) {
+    public KafkaTemplate<String, SendRequest> kafkaTemplate(ProducerFactory<String, SendRequest> sendTaskProducerFactory) {
         return new KafkaTemplate<>(sendTaskProducerFactory);
     }
 
     @Bean
-    public ConsumerFactory<String, SendTask> sendTaskConsumerFactory() {
+    public ConsumerFactory<String, SendRequest> sendTaskConsumerFactory() {
         Map<String, Object> config = new HashMap<>();
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ConsumerConfig.GROUP_ID_CONFIG, "ass-kicker");
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        config.put(JsonDeserializer.TRUSTED_PACKAGES, "com.github.waitlight.asskicker.model");
-        config.put(JsonDeserializer.VALUE_DEFAULT_TYPE, SendTask.class.getName());
+        config.put(
+                JsonDeserializer.TRUSTED_PACKAGES,
+                "com.github.waitlight.asskicker.model,com.github.waitlight.asskicker.dto.send");
+        config.put(JsonDeserializer.VALUE_DEFAULT_TYPE, SendRequest.class.getName());
         return new DefaultKafkaConsumerFactory<>(config);
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, SendTask> sendTaskListenerContainerFactory(
-            ConsumerFactory<String, SendTask> sendTaskConsumerFactory) {
-        ConcurrentKafkaListenerContainerFactory<String, SendTask> factory =
+    public ConcurrentKafkaListenerContainerFactory<String, SendRequest> sendTaskListenerContainerFactory(
+            ConsumerFactory<String, SendRequest> sendTaskConsumerFactory) {
+        ConcurrentKafkaListenerContainerFactory<String, SendRequest> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(sendTaskConsumerFactory);
         return factory;

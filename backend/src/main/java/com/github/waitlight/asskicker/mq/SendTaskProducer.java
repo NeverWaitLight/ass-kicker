@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.mq;
 
-import com.github.waitlight.asskicker.model.SendTask;
+import com.github.waitlight.asskicker.dto.send.SendRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -15,18 +15,18 @@ public class SendTaskProducer {
 
     private static final Logger logger = LoggerFactory.getLogger(SendTaskProducer.class);
 
-    private final KafkaTemplate<String, SendTask> kafkaTemplate;
+    private final KafkaTemplate<String, SendRequest> kafkaTemplate;
 
-    public SendTaskProducer(KafkaTemplate<String, SendTask> kafkaTemplate) {
+    public SendTaskProducer(KafkaTemplate<String, SendRequest> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public Mono<SendTask> publish(SendTask task) {
-        CompletableFuture<SendResult<String, SendTask>> future =
-                kafkaTemplate.send(KafkaConfig.SEND_TASKS_TOPIC, task.getTaskId(), task);
+    public Mono<SendRequest> publish(SendRequest task) {
+        CompletableFuture<SendResult<String, SendRequest>> future =
+                kafkaTemplate.send(KafkaConfig.SEND_TASKS_TOPIC, task.taskId(), task);
         return Mono.fromFuture(future)
-                .doOnSuccess(result -> logger.debug("SendTask published taskId={}", task.getTaskId()))
-                .doOnError(ex -> logger.warn("SendTask publish failed taskId={} reason={}", task.getTaskId(), ex.getMessage()))
+                .doOnSuccess(result -> logger.debug("SendTask published taskId={}", task.taskId()))
+                .doOnError(ex -> logger.warn("SendTask publish failed taskId={} reason={}", task.taskId(), ex.getMessage()))
                 .thenReturn(task);
     }
 }
