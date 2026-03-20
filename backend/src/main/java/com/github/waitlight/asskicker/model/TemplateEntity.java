@@ -39,9 +39,6 @@ public class TemplateEntity {
     @Field("channel_type")
     private ChannelType channelType;
 
-    @Field("content_type")
-    private TemplateContentType contentType;
-
     @Field("created_at")
     private Long createdAt;
 

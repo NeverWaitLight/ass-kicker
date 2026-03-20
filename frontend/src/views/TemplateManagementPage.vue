@@ -33,9 +33,6 @@
           <a-tag v-if="record.channelType" color="blue">{{ channelTypeLabel(record.channelType) }}</a-tag>
           <span v-else class="text-muted">-</span>
         </template>
-        <template v-else-if="column.key === 'contentType'">
-          {{ getContentTypeLabel(record.contentType) }}
-        </template>
         <template v-else-if="column.key === 'createdAt'">
           {{ formatTimestamp(record.createdAt) }}
         </template>
@@ -85,14 +82,6 @@
             style="width: 100%"
           />
         </a-form-item>
-        <a-form-item label="内容类型" name="contentType">
-          <a-select
-            v-model:value="formData.contentType"
-            placeholder="选择内容类型"
-            :options="CONTENT_TYPE_OPTIONS"
-            style="width: 100%"
-          />
-        </a-form-item>
         <a-form-item label="描述" name="description">
           <a-textarea
             v-model:value="formData.description"
@@ -137,7 +126,6 @@ import {
   deleteTemplate
 } from '../utils/templateApi'
 import { CHANNEL_TYPE_VALUES, CHANNEL_TYPE_LABELS } from '../constants/channelTypes'
-import { CONTENT_TYPE_OPTIONS, getContentTypeLabel } from '../constants/templateTypes'
 
 const router = useRouter()
 
@@ -177,8 +165,7 @@ const formData = reactive({
   name: '',
   code: '',
   description: '',
-  channelType: undefined,
-  contentType: 'PLAIN_TEXT'
+  channelType: undefined
 })
 
 const formRules = {
@@ -190,7 +177,6 @@ const columns = [
   { title: '名称', dataIndex: 'name', key: 'name', ellipsis: true },
   { title: '编码', dataIndex: 'code', key: 'code', ellipsis: true },
   { title: '通道类型', key: 'channelType', width: 180 },
-  { title: '内容类型', key: 'contentType', width: 100 },
   { title: '描述', dataIndex: 'description', key: 'description', ellipsis: true },
   { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180 },
   { title: '操作', key: 'actions', width: 180, fixed: 'right' }
@@ -231,7 +217,6 @@ const openCreate = () => {
   formData.code = ''
   formData.description = ''
   formData.channelType = undefined
-  formData.contentType = 'PLAIN_TEXT'
   formModal.isEdit = false
   formModal.editId = null
   formModal.open = true
@@ -242,7 +227,6 @@ const openEdit = (record) => {
   formData.code = record.code
   formData.description = record.description || ''
   formData.channelType = record.channelType
-  formData.contentType = record.contentType || 'PLAIN_TEXT'
   formModal.isEdit = true
   formModal.editId = record.id
   formModal.open = true
@@ -265,8 +249,7 @@ const submitForm = async () => {
       name: formData.name,
       code: formData.code,
       description: formData.description,
-      channelType: formData.channelType,
-      contentType: formData.contentType
+      channelType: formData.channelType
     }
     if (formModal.isEdit) {
       await updateTemplate(formModal.editId, payload)

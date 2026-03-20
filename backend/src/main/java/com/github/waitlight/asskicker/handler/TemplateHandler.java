@@ -189,7 +189,6 @@ public class TemplateHandler {
         sanitized.setCode(input.getCode());
         sanitized.setDescription(input.getDescription());
         sanitized.setChannelType(input.getChannelType());
-        sanitized.setContentType(input.getContentType());
         return sanitized;
     }
 }

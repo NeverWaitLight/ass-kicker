@@ -41,7 +41,6 @@
             <a-tag v-if="template.channelType" color="blue">{{ channelTypeLabel(template.channelType) }}</a-tag>
             <span v-else class="desc-empty">未设置</span>
           </a-descriptions-item>
-          <a-descriptions-item label="内容类型">{{ getContentTypeLabel(template.contentType) }}</a-descriptions-item>
           <a-descriptions-item label="描述" :span="2">{{ template.description || '-' }}</a-descriptions-item>
           <a-descriptions-item label="创建时间">{{ formatTimestamp(template.createdAt) }}</a-descriptions-item>
           <a-descriptions-item label="更新时间">{{ formatTimestamp(template.updatedAt) }}</a-descriptions-item>
@@ -77,14 +76,6 @@
               style="width: 100%"
             />
           </a-form-item>
-          <a-form-item label="内容类型" name="contentType">
-            <a-select
-              v-model:value="infoForm.contentType"
-              placeholder="选择内容类型"
-              :options="CONTENT_TYPE_OPTIONS"
-              style="width: 100%"
-            />
-          </a-form-item>
           <a-form-item label="描述" name="description">
             <a-textarea
               v-model:value="infoForm.description"
@@ -116,7 +107,7 @@
                 v-model:value="langContents[lang.code]"
                 :placeholder="contentPlaceholder(lang)"
                 :rows="10"
-                :class="['lang-textarea', { 'lang-textarea-code': isCodeContentType }]"
+                class="lang-textarea"
                 @input="markDirty(lang.code)"
               />
 
@@ -165,7 +156,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, computed } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { formatTimestamp } from '../utils/time'
@@ -177,7 +168,6 @@ import {
   deleteLanguageContent
 } from '../utils/templateApi'
 import { CHANNEL_TYPE_VALUES, CHANNEL_TYPE_LABELS } from '../constants/channelTypes'
-import { CONTENT_TYPE_OPTIONS, getContentTypeLabel } from '../constants/templateTypes'
 
 const channelTypeOptions = CHANNEL_TYPE_VALUES.map((v) => ({
   value: v,
@@ -209,24 +199,14 @@ const infoForm = reactive({
   name: '',
   code: '',
   description: '',
-  channelType: undefined,
-  contentType: 'PLAIN_TEXT'
+  channelType: undefined
 })
 const infoRules = {
   name: [{ required: true, message: '请输入模板名称', trigger: 'blur' }]
 }
 
-const effectiveContentType = computed(() => template.value?.contentType || 'PLAIN_TEXT')
-const isCodeContentType = computed(
-  () => effectiveContentType.value === 'HTML' || effectiveContentType.value === 'JSON'
-)
-
-const contentPlaceholder = (lang) => {
-  const base = `输入 ${lang.displayName} 的模板内容`
-  if (effectiveContentType.value === 'HTML') return `${base}，支持 HTML 标签与变量占位符`
-  if (effectiveContentType.value === 'JSON') return `${base}，请填写合法 JSON`
-  return `${base}，支持变量占位符如 {{name}}...`
-}
+const contentPlaceholder = (lang) =>
+  `输入 ${lang.displayName} 的模板内容，支持变量占位符如 {{name}}`
 
 const langContents = reactive({})
 const originalContents = reactive({})
@@ -253,7 +233,6 @@ const loadTemplate = async () => {
     infoForm.code = t.code
     infoForm.description = t.description || ''
     infoForm.channelType = t.channelType
-    infoForm.contentType = t.contentType || 'PLAIN_TEXT'
 
     const contents = await fetchTemplateContents(id)
     LANGUAGES.forEach((lang) => {
@@ -283,7 +262,6 @@ const cancelInfoEdit = () => {
   infoForm.code = template.value.code
   infoForm.description = template.value.description || ''
   infoForm.channelType = template.value.channelType
-  infoForm.contentType = template.value.contentType || 'PLAIN_TEXT'
   infoEditing.value = false
   infoFormRef.value?.clearValidate()
 }
@@ -300,8 +278,7 @@ const saveInfo = async () => {
       name: infoForm.name,
       code: infoForm.code,
       description: infoForm.description,
-      channelType: infoForm.channelType,
-      contentType: infoForm.contentType
+      channelType: infoForm.channelType
     })
     template.value = updated
     infoEditing.value = false
@@ -320,20 +297,11 @@ const markDirty = (code) => {
 }
 
 const saveLangContent = async (lang) => {
-  const content = langContents[lang.code]
-  if (effectiveContentType.value === 'JSON' && content && content.trim()) {
-    try {
-      JSON.parse(content)
-    } catch {
-      message.warning('内容不是合法的 JSON，请检查格式后重试')
-      return
-    }
-  }
   const newSaving = new Set(savingLangs.value)
   newSaving.add(lang.code)
   savingLangs.value = newSaving
   try {
-    await saveLanguageContent(route.params.id, lang.code, content)
+    await saveLanguageContent(route.params.id, lang.code, langContents[lang.code])
     originalContents[lang.code] = langContents[lang.code]
     const newDirty = new Set(dirtyLangs.value)
     newDirty.delete(lang.code)
@@ -472,11 +440,6 @@ onMounted(loadTemplate)
   font-size: 13px;
   resize: vertical;
   line-height: 1.6;
-}
-
-.lang-textarea-code {
-  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
-  font-size: 13px;
 }
 
 .lang-tab-footer {
