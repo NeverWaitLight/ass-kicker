@@ -50,7 +50,7 @@ public class SubmitHandler {
         SendTask task = SendTask.builder()
                 .taskId(taskId)
                 .templateCode(body.templateCode())
-                .languageCode(body.language().getCode())
+                .language(body.language())
                 .params(params)
                 .recipients(body.recipients())
                 .submittedAt(Instant.now().toEpochMilli())

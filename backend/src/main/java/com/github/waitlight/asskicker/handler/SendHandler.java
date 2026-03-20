@@ -49,12 +49,12 @@ public class SendHandler {
         SendTask task = SendTask.builder()
                 .taskId(taskId)
                 .templateCode(body.templateCode())
-                .languageCode(body.language().getCode())
+                .language(body.language())
                 .params(params)
                 .recipients(body.recipients())
                 .submittedAt(Instant.now().toEpochMilli())
                 .build();
-        sendTaskExecutor.execute(task);
+        sendTaskExecutor.submit(task);
         return Mono.just(taskId);
     }
 }

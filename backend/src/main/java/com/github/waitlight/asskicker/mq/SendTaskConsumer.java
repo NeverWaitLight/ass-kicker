@@ -23,7 +23,7 @@ public class SendTaskConsumer {
             return;
         }
         try {
-            sendTaskExecutor.execute(task);
+            sendTaskExecutor.submit(task);
         } catch (RejectedExecutionException ex) {
             log.error("SendTaskConsumer rejected taskId={} reason={}", task.getTaskId(), ex.getMessage());
             sendTaskExecutor.handleRejectedTask(task,

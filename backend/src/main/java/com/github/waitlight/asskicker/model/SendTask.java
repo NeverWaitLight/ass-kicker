@@ -8,6 +8,9 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Send task model.
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -16,7 +19,7 @@ public class SendTask {
 
     private String taskId;
     private String templateCode;
-    private String languageCode;
+    private Language language;
     private Map<String, Object> params;
     private List<String> recipients;
     private Long submittedAt;

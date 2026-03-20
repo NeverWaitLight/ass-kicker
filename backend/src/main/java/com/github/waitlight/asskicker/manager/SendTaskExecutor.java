@@ -38,8 +38,13 @@ public class SendTaskExecutor implements DisposableBean {
         this.taskExecutor = Executors.newVirtualThreadPerTaskExecutor();
     }
 
-    public void execute(SendTask task) {
-        taskExecutor.submit(() -> processTask(task));
+    /**
+     * Submit the send task to the task executor.
+     * 
+     * @param task
+     */
+    public void submit(SendTask task) {
+        taskExecutor.submit(() -> process(task));
     }
 
     public void handleRejectedTask(SendTask task, String reason) {
@@ -47,19 +52,22 @@ public class SendTaskExecutor implements DisposableBean {
                 "TASK_REJECTED", messageOrDefault(reason, "Task executor rejected task"));
     }
 
-    void processTask(SendTask task) {
+    /**
+     * Process the send task.
+     * 
+     * @param task
+     */
+    private void process(SendTask task) {
         List<String> recipients = normalizeRecipients(task.getRecipients());
         List<String> failureRecipients = recipients.isEmpty() ? Collections.singletonList(null) : recipients;
         String lastErrorCode = null;
         String lastErrorMessage = null;
 
         try {
-            Language language;
-            try {
-                language = Language.fromCode(task.getLanguageCode());
-            } catch (IllegalArgumentException ex) {
+            Language language = task.getLanguage();
+            if (language == null) {
                 lastErrorCode = "INVALID_LANGUAGE";
-                lastErrorMessage = ex.getMessage();
+                lastErrorMessage = "Language is required";
                 markRecipientsFailed(task, null, null, failureRecipients, lastErrorCode, lastErrorMessage);
                 return;
             }
@@ -191,7 +199,7 @@ public class SendTaskExecutor implements DisposableBean {
         SendRecordEntity record = new SendRecordEntity();
         record.setTaskId(task.getTaskId());
         record.setTemplateCode(task.getTemplateCode());
-        record.setLanguageCode(task.getLanguageCode());
+        record.setLanguageCode(task.getLanguage() != null ? task.getLanguage().getCode() : null);
         record.setParams(task.getParams());
         record.setChannelId(channelEntity != null ? channelEntity.getId() : null);
         record.setRecipients(task.getRecipients());
@@ -207,6 +215,12 @@ public class SendTaskExecutor implements DisposableBean {
         return record;
     }
 
+    /**
+     * Normalize recipients list by trimming and filtering out empty values.
+     * 
+     * @param recipients
+     * @return normalized recipients list
+     */
     private List<String> normalizeRecipients(List<String> recipients) {
         if (recipients == null || recipients.isEmpty()) {
             return List.of();
