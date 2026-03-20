@@ -14,9 +14,11 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +35,9 @@ public class SendTaskExecutor implements DisposableBean {
     private final TemplateManager templateManager;
     private final ChannelManager channelManager;
     private final SendRecordService sendRecordService;
+
+    @Value("${send-record.ttl-days:90}")
+    private int sendRecordTtlDays;
 
     private ExecutorService taskExecutor;
 
@@ -280,6 +285,7 @@ public class SendTaskExecutor implements DisposableBean {
         record.setErrorCode(status == SendRecordStatus.SUCCESS ? null : errorCode);
         record.setErrorMessage(status == SendRecordStatus.SUCCESS ? null : errorMessage);
         record.setSentAt(sentAt);
+        record.setExpireAt(Instant.now().plus(Duration.ofDays(sendRecordTtlDays)));
         return record;
     }
 

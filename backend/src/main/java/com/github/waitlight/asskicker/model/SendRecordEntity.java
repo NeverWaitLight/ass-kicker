@@ -4,9 +4,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.time.Instant;
 import java.util.Map;
 
 @Getter
@@ -59,4 +61,12 @@ public class SendRecordEntity {
 
     @Field("sent_at")
     private Long sentAt;
+
+    /**
+     * Absolute time when this document may be removed by MongoDB TTL.
+     * {@code expireAfterSeconds = 0} means delete once this instant is in the past.
+     */
+    @Indexed(name = "idx_t_send_record_expire_at", expireAfterSeconds = 0)
+    @Field("expire_at")
+    private Instant expireAt;
 }

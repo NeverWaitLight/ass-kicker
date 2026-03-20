@@ -6,6 +6,7 @@ spring:
   data:
     mongodb:
       uri: mongodb://admin:123456@localhost:27017/asskicker?authSource=admin
+      auto-index-creation: true
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
@@ -17,6 +18,7 @@ spring:
 send-record:
   buffer-size: 100
   flush-interval-ms: 5000
+  ttl-days: 7
 ass-kicker:
   cache:
     maximum-size: 1000
