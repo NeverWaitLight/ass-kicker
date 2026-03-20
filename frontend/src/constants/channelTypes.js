@@ -1,9 +1,9 @@
 export const CHANNEL_TYPE_LABELS = {
   'zh-CN': {
     SMS: '短信',
-    EMAIL: '电子邮件',
-    IM: '即时消息',
-    PUSH: '系统推送'
+    EMAIL: '邮件',
+    IM: '聊天',
+    PUSH: '推送'
   },
   'en-US': {
     SMS: 'SMS',

@@ -90,9 +90,9 @@ public class WeComIMChannel extends Channel<WeComIMChannelSpec> {
             if (response != null && response.getErrcode() == 0) {
                 return MsgResp.success(response.getErrmsg() != null ? response.getErrmsg() : "ok");
             } else if (response != null) {
-                return MsgResp.failure("WECHAT_WORK_API_ERROR", response.getErrmsg());
+                return MsgResp.failure("WECOM_API_ERROR", response.getErrmsg());
             }
-            return MsgResp.failure("WECHAT_WORK_API_ERROR", "企业微信 API 返回空响应");
+            return MsgResp.failure("WECOM_API_ERROR", "企业微信 API 返回空响应");
         } catch (Exception ex) {
             String errorCode = categorizeError(ex);
             return MsgResp.failure(errorCode, ex.getMessage());
@@ -101,10 +101,10 @@ public class WeComIMChannel extends Channel<WeComIMChannelSpec> {
 
     private String buildMessageContent(MsgReq request) {
         StringBuilder content = new StringBuilder();
-        if (request.getSubject() != null && !request.getSubject().isBlank()) {
-            content.append("【").append(request.getSubject()).append("】\n");
+        if (request.subject() != null && !request.subject().isBlank()) {
+            content.append("【").append(request.subject()).append("】\n");
         }
-        content.append(request.getContent() != null ? request.getContent() : "");
+        content.append(request.content() != null ? request.content() : "");
         return content.toString();
     }
 
@@ -128,7 +128,7 @@ public class WeComIMChannel extends Channel<WeComIMChannelSpec> {
         if (findCause(ex, TimeoutException.class) != null) {
             return "TIMEOUT";
         }
-        return "WECHAT_WORK_SEND_FAILED";
+        return "WECOM_SEND_FAILED";
     }
 
     private String categorizeHttpStatus(int status) {
@@ -141,7 +141,7 @@ public class WeComIMChannel extends Channel<WeComIMChannelSpec> {
         } else if (status >= 500) {
             return "SERVER_ERROR";
         }
-        return "WECHAT_WORK_SEND_FAILED";
+        return "WECOM_SEND_FAILED";
     }
 
     private <T extends Throwable> T findCause(Throwable ex, Class<T> type) {

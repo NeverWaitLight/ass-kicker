@@ -37,6 +37,14 @@ public class ChannelEntity {
     @Field("description")
     private String description;
 
+    @Size(max = 2048, message = "Include recipient regex must not exceed 2048 characters")
+    @Field("include_recipient_regex")
+    private String includeRecipientRegex;
+
+    @Size(max = 2048, message = "Exclude recipient regex must not exceed 2048 characters")
+    @Field("exclude_recipient_regex")
+    private String excludeRecipientRegex;
+
     @JsonIgnore
     @Field("properties_json")
     private String propertiesJson;

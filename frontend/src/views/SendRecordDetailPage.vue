@@ -22,7 +22,7 @@
             <a-tag v-if="record.channelType" color="blue">{{ channelTypeLabel(record.channelType) }}</a-tag>
             <span v-else>-</span>
           </a-descriptions-item>
-          <a-descriptions-item label="接收人">{{ record.recipient || (record.recipients && record.recipients.join(', ')) || '-' }}</a-descriptions-item>
+          <a-descriptions-item label="接收人">{{ record.recipient || '-' }}</a-descriptions-item>
           <a-descriptions-item label="提交时间">{{ formatTimestamp(record.submittedAt) }}</a-descriptions-item>
           <a-descriptions-item label="发送时间">{{ formatTimestamp(record.sentAt) }}</a-descriptions-item>
           <a-descriptions-item label="发送结果">

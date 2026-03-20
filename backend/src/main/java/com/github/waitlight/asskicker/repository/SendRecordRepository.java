@@ -48,9 +48,7 @@ class SendRecordRepositoryCustomImpl implements SendRecordRepositoryCustom {
         Query query = new Query();
         if (recipient != null && !recipient.isBlank()) {
             String term = recipient.trim();
-            query.addCriteria(new Criteria().orOperator(
-                    Criteria.where("recipient").is(term),
-                    Criteria.where("recipients").is(term)));
+            query.addCriteria(Criteria.where("recipient").is(term));
         }
         if (channelType != null && !channelType.isBlank()) {
             query.addCriteria(Criteria.where("channel_type").is(channelType.trim()));

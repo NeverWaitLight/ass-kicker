@@ -37,10 +37,8 @@
           <a-descriptions-item label="模板编码">
             <code class="desc-code">{{ template.code || '-' }}</code>
           </a-descriptions-item>
-          <a-descriptions-item label="适用通道类型">
-            <template v-if="(template.applicableChannelTypes || []).length">
-              <a-tag v-for="t in template.applicableChannelTypes" :key="t" color="blue">{{ channelTypeLabel(t) }}</a-tag>
-            </template>
+          <a-descriptions-item label="通道类型">
+            <a-tag v-if="template.channelType" color="blue">{{ channelTypeLabel(template.channelType) }}</a-tag>
             <span v-else class="desc-empty">未设置</span>
           </a-descriptions-item>
           <a-descriptions-item label="内容类型">{{ getContentTypeLabel(template.contentType) }}</a-descriptions-item>
@@ -70,11 +68,10 @@
               </a-form-item>
             </a-col>
           </a-row>
-          <a-form-item label="适用通道类型" name="applicableChannelTypes">
+          <a-form-item label="通道类型" name="channelType">
             <a-select
-              v-model:value="infoForm.applicableChannelTypes"
-              mode="multiple"
-              placeholder="选择适用的通道类型（可多选）"
+              v-model:value="infoForm.channelType"
+              placeholder="选择通道类型"
               :options="channelTypeOptions"
               allow-clear
               style="width: 100%"
@@ -212,7 +209,7 @@ const infoForm = reactive({
   name: '',
   code: '',
   description: '',
-  applicableChannelTypes: [],
+  channelType: undefined,
   contentType: 'PLAIN_TEXT'
 })
 const infoRules = {
@@ -255,7 +252,7 @@ const loadTemplate = async () => {
     infoForm.name = t.name
     infoForm.code = t.code
     infoForm.description = t.description || ''
-    infoForm.applicableChannelTypes = t.applicableChannelTypes ? [...t.applicableChannelTypes] : []
+    infoForm.channelType = t.channelType
     infoForm.contentType = t.contentType || 'PLAIN_TEXT'
 
     const contents = await fetchTemplateContents(id)
@@ -285,9 +282,7 @@ const cancelInfoEdit = () => {
   infoForm.name = template.value.name
   infoForm.code = template.value.code
   infoForm.description = template.value.description || ''
-  infoForm.applicableChannelTypes = template.value.applicableChannelTypes
-    ? [...template.value.applicableChannelTypes]
-    : []
+  infoForm.channelType = template.value.channelType
   infoForm.contentType = template.value.contentType || 'PLAIN_TEXT'
   infoEditing.value = false
   infoFormRef.value?.clearValidate()
@@ -305,7 +300,7 @@ const saveInfo = async () => {
       name: infoForm.name,
       code: infoForm.code,
       description: infoForm.description,
-      applicableChannelTypes: infoForm.applicableChannelTypes,
+      channelType: infoForm.channelType,
       contentType: infoForm.contentType
     })
     template.value = updated
@@ -464,8 +459,13 @@ onMounted(loadTemplate)
   font-weight: 600;
 }
 
+.lang-card :deep(.ant-tabs-top > .ant-tabs-nav),
+.lang-card :deep(.ant-tabs-top > div > .ant-tabs-nav) {
+  margin-bottom: 0;
+}
+
 .lang-tab-body {
-  padding: 16px 0 0;
+  padding: 0;
 }
 
 .lang-textarea {

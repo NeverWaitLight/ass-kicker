@@ -85,12 +85,12 @@ public class DingTalkIMChannel extends Channel<DingTalkIMChannelSpec> {
         StringBuilder content = new StringBuilder();
 
         // 添加主题（如果有）
-        if (request.getSubject() != null && !request.getSubject().isBlank()) {
-            content.append("【").append(request.getSubject()).append("】\n");
+        if (request.subject() != null && !request.subject().isBlank()) {
+            content.append("【").append(request.subject()).append("】\n");
         }
 
         // 添加主要内容
-        content.append(request.getContent());
+        content.append(request.content());
 
         return content.toString();
     }

@@ -25,11 +25,11 @@ public class TencentSmsChannel extends Channel<TencentSmsChannelSpec> {
         if (request == null) {
             return MsgResp.failure("INVALID_REQUEST", "Message request is null");
         }
-        String phone = request.getRecipient();
+        String phone = request.recipient();
         if (phone == null || phone.isBlank()) {
             return MsgResp.failure("INVALID_REQUEST", "手机号不能为空");
         }
-        String content = request.getContent() != null ? request.getContent() : "";
+        String content = request.content() != null ? request.content() : "";
         try {
             Credential credential = new Credential(spec.getSecretId(), spec.getSecretKey());
             SmsClient client = new SmsClient(credential, spec.getRegion());

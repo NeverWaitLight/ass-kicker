@@ -84,6 +84,8 @@ public class ChannelEntityServiceImpl implements ChannelEntityService {
         toSave.setName(channelEntity.getName());
         toSave.setType(channelEntity.getType());
         toSave.setDescription(channelEntity.getDescription());
+        toSave.setIncludeRecipientRegex(channelEntity.getIncludeRecipientRegex());
+        toSave.setExcludeRecipientRegex(channelEntity.getExcludeRecipientRegex());
         long timestamp = Instant.now().toEpochMilli();
         toSave.setCreatedAt(timestamp);
         toSave.setUpdatedAt(timestamp);
@@ -118,6 +120,8 @@ public class ChannelEntityServiceImpl implements ChannelEntityService {
                     existing.setName(channelEntity.getName());
                     existing.setType(channelEntity.getType());
                     existing.setDescription(channelEntity.getDescription());
+                    existing.setIncludeRecipientRegex(channelEntity.getIncludeRecipientRegex());
+                    existing.setExcludeRecipientRegex(channelEntity.getExcludeRecipientRegex());
                     existing.setUpdatedAt(Instant.now().toEpochMilli());
                     Map<String, Object> properties = normalizeProperties(channelEntity.getProperties());
                     existing.setPropertiesJson(writeProperties(properties));
@@ -171,12 +175,8 @@ public class ChannelEntityServiceImpl implements ChannelEntityService {
                         || request.type() == ChannelType.PUSH || request.type() == ChannelType.SMS) {
                     Channel<?> channel = channelFactory.create(request.type(), request.properties());
                     String subject = request.type() == ChannelType.SMS ? "" : "测试消息";
-                    MsgReq messageRequest = MsgReq.builder()
-                            .recipient(request.target())
-                            .subject(subject)
-                            .content(request.content())
-                            .attributes(Map.of("senderType", request.type().name()))
-                            .build();
+                    MsgReq messageRequest = new MsgReq(
+                            request.target(), subject, request.content(), null);
                     try {
                         logger.info("SECURITY_TEST_SEND_SENDER_READY type={} protocol={} sender={}",
                                 request.type(), protocol, channel.getClass().getSimpleName());
@@ -218,7 +218,7 @@ public class ChannelEntityServiceImpl implements ChannelEntityService {
         }
         String upper = text.toUpperCase(Locale.ROOT);
         if ("DINGTALK".equals(upper)) return "DINGTALK";
-        if ("WECHAT_WORK".equals(upper)) return "WECHAT_WORK";
+        if ("WECOM".equals(upper)) return "WECOM";
         if ("APNS".equals(upper)) return "APNS";
         if ("FCM".equals(upper)) return "FCM";
         if ("ALIYUN".equals(upper)) return "ALIYUN";

@@ -5,7 +5,7 @@ import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.service.ChannelEntityService;
-import com.github.waitlight.asskicker.service.TemplateService;
+import com.github.waitlight.asskicker.util.RecipientsRuleMatcher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
@@ -23,37 +23,42 @@ import java.util.concurrent.ThreadLocalRandom;
 @Component
 public class ChannelManager implements DisposableBean {
 
-    private final TemplateService templateService;
     private final ChannelEntityService channelEntityService;
     private final ChannelFactory channelFactory;
 
     private final ConcurrentHashMap<String, Channel<?>> channelCache = new ConcurrentHashMap<>();
 
-    public Mono<ChannelEntity> selectChannel(String templateCode) {
-        return templateService.findByCode(templateCode)
-                .switchIfEmpty(Mono.error(
-                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Template not found: " + templateCode)))
-                .flatMap(template -> {
-                    List<ChannelType> types = template.getApplicableChannelTypes();
-                    if (types == null || types.isEmpty()) {
+    /**
+     * Select a channel: by type, then by include/exclude recipient rules, then random among matches.
+     * Returns the cached {@link Channel} instance used for sending.
+     */
+    public Mono<Channel<?>> selectChannel(ChannelType channelType, String recipient) {
+        if (channelType == null) {
+            return Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Channel type is required"));
+        }
+        return channelEntityService.findByTypes(List.of(channelType))
+                .collectList()
+                .flatMap(channels -> {
+                    if (channels.isEmpty()) {
                         return Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND,
-                                "Template has no applicable channel types: " + templateCode));
+                                "No available channel for type: " + channelType));
                     }
-                    return channelEntityService.findByTypes(types)
-                            .collectList()
-                            .flatMap(channels -> {
-                                if (channels.isEmpty()) {
-                                    return Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND,
-                                            "No available channel for types: " + types));
-                                }
-                                ChannelEntity selected = channels.get(ThreadLocalRandom.current().nextInt(channels.size()));
-                                return Mono.just(selected);
-                            });
+                    List<ChannelEntity> matched = channels.stream()
+                            .filter(ch -> RecipientsRuleMatcher.isAllowed(recipient,
+                                    ch.getIncludeRecipientRegex(), ch.getExcludeRecipientRegex()))
+                            .toList();
+                    if (matched.isEmpty()) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                "No channel matches recipient rules for type: " + channelType));
+                    }
+                    ChannelEntity selected = matched.get(ThreadLocalRandom.current().nextInt(matched.size()));
+                    return Mono.just(resolveChannel(selected));
                 });
     }
 
     public Channel<?> resolveChannel(ChannelEntity channelEntity) {
-        return channelCache.computeIfAbsent(channelEntity.getId(), id -> channelFactory.create(channelEntity));
+        String id = channelEntity.getId();
+        return channelCache.computeIfAbsent(id, i -> channelFactory.create(channelEntity));
     }
 
     @Override

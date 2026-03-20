@@ -157,7 +157,7 @@ public class TemplateHandler {
                         req.templateCode(),
                         req.language(),
                         req.params() != null ? req.params() : Collections.emptyMap()))
-                .map(content -> new FillTemplateResponse(content))
+                .map(r -> new FillTemplateResponse(r.template(), r.renderedContent()))
                 .flatMap(resp -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(BodyInserters.fromValue(resp)))
@@ -188,7 +188,7 @@ public class TemplateHandler {
         sanitized.setName(input.getName());
         sanitized.setCode(input.getCode());
         sanitized.setDescription(input.getDescription());
-        sanitized.setApplicableChannelTypes(input.getApplicableChannelTypes());
+        sanitized.setChannelType(input.getChannelType());
         sanitized.setContentType(input.getContentType());
         return sanitized;
     }

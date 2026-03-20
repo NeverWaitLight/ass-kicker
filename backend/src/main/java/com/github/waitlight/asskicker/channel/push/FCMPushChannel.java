@@ -43,7 +43,7 @@ public class FCMPushChannel extends Channel<FCMPushChannelSpec> {
         if (request == null) {
             return MsgResp.failure("INVALID_REQUEST", "Message request is null");
         }
-        String token = request.getRecipient();
+        String token = request.recipient();
         if (token == null || token.isBlank()) {
             return MsgResp.failure("INVALID_REQUEST", "FCM token is required");
         }
@@ -53,10 +53,10 @@ public class FCMPushChannel extends Channel<FCMPushChannelSpec> {
             String url = String.format(FCM_SEND_URL, projectId);
 
             Map<String, Object> notification = new HashMap<>();
-            if (request.getSubject() != null && !request.getSubject().isBlank()) {
-                notification.put("title", request.getSubject());
+            if (request.subject() != null && !request.subject().isBlank()) {
+                notification.put("title", request.subject());
             }
-            notification.put("body", request.getContent() != null ? request.getContent() : "");
+            notification.put("body", request.content() != null ? request.content() : "");
 
             Map<String, Object> message = new HashMap<>();
             message.put("token", token);

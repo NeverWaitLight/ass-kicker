@@ -91,7 +91,7 @@ public class TemplateServiceImpl implements TemplateService {
                     existingTemplate.setName(template.getName());
                     existingTemplate.setCode(template.getCode());
                     existingTemplate.setDescription(template.getDescription());
-                    existingTemplate.setApplicableChannelTypes(template.getApplicableChannelTypes());
+                    existingTemplate.setChannelType(template.getChannelType());
                     existingTemplate.setContentType(template.getContentType());
                     existingTemplate.setUpdatedAt(Instant.now().toEpochMilli());
                     return templateRepository.save(existingTemplate)

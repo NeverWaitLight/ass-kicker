@@ -27,11 +27,11 @@ public class AliyunSmsChannel extends Channel<AliyunSmsChannelSpec> {
         if (request == null) {
             return MsgResp.failure("INVALID_REQUEST", "Message request is null");
         }
-        String phone = request.getRecipient();
+        String phone = request.recipient();
         if (phone == null || phone.isBlank()) {
             return MsgResp.failure("INVALID_REQUEST", "手机号不能为空");
         }
-        String content = request.getContent() != null ? request.getContent() : "";
+        String content = request.content() != null ? request.content() : "";
         try {
             Config apiConfig = new Config()
                     .setAccessKeyId(spec.getAccessKeyId())

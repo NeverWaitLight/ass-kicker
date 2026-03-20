@@ -61,8 +61,8 @@ public class ChannelFactory {
         if (spec instanceof DingTalkIMChannelSpec dingTalk) {
             return new DingTalkIMChannel(dingTalk, sharedWebClient, debugProperties);
         }
-        if (spec instanceof WeComIMChannelSpec wechatWork) {
-            return new WeComIMChannel(wechatWork, sharedWebClient, debugProperties);
+        if (spec instanceof WeComIMChannelSpec wecom) {
+            return new WeComIMChannel(wecom, sharedWebClient, debugProperties);
         }
         if (spec instanceof APNsPushChannelSpec apns) {
             return new APNsPushChannel(apns, debugProperties);

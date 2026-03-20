@@ -137,7 +137,6 @@ public class SendRecordServiceImpl implements SendRecordService, DisposableBean 
                 r.getLanguageCode(),
                 r.getParams(),
                 r.getChannelId(),
-                r.getRecipients(),
                 r.getRecipient(),
                 r.getSubmittedAt(),
                 r.getRenderedContent(),

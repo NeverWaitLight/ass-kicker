@@ -46,7 +46,7 @@ public class APNsPushChannel extends Channel<APNsPushChannelSpec> {
         if (request == null) {
             return MsgResp.failure("INVALID_REQUEST", "Message request is null");
         }
-        String token = request.getRecipient();
+        String token = request.recipient();
         if (token == null || token.isBlank()) {
             return MsgResp.failure("INVALID_REQUEST", "Device token is required");
         }
@@ -58,10 +58,10 @@ public class APNsPushChannel extends Channel<APNsPushChannelSpec> {
 
             Map<String, Object> aps = new HashMap<>();
             Map<String, String> alert = new HashMap<>();
-            if (request.getSubject() != null && !request.getSubject().isBlank()) {
-                alert.put("title", request.getSubject());
+            if (request.subject() != null && !request.subject().isBlank()) {
+                alert.put("title", request.subject());
             }
-            alert.put("body", request.getContent() != null ? request.getContent() : "");
+            alert.put("body", request.content() != null ? request.content() : "");
             aps.put("alert", alert);
             aps.put("sound", "default");
             Map<String, Object> payload = new HashMap<>();

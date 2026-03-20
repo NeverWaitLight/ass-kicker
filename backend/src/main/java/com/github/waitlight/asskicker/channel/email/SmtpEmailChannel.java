@@ -60,9 +60,9 @@ public class SmtpEmailChannel extends Channel<SmtpEmailChannelSpec> {
                 MimeMessage message = mailSender.createMimeMessage();
                 MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
                 helper.setFrom(String.valueOf(resolveFrom()));
-                helper.setTo(String.valueOf(request.getRecipient()));
-                helper.setSubject(String.valueOf(request.getSubject()));
-                helper.setText(String.valueOf(request.getContent()), false);
+                helper.setTo(String.valueOf(request.recipient()));
+                helper.setSubject(String.valueOf(request.subject()));
+                helper.setText(String.valueOf(request.content()), false);
                 mailSender.send(message);
                 return MsgResp.success(message.getMessageID());
             } catch (MailException | MessagingException ex) {

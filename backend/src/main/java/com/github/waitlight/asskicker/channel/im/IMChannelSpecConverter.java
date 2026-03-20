@@ -49,12 +49,12 @@ public class IMChannelSpecConverter {
             return dingTalk;
         }
 
-        if (senderType == IMChannelType.WECHAT_WORK) {
-            Map<String, Object> wechatWorkValues = resolveProtocolValues(safe, "wechatWork", "wechat_work");
-            WeComIMChannelSpec wechatWork = mapToConfig(wechatWorkValues, WeComIMChannelSpec.class, "WECHAT_WORK");
-            ensurePositiveRetries(wechatWork.getMaxRetries(), "WECHAT_WORK");
-            validateConfig(wechatWork, "WECHAT_WORK");
-            return wechatWork;
+        if (senderType == IMChannelType.WECOM) {
+            Map<String, Object> wecomValues = resolveProtocolValues(safe, "weCom", "wecom");
+            WeComIMChannelSpec wecom = mapToConfig(wecomValues, WeComIMChannelSpec.class, "WECOM");
+            ensurePositiveRetries(wecom.getMaxRetries(), "WECOM");
+            validateConfig(wecom, "WECOM");
+            return wecom;
         }
 
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "不支持的 IM 协议类型");

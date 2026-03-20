@@ -7,7 +7,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -33,9 +32,6 @@ public class SendRecordEntity {
 
     @Field("channel_id")
     private String channelId;
-
-    @Field("recipients")
-    private List<String> recipients;
 
     @Field("recipient")
     private String recipient;

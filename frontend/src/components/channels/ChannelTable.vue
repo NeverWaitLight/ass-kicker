@@ -14,6 +14,9 @@
       <template v-else-if="column.key === 'type'">
         <a-tag :color="getTypeColor(record.type)">{{ getTypeLabel(record.type) }}</a-tag>
       </template>
+      <template v-else-if="column.key === 'recipientRules'">
+        {{ recipientRulesLabel(record) }}
+      </template>
       <template v-else-if="column.key === 'createdAt'">
         {{ formatTimestamp(record.createdAt) }}
       </template>
@@ -48,10 +51,18 @@ defineProps({
 const emit = defineEmits(['test', 'edit', 'delete', 'page-change'])
 const { t, te } = useI18n()
 
+const recipientRulesLabel = (record) => {
+  const inc = record.includeRecipientRegex?.trim?.()
+  const exc = record.excludeRecipientRegex?.trim?.()
+  if (inc || exc) return '已配置'
+  return '—'
+}
+
 const columns = [
   { title: '序号', key: 'ordinal', width: 80 },
   { title: '名称', dataIndex: 'name', key: 'name' },
   { title: '类型', dataIndex: 'type', key: 'type', width: 100 },
+  { title: '收件人规则', key: 'recipientRules', width: 100 },
   { title: '描述', dataIndex: 'description', key: 'description' },
   { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180 },
   { title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 180 },

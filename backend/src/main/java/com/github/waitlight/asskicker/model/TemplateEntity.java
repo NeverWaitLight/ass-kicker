@@ -36,8 +36,8 @@ public class TemplateEntity {
     @Field("description")
     private String description;
 
-    @Field("applicable_channel_types")
-    private List<ChannelType> applicableChannelTypes;
+    @Field("channel_type")
+    private ChannelType channelType;
 
     @Field("content_type")
     private TemplateContentType contentType;

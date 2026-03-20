@@ -43,7 +43,7 @@
           <a-tag color="blue">{{ channelTypeLabel(record.channelType) }}</a-tag>
         </template>
         <template v-else-if="column.key === 'recipient'">
-          {{ record.recipient || (record.recipients && record.recipients[0]) || '-' }}
+          {{ record.recipient || '-' }}
         </template>
         <template v-else-if="column.key === 'status'">
           <a-tag :color="statusColor(record.status)">{{ statusLabel(record.status) }}</a-tag>

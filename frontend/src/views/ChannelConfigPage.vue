@@ -89,6 +89,26 @@
           </div>
 
           <a-form layout="vertical" class="config-form config-form--description">
+            <a-form-item
+              label="收件人包含正则"
+              :validate-status="includeRegexError ? 'error' : ''"
+              :help="includeRegexError"
+            >
+              <a-input
+                v-model:value="form.includeRecipientRegex"
+                placeholder="可选，仅允许匹配该正则的收件人，优先于排除规则"
+              />
+            </a-form-item>
+            <a-form-item
+              label="收件人排除正则"
+              :validate-status="excludeRegexError ? 'error' : ''"
+              :help="excludeRegexError"
+            >
+              <a-input
+                v-model:value="form.excludeRecipientRegex"
+                placeholder="可选，未配置包含规则时生效，匹配则拒绝"
+              />
+            </a-form-item>
             <a-form-item label="描述">
               <a-textarea v-model:value="form.description" rows="3" />
             </a-form-item>
@@ -136,7 +156,9 @@ const form = reactive({
   id: null,
   name: '',
   type: '',
-  description: ''
+  description: '',
+  includeRecipientRegex: '',
+  excludeRecipientRegex: ''
 })
 
 const loading = ref(false)
@@ -148,6 +170,8 @@ const objectInvalidIds = ref({})
 const objectErrors = ref({})
 const nameError = ref('')
 const typeError = ref('')
+const includeRegexError = ref('')
+const excludeRegexError = ref('')
 const propertyError = ref('')
 const testModalOpen = ref(false)
 
@@ -283,6 +307,8 @@ const loadChannel = async () => {
     form.name = data.name || ''
     form.type = data.type || ''
     form.description = data.description || ''
+    form.includeRecipientRegex = data.includeRecipientRegex || ''
+    form.excludeRecipientRegex = data.excludeRecipientRegex || ''
     if (form.type === 'EMAIL') {
       const protocol = resolveProtocolValue(data.properties?.protocol)
       emailProtocol.value = protocol
@@ -321,9 +347,22 @@ const loadChannel = async () => {
   }
 }
 
+const validateRegexField = (value) => {
+  const trimmed = (value || '').trim()
+  if (!trimmed) return ''
+  try {
+    new RegExp(trimmed)
+    return ''
+  } catch {
+    return '正则语法无效'
+  }
+}
+
 const validateForm = () => {
   nameError.value = form.name.trim() ? '' : '通道名称不能为空'
   typeError.value = form.type ? '' : '请选择通道类型'
+  includeRegexError.value = validateRegexField(form.includeRecipientRegex)
+  excludeRegexError.value = validateRegexField(form.excludeRecipientRegex)
 
   const validation = validatePropertyRows(propertyRows.value)
   rowInvalidIds.value = validation.rowInvalidIds
@@ -332,7 +371,14 @@ const validateForm = () => {
   propertyError.value = validation.message
 
   const hasObjectErrors = Object.keys(validation.objectInvalidIds).length > 0
-  return !nameError.value && !typeError.value && !propertyError.value && !hasObjectErrors
+  return (
+    !nameError.value &&
+    !typeError.value &&
+    !includeRegexError.value &&
+    !excludeRegexError.value &&
+    !propertyError.value &&
+    !hasObjectErrors
+  )
 }
 
 const buildProperties = () => {
@@ -433,6 +479,8 @@ const saveChannel = async () => {
       name: form.name.trim(),
       type: form.type,
       description: form.description?.trim() || '',
+      includeRecipientRegex: form.includeRecipientRegex?.trim() || '',
+      excludeRecipientRegex: form.excludeRecipientRegex?.trim() || '',
       properties: buildProperties()
     }
     if (isEdit.value) {
@@ -453,6 +501,8 @@ const saveChannel = async () => {
 const openTestModal = () => {
   if (testDenied.value) return
   typeError.value = form.type ? '' : '请选择通道类型'
+  includeRegexError.value = validateRegexField(form.includeRecipientRegex)
+  excludeRegexError.value = validateRegexField(form.excludeRecipientRegex)
   const validation = validatePropertyRows(propertyRows.value)
   rowInvalidIds.value = validation.rowInvalidIds
   objectInvalidIds.value = validation.objectInvalidIds
@@ -460,7 +510,13 @@ const openTestModal = () => {
   propertyError.value = validation.message
 
   const hasObjectErrors = Object.keys(validation.objectInvalidIds).length > 0
-  if (typeError.value || propertyError.value || hasObjectErrors) {
+  if (
+    typeError.value ||
+    includeRegexError.value ||
+    excludeRegexError.value ||
+    propertyError.value ||
+    hasObjectErrors
+  ) {
     message.warning('请先完善通道配置再进行测试发送')
     return
   }
@@ -769,9 +825,9 @@ const getFallbackImTypes = () => ({
       ]
     },
     {
-      type: 'WECHAT_WORK',
+      type: 'WECOM',
       label: '企业微信',
-      propertyKey: 'wechatWork',
+      propertyKey: 'wecom',
       fields: [
         { key: 'webhookUrl', label: 'Webhook URL', required: true, defaultValue: '' }
       ]

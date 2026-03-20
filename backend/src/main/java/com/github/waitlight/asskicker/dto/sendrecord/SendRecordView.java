@@ -3,7 +3,6 @@ package com.github.waitlight.asskicker.dto.sendrecord;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
 
-import java.util.List;
 import java.util.Map;
 
 public record SendRecordView(
@@ -13,7 +12,6 @@ public record SendRecordView(
         String languageCode,
         Map<String, Object> params,
         String channelId,
-        List<String> recipients,
         String recipient,
         Long submittedAt,
         String renderedContent,

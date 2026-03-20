@@ -48,11 +48,11 @@ class TemplateManagerTest {
         }).when(mustache).execute(any(Writer.class), any(Object.class));
 
         StepVerifier.create(templateManager.fill("tpl-code", Language.EN, Map.of("name", "Alice")))
-                .expectNext("Hello Alice")
+                .expectNextMatches(r -> "Hello Alice".equals(r.renderedContent()) && template.equals(r.template()))
                 .verifyComplete();
 
         StepVerifier.create(templateManager.fill("tpl-code", Language.EN, Map.of("name", "Bob")))
-                .expectNext("Hello Bob")
+                .expectNextMatches(r -> "Hello Bob".equals(r.renderedContent()) && template.equals(r.template()))
                 .verifyComplete();
 
         verify(mustacheFactory, times(1)).compile(any(), anyString());
@@ -89,11 +89,11 @@ class TemplateManagerTest {
         }).when(secondMustache).execute(any(Writer.class), any(Object.class));
 
         StepVerifier.create(templateManager.fill("tpl-code", Language.EN, Map.of("name", "Alice")))
-                .expectNext("Hello Alice")
+                .expectNextMatches(r -> "Hello Alice".equals(r.renderedContent()) && template.equals(r.template()))
                 .verifyComplete();
 
         StepVerifier.create(templateManager.fill("tpl-code", Language.EN, Map.of("name", "Alice")))
-                .expectNext("Hi Alice")
+                .expectNextMatches(r -> "Hi Alice".equals(r.renderedContent()) && template.equals(r.template()))
                 .verifyComplete();
 
         verify(mustacheFactory, times(2)).compile(any(), anyString());

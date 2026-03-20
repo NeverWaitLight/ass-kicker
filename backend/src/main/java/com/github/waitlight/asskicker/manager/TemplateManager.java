@@ -6,6 +6,7 @@ import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import com.github.waitlight.asskicker.config.CaffeineCacheProperties;
+import com.github.waitlight.asskicker.dto.template.FilledTemplateResult;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.service.TemplateService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +45,7 @@ public class TemplateManager {
         this.compiledTemplateCache = compiledTemplateCache;
     }
 
-    public Mono<String> fill(String templateCode, Language language, Map<String, Object> params) {
+    public Mono<FilledTemplateResult> fill(String templateCode, Language language, Map<String, Object> params) {
         Map<String, Object> safeParams = params != null ? params : Collections.emptyMap();
         return templateService.findByCode(templateCode)
                 .switchIfEmpty(Mono.error(
@@ -52,7 +53,7 @@ public class TemplateManager {
                 .flatMap(template -> templateService.getTemplateContentByLanguage(template.getId(), language)
                         .switchIfEmpty(Mono.error(
                                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Language template not found")))
-                        .map(lt -> render(lt.getContent(), safeParams)));
+                        .map(lt -> new FilledTemplateResult(template, render(lt.getContent(), safeParams))));
     }
 
     private String render(String content, Map<String, Object> params) {

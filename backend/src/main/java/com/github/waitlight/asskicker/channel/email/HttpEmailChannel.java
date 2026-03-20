@@ -64,16 +64,16 @@ public class HttpEmailChannel extends Channel<HttpEmailChannelSpec> {
 
     private Map<String, Object> buildRequestBody(MsgReq request) {
         Map<String, Object> body = new HashMap<>();
-        body.put("to", String.valueOf(request.getRecipient()));
-        body.put("subject", String.valueOf(request.getSubject()));
-        body.put("content", String.valueOf(request.getContent()));
+        body.put("to", String.valueOf(request.recipient()));
+        body.put("subject", String.valueOf(request.subject()));
+        body.put("content", String.valueOf(request.content()));
 
         if (spec.getFrom() != null && !spec.getFrom().isBlank()) {
             body.put("from", spec.getFrom());
         }
 
-        if (request.getAttributes() != null) {
-            body.putAll(request.getAttributes());
+        if (request.attributes() != null) {
+            body.putAll(request.attributes());
         }
         return body;
     }

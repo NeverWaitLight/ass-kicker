@@ -8,6 +8,7 @@ import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.service.ChannelEntityService;
+import com.github.waitlight.asskicker.util.RecipientsRuleMatcher;
 import org.springframework.core.codec.DecodingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 @Component
 public class ChannelEntityHandler {
@@ -152,7 +154,7 @@ public class ChannelEntityHandler {
                 List.of(
                         new ImTypeInfo("DINGTALK", "钉钉", "dingtalk",
                                 List.of(new ImTypeFieldInfo("webhookUrl", "Webhook URL", true, ""))),
-                        new ImTypeInfo("WECHAT_WORK", "企业微信", "wechatWork",
+                        new ImTypeInfo("WECOM", "企业微信", "wecom",
                                 List.of(new ImTypeFieldInfo("webhookUrl", "Webhook URL", true, "")))
                 )
         );
@@ -175,6 +177,23 @@ public class ChannelEntityHandler {
             channelEntity.setProperties(new LinkedHashMap<>());
         }
         validateProperties(channelEntity.getProperties(), "properties");
+        if (channelEntity.getIncludeRecipientRegex() != null
+                && channelEntity.getIncludeRecipientRegex().length() > 2048) {
+            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "收件人包含正则长度不能超过 2048"));
+        }
+        if (channelEntity.getExcludeRecipientRegex() != null
+                && channelEntity.getExcludeRecipientRegex().length() > 2048) {
+            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "收件人排除正则长度不能超过 2048"));
+        }
+        try {
+            RecipientsRuleMatcher.validatePatternSyntax(channelEntity.getIncludeRecipientRegex());
+            RecipientsRuleMatcher.validatePatternSyntax(channelEntity.getExcludeRecipientRegex());
+        } catch (PatternSyntaxException ex) {
+            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "收件人规则正则无效: " + ex.getMessage()));
+        }
         return Mono.just(channelEntity);
     }
 
@@ -225,8 +244,18 @@ public class ChannelEntityHandler {
         sanitized.setName(input.getName());
         sanitized.setType(input.getType());
         sanitized.setDescription(input.getDescription());
+        sanitized.setIncludeRecipientRegex(trimToNull(input.getIncludeRecipientRegex()));
+        sanitized.setExcludeRecipientRegex(trimToNull(input.getExcludeRecipientRegex()));
         sanitized.setProperties(input.getProperties());
         return sanitized;
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private TestSendRequest sanitizeTestSend(TestSendRequest input) {
