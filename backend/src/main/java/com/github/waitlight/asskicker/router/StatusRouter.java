@@ -12,10 +12,10 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
 
 @Configuration(proxyBeanMethods = false)
 public class StatusRouter {
-  @Bean
-  public RouterFunction<ServerResponse> statusRoutes() {
-    return RouterFunctions.route(GET("/status"), request ->
-        ServerResponse.ok().bodyValue(Map.of("service", "ass-kicker", "status", "OK"))
-    );
-  }
+    @Bean
+    public RouterFunction<ServerResponse> statusRoutes() {
+        return RouterFunctions.route(GET("/status"), request ->
+                ServerResponse.ok().bodyValue(Map.of("service", "ass-kicker", "status", "OK"))
+        );
+    }
 }

@@ -15,16 +15,16 @@ public class LanguageTemplateRouter {
     @Bean
     public RouterFunction<ServerResponse> languageTemplateRoutes(LanguageTemplateHandler languageTemplateHandler) {
         return RouterFunctions
-                        .route(RequestPredicates.GET("/v1/language-templates/template/{templateId}")
+                .route(RequestPredicates.GET("/v1/language-templates/template/{templateId}")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), languageTemplateHandler::getLanguageTemplatesByTemplateId)
-                        .andRoute(RequestPredicates
-                                        .GET("/v1/language-templates/template/{templateId}/language/{language}")
+                .andRoute(RequestPredicates
+                        .GET("/v1/language-templates/template/{templateId}/language/{language}")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), languageTemplateHandler::getLanguageTemplateByTemplateIdAndLanguage)
-                        .andRoute(RequestPredicates.POST("/v1/language-templates")
+                .andRoute(RequestPredicates.POST("/v1/language-templates")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), languageTemplateHandler::createLanguageTemplate)
-                        .andRoute(RequestPredicates.PUT("/v1/language-templates/{id}")
+                .andRoute(RequestPredicates.PUT("/v1/language-templates/{id}")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), languageTemplateHandler::updateLanguageTemplate)
-                        .andRoute(RequestPredicates.DELETE("/v1/language-templates/{id}"),
-                                        languageTemplateHandler::deleteLanguageTemplate);
+                .andRoute(RequestPredicates.DELETE("/v1/language-templates/{id}"),
+                        languageTemplateHandler::deleteLanguageTemplate);
     }
 }

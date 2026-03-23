@@ -18,15 +18,6 @@ public enum Language {
         this.displayName = displayName;
     }
 
-    @JsonValue
-    public String getCode() {
-        return code;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
     @JsonCreator
     public static Language fromCode(String code) {
         if (code == null || code.isBlank()) {
@@ -39,5 +30,14 @@ public enum Language {
             }
         }
         throw new IllegalArgumentException("Unknown language code: " + code);
+    }
+
+    @JsonValue
+    public String getCode() {
+        return code;
+    }
+
+    public String getDisplayName() {
+        return displayName;
     }
 }

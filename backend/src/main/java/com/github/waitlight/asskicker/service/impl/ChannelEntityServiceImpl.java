@@ -12,8 +12,8 @@ import com.github.waitlight.asskicker.dto.channel.TestSendRequest;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.UserRole;
-import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.repository.ChannelEntityRepository;
+import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.service.ChannelEntityService;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -26,12 +26,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class ChannelEntityServiceImpl implements ChannelEntityService {
@@ -40,16 +35,13 @@ public class ChannelEntityServiceImpl implements ChannelEntityService {
     private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE =
             new TypeReference<>() {
             };
-
+    private static final String ALL_CHANNELS_KEY = "all";
     private final ChannelEntityRepository channelEntityRepository;
     private final ObjectMapper objectMapper;
     private final ChannelFactory channelFactory;
     private final CaffeineCacheConfig caffeineCacheConfig;
-
     private AsyncLoadingCache<String, Optional<ChannelEntity>> channelByIdCache;
     private AsyncLoadingCache<String, List<ChannelEntity>> channelListCache;
-
-    private static final String ALL_CHANNELS_KEY = "all";
 
     public ChannelEntityServiceImpl(ChannelEntityRepository channelEntityRepository,
                                     ObjectMapper objectMapper,

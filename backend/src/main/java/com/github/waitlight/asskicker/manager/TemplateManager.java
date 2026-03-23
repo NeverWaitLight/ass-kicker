@@ -39,7 +39,7 @@ public class TemplateManager {
     }
 
     TemplateManager(TemplateService templateService, MustacheFactory mustacheFactory,
-            Cache<String, Mustache> compiledTemplateCache) {
+                    Cache<String, Mustache> compiledTemplateCache) {
         this.templateService = templateService;
         this.mustacheFactory = mustacheFactory;
         this.compiledTemplateCache = compiledTemplateCache;

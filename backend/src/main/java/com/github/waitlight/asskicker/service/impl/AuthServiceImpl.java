@@ -33,8 +33,8 @@ public class AuthServiceImpl implements AuthService {
     private AsyncLoadingCache<String, Optional<UserEntity>> userByIdCache;
 
     public AuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
-            JwtService jwtService, UserConverter userMapStructer,
-            CaffeineCacheConfig caffeineCacheConfig) {
+                           JwtService jwtService, UserConverter userMapStructer,
+                           CaffeineCacheConfig caffeineCacheConfig) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;

@@ -21,7 +21,8 @@ import java.util.stream.Collectors;
 @Component
 public class IMChannelSpecConverter {
 
-    private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE = new TypeReference<>() {};
+    private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE = new TypeReference<>() {
+    };
 
     private final ObjectMapper objectMapper;
     private final Validator validator;

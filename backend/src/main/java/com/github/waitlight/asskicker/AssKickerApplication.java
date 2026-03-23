@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication(proxyBeanMethods = false)
 @EnableScheduling
 public class AssKickerApplication {
-  public static void main(String[] args) {
-    SpringApplication.run(AssKickerApplication.class, args);
-  }
+    public static void main(String[] args) {
+        SpringApplication.run(AssKickerApplication.class, args);
+    }
 }

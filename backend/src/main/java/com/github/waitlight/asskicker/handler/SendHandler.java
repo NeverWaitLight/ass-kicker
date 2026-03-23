@@ -49,7 +49,7 @@ public class SendHandler {
     }
 
     private Mono<SendRequest> bodyToSubmitRequest(ServerRequest request) {
-            return request.bodyToMono(SendRequest.class)
+        return request.bodyToMono(SendRequest.class)
                 .onErrorMap(ServerWebInputException.class,
                         ex -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "请求数据格式错误"))
                 .onErrorMap(DecodingException.class,

@@ -30,14 +30,22 @@ import java.util.regex.PatternSyntaxException;
 @Component
 public class ChannelEntityHandler {
 
-    private final ChannelEntityService channelEntityService;
     private static final String CHANNEL_TYPE_ERROR = "通道类型必须为SMS、EMAIL、IM、PUSH";
     private static final String TEST_SEND_FAILED_MESSAGE = "测试发送失败";
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
     private static final Pattern SMS_PHONE_PATTERN = Pattern.compile("^1[3-9]\\d{9}$");
+    private final ChannelEntityService channelEntityService;
 
     public ChannelEntityHandler(ChannelEntityService channelEntityService) {
         this.channelEntityService = channelEntityService;
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     public Mono<ServerResponse> createChannel(ServerRequest request) {
@@ -248,14 +256,6 @@ public class ChannelEntityHandler {
         sanitized.setExcludeRecipientRegex(trimToNull(input.getExcludeRecipientRegex()));
         sanitized.setProperties(input.getProperties());
         return sanitized;
-    }
-
-    private static String trimToNull(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private TestSendRequest sanitizeTestSend(TestSendRequest input) {

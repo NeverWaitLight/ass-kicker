@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.mq;
 
-import com.github.waitlight.asskicker.manager.SendTaskExecutor;
 import com.github.waitlight.asskicker.dto.send.SendRequest;
+import com.github.waitlight.asskicker.manager.SendTaskExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;

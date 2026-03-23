@@ -15,20 +15,20 @@ public class ChannelEntityRouter {
     @Bean
     public RouterFunction<ServerResponse> channelRoutes(ChannelEntityHandler channelEntityHandler) {
         return RouterFunctions
-                        .route(RequestPredicates.POST("/v1/channels")
+                .route(RequestPredicates.POST("/v1/channels")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelEntityHandler::createChannel)
-                        .andRoute(RequestPredicates.GET("/v1/channels")
+                .andRoute(RequestPredicates.GET("/v1/channels")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelEntityHandler::listChannels)
-                        .andRoute(RequestPredicates.GET("/v1/channels/types")
+                .andRoute(RequestPredicates.GET("/v1/channels/types")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelEntityHandler::listChannelTypes)
-                        .andRoute(RequestPredicates.GET("/v1/channels/im-types")
+                .andRoute(RequestPredicates.GET("/v1/channels/im-types")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelEntityHandler::listImTypes)
-                        .andRoute(RequestPredicates.GET("/v1/channels/{id}")
+                .andRoute(RequestPredicates.GET("/v1/channels/{id}")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelEntityHandler::getChannelById)
-                        .andRoute(RequestPredicates.PUT("/v1/channels/{id}")
+                .andRoute(RequestPredicates.PUT("/v1/channels/{id}")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelEntityHandler::updateChannel)
-                        .andRoute(RequestPredicates.DELETE("/v1/channels/{id}"), channelEntityHandler::deleteChannel)
-                        .andRoute(RequestPredicates.POST("/v1/channels/test-send")
+                .andRoute(RequestPredicates.DELETE("/v1/channels/{id}"), channelEntityHandler::deleteChannel)
+                .andRoute(RequestPredicates.POST("/v1/channels/test-send")
                         .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)), channelEntityHandler::testSend);
     }
 }

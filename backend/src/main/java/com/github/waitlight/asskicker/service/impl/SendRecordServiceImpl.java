@@ -28,15 +28,11 @@ public class SendRecordServiceImpl implements SendRecordService, DisposableBean 
 
     private final SendRecordRepository sendRecordRepository;
     private final CaffeineCacheConfig caffeineCacheConfig;
-
+    private final List<SendRecordEntity> buffer = Collections.synchronizedList(new ArrayList<>());
     @Value("${send-record.buffer-size:100}")
     private int bufferSize;
-
     @Value("${send-record.flush-interval-ms:5000}")
     private long flushIntervalMs;
-
-    private final List<SendRecordEntity> buffer = Collections.synchronizedList(new ArrayList<>());
-
     private AsyncLoadingCache<String, Optional<SendRecordView>> recordByIdCache;
 
     public SendRecordServiceImpl(SendRecordRepository sendRecordRepository,

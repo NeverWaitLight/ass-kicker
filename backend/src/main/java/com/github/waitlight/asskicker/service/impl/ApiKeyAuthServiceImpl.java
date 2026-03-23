@@ -33,6 +33,16 @@ public class ApiKeyAuthServiceImpl implements ApiKeyAuthService {
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .build();
 
+    private static String sha256(String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Override
     public Mono<UserPrincipal> authenticate(String rawKey) {
         if (rawKey == null || rawKey.length() < 12) {
@@ -75,16 +85,6 @@ public class ApiKeyAuthServiceImpl implements ApiKeyAuthService {
     @Override
     public void invalidateCache(String keyPrefix) {
         authCache.asMap().keySet().removeIf(k -> true);
-    }
-
-    private static String sha256(String input) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     record CachedAuthResult(UserPrincipal principal, Long expiresAt) {

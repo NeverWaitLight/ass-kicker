@@ -68,7 +68,7 @@ public class JwtService {
                 .parseClaimsJws(token);
         Claims claims = jws.getBody();
         String type = claims.get("type", String.class);
-        if (type == null || !expectedType.name().equals(type)) {
+        if (!expectedType.name().equals(type)) {
             throw new JwtException("Invalid token type.");
         }
         String roleValue = claims.get("role", String.class);
