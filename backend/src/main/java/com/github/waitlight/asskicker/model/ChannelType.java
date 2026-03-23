@@ -23,7 +23,7 @@ public enum ChannelType {
         try {
             return ChannelType.valueOf(normalized.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("通道类型必须为SMS、EMAIL、IM、PUSH");
+            throw new IllegalArgumentException("Channel type must be SMS, EMAIL, IM, or PUSH");
         }
     }
 
