@@ -1,6 +1,7 @@
 package com.github.waitlight.asskicker.manager;
 
 import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.channel.MsgReq;
 import com.github.waitlight.asskicker.channel.MsgResp;
 import com.github.waitlight.asskicker.dto.send.SendRequest;
@@ -10,6 +11,8 @@ import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.SendRecordEntity;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
 import com.github.waitlight.asskicker.service.SendRecordService;
+import com.github.waitlight.asskicker.template.TemplateManager;
+
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

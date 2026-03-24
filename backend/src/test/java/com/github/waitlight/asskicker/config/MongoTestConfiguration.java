@@ -1,0 +1,30 @@
+package com.github.waitlight.asskicker.config;
+
+import com.github.waitlight.asskicker.converter.ChannelProviderConverterImpl;
+import com.github.waitlight.asskicker.converter.MessageTemplateConverterImpl;
+import com.github.waitlight.asskicker.service.impl.ChannelProviderServiceImpl;
+import com.github.waitlight.asskicker.service.impl.MessageTemplateServiceImpl;
+import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.mongodb.repository.config.EnableReactiveMongoRepositories;
+
+/**
+ * 嵌入式 Mongo 测试切片：装配 MapStruct 转换、JsonNode 与 Document
+ * 互转、以及 ChannelProvider / MessageTemplate 等服务实现。
+ * 使用 Flapdoodle 启动本机 mongod 进程（见
+ * {@code de.flapdoodle.embed.mongo.spring.autoconfigure.EmbeddedMongoAutoConfiguration}），
+ * 而非 Fongo：Fongo 面向旧版同步 Java 驱动，无法与 {@code ReactiveMongoRepository} 共用。
+ */
+@TestConfiguration
+@EnableReactiveMongoRepositories(basePackages = "com.github.waitlight.asskicker.repository")
+@Import({
+                JacksonAutoConfiguration.class,
+                MongoJsonNodeConfig.class,
+                ChannelProviderConverterImpl.class,
+                ChannelProviderServiceImpl.class,
+                MessageTemplateConverterImpl.class,
+                MessageTemplateServiceImpl.class
+})
+public class MongoTestConfiguration {
+}

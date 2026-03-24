@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.manager;
+package com.github.waitlight.asskicker.template;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;

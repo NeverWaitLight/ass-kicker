@@ -4,6 +4,7 @@
 
 - [后端待办事项](backend/README.md#todo)
 - [前端待办事项](frontend/README.md#todo)
+- [] 如何才能支持自动化发布模板？
 
 ## 后端启动
 

@@ -1,7 +1,5 @@
-package com.github.waitlight.asskicker.manager;
+package com.github.waitlight.asskicker.channel;
 
-import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.service.ChannelEntityService;

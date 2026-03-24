@@ -150,6 +150,13 @@
       <artifactId>mockwebserver</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- 嵌入式 MongoDB（Spring Boot 3 集成），供 Reactive Mongo 服务层测试使用；Fongo 仅适配同步驱动，与本项目 reactive 栈不兼容 -->
+    <dependency>
+      <groupId>de.flapdoodle.embed</groupId>
+      <artifactId>de.flapdoodle.embed.mongo.spring3x</artifactId>
+      <version>4.24.0</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

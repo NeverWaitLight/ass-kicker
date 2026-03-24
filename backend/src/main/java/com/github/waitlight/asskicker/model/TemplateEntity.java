@@ -1,7 +1,5 @@
 package com.github.waitlight.asskicker.model;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -24,17 +22,12 @@ public class TemplateEntity {
     @Id
     private String id;
 
-    @NotBlank(message = "Template name is required")
-    @Size(max = 255, message = "Template name must not exceed 255 characters")
     @Field("name")
     private String name;
 
-    @NotBlank(message = "Template code is required")
-    @Size(max = 100, message = "Template code must not exceed 100 characters")
     @Field("code")
     private String code;
 
-    @Size(max = 1000, message = "Description must not exceed 1000 characters")
     @Field("description")
     private String description;
 

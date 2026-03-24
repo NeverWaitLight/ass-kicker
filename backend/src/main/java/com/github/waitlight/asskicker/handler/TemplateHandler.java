@@ -2,11 +2,17 @@ package com.github.waitlight.asskicker.handler;
 
 import com.github.waitlight.asskicker.dto.template.FillTemplateRequest;
 import com.github.waitlight.asskicker.dto.template.FillTemplateResponse;
-import com.github.waitlight.asskicker.manager.TemplateManager;
+import com.github.waitlight.asskicker.dto.template.TemplateDTO;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.LanguageTemplateEntity;
 import com.github.waitlight.asskicker.model.TemplateEntity;
 import com.github.waitlight.asskicker.service.TemplateService;
+import com.github.waitlight.asskicker.template.TemplateManager;
+
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
+import lombok.RequiredArgsConstructor;
+import org.springframework.core.codec.DecodingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -14,29 +20,38 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class TemplateHandler {
 
     private final TemplateService templateService;
     private final TemplateManager templateManager;
-
-    public TemplateHandler(TemplateService templateService, TemplateManager templateManager) {
-        this.templateService = templateService;
-        this.templateManager = templateManager;
-    }
+    private final Validator validator;
 
     public Mono<ServerResponse> createTemplate(ServerRequest request) {
-        return request.bodyToMono(TemplateEntity.class)
-                .map(this::sanitizeTemplate)
+        return request.bodyToMono(TemplateDTO.class)
+                .onErrorMap(ServerWebInputException.class,
+                        ex -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request body"))
+                .onErrorMap(DecodingException.class,
+                        ex -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request body"))
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required")))
+                .flatMap(this::validateDto)
+                .map(this::toTemplateEntity)
                 .flatMap(template -> templateService.createTemplate(template))
                 .flatMap(template -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(BodyInserters.fromValue(template)))
+                .onErrorResume(ResponseStatusException.class, ex -> ServerResponse.status(ex.getStatusCode())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(BodyInserters.fromValue(ex.getReason() != null ? ex.getReason() : ex.getStatusCode().toString())))
                 .onErrorResume(throwable -> {
                     System.err.println("Error creating template: " + throwable.getMessage());
                     return ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -74,13 +89,22 @@ public class TemplateHandler {
 
     public Mono<ServerResponse> updateTemplate(ServerRequest request) {
         String id = request.pathVariable("id");
-        return request.bodyToMono(TemplateEntity.class)
-                .map(this::sanitizeTemplate)
+        return request.bodyToMono(TemplateDTO.class)
+                .onErrorMap(ServerWebInputException.class,
+                        ex -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request body"))
+                .onErrorMap(DecodingException.class,
+                        ex -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request body"))
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request body is required")))
+                .flatMap(this::validateDto)
+                .map(this::toTemplateEntity)
                 .flatMap(template -> templateService.updateTemplate(id, template))
                 .flatMap(template -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(BodyInserters.fromValue(template)))
                 .switchIfEmpty(ServerResponse.notFound().build())
+                .onErrorResume(ResponseStatusException.class, ex -> ServerResponse.status(ex.getStatusCode())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(BodyInserters.fromValue(ex.getReason() != null ? ex.getReason() : ex.getStatusCode().toString())))
                 .onErrorResume(throwable -> {
                     System.err.println("Error updating template: " + throwable.getMessage());
                     return ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -182,20 +206,32 @@ public class TemplateHandler {
         return ServerResponse.badRequest().build();
     }
 
-    private TemplateEntity sanitizeTemplate(TemplateEntity input) {
-        TemplateEntity sanitized = new TemplateEntity();
+    private Mono<TemplateDTO> validateDto(TemplateDTO dto) {
+        Set<ConstraintViolation<TemplateDTO>> violations = validator.validate(dto);
+        if (!violations.isEmpty()) {
+            String message = violations.stream()
+                    .map(ConstraintViolation::getMessage)
+                    .distinct()
+                    .collect(Collectors.joining("; "));
+            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, message));
+        }
+        return Mono.just(dto);
+    }
+
+    private TemplateEntity toTemplateEntity(TemplateDTO input) {
+        TemplateEntity entity = new TemplateEntity();
         if (input == null) {
-            return sanitized;
+            return entity;
         }
-        sanitized.setName(input.getName());
-        sanitized.setCode(input.getCode());
-        sanitized.setDescription(input.getDescription());
-        sanitized.setChannelType(input.getChannelType());
+        entity.setName(input.getName());
+        entity.setCode(input.getCode());
+        entity.setDescription(input.getDescription());
+        entity.setChannelType(input.getChannelType());
         if (input.getAttributes() != null) {
-            sanitized.setAttributes(new LinkedHashMap<>(input.getAttributes()));
+            entity.setAttributes(new LinkedHashMap<>(input.getAttributes()));
         } else {
-            sanitized.setAttributes(null);
+            entity.setAttributes(null);
         }
-        return sanitized;
+        return entity;
     }
 }
