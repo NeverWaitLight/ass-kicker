@@ -54,14 +54,14 @@ public class MessageTemplateServiceImpl implements MessageTemplateService {
         long now = Instant.now().toEpochMilli();
         toCreate.setCreatedAt(now);
         toCreate.setUpdatedAt(now);
-        return ensureUniqueCodeAndType(toCreate.getCode(), toCreate.getChannelType(), null)
+        return ensureUniqueCode(toCreate.getCode(), null)
                 .then(Mono.defer(() -> messageTemplateRepository.save(toCreate)));
     }
 
     @Override
     public Mono<MessageTemplateEntity> update(String id, MessageTemplateEntity entity) {
         return messageTemplateRepository.findById(id)
-                .flatMap(existing -> ensureUniqueCodeAndType(entity.getCode(), entity.getChannelType(), id)
+                .flatMap(existing -> ensureUniqueCode(entity.getCode(), id)
                         .then(Mono.defer(() -> {
                             messageTemplateConverter.merge(entity, existing);
                             existing.setUpdatedAt(Instant.now().toEpochMilli());
@@ -74,15 +74,15 @@ public class MessageTemplateServiceImpl implements MessageTemplateService {
         return messageTemplateRepository.deleteById(id);
     }
 
-    private Mono<Void> ensureUniqueCodeAndType(String code, ChannelType channelType, String currentId) {
-        return messageTemplateRepository.findByCodeAndChannelType(code, channelType)
+    private Mono<Void> ensureUniqueCode(String code, String currentId) {
+        return messageTemplateRepository.findByCode(code)
                 .flatMap(existing -> {
                     if (currentId != null && currentId.equals(existing.getId())) {
                         return Mono.empty();
                     }
                     return Mono.error(new ResponseStatusException(
                             HttpStatus.CONFLICT,
-                            "Message template already exists: " + code + " / " + channelType));
+                            "Message template already exists: " + code));
                 })
                 .then();
     }

@@ -102,22 +102,18 @@ class MessageTemplateServiceTest {
         }
 
         @Test
-        void create_sameCodeDifferentType_findByCodeAndChannelType_returnsEachTemplate() {
+        void create_sameCodeDifferentChannelType_conflicts() {
                 MessageTemplateEntity sms = MessageTemplateEntityFixtures.smsCaptcha();
-                MessageTemplateEntity email = MessageTemplateEntityFixtures.emailCaptcha();
+                MessageTemplateEntity sameCodeEmail = MessageTemplateEntityFixtures.smsCaptcha();
+                sameCodeEmail.setChannelType(ChannelType.EMAIL);
 
                 StepVerifier.create(messageTemplateService.create(sms)
-                                .then(messageTemplateService.create(email))
-                                .thenMany(Flux.zip(
-                                                messageTemplateService.findByCodeAndChannelType("captcha",
-                                                                ChannelType.SMS),
-                                                messageTemplateService.findByCodeAndChannelType("captcha",
-                                                                ChannelType.EMAIL))))
-                                .assertNext(tuple -> {
-                                        assertTemplateContentEqual(sms, tuple.getT1());
-                                        assertTemplateContentEqual(email, tuple.getT2());
-                                })
-                                .verifyComplete();
+                                .then(messageTemplateService.create(sameCodeEmail)))
+                                .expectErrorSatisfies(ex -> assertThat(ex)
+                                                .isInstanceOf(ResponseStatusException.class)
+                                                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
+                                                .isEqualTo(HttpStatus.CONFLICT))
+                                .verify();
         }
 
         @Test

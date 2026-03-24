@@ -6,19 +6,19 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @Document(collection = "message_template")
-@CompoundIndex(name = "uk_message_template_code_channelType", def = "{'code': 1, 'channelType': 1}", unique = true)
 public class MessageTemplateEntity {
 
         @Id
         private String id;
 
+        @Indexed(name = "uk_message_template_code", unique = true)
         private String code;
 
         private ChannelType channelType;

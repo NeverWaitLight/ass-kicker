@@ -46,7 +46,7 @@ public final class MessageTemplateEntityFixtures {
   public static MessageTemplateEntity emailCaptcha() {
     return read("""
         {
-          "code": "captcha",
+          "code": "captcha_email",
           "channelType": "EMAIL",
           "templates": {
             "zh-cn": {

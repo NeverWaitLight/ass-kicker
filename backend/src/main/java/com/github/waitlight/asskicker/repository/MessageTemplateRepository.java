@@ -10,6 +10,8 @@ import reactor.core.publisher.Mono;
 @Repository
 public interface MessageTemplateRepository extends ReactiveMongoRepository<MessageTemplateEntity, String> {
 
+    Mono<MessageTemplateEntity> findByCode(String code);
+
     Mono<MessageTemplateEntity> findByCodeAndChannelType(String code, ChannelType channelType);
 
     Flux<MessageTemplateEntity> findByChannelType(ChannelType channelType);
