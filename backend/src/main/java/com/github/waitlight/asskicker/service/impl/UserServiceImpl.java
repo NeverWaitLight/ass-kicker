@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.auth.RegisterRequest;
+import com.github.waitlight.asskicker.dto.common.PageResp;
 import com.github.waitlight.asskicker.dto.user.*;
 import com.github.waitlight.asskicker.model.UserEntity;
 import com.github.waitlight.asskicker.model.UserRole;
@@ -113,7 +114,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Mono<UserPageResponse> listUsers(int page, int size, String keyword) {
+    public Mono<PageResp<UserView>> listUsers(int page, int size, String keyword) {
         int normalizedPage = page <= 0 ? 1 : page;
         int normalizedSize = size <= 0 ? 10 : size;
         int offset = (normalizedPage - 1) * normalizedSize;
@@ -124,7 +125,7 @@ public class UserServiceImpl implements UserService {
                 .collectList();
 
         return Mono.zip(itemsMono, totalMono)
-                .map(tuple -> new UserPageResponse(tuple.getT1(), normalizedPage, normalizedSize, tuple.getT2()));
+                .map(tuple -> new PageResp<>(tuple.getT1(), normalizedPage, normalizedSize, tuple.getT2()));
     }
 
     @Override

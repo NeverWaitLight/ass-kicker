@@ -1,6 +1,7 @@
 package com.github.waitlight.asskicker.service;
 
 import com.github.waitlight.asskicker.dto.auth.RegisterRequest;
+import com.github.waitlight.asskicker.dto.common.PageResp;
 import com.github.waitlight.asskicker.dto.user.*;
 import reactor.core.publisher.Mono;
 
@@ -11,7 +12,7 @@ public interface UserService {
 
     Mono<UserView> getUserById(String id);
 
-    Mono<UserPageResponse> listUsers(int page, int size, String keyword);
+    Mono<PageResp<UserView>> listUsers(int page, int size, String keyword);
 
     Mono<Void> deleteUser(String id);
 

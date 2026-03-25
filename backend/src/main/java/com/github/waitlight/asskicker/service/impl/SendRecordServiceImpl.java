@@ -2,7 +2,7 @@ package com.github.waitlight.asskicker.service.impl;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
-import com.github.waitlight.asskicker.dto.sendrecord.SendRecordPageResponse;
+import com.github.waitlight.asskicker.dto.common.PageResp;
 import com.github.waitlight.asskicker.dto.sendrecord.SendRecordView;
 import com.github.waitlight.asskicker.model.SendRecordEntity;
 import com.github.waitlight.asskicker.repository.SendRecordRepository;
@@ -51,7 +51,7 @@ public class SendRecordServiceImpl implements SendRecordService, DisposableBean 
     }
 
     @Override
-    public Mono<SendRecordPageResponse> listRecords(int page, int size, String recipient, String channelType) {
+    public Mono<PageResp<SendRecordView>> listRecords(int page, int size, String recipient, String channelType) {
         int normalizedPage = page <= 0 ? 1 : page;
         int normalizedSize = size <= 0 ? 10 : size;
         int offset = (normalizedPage - 1) * normalizedSize;
@@ -64,7 +64,7 @@ public class SendRecordServiceImpl implements SendRecordService, DisposableBean 
                 .collectList();
 
         return Mono.zip(itemsMono, totalMono)
-                .map(tuple -> new SendRecordPageResponse(tuple.getT1(), normalizedPage, normalizedSize, tuple.getT2()));
+                .map(tuple -> new PageResp<>(tuple.getT1(), normalizedPage, normalizedSize, tuple.getT2()));
     }
 
     @Override

@@ -2,7 +2,7 @@ package com.github.waitlight.asskicker.service.impl;
 
 import com.github.waitlight.asskicker.converter.ChannelProviderConverter;
 import com.github.waitlight.asskicker.dto.channelprovider.ChannelProviderDTO;
-import com.github.waitlight.asskicker.dto.channelprovider.ChannelProviderPageResponse;
+import com.github.waitlight.asskicker.dto.common.PageResp;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.repository.ChannelProviderRepository;
@@ -36,7 +36,7 @@ public class ChannelProviderServiceImpl implements ChannelProviderService {
     }
 
     @Override
-    public Mono<ChannelProviderPageResponse> listPage(int page, int size) {
+    public Mono<PageResp<ChannelProviderDTO>> listPage(int page, int size) {
         int normalizedPage = page <= 0 ? 1 : page;
         int normalizedSize = size <= 0 ? 10 : size;
         int zeroBasedPage = normalizedPage - 1;
@@ -46,7 +46,7 @@ public class ChannelProviderServiceImpl implements ChannelProviderService {
                         .map(channelProviderConverter::toDto)
                         .collectList();
         return Mono.zip(itemsMono, totalMono)
-                .map(t -> new ChannelProviderPageResponse(t.getT1(), normalizedPage, normalizedSize, t.getT2()));
+                .map(t -> new PageResp<>(t.getT1(), normalizedPage, normalizedSize, t.getT2()));
     }
 
     @Override
