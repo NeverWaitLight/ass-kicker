@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.service;
 
+import com.github.waitlight.asskicker.dto.channelprovider.ChannelProviderPageResponse;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import reactor.core.publisher.Flux;
@@ -8,6 +9,8 @@ import reactor.core.publisher.Mono;
 public interface ChannelProviderService {
 
     Flux<ChannelProviderEntity> findAll(int page, int size);
+
+    Mono<ChannelProviderPageResponse> listPage(int page, int size);
 
     Mono<ChannelProviderEntity> findById(String id);
 

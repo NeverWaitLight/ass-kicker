@@ -19,12 +19,12 @@ import org.springframework.data.mongodb.repository.config.EnableReactiveMongoRep
 @TestConfiguration
 @EnableReactiveMongoRepositories(basePackages = "com.github.waitlight.asskicker.repository")
 @Import({
-                JacksonAutoConfiguration.class,
-                MongoJsonNodeConfig.class,
-                ChannelProviderConverterImpl.class,
-                ChannelProviderServiceImpl.class,
-                MessageTemplateConverterImpl.class,
-                MessageTemplateServiceImpl.class
+        JacksonAutoConfiguration.class,
+        MongoJsonNodeConfig.class,
+        ChannelProviderConverterImpl.class,
+        ChannelProviderServiceImpl.class,
+        MessageTemplateConverterImpl.class,
+        MessageTemplateServiceImpl.class
 })
 public class MongoTestConfiguration {
 }

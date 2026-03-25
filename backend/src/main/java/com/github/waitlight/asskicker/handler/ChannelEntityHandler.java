@@ -62,20 +62,18 @@ public class ChannelEntityHandler {
                 .flatMap(channel -> ServerResponse.status(HttpStatus.CREATED)
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(channel))
-                .onErrorResume(ResponseStatusException.class, ex ->
-                        ServerResponse.status(ex.getStatusCode())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .bodyValue(ex.getReason() == null ? "创建通道失败" : ex.getReason()));
+                .onErrorResume(ResponseStatusException.class, ex -> ServerResponse.status(ex.getStatusCode())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ex.getReason() == null ? "创建通道失败" : ex.getReason()));
     }
 
     public Mono<ServerResponse> listChannels(ServerRequest request) {
         return ServerResponse.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(channelEntityService.listChannels(), ChannelEntity.class)
-                .onErrorResume(ResponseStatusException.class, ex ->
-                        ServerResponse.status(ex.getStatusCode())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .bodyValue(ex.getReason() == null ? "获取通道列表失败" : ex.getReason()));
+                .onErrorResume(ResponseStatusException.class, ex -> ServerResponse.status(ex.getStatusCode())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ex.getReason() == null ? "获取通道列表失败" : ex.getReason()));
     }
 
     public Mono<ServerResponse> getChannelById(ServerRequest request) {
@@ -85,10 +83,9 @@ public class ChannelEntityHandler {
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(channel))
                 .switchIfEmpty(ServerResponse.notFound().build())
-                .onErrorResume(ResponseStatusException.class, ex ->
-                        ServerResponse.status(ex.getStatusCode())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .bodyValue(ex.getReason() == null ? "获取通道失败" : ex.getReason()));
+                .onErrorResume(ResponseStatusException.class, ex -> ServerResponse.status(ex.getStatusCode())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ex.getReason() == null ? "获取通道失败" : ex.getReason()));
     }
 
     public Mono<ServerResponse> updateChannel(ServerRequest request) {
@@ -107,20 +104,18 @@ public class ChannelEntityHandler {
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(channel))
                 .switchIfEmpty(ServerResponse.notFound().build())
-                .onErrorResume(ResponseStatusException.class, ex ->
-                        ServerResponse.status(ex.getStatusCode())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .bodyValue(ex.getReason() == null ? "更新通道失败" : ex.getReason()));
+                .onErrorResume(ResponseStatusException.class, ex -> ServerResponse.status(ex.getStatusCode())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ex.getReason() == null ? "更新通道失败" : ex.getReason()));
     }
 
     public Mono<ServerResponse> deleteChannel(ServerRequest request) {
         String id = request.pathVariable("id");
         return channelEntityService.deleteChannel(id)
                 .then(ServerResponse.noContent().build())
-                .onErrorResume(ResponseStatusException.class, ex ->
-                        ServerResponse.status(ex.getStatusCode())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .bodyValue(ex.getReason() == null ? "删除通道失败" : ex.getReason()));
+                .onErrorResume(ResponseStatusException.class, ex -> ServerResponse.status(ex.getStatusCode())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ex.getReason() == null ? "删除通道失败" : ex.getReason()));
     }
 
     public Mono<ServerResponse> testSend(ServerRequest request) {
@@ -141,10 +136,9 @@ public class ChannelEntityHandler {
                 .flatMap(response -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(response))
-                .onErrorResume(ResponseStatusException.class, ex ->
-                        ServerResponse.status(ex.getStatusCode())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .bodyValue(ex.getReason() == null ? TEST_SEND_FAILED_MESSAGE : ex.getReason()));
+                .onErrorResume(ResponseStatusException.class, ex -> ServerResponse.status(ex.getStatusCode())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(ex.getReason() == null ? TEST_SEND_FAILED_MESSAGE : ex.getReason()));
     }
 
     public Mono<ServerResponse> listChannelTypes(ServerRequest request) {
@@ -163,9 +157,7 @@ public class ChannelEntityHandler {
                         new ImTypeInfo("DINGTALK", "钉钉", "dingtalk",
                                 List.of(new ImTypeFieldInfo("webhookUrl", "Webhook URL", true, ""))),
                         new ImTypeInfo("WECOM", "企业微信", "wecom",
-                                List.of(new ImTypeFieldInfo("webhookUrl", "Webhook URL", true, "")))
-                )
-        );
+                                List.of(new ImTypeFieldInfo("webhookUrl", "Webhook URL", true, "")))));
         return ServerResponse.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(response);

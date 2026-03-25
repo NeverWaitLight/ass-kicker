@@ -1,6 +1,8 @@
 package com.github.waitlight.asskicker.service.impl;
 
 import com.github.waitlight.asskicker.converter.ChannelProviderConverter;
+import com.github.waitlight.asskicker.dto.channelprovider.ChannelProviderDTO;
+import com.github.waitlight.asskicker.dto.channelprovider.ChannelProviderPageResponse;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.repository.ChannelProviderRepository;
@@ -13,6 +15,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +33,20 @@ public class ChannelProviderServiceImpl implements ChannelProviderService {
         return channelProviderRepository.findAll()
                 .skip(offset)
                 .take(size);
+    }
+
+    @Override
+    public Mono<ChannelProviderPageResponse> listPage(int page, int size) {
+        int normalizedPage = page <= 0 ? 1 : page;
+        int normalizedSize = size <= 0 ? 10 : size;
+        int zeroBasedPage = normalizedPage - 1;
+        Mono<Long> totalMono = channelProviderRepository.count();
+        Mono<List<ChannelProviderDTO>> itemsMono =
+                findAll(zeroBasedPage, normalizedSize)
+                        .map(channelProviderConverter::toDto)
+                        .collectList();
+        return Mono.zip(itemsMono, totalMono)
+                .map(t -> new ChannelProviderPageResponse(t.getT1(), normalizedPage, normalizedSize, t.getT2()));
     }
 
     @Override
