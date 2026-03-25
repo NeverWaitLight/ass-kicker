@@ -1,10 +1,12 @@
 package com.github.waitlight.asskicker.service;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.waitlight.asskicker.AssKickerTestApplication;
+import com.github.waitlight.asskicker.MessageTemplateEntityFixtures;
 import com.github.waitlight.asskicker.config.MongoTestConfiguration;
 import com.github.waitlight.asskicker.model.ChannelType;
+import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.MessageTemplateEntity;
+import com.github.waitlight.asskicker.model.MessageTemplateEntity.LocalizedTemplate;
 import com.github.waitlight.asskicker.repository.MessageTemplateRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,8 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -125,14 +129,16 @@ class MessageTemplateServiceTest {
                                         assertThat(saved.getId()).isNotBlank();
                                         long before = saved.getUpdatedAt();
 
-                                        ObjectNode templates = (ObjectNode) saved.getTemplates().deepCopy();
-                                        ((ObjectNode) templates.get("zh-cn")).put("body", "patched-zh-body");
+                                        Map<Language, LocalizedTemplate> loc = new HashMap<>(
+                                                        saved.getLocalizedTemplates());
+                                        LocalizedTemplate zh = loc.get(Language.ZH_CN);
+                                        loc.put(Language.ZH_CN,
+                                                        new LocalizedTemplate(zh.getTitle(), "patched-zh-body"));
 
                                         MessageTemplateEntity patch = new MessageTemplateEntity();
                                         patch.setCode(saved.getCode());
                                         patch.setChannelType(saved.getChannelType());
-                                        patch.setTemplates(templates);
-                                        patch.setChannels(saved.getChannels());
+                                        patch.setLocalizedTemplates(loc);
 
                                         return Mono.delay(Duration.ofMillis(2))
                                                         .then(messageTemplateService.update(saved.getId(), patch))
@@ -144,11 +150,14 @@ class MessageTemplateServiceTest {
                                 .assertNext(u -> {
                                         assertThat(u.reloaded().getUpdatedAt())
                                                         .isGreaterThanOrEqualTo(u.beforeUpdatedAt());
-                                        assertThat(u.reloaded().getTemplates().path("zh-cn").path("body").asText())
-                                                        .isEqualTo("patched-zh-body");
-                                        assertThat(u.reloaded().getTemplates().path("en"))
-                                                        .isEqualTo(u.input().getTemplates().path("en"));
-                                        assertThat(u.reloaded().getChannels()).isEqualTo(u.input().getChannels());
+                                        assertThat(u.reloaded().getLocalizedTemplates().get(Language.ZH_CN)
+                                                        .getContent()).isEqualTo("patched-zh-body");
+                                        LocalizedTemplate enIn = u.input().getLocalizedTemplates()
+                                                        .get(Language.EN);
+                                        LocalizedTemplate enOut = u.reloaded().getLocalizedTemplates()
+                                                        .get(Language.EN);
+                                        assertThat(enOut.getTitle()).isEqualTo(enIn.getTitle());
+                                        assertThat(enOut.getContent()).isEqualTo(enIn.getContent());
                                 })
                                 .verifyComplete();
         }
@@ -169,8 +178,7 @@ class MessageTemplateServiceTest {
                                                         MessageTemplateEntity patch = new MessageTemplateEntity();
                                                         patch.setCode("captcha");
                                                         patch.setChannelType(ChannelType.SMS);
-                                                        patch.setTemplates(w.getTemplates());
-                                                        patch.setChannels(w.getChannels());
+                                                        patch.setLocalizedTemplates(w.getLocalizedTemplates());
                                                         return messageTemplateService.update(w.getId(), patch);
                                                 })))
                                 .expectErrorSatisfies(ex -> assertThat(ex)
@@ -223,7 +231,19 @@ class MessageTemplateServiceTest {
         private static void assertTemplateContentEqual(MessageTemplateEntity expected, MessageTemplateEntity actual) {
                 assertThat(actual.getCode()).isEqualTo(expected.getCode());
                 assertThat(actual.getChannelType()).isEqualTo(expected.getChannelType());
-                assertThat(actual.getTemplates()).isEqualTo(expected.getTemplates());
-                assertThat(actual.getChannels()).isEqualTo(expected.getChannels());
+                Map<Language, LocalizedTemplate> exp = expected.getLocalizedTemplates();
+                Map<Language, LocalizedTemplate> got = actual.getLocalizedTemplates();
+                if (exp == null) {
+                        assertThat(got).isNull();
+                        return;
+                }
+                assertThat(got).isNotNull();
+                assertThat(got).hasSameSizeAs(exp);
+                exp.forEach((lang, tmpl) -> {
+                        LocalizedTemplate a = got.get(lang);
+                        assertThat(a).as("language %s", lang).isNotNull();
+                        assertThat(a.getTitle()).isEqualTo(tmpl.getTitle());
+                        assertThat(a.getContent()).isEqualTo(tmpl.getContent());
+                });
         }
 }

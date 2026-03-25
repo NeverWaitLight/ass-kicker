@@ -1,4 +1,16 @@
-package com.github.waitlight.asskicker.template;
+package com.github.waitlight.asskicker.manager;
+
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -9,19 +21,10 @@ import com.github.waitlight.asskicker.config.CaffeineCacheProperties;
 import com.github.waitlight.asskicker.dto.template.FilledTemplateResult;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.service.TemplateService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
+
 import reactor.core.publisher.Mono;
 
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
+@Deprecated
 @Component
 public class TemplateManager {
 
@@ -39,7 +42,7 @@ public class TemplateManager {
     }
 
     TemplateManager(TemplateService templateService, MustacheFactory mustacheFactory,
-                    Cache<String, Mustache> compiledTemplateCache) {
+            Cache<String, Mustache> compiledTemplateCache) {
         this.templateService = templateService;
         this.mustacheFactory = mustacheFactory;
         this.compiledTemplateCache = compiledTemplateCache;

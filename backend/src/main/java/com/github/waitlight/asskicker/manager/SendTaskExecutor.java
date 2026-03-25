@@ -11,7 +11,6 @@ import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.SendRecordEntity;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
 import com.github.waitlight.asskicker.service.SendRecordService;
-import com.github.waitlight.asskicker.template.TemplateManager;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +29,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+@Deprecated
 @Service
 @RequiredArgsConstructor
 @Slf4j

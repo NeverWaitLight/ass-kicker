@@ -3,11 +3,11 @@ package com.github.waitlight.asskicker.handler;
 import com.github.waitlight.asskicker.dto.template.FillTemplateRequest;
 import com.github.waitlight.asskicker.dto.template.FillTemplateResponse;
 import com.github.waitlight.asskicker.dto.template.TemplateDTO;
+import com.github.waitlight.asskicker.manager.TemplateManager;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.LanguageTemplateEntity;
 import com.github.waitlight.asskicker.model.TemplateEntity;
 import com.github.waitlight.asskicker.service.TemplateService;
-import com.github.waitlight.asskicker.template.TemplateManager;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
