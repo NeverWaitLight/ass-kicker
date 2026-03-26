@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.channelhandler;
+package com.github.waitlight.asskicker.channel;
 
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;

@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.channelhandler;
+package com.github.waitlight.asskicker.channel;
 
 import java.time.Duration;
 import java.util.LinkedHashMap;

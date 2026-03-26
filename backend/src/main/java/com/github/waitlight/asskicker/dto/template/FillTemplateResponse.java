@@ -1,9 +1,0 @@
-package com.github.waitlight.asskicker.dto.template;
-
-import com.github.waitlight.asskicker.model.TemplateEntity;
-
-public record FillTemplateResponse(
-        TemplateEntity template,
-        String content
-) {
-}
