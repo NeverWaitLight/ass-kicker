@@ -1,0 +1,203 @@
+{
+  "uuid": "a1b2c3d4-e5f6-7890-1234-56789abcdef0",
+  "lastMigration": 33,
+  "name": "Apple Push Notification service (APNs) Mock",
+  "endpointPrefix": "",
+  "latency": 0,
+  "port": 3000,
+  "hostname": "",
+  "folders": [],
+  "routes": [
+    {
+      "uuid": "b2c3d4e5-f6a7-8901-2345-6789abcdef01",
+      "type": "http",
+      "documentation": "APNs Push Endpoint",
+      "method": "post",
+      "endpoint": "3/device/:device_token",
+      "responses": [
+        {
+          "uuid": "c3d4e5f6-a7b8-9012-3456-789abcdef012",
+          "body": "",
+          "latency": 100,
+          "statusCode": 200,
+          "label": "Success (200 OK)",
+          "headers": [
+            {
+              "key": "apns-id",
+              "value": "{{#if (header 'apns-id')}}{{header 'apns-id'}}{{else}}{{faker 'string.uuid'}}{{/if}}"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "d4e5f6a7-b8c9-0123-4567-89abcdef0123",
+          "body": "{\n  \"reason\": \"Unregistered\"\n}",
+          "latency": 50,
+          "statusCode": 410,
+          "label": "Error: Device Unregistered (410)",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "apns-id",
+              "value": "{{#if (header 'apns-id')}}{{header 'apns-id'}}{{else}}{{faker 'string.uuid'}}{{/if}}"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "device_token",
+              "value": "unregistered_test_token",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "e5f6a7b8-c9d0-1234-5678-9abcdef01234",
+          "body": "{\n  \"reason\": \"MissingTopic\"\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "Error: Missing Topic (400)",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "apns-id",
+              "value": "{{#if (header 'apns-id')}}{{header 'apns-id'}}{{else}}{{faker 'string.uuid'}}{{/if}}"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "apns-topic",
+              "value": "",
+              "invert": true,
+              "operator": "null"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "callbacks": [],
+          "crudKey": "id"
+        },
+        {
+          "uuid": "f6a7b8c9-d0e1-2345-6789-abcdef012345",
+          "body": "{\n  \"reason\": \"InvalidProviderToken\"\n}",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "Error: Invalid Token / Auth (403)",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "apns-id",
+              "value": "{{#if (header 'apns-id')}}{{header 'apns-id'}}{{else}}{{faker 'string.uuid'}}{{/if}}"
+            }
+          ],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "authorization",
+              "value": "bearer ",
+              "invert": true,
+              "operator": "regex"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "callbacks": [],
+          "crudKey": "id"
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    }
+  ],
+  "rootChildren": [
+    {
+      "type": "route",
+      "uuid": "b2c3d4e5-f6a7-8901-2345-6789abcdef01"
+    }
+  ],
+  "proxyMode": false,
+  "proxyHost": "",
+  "proxyRemovePrefix": false,
+  "tlsOptions": {
+    "enabled": false,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "cors": true,
+  "headers": [
+    {
+      "key": "Access-Control-Allow-Origin",
+      "value": "*"
+    },
+    {
+      "key": "Access-Control-Allow-Methods",
+      "value": "GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS"
+    },
+    {
+      "key": "Access-Control-Allow-Headers",
+      "value": "Content-Type, Origin, Accept, Authorization, Content-Length, X-Requested-With, apns-topic, apns-push-type, apns-id, apns-expiration, apns-priority, apns-collapse-id"
+    }
+  ],
+  "proxyReqHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "proxyResHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "data": [],
+  "callbacks": []
+}

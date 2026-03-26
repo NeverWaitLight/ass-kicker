@@ -39,7 +39,7 @@ class ChannelProviderServiceTest {
         ChannelProviderEntity input = ChannelProviderEntityFixtures.smsAliyun();
 
         StepVerifier.create(channelProviderService.create(input)
-                .flatMap(saved -> channelProviderService.findByKey(saved.getKey())))
+                .flatMap(saved -> channelProviderService.findByKey(saved.getCode())))
                 .assertNext(found -> {
                     assertThat(found.getId()).isNotBlank();
                     assertThat(found.getCreatedAt()).isNotNull();
@@ -65,8 +65,8 @@ class ChannelProviderServiceTest {
                 .assertNext(list -> {
                     assertThat(list).hasSize(1);
                     ChannelProviderEntity e = list.get(0);
-                    assertThat(e.getType()).isEqualTo(ChannelType.EMAIL);
-                    assertThat(e.getKey()).isEqualTo(email.getKey());
+                    assertThat(e.getChannelType()).isEqualTo(ChannelType.EMAIL);
+                    assertThat(e.getCode()).isEqualTo(email.getCode());
                     assertChannelContentEqual(email, e);
                 })
                 .verifyComplete();
@@ -84,7 +84,7 @@ class ChannelProviderServiceTest {
                 .assertNext(list -> {
                     assertThat(list).hasSize(1);
                     ChannelProviderEntity e = list.get(0);
-                    assertThat(e.getKey()).isEqualTo(on.getKey());
+                    assertThat(e.getCode()).isEqualTo(on.getCode());
                     assertThat(e.isEnabled()).isTrue();
                     assertChannelContentEqual(on, e);
                 })
@@ -103,7 +103,7 @@ class ChannelProviderServiceTest {
                 .assertNext(list -> {
                     assertThat(list).hasSize(1);
                     ChannelProviderEntity e = list.get(0);
-                    assertThat(e.getKey()).isEqualTo(on.getKey());
+                    assertThat(e.getCode()).isEqualTo(on.getCode());
                     assertThat(e.isEnabled()).isTrue();
                     assertChannelContentEqual(on, e);
                 })
@@ -111,10 +111,10 @@ class ChannelProviderServiceTest {
     }
 
     private static void assertChannelContentEqual(ChannelProviderEntity expected, ChannelProviderEntity actual) {
-        assertThat(actual.getKey()).isEqualTo(expected.getKey());
+        assertThat(actual.getCode()).isEqualTo(expected.getCode());
         assertThat(actual.getName()).isEqualTo(expected.getName());
-        assertThat(actual.getType()).isEqualTo(expected.getType());
-        assertThat(actual.getProvider()).isEqualTo(expected.getProvider());
+        assertThat(actual.getChannelType()).isEqualTo(expected.getChannelType());
+        assertThat(actual.getProviderType()).isEqualTo(expected.getProviderType());
         assertThat(actual.getDescription()).isEqualTo(expected.getDescription());
         assertThat(actual.getPriorityAddressRegex()).isEqualTo(expected.getPriorityAddressRegex());
         assertThat(actual.getExcludeAddressRegex()).isEqualTo(expected.getExcludeAddressRegex());

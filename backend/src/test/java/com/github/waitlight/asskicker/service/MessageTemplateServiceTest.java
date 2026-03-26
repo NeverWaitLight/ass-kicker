@@ -1,7 +1,6 @@
 package com.github.waitlight.asskicker.service;
 
 import com.github.waitlight.asskicker.AssKickerTestApplication;
-import com.github.waitlight.asskicker.MessageTemplateEntityFixtures;
 import com.github.waitlight.asskicker.config.MongoTestConfiguration;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.Language;

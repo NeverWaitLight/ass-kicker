@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
@@ -64,8 +65,9 @@ public class APNsPushChannel extends Channel<APNsPushChannelSpec> {
             alert.put("body", request.content() != null ? request.content() : "");
             aps.put("alert", alert);
             aps.put("sound", "default");
-            Map<String, Object> payload = new HashMap<>();
+            Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("aps", aps);
+            mergeCustomPayload(payload, request.attributes());
             byte[] bodyBytes = objectMapper.writeValueAsBytes(payload);
 
             HttpClient client = HttpClient.newBuilder()
@@ -156,6 +158,19 @@ public class APNsPushChannel extends Channel<APNsPushChannelSpec> {
         }
         String msg = e.getMessage();
         return msg != null && (msg.contains("timeout") || msg.contains("Connection") || msg.contains("reset"));
+    }
+
+    private void mergeCustomPayload(Map<String, Object> payload, Map<String, Object> attributes) {
+        if (attributes == null || attributes.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            String key = entry.getKey();
+            if (key == null || key.isBlank() || "aps".equals(key)) {
+                continue;
+            }
+            payload.put(key, entry.getValue());
+        }
     }
 
     private String categorizeApnsStatus(int status, String reason) {

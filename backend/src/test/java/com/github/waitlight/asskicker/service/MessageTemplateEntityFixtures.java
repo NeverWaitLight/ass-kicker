@@ -1,11 +1,10 @@
-package com.github.waitlight.asskicker;
+package com.github.waitlight.asskicker.service;
 
 import java.io.UncheckedIOException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.model.MessageTemplateEntity;
-import com.github.waitlight.asskicker.service.ChannelProviderEntityFixtures;
 
 /**
  * {@link MessageTemplateEntity} 测试用固定样例，风格与

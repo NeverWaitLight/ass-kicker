@@ -1,13 +1,15 @@
 package com.github.waitlight.asskicker.model;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -18,26 +20,33 @@ public class ChannelProviderEntity {
         @Id
         private String id;
 
-        @Indexed(name = "uk_notification_channels_key", unique = true)
-        private String key;
+        @Indexed(name = "uk_notification_channels_code", unique = true)
+        private String code;
 
         private String name;
 
-        private ChannelType type;
-
-        private String provider;
+        private ChannelType channelType;
+        private ChannelProviderType providerType;
 
         private String description;
 
+        /**
+         * 优先地址正则表达式，用于匹配优先地址
+         */
         private String priorityAddressRegex;
 
+        /**
+         * 排除地址正则表达式，用于排除地址
+         */
         private String excludeAddressRegex;
 
         private boolean enabled = true;
 
-        private JsonNode properties = JsonNodeFactory.instance.objectNode();
+        /**
+         * 供应商配置，用于存储供应商的配置
+         */
+        private Map<String, String> properties = new HashMap<>();
 
         private Long createdAt;
-
         private Long updatedAt;
 }

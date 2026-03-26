@@ -76,14 +76,14 @@ public class ChannelProviderServiceImpl implements ChannelProviderService {
         long now = Instant.now().toEpochMilli();
         toCreate.setCreatedAt(now);
         toCreate.setUpdatedAt(now);
-        return ensureUniqueKey(toCreate.getKey(), null)
+        return ensureUniqueKey(toCreate.getCode(), null)
                 .then(Mono.defer(() -> channelProviderRepository.save(toCreate)));
     }
 
     @Override
     public Mono<ChannelProviderEntity> update(String id, ChannelProviderEntity patch) {
         return channelProviderRepository.findById(id)
-                .flatMap(existing -> ensureUniqueKey(patch.getKey(), id)
+                .flatMap(existing -> ensureUniqueKey(patch.getCode(), id)
                         .then(Mono.defer(() -> {
                             channelProviderConverter.merge(patch, existing);
                             existing.setUpdatedAt(Instant.now().toEpochMilli());

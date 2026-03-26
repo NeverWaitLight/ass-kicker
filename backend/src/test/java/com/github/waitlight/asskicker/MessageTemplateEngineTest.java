@@ -20,6 +20,7 @@ import com.github.waitlight.asskicker.config.CaffeineCacheProperties;
 import com.github.waitlight.asskicker.dto.UniSendMessageReq;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.MessageTemplateEntity;
+import com.github.waitlight.asskicker.service.MessageTemplateEntityFixtures;
 import com.github.waitlight.asskicker.service.MessageTemplateService;
 
 import reactor.core.publisher.Mono;

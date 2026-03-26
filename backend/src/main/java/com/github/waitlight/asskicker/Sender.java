@@ -16,10 +16,10 @@ import reactor.core.publisher.Mono;
 @AllArgsConstructor
 public class Sender {
 
-    private final MessageTemplateEngine messageTemplateHandler;
+    private final MessageTemplateEngine messageTemplateEngine;
 
     public Mono<List<String>> send(UniSendMessageReq req, UniAddress... uniAddresses) {
-        return messageTemplateHandler.fill(req).thenReturn(List.of("success"));
+        return messageTemplateEngine.fill(req).thenReturn(List.of("success"));
     }
 
 }
