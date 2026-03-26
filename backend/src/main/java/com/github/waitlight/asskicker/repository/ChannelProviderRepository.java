@@ -10,11 +10,9 @@ import reactor.core.publisher.Mono;
 @Repository
 public interface ChannelProviderRepository extends ReactiveMongoRepository<ChannelProviderEntity, String> {
 
-    Mono<ChannelProviderEntity> findByKey(String key);
+    Mono<ChannelProviderEntity> findByCode(String code);
 
-    Flux<ChannelProviderEntity> findByType(ChannelType type);
+    Flux<ChannelProviderEntity> findByChannelType(ChannelType channelType);
 
-    Flux<ChannelProviderEntity> findByTypeAndEnabled(ChannelType type, boolean enabled);
-
-    Flux<ChannelProviderEntity> findByProvider(String provider);
+    Flux<ChannelProviderEntity> findByChannelTypeAndEnabled(ChannelType channelType, boolean enabled);
 }

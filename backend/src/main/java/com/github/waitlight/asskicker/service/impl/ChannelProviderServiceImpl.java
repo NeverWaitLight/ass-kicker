@@ -56,17 +56,17 @@ public class ChannelProviderServiceImpl implements ChannelProviderService {
 
     @Override
     public Mono<ChannelProviderEntity> findByKey(String key) {
-        return channelProviderRepository.findByKey(key);
+        return channelProviderRepository.findByCode(key);
     }
 
     @Override
     public Flux<ChannelProviderEntity> findByType(ChannelType type) {
-        return channelProviderRepository.findByType(type);
+        return channelProviderRepository.findByChannelType(type);
     }
 
     @Override
     public Flux<ChannelProviderEntity> findEnabledByType(ChannelType type) {
-        return channelProviderRepository.findByTypeAndEnabled(type, true);
+        return channelProviderRepository.findByChannelTypeAndEnabled(type, true);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class ChannelProviderServiceImpl implements ChannelProviderService {
     }
 
     private Mono<Void> ensureUniqueKey(String key, String currentId) {
-        return channelProviderRepository.findByKey(key)
+        return channelProviderRepository.findByCode(key)
                 .flatMap(existing -> {
                     if (currentId != null && currentId.equals(existing.getId())) {
                         return Mono.empty();

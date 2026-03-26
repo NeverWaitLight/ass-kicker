@@ -21,9 +21,9 @@ public final class ChannelProviderEntityFixtures {
         return read("""
                 {
                   "name": "阿里云短信",
-                  "key": "aliyun-sms-prod",
-                  "type": "SMS",
-                  "provider": "ALIYUN",
+                  "code": "aliyun-sms-prod",
+                  "channelType": "SMS",
+                  "providerType": "ALIYUN_SMS",
                   "description": "Aliyun SMS",
                   "priorityAddressRegex": "^1[3-9]\\\\d{9}$",
                   "excludeAddressRegex": "^1(70|71|162)\\\\d{8}$",
@@ -33,9 +33,9 @@ public final class ChannelProviderEntityFixtures {
                     "accessKeySecret": "sk-test",
                     "signName": "签名",
                     "regionId": "cn-hangzhou",
-                    "maxRetries": 3,
-                    "timeout": 10000,
-                    "retryDelay": 1000
+                    "maxRetries": "3",
+                    "timeout": "10000",
+                    "retryDelay": "1000"
                   }
                 }
                 """);
@@ -45,24 +45,24 @@ public final class ChannelProviderEntityFixtures {
         return read("""
                 {
                   "name": "SMTP 邮件",
-                  "key": "smtp-email-prod",
-                  "type": "EMAIL",
-                  "provider": "SMTP",
+                  "code": "smtp-email-prod",
+                  "channelType": "EMAIL",
+                  "providerType": "SMTP",
                   "description": "SMTP channel",
                   "priorityAddressRegex": "^[a-zA-Z0-9._%+-]+@(mail\\\\.)?corp\\\\.example\\\\.com$",
                   "excludeAddressRegex": "^(no-?reply|bounce|mailer-daemon)@",
                   "enabled": true,
                   "properties": {
                     "host": "smtp.example.com",
-                    "port": 465,
+                    "port": "465",
                     "username": "user@example.com",
                     "password": "pass",
-                    "sslEnabled": true,
+                    "sslEnabled": "true",
                     "from": "noreply@example.com",
-                    "connectionTimeout": 5000,
-                    "readTimeout": 10000,
-                    "maxRetries": 3,
-                    "retryDelay": 1000
+                    "connectionTimeout": "5000",
+                    "readTimeout": "10000",
+                    "maxRetries": "3",
+                    "retryDelay": "1000"
                   }
                 }
                 """);
@@ -72,18 +72,18 @@ public final class ChannelProviderEntityFixtures {
         return read("""
                 {
                   "name": "Slack Bot 渠道",
-                  "key": "slack-bot-prod",
-                  "type": "IM",
-                  "provider": "SLACK",
+                  "code": "slack-bot-prod",
+                  "channelType": "IM",
+                  "providerType": "SLACK",
                   "description": "Slack IM",
                   "priorityAddressRegex": "^(C|G|D)[A-Z0-9]{8,}$|^#[a-z0-9._-]+$",
                   "excludeAddressRegex": "^D0[A-Z0-9]+$|^#archive-",
                   "enabled": true,
                   "properties": {
                     "botToken": "xoxb-test-token",
-                    "maxRetries": 3,
-                    "timeout": 10000,
-                    "retryDelay": 1000
+                    "maxRetries": "3",
+                    "timeout": "10000",
+                    "retryDelay": "1000"
                   }
                 }
                 """);
@@ -93,9 +93,9 @@ public final class ChannelProviderEntityFixtures {
         return read("""
                 {
                   "name": "Slack Bot 停用",
-                  "key": "slack-bot-disabled",
-                  "type": "IM",
-                  "provider": "SLACK",
+                  "code": "slack-bot-disabled",
+                  "channelType": "IM",
+                  "providerType": "SLACK",
                   "description": "disabled",
                   "priorityAddressRegex": "^(C|G|D)[A-Z0-9]{8,}$",
                   "excludeAddressRegex": "^#archive-",
@@ -111,9 +111,9 @@ public final class ChannelProviderEntityFixtures {
         return read("""
                 {
                   "name": "苹果推送",
-                  "key": "apns-app-dev",
-                  "type": "PUSH",
-                  "provider": "APNS",
+                  "code": "apns-app-dev",
+                  "channelType": "PUSH",
+                  "providerType": "APNS",
                   "description": "APNs push",
                   "priorityAddressRegex": "^[0-9a-fA-F]{64}$",
                   "excludeAddressRegex": "^0{64}$|^[fF]{64}$",
@@ -123,10 +123,10 @@ public final class ChannelProviderEntityFixtures {
                     "keyId": "AUTH_KEY_ID",
                     "bundleId": "com.example.app",
                     "p8KeyContent": "-----BEGIN PRIVATE KEY-----\\nTEST\\n-----END PRIVATE KEY-----\\n",
-                    "production": false,
-                    "maxRetries": 3,
-                    "timeout": 10000,
-                    "retryDelay": 1000
+                    "production": "false",
+                    "maxRetries": "3",
+                    "timeout": "10000",
+                    "retryDelay": "1000"
                   }
                 }
                 """);
@@ -136,9 +136,9 @@ public final class ChannelProviderEntityFixtures {
         return read("""
                 {
                   "name": "苹果推送停用",
-                  "key": "apns-app-disabled",
-                  "type": "PUSH",
-                  "provider": "APNS",
+                  "code": "apns-app-disabled",
+                  "channelType": "PUSH",
+                  "providerType": "APNS",
                   "description": "disabled",
                   "priorityAddressRegex": "^[0-9a-fA-F]{64}$",
                   "excludeAddressRegex": "^0{64}$",
@@ -148,7 +148,7 @@ public final class ChannelProviderEntityFixtures {
                     "keyId": "K",
                     "bundleId": "com.example.off",
                     "p8KeyContent": "-----BEGIN PRIVATE KEY-----\\nOFF\\n-----END PRIVATE KEY-----\\n",
-                    "production": false
+                    "production": "false"
                   }
                 }
                 """);

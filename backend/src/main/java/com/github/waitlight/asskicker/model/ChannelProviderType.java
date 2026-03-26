@@ -11,9 +11,11 @@ public enum ChannelProviderType {
 
     ALIYUN_EMAIL(ChannelType.EMAIL),
     TENCENT_EMAIL(ChannelType.EMAIL),
+    SMTP(ChannelType.EMAIL),
 
     DINGTALK(ChannelType.IM),
     WECOM(ChannelType.IM),
+    SLACK(ChannelType.IM),
 
     APNS(ChannelType.PUSH),
     FCM(ChannelType.PUSH),

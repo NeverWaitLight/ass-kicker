@@ -1,6 +1,7 @@
 package com.github.waitlight.asskicker.config;
 
 import com.github.waitlight.asskicker.converter.ChannelProviderConverterImpl;
+import com.github.waitlight.asskicker.converter.ChannelProviderPropertiesMapper;
 import com.github.waitlight.asskicker.converter.MessageTemplateConverterImpl;
 import com.github.waitlight.asskicker.service.impl.ChannelProviderServiceImpl;
 import com.github.waitlight.asskicker.service.impl.MessageTemplateServiceImpl;
@@ -21,6 +22,7 @@ import org.springframework.data.mongodb.repository.config.EnableReactiveMongoRep
 @Import({
         JacksonAutoConfiguration.class,
         MongoJsonNodeConfig.class,
+        ChannelProviderPropertiesMapper.class,
         ChannelProviderConverterImpl.class,
         ChannelProviderServiceImpl.class,
         MessageTemplateConverterImpl.class,
