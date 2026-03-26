@@ -9,6 +9,10 @@ import reactor.core.publisher.Mono;
 
 public interface ChannelProviderService {
 
+    Flux<ChannelProviderEntity> findAll();
+
+    Flux<ChannelProviderEntity> findEnabled();
+
     Flux<ChannelProviderEntity> findAll(int page, int size);
 
     Mono<PageResp<ChannelProviderDTO>> listPage(int page, int size);

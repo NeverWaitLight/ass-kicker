@@ -14,5 +14,7 @@ public interface ChannelProviderRepository extends ReactiveMongoRepository<Chann
 
     Flux<ChannelProviderEntity> findByChannelType(ChannelType channelType);
 
+    Flux<ChannelProviderEntity> findByEnabled(boolean enabled);
+
     Flux<ChannelProviderEntity> findByChannelTypeAndEnabled(ChannelType channelType, boolean enabled);
 }

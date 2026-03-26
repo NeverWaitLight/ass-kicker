@@ -25,6 +25,16 @@ public class ChannelProviderServiceImpl implements ChannelProviderService {
     private final ChannelProviderConverter channelProviderConverter;
 
     @Override
+    public Flux<ChannelProviderEntity> findAll() {
+        return channelProviderRepository.findAll();
+    }
+
+    @Override
+    public Flux<ChannelProviderEntity> findEnabled() {
+        return channelProviderRepository.findByEnabled(true);
+    }
+
+    @Override
     public Flux<ChannelProviderEntity> findAll(int page, int size) {
         if (page < 0 || size <= 0) {
             return Flux.empty();

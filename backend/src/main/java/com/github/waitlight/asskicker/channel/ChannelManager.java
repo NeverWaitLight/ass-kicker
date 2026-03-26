@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.repository.ChannelProviderRepository;
+import com.github.waitlight.asskicker.service.ChannelProviderService;
 
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
@@ -25,9 +25,10 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class ChannelManager {
 
-    private static final Comparator<ChannelHandlerWrapper> BY_CODE = Comparator.comparing(ChannelHandlerWrapper::getCode);
+    private static final Comparator<ChannelHandlerWrapper> BY_CODE = Comparator
+            .comparing(ChannelHandlerWrapper::getCode);
 
-    private final ChannelProviderRepository channelProviderRepository;
+    private final ChannelProviderService channelProviderService;
     private final ChannelFactory channelFactory;
 
     private final ConcurrentHashMap<String, ChannelHandlerWrapper> cache = new ConcurrentHashMap<>();
@@ -35,13 +36,10 @@ public class ChannelManager {
 
     @PostConstruct
     void init() {
-        List<ChannelProviderEntity> all = channelProviderRepository.findAll().collectList().block();
-        if (all == null) {
-            all = List.of();
+        List<ChannelProviderEntity> enabled = channelProviderService.findEnabled().collectList().block();
+        if (enabled == null) {
+            enabled = List.of();
         }
-        List<ChannelProviderEntity> enabled = all.stream()
-                .filter(ChannelProviderEntity::isEnabled)
-                .toList();
         int loaded = 0;
         for (ChannelProviderEntity entity : enabled) {
             ChannelHandler handler = channelFactory.create(entity);
@@ -82,13 +80,10 @@ public class ChannelManager {
         refreshLock.lock();
         try {
             ConcurrentHashMap<String, ChannelHandlerWrapper> next = new ConcurrentHashMap<>();
-            List<ChannelProviderEntity> all = channelProviderRepository.findAll().collectList().block();
-            if (all == null) {
-                all = List.of();
+            List<ChannelProviderEntity> enabled = channelProviderService.findEnabled().collectList().block();
+            if (enabled == null) {
+                enabled = List.of();
             }
-            List<ChannelProviderEntity> enabled = all.stream()
-                    .filter(ChannelProviderEntity::isEnabled)
-                    .toList();
             for (ChannelProviderEntity entity : enabled) {
                 ChannelHandler handler = channelFactory.create(entity);
                 if (handler == null) {
@@ -138,8 +133,10 @@ public class ChannelManager {
             this.channelType = entity.getChannelType();
             this.enabled = entity.isEnabled();
             this.handler = handler;
-            this.priorityPattern = compilePattern(entity.getCode(), entity.getPriorityAddressRegex(), "priorityAddressRegex");
-            this.excludePattern = compilePattern(entity.getCode(), entity.getExcludeAddressRegex(), "excludeAddressRegex");
+            this.priorityPattern = compilePattern(entity.getCode(), entity.getPriorityAddressRegex(),
+                    "priorityAddressRegex");
+            this.excludePattern = compilePattern(entity.getCode(), entity.getExcludeAddressRegex(),
+                    "excludeAddressRegex");
         }
 
         private static Pattern compilePattern(String channelCode, String regex, String fieldName) {

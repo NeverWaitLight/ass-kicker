@@ -14,7 +14,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
-import com.github.waitlight.asskicker.repository.ChannelProviderRepository;
+import com.github.waitlight.asskicker.service.ChannelProviderService;
 
 import reactor.core.publisher.Flux;
 
@@ -24,7 +24,7 @@ class ChannelManagerRefreshFailureTest {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Mock
-    private ChannelProviderRepository channelProviderRepository;
+    private ChannelProviderService channelProviderService;
 
     @Mock
     private ChannelFactory channelFactory;
@@ -33,7 +33,7 @@ class ChannelManagerRefreshFailureTest {
 
     @BeforeEach
     void setUp() {
-        channelManager = new ChannelManager(channelProviderRepository, channelFactory);
+        channelManager = new ChannelManager(channelProviderService, channelFactory);
     }
 
     @Test
@@ -61,7 +61,7 @@ class ChannelManagerRefreshFailureTest {
         map.put("id-1", wrapper);
         ReflectionTestUtils.setField(channelManager, "cache", map);
 
-        when(channelProviderRepository.findAll()).thenReturn(Flux.error(new RuntimeException("db unavailable")));
+        when(channelProviderService.findEnabled()).thenReturn(Flux.error(new RuntimeException("db unavailable")));
 
         channelManager.refresh();
 
