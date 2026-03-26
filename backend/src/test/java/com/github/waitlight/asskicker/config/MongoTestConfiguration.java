@@ -1,5 +1,7 @@
 package com.github.waitlight.asskicker.config;
 
+import com.github.waitlight.asskicker.channel.ChannelFactory;
+import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.converter.ChannelProviderConverterImpl;
 import com.github.waitlight.asskicker.converter.ChannelProviderPropertiesMapper;
 import com.github.waitlight.asskicker.converter.MessageTemplateConverterImpl;
@@ -25,6 +27,8 @@ import org.springframework.data.mongodb.repository.config.EnableReactiveMongoRep
         ChannelProviderPropertiesMapper.class,
         ChannelProviderConverterImpl.class,
         ChannelProviderServiceImpl.class,
+        ChannelFactory.class,
+        ChannelManager.class,
         MessageTemplateConverterImpl.class,
         MessageTemplateServiceImpl.class
 })
