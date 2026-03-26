@@ -1,6 +1,5 @@
 package com.github.waitlight.asskicker.service;
 
-import com.github.waitlight.asskicker.channel.MsgResp;
 import com.github.waitlight.asskicker.dto.channel.TestSendRequest;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
@@ -23,5 +22,5 @@ public interface ChannelEntityService {
 
     Mono<Void> deleteChannel(String id);
 
-    Mono<MsgResp> testSend(TestSendRequest request, UserPrincipal principal);
+    Mono<Object> testSend(TestSendRequest request, UserPrincipal principal);
 }

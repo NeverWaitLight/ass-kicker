@@ -2,7 +2,6 @@ package com.github.waitlight.asskicker.handler;
 
 import com.github.waitlight.asskicker.dto.send.SendRequest;
 import com.github.waitlight.asskicker.dto.send.SendResponse;
-import com.github.waitlight.asskicker.manager.SendTaskExecutor;
 import com.github.waitlight.asskicker.mq.SendTaskProducer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.codec.DecodingException;
@@ -23,7 +22,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class SendHandler {
 
-        private final SendTaskExecutor sendTaskExecutor;
         private final SendTaskProducer sendTaskProducer;
 
         public Mono<ServerResponse> send(ServerRequest request) {
@@ -62,18 +60,8 @@ public class SendHandler {
                 if (body == null) {
                         return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "请求体不能为空"));
                 }
-                String taskId = UUID.randomUUID().toString();
-                Map<String, Object> params = body.params() != null ? body.params() : Map.of();
-                long submittedAt = Instant.now().toEpochMilli();
-                SendRequest task = new SendRequest(
-                                body.templateCode(),
-                                body.language(),
-                                params,
-                                body.recipients(),
-                                taskId,
-                                submittedAt);
-                sendTaskExecutor.submit(task);
-                return Mono.just(taskId);
+                // TODO: replace with new direct-send implementation after migration.
+                return Mono.error(new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, "TODO: 新发送逻辑尚未接入"));
         }
 
         private Mono<String> validateAndPublish(SendRequest body) {

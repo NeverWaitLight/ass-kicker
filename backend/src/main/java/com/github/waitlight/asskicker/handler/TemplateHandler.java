@@ -3,7 +3,6 @@ package com.github.waitlight.asskicker.handler;
 import com.github.waitlight.asskicker.dto.template.FillTemplateRequest;
 import com.github.waitlight.asskicker.dto.template.FillTemplateResponse;
 import com.github.waitlight.asskicker.dto.template.TemplateDTO;
-import com.github.waitlight.asskicker.manager.TemplateManager;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.LanguageTemplateEntity;
 import com.github.waitlight.asskicker.model.TemplateEntity;
@@ -33,7 +32,6 @@ import java.util.stream.Collectors;
 public class TemplateHandler {
 
     private final TemplateService templateService;
-    private final TemplateManager templateManager;
     private final Validator validator;
 
     public Mono<ServerResponse> createTemplate(ServerRequest request) {
@@ -179,11 +177,8 @@ public class TemplateHandler {
 
     public Mono<ServerResponse> fillTemplate(ServerRequest request) {
         return request.bodyToMono(FillTemplateRequest.class)
-                .flatMap(req -> templateManager.fill(
-                        req.templateCode(),
-                        req.language(),
-                        req.params() != null ? req.params() : Collections.emptyMap()))
-                .map(r -> new FillTemplateResponse(r.template(), r.renderedContent()))
+                // TODO: replace with new template rendering implementation after migration.
+                .map(req -> new FillTemplateResponse(null, "TODO: 新模板渲染逻辑尚未接入"))
                 .flatMap(resp -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(BodyInserters.fromValue(resp)))
