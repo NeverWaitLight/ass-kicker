@@ -1,6 +1,5 @@
 package com.github.waitlight.asskicker.channel;
 
-import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,7 +12,6 @@ import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
@@ -25,20 +23,16 @@ import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.netty.http.client.HttpClient;
 
 @Slf4j
 public class FcmChannelHandler extends ChannelHandler {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final WebClient FCM_WEB_CLIENT = WebClient.builder()
-            .clientConnector(new ReactorClientHttpConnector(
-                    HttpClient.create().responseTimeout(Duration.ofSeconds(30))))
-            .build();
 
     private final Spec spec;
 
-    public FcmChannelHandler(ChannelProviderEntity provider) {
+    public FcmChannelHandler(ChannelProviderEntity provider, WebClient webClient) {
+        super(webClient);
         this.spec = FcmSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 
@@ -133,8 +127,8 @@ public class FcmChannelHandler extends ChannelHandler {
         return OBJECT_MAPPER.writeValueAsBytes(payload);
     }
 
-    private static Mono<String> postFcmMessage(String accessToken, String endpoint, byte[] bodyBytes) {
-        return FCM_WEB_CLIENT.post()
+    private Mono<String> postFcmMessage(String accessToken, String endpoint, byte[] bodyBytes) {
+        return webClient.post()
                 .uri(endpoint)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                 .contentType(MediaType.APPLICATION_JSON)

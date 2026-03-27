@@ -1,7 +1,6 @@
 package com.github.waitlight.asskicker.channel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.FcmChannelHandler;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
@@ -11,6 +10,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.test.StepVerifier;
 
 import java.util.List;
@@ -70,7 +70,7 @@ class FcmChannelHandlerTest {
         mockServer.start();
 
         ChannelProviderEntity provider = createProvider(mockServer.getBaseUrl());
-        handler = new FcmChannelHandler(provider);
+        handler = new FcmChannelHandler(provider, WebClient.create());
     }
 
     @AfterEach

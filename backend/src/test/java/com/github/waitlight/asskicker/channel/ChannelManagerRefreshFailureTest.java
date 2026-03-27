@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
@@ -55,7 +56,7 @@ class ChannelManagerRefreshFailureTest {
                 }
                 """;
         ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
-        ApnsChannelHandler handler = new ApnsChannelHandler(entity);
+        ApnsChannelHandler handler = new ApnsChannelHandler(entity, WebClient.create());
         ChannelManager.ChannelHandlerWrapper wrapper = new ChannelManager.ChannelHandlerWrapper(entity, handler);
         ConcurrentHashMap<String, ChannelManager.ChannelHandlerWrapper> map = new ConcurrentHashMap<>();
         map.put("id-1", wrapper);

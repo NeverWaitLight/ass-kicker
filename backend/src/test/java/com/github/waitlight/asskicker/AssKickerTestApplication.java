@@ -7,6 +7,8 @@ import org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.reactive.ReactiveWebServerFactoryAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.web.reactive.function.client.WebClient;
 
 /**
  * 仅用于 ChannelProvider 嵌入式 Mongo 测试，避免 {@code @DataMongoTest} 向上解析到
@@ -28,4 +30,9 @@ import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfigurat
         MailSenderAutoConfiguration.class
 })
 public class AssKickerTestApplication {
+
+    @Bean
+    WebClient sharedWebClient() {
+        return WebClient.create();
+    }
 }

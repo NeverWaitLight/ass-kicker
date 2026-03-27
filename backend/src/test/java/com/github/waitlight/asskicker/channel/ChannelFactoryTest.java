@@ -2,17 +2,21 @@ package com.github.waitlight.asskicker.channel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.waitlight.asskicker.model.ChannelProviderType;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 
 class ChannelFactoryTest {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  private final ChannelFactory factory = new ChannelFactory();
+  private final ChannelFactory factory = new ChannelFactory(WebClient.create());
 
   @Test
   @DisplayName("创建APNS渠道处理器")
@@ -57,6 +61,60 @@ class ChannelFactoryTest {
   }
 
   @Test
+  @DisplayName("创建钉钉Webhook渠道处理器")
+  void create_dingtalk_returnsDingtalkWebhookHandler() throws Exception {
+    String json = """
+        {
+          "code": "dingtalk-factory",
+          "channelType": "IM",
+          "providerType": "DINGTALK",
+          "enabled": true,
+          "properties": {
+            "url": "https://oapi.dingtalk.com/robot/send"
+          }
+        }
+        """;
+    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    assertThat(factory.create(entity)).isInstanceOf(DingtalkWebhookChannelHandler.class);
+  }
+
+  @Test
+  @DisplayName("创建企业微信Webhook渠道处理器")
+  void create_wecom_returnsWecomWebhookHandler() throws Exception {
+    String json = """
+        {
+          "code": "wecom-factory",
+          "channelType": "IM",
+          "providerType": "WECOM",
+          "enabled": true,
+          "properties": {
+            "url": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send"
+          }
+        }
+        """;
+    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    assertThat(factory.create(entity)).isInstanceOf(WecomWebhookChannelHandler.class);
+  }
+
+  @Test
+  @DisplayName("创建飞书Webhook渠道处理器")
+  void create_feishu_returnsFeishuWebhookHandler() throws Exception {
+    String json = """
+        {
+          "code": "feishu-factory",
+          "channelType": "IM",
+          "providerType": "FEISHU",
+          "enabled": true,
+          "properties": {
+            "url": "https://open.feishu.cn/open-apis/bot/v2/hook"
+          }
+        }
+        """;
+    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    assertThat(factory.create(entity)).isInstanceOf(FeishuWebhookChannelHandler.class);
+  }
+
+  @Test
   @DisplayName("创建不支持的渠道处理器")
   void create_unsupportedProvider_returnsNull() throws Exception {
     String json = """
@@ -73,5 +131,20 @@ class ChannelFactoryTest {
         """;
     ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
     assertThat(factory.create(entity)).isNull();
+  }
+
+  @Test
+  @DisplayName("返回支持的渠道类型列表")
+  void getSupportedTypes_containsWebhookProviders() {
+    assertThat(factory.getSupportedTypes()).containsExactly(
+        ChannelProviderType.APNS,
+        ChannelProviderType.FCM,
+        ChannelProviderType.DINGTALK,
+        ChannelProviderType.WECOM,
+        ChannelProviderType.FEISHU);
+    assertThat(factory.getSupportedTypes()).containsAll(List.of(
+        ChannelProviderType.DINGTALK,
+        ChannelProviderType.WECOM,
+        ChannelProviderType.FEISHU));
   }
 }

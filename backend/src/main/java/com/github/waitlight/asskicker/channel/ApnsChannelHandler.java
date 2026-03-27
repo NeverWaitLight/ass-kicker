@@ -3,7 +3,6 @@ package com.github.waitlight.asskicker.channel;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.time.Duration;
 import java.util.Base64;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -20,7 +19,6 @@ import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
@@ -34,20 +32,16 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.netty.http.client.HttpClient;
 
 @Slf4j
 public class ApnsChannelHandler extends ChannelHandler {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final WebClient APNS_WEB_CLIENT = WebClient.builder()
-            .clientConnector(new ReactorClientHttpConnector(
-                    HttpClient.create().responseTimeout(Duration.ofSeconds(30))))
-            .build();
 
     private final Spec spec;
 
-    public ApnsChannelHandler(ChannelProviderEntity provider) {
+    public ApnsChannelHandler(ChannelProviderEntity provider, WebClient webClient) {
+        super(webClient);
         this.spec = ApnsSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 
@@ -159,7 +153,7 @@ public class ApnsChannelHandler extends ChannelHandler {
         return u.endsWith("/") ? u.substring(0, u.length() - 1) : u;
     }
 
-    private static Mono<String> postApnsDevice(
+    private Mono<String> postApnsDevice(
             String jwt,
             String endpointBase,
             String deviceToken,
@@ -167,7 +161,7 @@ public class ApnsChannelHandler extends ChannelHandler {
             UUID apnsId,
             byte[] bodyBytes) {
         String uri = endpointBase + "/" + deviceToken.trim();
-        return APNS_WEB_CLIENT.post()
+        return webClient.post()
                 .uri(uri)
                 .header(HttpHeaders.AUTHORIZATION, "bearer " + jwt)
                 .header("apns-topic", bundleIdTopic)

@@ -1,7 +1,6 @@
 package com.github.waitlight.asskicker.channel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.ApnsChannelHandler;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
@@ -11,6 +10,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.test.StepVerifier;
 
 import java.util.List;
@@ -81,7 +81,7 @@ class ApnsChannelHandlerTest {
 
                 // Create provider configuration using mock server URL
                 ChannelProviderEntity provider = createProvider(mockServer.getBaseUrl());
-                handler = new ApnsChannelHandler(provider);
+                handler = new ApnsChannelHandler(provider, WebClient.create());
         }
 
         // ==================== Success Scenarios ====================
