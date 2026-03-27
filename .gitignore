@@ -11,4 +11,5 @@
 **/dist/
 **/__pycache__/
 **/openspec/
+**/.opencode/
 **/.cursorignore
