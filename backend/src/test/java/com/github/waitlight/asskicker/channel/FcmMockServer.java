@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.channelhandler;
+package com.github.waitlight.asskicker.channel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.mockwebserver.MockResponse;
