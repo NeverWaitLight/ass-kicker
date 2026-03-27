@@ -80,18 +80,15 @@ public class ChannelManager {
         refreshLock.lock();
         try {
             ConcurrentHashMap<String, ChannelHandlerWrapper> next = new ConcurrentHashMap<>();
-            List<ChannelProviderEntity> enabled = channelProviderService.findEnabled().collectList().block();
-            if (enabled == null) {
-                enabled = List.of();
+            List<ChannelProviderEntity> enabledProvider = channelProviderService.findEnabled().collectList().block();
+            if (enabledProvider == null) {
+                enabledProvider = List.of();
             }
-            for (ChannelProviderEntity entity : enabled) {
-                ChannelHandler handler = channelFactory.create(entity);
-                if (handler == null) {
-                    log.warn("Skip channel {}, handler creation returned null", entity.getCode());
-                    continue;
-                }
-                ChannelHandlerWrapper wrapper = new ChannelHandlerWrapper(entity, handler);
-                next.put(entity.getId(), wrapper);
+
+            for (ChannelProviderEntity provider : enabledProvider) {
+                ChannelHandler handler = channelFactory.create(provider);
+                ChannelHandlerWrapper wrapper = new ChannelHandlerWrapper(provider, handler);
+                next.put(provider.getId(), wrapper);
             }
             cache.clear();
             cache.putAll(next);
