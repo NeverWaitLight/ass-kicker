@@ -2,7 +2,6 @@ package com.github.waitlight.asskicker.channel;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -18,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ChannelFactory {
 
-    @Qualifier("sharedWebClient")
     private final WebClient webClient;
 
     public Channel create(ChannelProviderEntity provider) {

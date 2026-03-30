@@ -32,7 +32,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class AssKickerTestApplication {
 
     @Bean
-    WebClient sharedWebClient() {
+    WebClient webClient() {
         return WebClient.create();
     }
 }
