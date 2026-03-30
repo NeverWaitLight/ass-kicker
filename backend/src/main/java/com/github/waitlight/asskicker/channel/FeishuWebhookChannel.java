@@ -31,7 +31,7 @@ public class FeishuWebhookChannel extends Channel {
     private final Spec spec;
 
     public FeishuWebhookChannel(ChannelProviderEntity provider, WebClient webClient) {
-        super(webClient);
+        super(provider, webClient);
         this.spec = FeishuSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 

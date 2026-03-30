@@ -31,7 +31,7 @@ public class DingtalkWebhookChannel extends Channel {
     private final Spec spec;
 
     public DingtalkWebhookChannel(ChannelProviderEntity provider, WebClient webClient) {
-        super(webClient);
+        super(provider, webClient);
         this.spec = DingtalkSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 

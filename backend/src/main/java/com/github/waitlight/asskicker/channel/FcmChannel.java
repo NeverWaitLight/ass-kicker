@@ -32,7 +32,7 @@ public class FcmChannel extends Channel {
     private final Spec spec;
 
     public FcmChannel(ChannelProviderEntity provider, WebClient webClient) {
-        super(webClient);
+        super(provider, webClient);
         this.spec = FcmSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 

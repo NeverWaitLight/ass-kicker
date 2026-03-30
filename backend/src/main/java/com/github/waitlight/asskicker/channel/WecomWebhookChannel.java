@@ -31,7 +31,7 @@ public class WecomWebhookChannel extends Channel {
     private final Spec spec;
 
     public WecomWebhookChannel(ChannelProviderEntity provider, WebClient webClient) {
-        super(webClient);
+        super(provider, webClient);
         this.spec = WecomSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 

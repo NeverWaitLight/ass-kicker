@@ -4,10 +4,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
@@ -15,7 +12,6 @@ import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.service.ChannelProviderService;
 
 import jakarta.annotation.PostConstruct;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
@@ -25,13 +21,13 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class ChannelManager {
 
-    private static final Comparator<ChannelWrapper> BY_CODE = Comparator
-            .comparing(ChannelWrapper::getCode);
+    private static final Comparator<Channel> BY_CODE = Comparator
+            .comparing(Channel::getCode);
 
     private final ChannelProviderService channelProviderService;
     private final ChannelFactory channelFactory;
 
-    private final ConcurrentHashMap<String, ChannelWrapper> cache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Channel> cache = new ConcurrentHashMap<>();
     private final ReentrantLock refreshLock = new ReentrantLock();
 
     @PostConstruct
@@ -47,8 +43,7 @@ public class ChannelManager {
                 log.warn("Skip channel {}, channel creation returned null", entity.getCode());
                 continue;
             }
-            ChannelWrapper wrapper = new ChannelWrapper(entity, channel);
-            cache.put(entity.getId(), wrapper);
+            cache.put(entity.getId(), channel);
             loaded++;
         }
         log.info("Loaded {} channel channel(s)", loaded);
@@ -56,30 +51,30 @@ public class ChannelManager {
 
     public Mono<Channel> selectChannel(ChannelType channelType, String targetAddress) {
         String addr = targetAddress == null ? "" : targetAddress;
-        List<ChannelWrapper> matching = cache.values().stream()
+        List<Channel> matching = cache.values().stream()
                 .filter(w -> w.getChannelType() == channelType)
-                .filter(ChannelWrapper::isEnabled)
+                .filter(Channel::isEnabled)
                 .filter(w -> !w.matchesExclude(addr))
                 .toList();
         if (matching.isEmpty()) {
             return Mono.empty();
         }
-        List<ChannelWrapper> priorityMatches = matching.stream()
+        List<Channel> priorityMatches = matching.stream()
                 .filter(w -> w.matchesPriority(addr))
                 .sorted(BY_CODE)
                 .toList();
-        List<ChannelWrapper> candidates = priorityMatches.isEmpty()
+        List<Channel> candidates = priorityMatches.isEmpty()
                 ? matching.stream().sorted(BY_CODE).toList()
                 : priorityMatches;
-        ChannelWrapper chosen = candidates.get(0);
+        Channel chosen = candidates.get(0);
         log.debug("Selected channel {} for target address {}", chosen.getCode(), targetAddress);
-        return Mono.just(chosen.getChannel());
+        return Mono.just(chosen);
     }
 
     public void refresh() {
         refreshLock.lock();
         try {
-            ConcurrentHashMap<String, ChannelWrapper> next = new ConcurrentHashMap<>();
+            ConcurrentHashMap<String, Channel> next = new ConcurrentHashMap<>();
             List<ChannelProviderEntity> enabledProvider = channelProviderService.findEnabled().collectList().block();
             if (enabledProvider == null) {
                 enabledProvider = List.of();
@@ -87,8 +82,9 @@ public class ChannelManager {
 
             for (ChannelProviderEntity provider : enabledProvider) {
                 Channel channel = channelFactory.create(provider);
-                ChannelWrapper wrapper = new ChannelWrapper(provider, channel);
-                next.put(provider.getId(), wrapper);
+                if (channel != null) {
+                    next.put(provider.getId(), channel);
+                }
             }
             cache.clear();
             cache.putAll(next);
@@ -101,61 +97,14 @@ public class ChannelManager {
     }
 
     public Channel getChannelById(String id) {
-        ChannelWrapper w = cache.get(id);
-        return w == null ? null : w.getChannel();
+        return cache.get(id);
     }
 
     public List<Channel> getAllChannels() {
-        return cache.values().stream().map(ChannelWrapper::getChannel).toList();
+        return cache.values().stream().toList();
     }
 
     public int getChannelCount() {
         return cache.size();
-    }
-
-    @Getter
-    static final class ChannelWrapper {
-
-        private final String id;
-        private final String code;
-        private final ChannelType channelType;
-        private final boolean enabled;
-        private final Pattern priorityPattern;
-        private final Pattern excludePattern;
-        private final Channel channel;
-
-        ChannelWrapper(ChannelProviderEntity entity, Channel channel) {
-            this.id = entity.getId();
-            this.code = entity.getCode();
-            this.channelType = entity.getChannelType();
-            this.enabled = entity.isEnabled();
-            this.channel = channel;
-            this.priorityPattern = compilePattern(entity.getCode(), entity.getPriorityAddressRegex(),
-                    "priorityAddressRegex");
-            this.excludePattern = compilePattern(entity.getCode(), entity.getExcludeAddressRegex(),
-                    "excludeAddressRegex");
-        }
-
-        private static Pattern compilePattern(String channelCode, String regex, String fieldName) {
-            if (StringUtils.isBlank(regex)) {
-                return null;
-            }
-            try {
-                return Pattern.compile(regex);
-            } catch (PatternSyntaxException e) {
-                log.error("Invalid {} for channel {}: {}", fieldName, channelCode, regex, e);
-                return null;
-            }
-        }
-
-        boolean matchesPriority(String address) {
-            String a = address == null ? "" : address;
-            return priorityPattern != null && priorityPattern.matcher(a).matches();
-        }
-
-        boolean matchesExclude(String address) {
-            String a = address == null ? "" : address;
-            return excludePattern != null && excludePattern.matcher(a).matches();
-        }
     }
 }

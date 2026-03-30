@@ -41,7 +41,7 @@ public class ApnsChannel extends Channel {
     private final Spec spec;
 
     public ApnsChannel(ChannelProviderEntity provider, WebClient webClient) {
-        super(webClient);
+        super(provider, webClient);
         this.spec = ApnsSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 

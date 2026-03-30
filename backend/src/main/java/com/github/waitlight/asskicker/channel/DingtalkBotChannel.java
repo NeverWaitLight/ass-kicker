@@ -38,7 +38,7 @@ public class DingtalkBotChannel extends Channel {
     private final Spec spec;
 
     public DingtalkBotChannel(ChannelProviderEntity provider, WebClient webClient) {
-        super(webClient);
+        super(provider, webClient);
         this.spec = DingtalkBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 

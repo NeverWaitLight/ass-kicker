@@ -37,7 +37,7 @@ public class WecomBotChannel extends Channel {
     private final Spec spec;
 
     public WecomBotChannel(ChannelProviderEntity provider, WebClient webClient) {
-        super(webClient);
+        super(provider, webClient);
         this.spec = WecomBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 

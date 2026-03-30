@@ -38,7 +38,7 @@ public class FeishuBotChannel extends Channel {
     private final Spec spec;
 
     public FeishuBotChannel(ChannelProviderEntity provider, WebClient webClient) {
-        super(webClient);
+        super(provider, webClient);
         this.spec = FeishuBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 
