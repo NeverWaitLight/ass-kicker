@@ -115,6 +115,64 @@ class ChannelFactoryTest {
   }
 
   @Test
+  @DisplayName("创建钉钉Bot渠道")
+  void create_dingtalkBot_returnsDingtalkBotChannel() throws Exception {
+    String json = """
+        {
+          "code": "dingtalk-bot-factory",
+          "channelType": "IM",
+          "providerType": "DINGTALK_BOT",
+          "enabled": true,
+          "properties": {
+            "appKey": "k",
+            "appSecret": "s",
+            "robotCode": "r"
+          }
+        }
+        """;
+    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    assertThat(factory.create(entity)).isInstanceOf(DingtalkBotChannel.class);
+  }
+
+  @Test
+  @DisplayName("创建企业微信Bot渠道")
+  void create_wecomBot_returnsWecomBotChannel() throws Exception {
+    String json = """
+        {
+          "code": "wecom-bot-factory",
+          "channelType": "IM",
+          "providerType": "WECOM_BOT",
+          "enabled": true,
+          "properties": {
+            "corpId": "ww",
+            "corpSecret": "sec"
+          }
+        }
+        """;
+    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    assertThat(factory.create(entity)).isInstanceOf(WecomBotChannel.class);
+  }
+
+  @Test
+  @DisplayName("创建飞书Bot渠道")
+  void create_feishuBot_returnsFeishuBotChannel() throws Exception {
+    String json = """
+        {
+          "code": "feishu-bot-factory",
+          "channelType": "IM",
+          "providerType": "FEISHU_BOT",
+          "enabled": true,
+          "properties": {
+            "appId": "cli_x",
+            "appSecret": "sec_x"
+          }
+        }
+        """;
+    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    assertThat(factory.create(entity)).isInstanceOf(FeishuBotChannel.class);
+  }
+
+  @Test
   @DisplayName("创建不支持的渠道")
   void create_unsupportedProvider_returnsNull() throws Exception {
     String json = """
@@ -141,10 +199,16 @@ class ChannelFactoryTest {
         ChannelProviderType.FCM,
         ChannelProviderType.DINGTALK,
         ChannelProviderType.WECOM,
-        ChannelProviderType.FEISHU);
+        ChannelProviderType.FEISHU,
+        ChannelProviderType.DINGTALK_BOT,
+        ChannelProviderType.WECOM_BOT,
+        ChannelProviderType.FEISHU_BOT);
     assertThat(factory.getSupportedTypes()).containsAll(List.of(
         ChannelProviderType.DINGTALK,
         ChannelProviderType.WECOM,
-        ChannelProviderType.FEISHU));
+        ChannelProviderType.FEISHU,
+        ChannelProviderType.DINGTALK_BOT,
+        ChannelProviderType.WECOM_BOT,
+        ChannelProviderType.FEISHU_BOT));
   }
 }

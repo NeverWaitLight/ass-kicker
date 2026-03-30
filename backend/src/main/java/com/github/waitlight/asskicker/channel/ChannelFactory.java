@@ -31,6 +31,9 @@ public class ChannelFactory {
                 case DINGTALK -> new DingtalkWebhookChannel(provider, webClient);
                 case WECOM -> new WecomWebhookChannel(provider, webClient);
                 case FEISHU -> new FeishuWebhookChannel(provider, webClient);
+                case DINGTALK_BOT -> new DingtalkBotChannel(provider, webClient);
+                case WECOM_BOT -> new WecomBotChannel(provider, webClient);
+                case FEISHU_BOT -> new FeishuBotChannel(provider, webClient);
                 default -> {
                     log.warn("Unsupported channel provider type: {}", provider.getProviderType());
                     yield null;
@@ -48,6 +51,9 @@ public class ChannelFactory {
                 ChannelProviderType.FCM,
                 ChannelProviderType.DINGTALK,
                 ChannelProviderType.WECOM,
-                ChannelProviderType.FEISHU);
+                ChannelProviderType.FEISHU,
+                ChannelProviderType.DINGTALK_BOT,
+                ChannelProviderType.WECOM_BOT,
+                ChannelProviderType.FEISHU_BOT);
     }
 }

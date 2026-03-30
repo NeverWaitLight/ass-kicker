@@ -16,6 +16,9 @@ public enum ChannelProviderType {
     DINGTALK(ChannelType.IM),
     WECOM(ChannelType.IM),
     FEISHU(ChannelType.IM),
+    DINGTALK_BOT(ChannelType.IM),
+    WECOM_BOT(ChannelType.IM),
+    FEISHU_BOT(ChannelType.IM),
     SLACK(ChannelType.IM),
 
     APNS(ChannelType.PUSH),
