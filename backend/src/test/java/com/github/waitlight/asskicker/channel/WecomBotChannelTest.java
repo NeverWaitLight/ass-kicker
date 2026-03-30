@@ -138,4 +138,32 @@ class WecomBotChannelTest {
                         && e.getMessage().contains("WECOM_BOT spec requires corpId"))
                 .verify();
     }
+
+    @Test
+    void send_missingGetTokenUrl_returnsIllegalStateException() throws Exception {
+        String providerJson = """
+                {
+                  "code": "wecom-bot-no-token-url",
+                  "channelType": "IM",
+                  "providerType": "WECOM_BOT",
+                  "enabled": true,
+                  "properties": {
+                    "corpId": "c",
+                    "corpSecret": "s",
+                    "messageSendUrl": "https://example/cgi-bin/appchat/send"
+                  }
+                }
+                """;
+        ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
+        WecomBotChannel ch = new WecomBotChannel(provider, WebClient.create());
+
+        UniMessage message = new UniMessage();
+        message.setContent("x");
+        UniAddress address = UniAddress.ofImBot(ChannelProviderType.WECOM_BOT, "k", "cid");
+
+        StepVerifier.create(ch.send(message, address))
+                .expectErrorMatches(e -> e instanceof IllegalStateException
+                        && e.getMessage().contains("WECOM_BOT spec requires getTokenUrl"))
+                .verify();
+    }
 }

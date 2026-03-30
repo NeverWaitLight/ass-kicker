@@ -120,4 +120,32 @@ class FeishuBotChannelTest {
                         && e.getMessage().contains("FEISHU_BOT recipients required"))
                 .verify();
     }
+
+    @Test
+    void send_missingTenantTokenUrl_returnsIllegalStateException() throws Exception {
+        String providerJson = """
+                {
+                  "code": "feishu-bot-no-token-url",
+                  "channelType": "IM",
+                  "providerType": "FEISHU_BOT",
+                  "enabled": true,
+                  "properties": {
+                    "appId": "cli_x",
+                    "appSecret": "sec_x",
+                    "messageSendUrl": "https://example/open-apis/im/v1/messages"
+                  }
+                }
+                """;
+        ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
+        FeishuBotChannel ch = new FeishuBotChannel(provider, WebClient.create());
+
+        UniMessage message = new UniMessage();
+        message.setContent("x");
+        UniAddress address = UniAddress.ofImBot(ChannelProviderType.FEISHU_BOT, "k", "oc");
+
+        StepVerifier.create(ch.send(message, address))
+                .expectErrorMatches(e -> e instanceof IllegalStateException
+                        && e.getMessage().contains("FEISHU_BOT spec requires tenantTokenUrl"))
+                .verify();
+    }
 }

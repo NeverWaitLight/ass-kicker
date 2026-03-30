@@ -28,8 +28,6 @@ import reactor.core.publisher.Mono;
  */
 public class DingtalkBotChannel extends Channel {
 
-    private static final String DEFAULT_ACCESS_TOKEN_URL = "https://api.dingtalk.com/v1.0/oauth2/accessToken";
-    private static final String DEFAULT_GROUP_SEND_URL = "https://api.dingtalk.com/v1.0/robot/groupMessages/send";
     private static final String HEADER_ACCESS_TOKEN = "x-acs-dingtalk-access-token";
     private static final String MSG_KEY_SAMPLE_TEXT = "sampleText";
 
@@ -49,9 +47,8 @@ public class DingtalkBotChannel extends Channel {
             requireNonBlank(spec.appKey(), "appKey", "DINGTALK_BOT");
             requireNonBlank(spec.appSecret(), "appSecret", "DINGTALK_BOT");
             requireNonBlank(spec.robotCode(), "robotCode", "DINGTALK_BOT");
-
-            String accessTokenUrl = StringUtils.defaultIfBlank(spec.accessTokenUrl(), DEFAULT_ACCESS_TOKEN_URL);
-            String groupSendUrl = StringUtils.defaultIfBlank(spec.groupSendUrl(), DEFAULT_GROUP_SEND_URL);
+            String accessTokenUrl = requireNonBlank(spec.accessTokenUrl(), "accessTokenUrl", "DINGTALK_BOT");
+            String groupSendUrl = requireNonBlank(spec.groupSendUrl(), "groupSendUrl", "DINGTALK_BOT");
 
             String text = buildPlainText(uniMessage);
             String msgParamJson;

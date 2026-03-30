@@ -123,4 +123,33 @@ class DingtalkBotChannelTest {
                         && e.getMessage().contains("DINGTALK_BOT recipients required"))
                 .verify();
     }
+
+    @Test
+    void send_missingGroupSendUrl_returnsIllegalStateException() throws Exception {
+        String providerJson = """
+                {
+                  "code": "dingtalk-bot-no-send-url",
+                  "channelType": "IM",
+                  "providerType": "DINGTALK_BOT",
+                  "enabled": true,
+                  "properties": {
+                    "appKey": "k",
+                    "appSecret": "s",
+                    "robotCode": "r",
+                    "accessTokenUrl": "https://example/v1.0/oauth2/accessToken"
+                  }
+                }
+                """;
+        ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
+        DingtalkBotChannel ch = new DingtalkBotChannel(provider, WebClient.create());
+
+        UniMessage message = new UniMessage();
+        message.setContent("x");
+        UniAddress address = UniAddress.ofImBot(ChannelProviderType.DINGTALK_BOT, "k", "cid");
+
+        StepVerifier.create(ch.send(message, address))
+                .expectErrorMatches(e -> e instanceof IllegalStateException
+                        && e.getMessage().contains("DINGTALK_BOT spec requires groupSendUrl"))
+                .verify();
+    }
 }

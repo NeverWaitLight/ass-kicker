@@ -31,8 +31,6 @@ import reactor.core.publisher.Mono;
 public class WecomBotChannel extends Channel {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final String DEFAULT_GET_TOKEN_URL = "https://qyapi.weixin.qq.com/cgi-bin/gettoken";
-    private static final String DEFAULT_APP_CHAT_SEND_URL = "https://qyapi.weixin.qq.com/cgi-bin/appchat/send";
 
     private final Spec spec;
 
@@ -47,9 +45,8 @@ public class WecomBotChannel extends Channel {
             List<String> chatIds = normalizeRecipients(uniAddress, "WECOM_BOT");
             requireNonBlank(spec.corpId(), "corpId", "WECOM_BOT");
             requireNonBlank(spec.corpSecret(), "corpSecret", "WECOM_BOT");
-
-            String getTokenUrl = StringUtils.defaultIfBlank(spec.getTokenUrl(), DEFAULT_GET_TOKEN_URL);
-            String appChatSendUrl = StringUtils.defaultIfBlank(spec.messageSendUrl(), DEFAULT_APP_CHAT_SEND_URL);
+            String getTokenUrl = requireNonBlank(spec.getTokenUrl(), "getTokenUrl", "WECOM_BOT");
+            String appChatSendUrl = requireNonBlank(spec.messageSendUrl(), "messageSendUrl", "WECOM_BOT");
 
             String text = buildPlainText(uniMessage);
 

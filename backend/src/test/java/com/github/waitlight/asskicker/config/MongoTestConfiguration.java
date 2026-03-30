@@ -20,6 +20,9 @@ import org.springframework.data.mongodb.repository.config.EnableReactiveMongoRep
  * 使用 Flapdoodle 启动本机 mongod 进程（见
  * {@code de.flapdoodle.embed.mongo.spring.autoconfigure.EmbeddedMongoAutoConfiguration}），
  * 而非 Fongo：Fongo 面向旧版同步 Java 驱动，无法与 {@code ReactiveMongoRepository} 共用。
+ * <p>
+ * 若出现 {@code ClassNotFoundException}（例如仅类名 {@code ChannelProviderEntity} 无包名）或
+ * MapStruct 实现类无法内省，多为 {@code target} 下过时字节码，请先执行 {@code mvn clean test}。
  */
 @TestConfiguration
 @EnableReactiveMongoRepositories(basePackages = "com.github.waitlight.asskicker.repository")

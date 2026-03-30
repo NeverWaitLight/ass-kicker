@@ -28,9 +28,6 @@ import reactor.core.publisher.Mono;
  */
 public class FeishuBotChannel extends Channel {
 
-    private static final String DEFAULT_TENANT_TOKEN_URL =
-            "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal";
-    private static final String DEFAULT_MESSAGE_SEND_URL = "https://open.feishu.cn/open-apis/im/v1/messages";
     private static final String DEFAULT_RECEIVE_ID_TYPE = "chat_id";
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -48,9 +45,8 @@ public class FeishuBotChannel extends Channel {
             List<String> chatIds = normalizeRecipients(uniAddress, "FEISHU_BOT");
             requireNonBlank(spec.appId(), "appId", "FEISHU_BOT");
             requireNonBlank(spec.appSecret(), "appSecret", "FEISHU_BOT");
-
-            String tenantTokenUrl = StringUtils.defaultIfBlank(spec.tenantTokenUrl(), DEFAULT_TENANT_TOKEN_URL);
-            String messageSendUrl = StringUtils.defaultIfBlank(spec.messageSendUrl(), DEFAULT_MESSAGE_SEND_URL);
+            String tenantTokenUrl = requireNonBlank(spec.tenantTokenUrl(), "tenantTokenUrl", "FEISHU_BOT");
+            String messageSendUrl = requireNonBlank(spec.messageSendUrl(), "messageSendUrl", "FEISHU_BOT");
             String receiveIdType = StringUtils.defaultIfBlank(spec.receiveIdType(), DEFAULT_RECEIVE_ID_TYPE);
 
             String text = buildPlainText(uniMessage);
