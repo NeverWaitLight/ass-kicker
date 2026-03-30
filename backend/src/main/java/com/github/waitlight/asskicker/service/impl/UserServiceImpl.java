@@ -11,6 +11,7 @@ import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.model.UserStatus;
 import com.github.waitlight.asskicker.repository.UserRepository;
 import com.github.waitlight.asskicker.service.UserService;
+import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import jakarta.annotation.PostConstruct;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,16 +30,19 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserConverter userMapStructer;
     private final CaffeineCacheConfig caffeineCacheConfig;
+    private final SnowflakeIdGenerator snowflakeIdGenerator;
 
     private AsyncLoadingCache<String, Optional<UserEntity>> userByIdCache;
     private AsyncLoadingCache<String, Optional<UserEntity>> userByUsernameCache;
 
     public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
-                           UserConverter userMapStructer, CaffeineCacheConfig caffeineCacheConfig) {
+                           UserConverter userMapStructer, CaffeineCacheConfig caffeineCacheConfig,
+                           SnowflakeIdGenerator snowflakeIdGenerator) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userMapStructer = userMapStructer;
         this.caffeineCacheConfig = caffeineCacheConfig;
+        this.snowflakeIdGenerator = snowflakeIdGenerator;
     }
 
     @PostConstruct
@@ -69,6 +73,7 @@ public class UserServiceImpl implements UserService {
                     }
                     UserEntity user = new UserEntity();
                     long now = Instant.now().toEpochMilli();
+                    user.setId(snowflakeIdGenerator.nextIdString());
                     user.setUsername(username);
                     user.setPasswordHash(passwordEncoder.encode(request.password()));
                     user.setRole(request.role() == null ? UserRole.USER : request.role());
@@ -95,6 +100,7 @@ public class UserServiceImpl implements UserService {
                 .flatMap(count -> {
                     UserEntity user = new UserEntity();
                     long now = Instant.now().toEpochMilli();
+                    user.setId(snowflakeIdGenerator.nextIdString());
                     user.setUsername(username);
                     user.setPasswordHash(passwordEncoder.encode(request.password()));
                     user.setRole(count == 0 ? UserRole.ADMIN : UserRole.USER);

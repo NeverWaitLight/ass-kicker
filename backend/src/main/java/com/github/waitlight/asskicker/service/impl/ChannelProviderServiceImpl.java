@@ -7,6 +7,7 @@ import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.repository.ChannelProviderRepository;
 import com.github.waitlight.asskicker.service.ChannelProviderService;
+import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class ChannelProviderServiceImpl implements ChannelProviderService {
 
     private final ChannelProviderRepository channelProviderRepository;
     private final ChannelProviderConverter channelProviderConverter;
+    private final SnowflakeIdGenerator snowflakeIdGenerator;
 
     @Override
     public Flux<ChannelProviderEntity> findAll() {
@@ -84,6 +86,7 @@ public class ChannelProviderServiceImpl implements ChannelProviderService {
         ChannelProviderEntity toCreate = channelProviderConverter.copyForCreate(entity);
         toCreate.setId(null);
         long now = Instant.now().toEpochMilli();
+        toCreate.setId(snowflakeIdGenerator.nextIdString());
         toCreate.setCreatedAt(now);
         toCreate.setUpdatedAt(now);
         return ensureUniqueKey(toCreate.getCode(), null)

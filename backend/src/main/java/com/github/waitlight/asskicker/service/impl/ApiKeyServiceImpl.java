@@ -8,6 +8,7 @@ import com.github.waitlight.asskicker.model.ApiKeyStatus;
 import com.github.waitlight.asskicker.repository.ApiKeyRepository;
 import com.github.waitlight.asskicker.service.ApiKeyAuthService;
 import com.github.waitlight.asskicker.service.ApiKeyService;
+import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,7 +18,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,15 +26,17 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     private final ApiKeyRepository apiKeyRepository;
     private final PasswordEncoder passwordEncoder;
     private final ApiKeyAuthService apiKeyAuthService;
+    private final SnowflakeIdGenerator snowflakeIdGenerator;
 
     @Override
     public Mono<CreateApiKeyResponse> createApiKey(String userId, CreateApiKeyRequest request) {
-        String raw = "ak_" + UUID.randomUUID().toString().replace("-", "");
+        String raw = "ak_" + snowflakeIdGenerator.nextIdString();
         String keyPrefix = raw.substring(0, 12);
         String keyHash = passwordEncoder.encode(raw);
         long now = Instant.now().toEpochMilli();
 
         ApiKeyEntity apiKey = new ApiKeyEntity();
+        apiKey.setId(snowflakeIdGenerator.nextIdString());
         apiKey.setUserId(userId);
         apiKey.setName(request.name());
         apiKey.setKeyHash(keyHash);

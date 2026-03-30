@@ -7,6 +7,7 @@ import com.github.waitlight.asskicker.dto.sendrecord.SendRecordView;
 import com.github.waitlight.asskicker.model.SendRecordEntity;
 import com.github.waitlight.asskicker.repository.SendRecordRepository;
 import com.github.waitlight.asskicker.service.SendRecordService;
+import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
@@ -28,6 +29,7 @@ public class SendRecordServiceImpl implements SendRecordService, DisposableBean 
 
     private final SendRecordRepository sendRecordRepository;
     private final CaffeineCacheConfig caffeineCacheConfig;
+    private final SnowflakeIdGenerator snowflakeIdGenerator;
     private final List<SendRecordEntity> buffer = Collections.synchronizedList(new ArrayList<>());
     @Value("${send-record.buffer-size:100}")
     private int bufferSize;
@@ -36,9 +38,11 @@ public class SendRecordServiceImpl implements SendRecordService, DisposableBean 
     private AsyncLoadingCache<String, Optional<SendRecordView>> recordByIdCache;
 
     public SendRecordServiceImpl(SendRecordRepository sendRecordRepository,
-                                 CaffeineCacheConfig caffeineCacheConfig) {
+                                 CaffeineCacheConfig caffeineCacheConfig,
+                                 SnowflakeIdGenerator snowflakeIdGenerator) {
         this.sendRecordRepository = sendRecordRepository;
         this.caffeineCacheConfig = caffeineCacheConfig;
+        this.snowflakeIdGenerator = snowflakeIdGenerator;
     }
 
     @PostConstruct
@@ -77,6 +81,7 @@ public class SendRecordServiceImpl implements SendRecordService, DisposableBean 
 
     @Override
     public void writeRecord(SendRecordEntity record) {
+        record.setId(snowflakeIdGenerator.nextIdString());
         List<SendRecordEntity> toFlush = null;
         synchronized (buffer) {
             buffer.add(record);

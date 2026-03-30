@@ -7,6 +7,7 @@ import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.MessageTemplateEntity;
 import com.github.waitlight.asskicker.repository.MessageTemplateRepository;
 import com.github.waitlight.asskicker.service.MessageTemplateService;
+import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class MessageTemplateServiceImpl implements MessageTemplateService {
 
     private final MessageTemplateRepository messageTemplateRepository;
     private final MessageTemplateConverter messageTemplateConverter;
+    private final SnowflakeIdGenerator snowflakeIdGenerator;
 
     @Override
     public Flux<MessageTemplateEntity> findAll(int page, int size) {
@@ -74,6 +76,7 @@ public class MessageTemplateServiceImpl implements MessageTemplateService {
         MessageTemplateEntity toCreate = messageTemplateConverter.copyForCreate(entity);
         toCreate.setId(null);
         long now = Instant.now().toEpochMilli();
+        toCreate.setId(snowflakeIdGenerator.nextIdString());
         toCreate.setCreatedAt(now);
         toCreate.setUpdatedAt(now);
         return ensureUniqueCode(toCreate.getCode(), null)

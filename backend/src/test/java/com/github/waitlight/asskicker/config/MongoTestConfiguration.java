@@ -7,8 +7,10 @@ import com.github.waitlight.asskicker.converter.ChannelProviderPropertiesMapper;
 import com.github.waitlight.asskicker.converter.MessageTemplateConverterImpl;
 import com.github.waitlight.asskicker.service.impl.ChannelProviderServiceImpl;
 import com.github.waitlight.asskicker.service.impl.MessageTemplateServiceImpl;
+import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.mongodb.repository.config.EnableReactiveMongoRepositories;
 
@@ -33,4 +35,9 @@ import org.springframework.data.mongodb.repository.config.EnableReactiveMongoRep
         MessageTemplateServiceImpl.class
 })
 public class MongoTestConfiguration {
+
+    @Bean
+    SnowflakeIdGenerator testSnowflakeIdGenerator() {
+        return new SnowflakeIdGenerator(0, 0);
+    }
 }
