@@ -40,6 +40,9 @@ public class ChannelFactory {
                 case DINGTALK_BOT -> new DingtalkBotChannel(provider, webClient, channelObjectMapper);
                 case WECOM_BOT -> new WecomBotChannel(provider, webClient, channelObjectMapper);
                 case FEISHU_BOT -> new FeishuBotChannel(provider, webClient, channelObjectMapper);
+                case ALIYUN_SMS -> new AliyunSmsChannel(provider, webClient, channelObjectMapper);
+                case AWS_SMS -> new AwsSnsSmsChannel(provider, webClient, channelObjectMapper);
+                case SMTP, ALIYUN_EMAIL, AWS_EMAIL -> new SmtpChannel(provider, webClient, channelObjectMapper);
                 default -> {
                     log.warn("Unsupported channel provider type: {}", provider.getProviderType());
                     yield null;
@@ -53,6 +56,11 @@ public class ChannelFactory {
 
     public List<ChannelProviderType> getSupportedTypes() {
         return List.of(
+                ChannelProviderType.ALIYUN_SMS,
+                ChannelProviderType.AWS_SMS,
+                ChannelProviderType.ALIYUN_EMAIL,
+                ChannelProviderType.AWS_EMAIL,
+                ChannelProviderType.SMTP,
                 ChannelProviderType.APNS,
                 ChannelProviderType.FCM,
                 ChannelProviderType.DINGTALK,

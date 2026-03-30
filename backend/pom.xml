@@ -25,8 +25,8 @@
     <!-- Third-party dependencies versions -->
     <jjwt.version>0.11.5</jjwt.version>
     <google-auth.version>1.28.0</google-auth.version>
-    <aliyun-dysms.version>2.0.24</aliyun-dysms.version>
     <tencentcloud-sms.version>3.1.1124</tencentcloud-sms.version>
+    <greenmail.version>2.0.1</greenmail.version>
     <mustache.version>0.9.14</mustache.version>
   </properties>
 
@@ -82,12 +82,7 @@
       <scope>runtime</scope>
     </dependency>
 
-    <!-- ==================== SMS Providers ==================== -->
-    <dependency>
-      <groupId>com.aliyun</groupId>
-      <artifactId>dysmsapi20170525</artifactId>
-      <version>${aliyun-dysms.version}</version>
-    </dependency>
+    <!-- ==================== SMS Providers (Tencent SDK 保留供后续接入) ==================== -->
     <dependency>
       <groupId>com.tencentcloudapi</groupId>
       <artifactId>tencentcloud-sdk-java-sms</artifactId>
@@ -153,6 +148,12 @@
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>mockwebserver</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.icegreen</groupId>
+      <artifactId>greenmail-junit5</artifactId>
+      <version>${greenmail.version}</version>
       <scope>test</scope>
     </dependency>
     <!-- 嵌入式 MongoDB（Spring Boot 3 集成），供 Reactive Mongo 服务层测试使用；Fongo 仅适配同步驱动，与本项目 reactive 栈不兼容 -->

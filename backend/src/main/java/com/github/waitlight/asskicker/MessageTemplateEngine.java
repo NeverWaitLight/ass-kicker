@@ -53,6 +53,9 @@ public class MessageTemplateEngine {
                     uniMessage.setTitle(tpl.getTitle());
                     uniMessage.setContent(content);
                     uniMessage.setExtraData(req.getExtraData());
+                    uniMessage.setTemplateParams(req.getTemplateParams() == null
+                            ? Collections.emptyMap()
+                            : Map.copyOf(req.getTemplateParams()));
                     return uniMessage;
                 });
     }

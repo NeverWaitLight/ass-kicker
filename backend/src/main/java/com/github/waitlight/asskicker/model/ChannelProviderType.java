@@ -8,10 +8,12 @@ import lombok.Getter;
 public enum ChannelProviderType {
     ALIYUN_SMS(ChannelType.SMS),
     TENCENT_SMS(ChannelType.SMS),
+    AWS_SMS(ChannelType.SMS),
 
     ALIYUN_EMAIL(ChannelType.EMAIL),
     TENCENT_EMAIL(ChannelType.EMAIL),
     SMTP(ChannelType.EMAIL),
+    AWS_EMAIL(ChannelType.EMAIL),
 
     DINGTALK(ChannelType.IM),
     WECOM(ChannelType.IM),

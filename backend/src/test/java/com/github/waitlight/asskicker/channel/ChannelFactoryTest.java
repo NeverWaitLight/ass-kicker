@@ -178,14 +178,11 @@ class ChannelFactoryTest {
   void create_unsupportedProvider_returnsNull() throws Exception {
     String json = """
         {
-          "code": "sms-factory",
-          "channelType": "SMS",
-          "providerType": "ALIYUN_SMS",
+          "code": "slack-factory",
+          "channelType": "IM",
+          "providerType": "SLACK",
           "enabled": true,
-          "properties": {
-            "accessKeyId": "a",
-            "accessKeySecret": "s"
-          }
+          "properties": {}
         }
         """;
     ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
@@ -193,9 +190,77 @@ class ChannelFactoryTest {
   }
 
   @Test
+  @DisplayName("创建阿里云短信渠道")
+  void create_aliyunSms_returnsAliyunSmsChannel() throws Exception {
+    String json = """
+        {
+          "code": "aliyun-sms-factory",
+          "channelType": "SMS",
+          "providerType": "ALIYUN_SMS",
+          "enabled": true,
+          "properties": {
+            "accessKeyId": "a",
+            "accessKeySecret": "s",
+            "signName": "sig",
+            "templateCode": "SMS_1"
+          }
+        }
+        """;
+    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    assertThat(factory.create(entity)).isInstanceOf(AliyunSmsChannel.class);
+  }
+
+  @Test
+  @DisplayName("创建 AWS SNS 短信渠道")
+  void create_awsSms_returnsAwsSnsSmsChannel() throws Exception {
+    String json = """
+        {
+          "code": "aws-sms-factory",
+          "channelType": "SMS",
+          "providerType": "AWS_SMS",
+          "enabled": true,
+          "properties": {
+            "accessKeyId": "AKIA",
+            "secretAccessKey": "sec",
+            "region": "us-east-1"
+          }
+        }
+        """;
+    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    assertThat(factory.create(entity)).isInstanceOf(AwsSnsSmsChannel.class);
+  }
+
+  @Test
+  @DisplayName("创建 SMTP 邮件渠道")
+  void create_smtp_returnsSmtpChannel() throws Exception {
+    String json = """
+        {
+          "code": "smtp-factory",
+          "channelType": "EMAIL",
+          "providerType": "SMTP",
+          "enabled": true,
+          "properties": {
+            "host": "localhost",
+            "port": "25",
+            "username": "u",
+            "password": "p",
+            "from": "a@b.c"
+          }
+        }
+        """;
+    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    assertThat(factory.create(entity)).isInstanceOf(SmtpChannel.class);
+  }
+
+  @Test
   @DisplayName("返回支持的渠道类型列表")
   void getSupportedTypes_containsWebhookProviders() {
     assertThat(factory.getSupportedTypes()).containsExactly(
+        ChannelProviderType.ALIYUN_SMS,
+        ChannelProviderType.AWS_SMS,
+        ChannelProviderType.ALIYUN_EMAIL,
+        ChannelProviderType.AWS_EMAIL,
+        ChannelProviderType.SMTP,
         ChannelProviderType.APNS,
         ChannelProviderType.FCM,
         ChannelProviderType.DINGTALK,
