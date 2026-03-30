@@ -25,7 +25,6 @@
     <!-- Third-party dependencies versions -->
     <jjwt.version>0.11.5</jjwt.version>
     <google-auth.version>1.28.0</google-auth.version>
-    <tencentcloud-sms.version>3.1.1124</tencentcloud-sms.version>
     <greenmail.version>2.0.1</greenmail.version>
     <mustache.version>0.9.14</mustache.version>
   </properties>
@@ -80,13 +79,6 @@
       <artifactId>jjwt-jackson</artifactId>
       <version>${jjwt.version}</version>
       <scope>runtime</scope>
-    </dependency>
-
-    <!-- ==================== SMS Providers (Tencent SDK 保留供后续接入) ==================== -->
-    <dependency>
-      <groupId>com.tencentcloudapi</groupId>
-      <artifactId>tencentcloud-sdk-java-sms</artifactId>
-      <version>${tencentcloud-sms.version}</version>
     </dependency>
 
     <!-- ==================== Google OAuth2 ==================== -->
