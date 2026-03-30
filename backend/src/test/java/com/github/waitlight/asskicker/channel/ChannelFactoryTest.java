@@ -16,7 +16,8 @@ class ChannelFactoryTest {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  private final ChannelFactory factory = new ChannelFactory(WebClient.create());
+  private final ChannelFactory factory = new ChannelFactory(WebClient.create(),
+          ChannelTestObjectMappers.channelObjectMapper());
 
   @Test
   @DisplayName("创建APNS渠道")

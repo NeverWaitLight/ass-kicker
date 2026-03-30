@@ -26,12 +26,10 @@ import reactor.core.publisher.Mono;
 
 public class FeishuWebhookChannel extends Channel {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     private final Spec spec;
 
-    public FeishuWebhookChannel(ChannelProviderEntity provider, WebClient webClient) {
-        super(provider, webClient);
+    public FeishuWebhookChannel(ChannelProviderEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+        super(provider, webClient, objectMapper);
         this.spec = FeishuSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 
@@ -110,7 +108,7 @@ public class FeishuWebhookChannel extends Channel {
     }
 
     private byte[] toJsonBytes(Map<String, Object> payload) throws Exception {
-        return OBJECT_MAPPER.writeValueAsBytes(payload);
+        return objectMapper.writeValueAsBytes(payload);
     }
 
     private Mono<Map<String, Object>> postJson(String endpoint, byte[] bodyBytes, String providerName) {
@@ -123,7 +121,7 @@ public class FeishuWebhookChannel extends Channel {
                 .map(responseBody -> {
                     try {
                         @SuppressWarnings("unchecked")
-                        Map<String, Object> map = OBJECT_MAPPER.readValue(responseBody, Map.class);
+                        Map<String, Object> map = objectMapper.readValue(responseBody, Map.class);
                         return map;
                     } catch (Exception e) {
                         throw new IllegalStateException(providerName + " invalid response: " + responseBody, e);

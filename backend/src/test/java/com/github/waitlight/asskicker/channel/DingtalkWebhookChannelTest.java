@@ -45,7 +45,7 @@ class DingtalkWebhookChannelTest {
                 }
                 """, mockWebServer.url("/").toString().replaceAll("/$", ""));
         ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
-        channel = new DingtalkWebhookChannel(provider, WebClient.create());
+        channel = new DingtalkWebhookChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
     }
 
     @AfterEach

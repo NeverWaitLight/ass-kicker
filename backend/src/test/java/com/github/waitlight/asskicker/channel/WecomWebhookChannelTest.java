@@ -93,7 +93,7 @@ class WecomWebhookChannelTest {
                 }
                 """;
         ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
-        WecomWebhookChannel channel = new WecomWebhookChannel(provider, WebClient.create());
+        WecomWebhookChannel channel = new WecomWebhookChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
 
         UniMessage message = new UniMessage();
         message.setContent("test");
@@ -118,6 +118,6 @@ class WecomWebhookChannelTest {
                 }
                 """, baseUrl);
         ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
-        return new WecomWebhookChannel(provider, WebClient.create());
+        return new WecomWebhookChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
     }
 }

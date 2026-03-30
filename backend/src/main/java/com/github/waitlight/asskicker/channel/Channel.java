@@ -6,6 +6,7 @@ import java.util.regex.PatternSyntaxException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
@@ -27,9 +28,11 @@ public abstract class Channel {
     private final Pattern excludePattern;
 
     protected final WebClient webClient;
+    protected final ObjectMapper objectMapper;
 
-    protected Channel(ChannelProviderEntity entity, WebClient webClient) {
+    protected Channel(ChannelProviderEntity entity, WebClient webClient, ObjectMapper objectMapper) {
         this.webClient = webClient;
+        this.objectMapper = objectMapper;
         this.id = entity.getId();
         this.code = entity.getCode();
         this.channelType = entity.getChannelType();

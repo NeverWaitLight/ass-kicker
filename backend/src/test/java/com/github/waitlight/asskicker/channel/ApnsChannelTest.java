@@ -81,7 +81,7 @@ class ApnsChannelTest {
 
                 // Create provider configuration using mock server URL
                 ChannelProviderEntity provider = createProvider(mockServer.getBaseUrl());
-                channel = new ApnsChannel(provider, WebClient.create());
+                channel = new ApnsChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
         }
 
         // ==================== Success Scenarios ====================

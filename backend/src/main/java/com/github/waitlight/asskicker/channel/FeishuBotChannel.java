@@ -30,12 +30,10 @@ public class FeishuBotChannel extends Channel {
 
     private static final String DEFAULT_RECEIVE_ID_TYPE = "chat_id";
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-
     private final Spec spec;
 
-    public FeishuBotChannel(ChannelProviderEntity provider, WebClient webClient) {
-        super(provider, webClient);
+    public FeishuBotChannel(ChannelProviderEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+        super(provider, webClient, objectMapper);
         this.spec = FeishuBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 
@@ -52,7 +50,7 @@ public class FeishuBotChannel extends Channel {
             String text = buildPlainText(uniMessage);
             String contentJson;
             try {
-                contentJson = MAPPER.writeValueAsString(Map.of("text", text));
+                contentJson = objectMapper.writeValueAsString(Map.of("text", text));
             } catch (JsonProcessingException e) {
                 return Mono.error(e);
             }
@@ -139,7 +137,7 @@ public class FeishuBotChannel extends Channel {
     }
 
     private byte[] toJsonBytes(Map<String, Object> payload) throws Exception {
-        return MAPPER.writeValueAsBytes(payload);
+        return objectMapper.writeValueAsBytes(payload);
     }
 
     private Mono<Map<String, Object>> postJson(String uri, byte[] bodyBytes, String providerName) {
@@ -167,7 +165,7 @@ public class FeishuBotChannel extends Channel {
     @SuppressWarnings("unchecked")
     private Map<String, Object> parseJsonMap(String responseBody, String providerName) {
         try {
-            return MAPPER.readValue(responseBody, Map.class);
+            return objectMapper.readValue(responseBody, Map.class);
         } catch (Exception e) {
             throw new IllegalStateException(providerName + " invalid response: " + responseBody, e);
         }

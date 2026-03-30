@@ -8,7 +8,10 @@ import org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurity
 import org.springframework.boot.autoconfigure.web.reactive.ReactiveWebServerFactoryAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.web.reactive.function.client.WebClient;
+
+import com.github.waitlight.asskicker.config.ChannelObjectMapperConfig;
 
 /**
  * 仅用于 ChannelProvider 嵌入式 Mongo 测试，避免 {@code @DataMongoTest} 向上解析到
@@ -22,6 +25,7 @@ import org.springframework.web.reactive.function.client.WebClient;
  * {@code @ConditionalOnBean(MongoClient)} 不满足。
  */
 @SpringBootConfiguration
+@Import(ChannelObjectMapperConfig.class)
 @EnableAutoConfiguration(exclude = {
         KafkaAutoConfiguration.class,
         ReactiveSecurityAutoConfiguration.class,

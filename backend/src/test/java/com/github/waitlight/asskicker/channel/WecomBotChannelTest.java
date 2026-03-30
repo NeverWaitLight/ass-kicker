@@ -49,7 +49,7 @@ class WecomBotChannelTest {
                 }
                 """, base, base);
         ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
-        channel = new WecomBotChannel(provider, WebClient.create());
+        channel = new WecomBotChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
     }
 
     @AfterEach
@@ -127,7 +127,7 @@ class WecomBotChannelTest {
                 }
                 """;
         ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
-        WecomBotChannel badChannel = new WecomBotChannel(provider, WebClient.create());
+        WecomBotChannel badChannel = new WecomBotChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
 
         UniMessage message = new UniMessage();
         message.setContent("x");
@@ -155,7 +155,7 @@ class WecomBotChannelTest {
                 }
                 """;
         ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
-        WecomBotChannel ch = new WecomBotChannel(provider, WebClient.create());
+        WecomBotChannel ch = new WecomBotChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
 
         UniMessage message = new UniMessage();
         message.setContent("x");

@@ -30,12 +30,10 @@ import reactor.core.publisher.Mono;
  */
 public class WecomBotChannel extends Channel {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     private final Spec spec;
 
-    public WecomBotChannel(ChannelProviderEntity provider, WebClient webClient) {
-        super(provider, webClient);
+    public WecomBotChannel(ChannelProviderEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+        super(provider, webClient, objectMapper);
         this.spec = WecomBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 
@@ -135,7 +133,7 @@ public class WecomBotChannel extends Channel {
     }
 
     private byte[] toJsonBytes(Map<String, Object> payload) throws Exception {
-        return OBJECT_MAPPER.writeValueAsBytes(payload);
+        return objectMapper.writeValueAsBytes(payload);
     }
 
     private Mono<Map<String, Object>> postJson(String uri, byte[] bodyBytes, String providerName) {
@@ -184,7 +182,7 @@ public class WecomBotChannel extends Channel {
     @SuppressWarnings("unchecked")
     private Map<String, Object> parseJsonMap(String responseBody, String providerName) {
         try {
-            return OBJECT_MAPPER.readValue(responseBody, Map.class);
+            return objectMapper.readValue(responseBody, Map.class);
         } catch (Exception e) {
             throw new IllegalStateException(providerName + " invalid response: " + responseBody, e);
         }

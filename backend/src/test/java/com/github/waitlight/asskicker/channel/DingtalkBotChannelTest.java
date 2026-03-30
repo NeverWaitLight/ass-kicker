@@ -50,7 +50,7 @@ class DingtalkBotChannelTest {
                 }
                 """, base, base);
         ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
-        channel = new DingtalkBotChannel(provider, WebClient.create());
+        channel = new DingtalkBotChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
     }
 
     @AfterEach
@@ -141,7 +141,7 @@ class DingtalkBotChannelTest {
                 }
                 """;
         ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
-        DingtalkBotChannel ch = new DingtalkBotChannel(provider, WebClient.create());
+        DingtalkBotChannel ch = new DingtalkBotChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
 
         UniMessage message = new UniMessage();
         message.setContent("x");

@@ -27,12 +27,10 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class FcmChannel extends Channel {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     private final Spec spec;
 
-    public FcmChannel(ChannelProviderEntity provider, WebClient webClient) {
-        super(provider, webClient);
+    public FcmChannel(ChannelProviderEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+        super(provider, webClient, objectMapper);
         this.spec = FcmSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 
@@ -70,7 +68,7 @@ public class FcmChannel extends Channel {
                     .concatMap(token -> {
                         byte[] bodyBytes;
                         try {
-                            bodyBytes = buildFcmPayloadBytes(token, alertTitle, alertBody, extraData);
+                            bodyBytes = buildFcmPayloadBytes(objectMapper, token, alertTitle, alertBody, extraData);
                         } catch (Exception e) {
                             return Mono.error(e);
                         }
@@ -86,7 +84,7 @@ public class FcmChannel extends Channel {
         return base + "/v1/projects/" + projectId + "/messages:send";
     }
 
-    private static byte[] buildFcmPayloadBytes(String token, String title, String body,
+    private static byte[] buildFcmPayloadBytes(ObjectMapper objectMapper, String token, String title, String body,
             Map<String, Object> extraData) throws Exception {
         Map<String, Object> notification = new LinkedHashMap<>();
         if (StringUtils.isNotBlank(title)) {
@@ -124,7 +122,7 @@ public class FcmChannel extends Channel {
 
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("message", message);
-        return OBJECT_MAPPER.writeValueAsBytes(payload);
+        return objectMapper.writeValueAsBytes(payload);
     }
 
     private Mono<String> postFcmMessage(String accessToken, String endpoint, byte[] bodyBytes) {
@@ -138,7 +136,7 @@ public class FcmChannel extends Channel {
                 .map(responseBody -> {
                     try {
                         @SuppressWarnings("unchecked")
-                        Map<String, Object> resp = OBJECT_MAPPER.readValue(responseBody, Map.class);
+                        Map<String, Object> resp = objectMapper.readValue(responseBody, Map.class);
                         Object name = resp.get("name");
                         return name != null ? name.toString() : "ok";
                     } catch (Exception e) {

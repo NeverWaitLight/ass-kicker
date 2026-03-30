@@ -49,7 +49,7 @@ class FeishuBotChannelTest {
                 }
                 """, base, base);
         ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
-        channel = new FeishuBotChannel(provider, WebClient.create());
+        channel = new FeishuBotChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
     }
 
     @AfterEach
@@ -137,7 +137,7 @@ class FeishuBotChannelTest {
                 }
                 """;
         ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
-        FeishuBotChannel ch = new FeishuBotChannel(provider, WebClient.create());
+        FeishuBotChannel ch = new FeishuBotChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
 
         UniMessage message = new UniMessage();
         message.setContent("x");

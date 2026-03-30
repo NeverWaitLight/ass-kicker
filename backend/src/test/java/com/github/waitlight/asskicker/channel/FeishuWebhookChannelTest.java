@@ -45,7 +45,7 @@ class FeishuWebhookChannelTest {
                 }
                 """, mockWebServer.url("/").toString().replaceAll("/$", ""));
         ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
-        channel = new FeishuWebhookChannel(provider, WebClient.create());
+        channel = new FeishuWebhookChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
     }
 
     @AfterEach

@@ -52,7 +52,8 @@ class ChannelManagerRefreshFailureTest {
                 }
                 """;
         ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
-        Channel channel = new NoOpChannel(entity, WebClient.create());
+        Channel channel = new NoOpChannel(entity, WebClient.create(),
+                ChannelTestObjectMappers.channelObjectMapper());
         ConcurrentHashMap<String, Channel> map = new ConcurrentHashMap<>();
         map.put("id-1", channel);
         ReflectionTestUtils.setField(channelManager, "cache", map);
@@ -67,8 +68,8 @@ class ChannelManagerRefreshFailureTest {
     /** Avoids MapStruct-backed channels so this test does not depend on generated mapper classes. */
     private static final class NoOpChannel extends Channel {
 
-        NoOpChannel(ChannelProviderEntity entity, WebClient webClient) {
-            super(entity, webClient);
+        NoOpChannel(ChannelProviderEntity entity, WebClient webClient, ObjectMapper objectMapper) {
+            super(entity, webClient, objectMapper);
         }
 
         @Override

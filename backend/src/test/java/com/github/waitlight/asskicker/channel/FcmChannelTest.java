@@ -70,7 +70,7 @@ class FcmChannelTest {
         mockServer.start();
 
         ChannelProviderEntity provider = createProvider(mockServer.getBaseUrl());
-        channel = new FcmChannel(provider, WebClient.create());
+        channel = new FcmChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
     }
 
     @AfterEach

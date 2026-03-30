@@ -36,12 +36,10 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class ApnsChannel extends Channel {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     private final Spec spec;
 
-    public ApnsChannel(ChannelProviderEntity provider, WebClient webClient) {
-        super(provider, webClient);
+    public ApnsChannel(ChannelProviderEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+        super(provider, webClient, objectMapper);
         this.spec = ApnsSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 
@@ -85,7 +83,7 @@ public class ApnsChannel extends Channel {
                     .flatMapMany(jwt -> {
                         byte[] bodyBytes;
                         try {
-                            bodyBytes = buildApnsPayloadBytes(alertTitle, alertBody, extraData);
+                            bodyBytes = buildApnsPayloadBytes(objectMapper, alertTitle, alertBody, extraData);
                         } catch (Exception e) {
                             return Flux.error(e);
                         }
@@ -125,7 +123,8 @@ public class ApnsChannel extends Channel {
                 .compact();
     }
 
-    private static byte[] buildApnsPayloadBytes(String title, String body, Map<String, Object> extraData)
+    private static byte[] buildApnsPayloadBytes(ObjectMapper objectMapper, String title, String body,
+            Map<String, Object> extraData)
             throws Exception {
         Map<String, Object> alert = new LinkedHashMap<>();
         if (StringUtils.isNotBlank(title)) {
@@ -145,7 +144,7 @@ public class ApnsChannel extends Channel {
                 }
             }
         }
-        return OBJECT_MAPPER.writeValueAsBytes(payload);
+        return objectMapper.writeValueAsBytes(payload);
     }
 
     private static String normalizeApnsEndpointBase(String url) {

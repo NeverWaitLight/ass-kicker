@@ -31,12 +31,10 @@ public class DingtalkBotChannel extends Channel {
     private static final String HEADER_ACCESS_TOKEN = "x-acs-dingtalk-access-token";
     private static final String MSG_KEY_SAMPLE_TEXT = "sampleText";
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-
     private final Spec spec;
 
-    public DingtalkBotChannel(ChannelProviderEntity provider, WebClient webClient) {
-        super(provider, webClient);
+    public DingtalkBotChannel(ChannelProviderEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+        super(provider, webClient, objectMapper);
         this.spec = DingtalkBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 
@@ -53,7 +51,7 @@ public class DingtalkBotChannel extends Channel {
             String text = buildPlainText(uniMessage);
             String msgParamJson;
             try {
-                msgParamJson = MAPPER.writeValueAsString(Map.of("content", text));
+                msgParamJson = objectMapper.writeValueAsString(Map.of("content", text));
             } catch (JsonProcessingException e) {
                 return Mono.error(e);
             }
@@ -143,7 +141,7 @@ public class DingtalkBotChannel extends Channel {
     }
 
     private byte[] toJsonBytes(Map<String, Object> payload) throws Exception {
-        return MAPPER.writeValueAsBytes(payload);
+        return objectMapper.writeValueAsBytes(payload);
     }
 
     private Mono<Map<String, Object>> postJson(String uri, byte[] bodyBytes, String providerName) {
@@ -171,7 +169,7 @@ public class DingtalkBotChannel extends Channel {
     @SuppressWarnings("unchecked")
     private Map<String, Object> parseJsonMap(String responseBody, String providerName) {
         try {
-            return MAPPER.readValue(responseBody, Map.class);
+            return objectMapper.readValue(responseBody, Map.class);
         } catch (Exception e) {
             throw new IllegalStateException(providerName + " invalid response: " + responseBody, e);
         }
