@@ -21,12 +21,12 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import reactor.test.StepVerifier;
 
-class FeishuWebhookChannelHandlerTest {
+class DingtalkWebhookChannelTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private MockWebServer mockWebServer;
-    private FeishuWebhookChannelHandler handler;
+    private DingtalkWebhookChannel channel;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -35,17 +35,17 @@ class FeishuWebhookChannelHandlerTest {
 
         String providerJson = String.format("""
                 {
-                  "code": "feishu-webhook-test",
+                  "code": "dingtalk-webhook-test",
                   "channelType": "IM",
-                  "providerType": "FEISHU",
+                  "providerType": "DINGTALK",
                   "enabled": true,
                   "properties": {
-                    "url": "%s/open-apis/bot/v2/hook"
+                    "url": "%s/robot/send"
                   }
                 }
                 """, mockWebServer.url("/").toString().replaceAll("/$", ""));
         ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
-        handler = new FeishuWebhookChannelHandler(provider, WebClient.create());
+        channel = new DingtalkWebhookChannel(provider, WebClient.create());
     }
 
     @AfterEach
@@ -59,37 +59,38 @@ class FeishuWebhookChannelHandlerTest {
     void send_success_verifiesRequestBodyAndPath() throws Exception {
         mockWebServer.enqueue(new MockResponse().setResponseCode(200)
                 .setHeader("Content-Type", "application/json")
-                .setBody("{\"code\":0,\"msg\":\"success\"}"));
+                .setBody("{\"errcode\":0,\"errmsg\":\"ok\"}"));
 
         UniMessage message = new UniMessage();
-        message.setTitle("标题");
-        message.setContent("内容");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.FEISHU, "token-001");
+        message.setTitle("告警");
+        message.setContent("服务异常");
+        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.DINGTALK, "abc-token");
 
-        StepVerifier.create(handler.send(message, address))
-                .expectNext("FEISHU ok 1 recipient(s)")
+        StepVerifier.create(channel.send(message, address))
+                .expectNext("DINGTALK ok 1 recipient(s)")
                 .verifyComplete();
 
         RecordedRequest request = mockWebServer.takeRequest(5, TimeUnit.SECONDS);
-        assertThat(request.getPath()).isEqualTo("/open-apis/bot/v2/hook/token-001");
+        assertThat(request.getPath()).isEqualTo("/robot/send?access_token=abc-token");
         JsonNode payload = MAPPER.readTree(request.getBody().readUtf8());
-        assertThat(payload.get("msg_type").asText()).isEqualTo("text");
-        assertThat(payload.get("content").get("text").asText()).contains("标题").contains("内容");
+        assertThat(payload.get("msgtype").asText()).isEqualTo("markdown");
+        assertThat(payload.get("markdown").get("title").asText()).isEqualTo("告警");
+        assertThat(payload.get("markdown").get("text").asText()).contains("服务异常");
     }
 
     @Test
     void send_platformFailure_returnsMappedException() {
         mockWebServer.enqueue(new MockResponse().setResponseCode(200)
                 .setHeader("Content-Type", "application/json")
-                .setBody("{\"code\":19024,\"msg\":\"token expired\"}"));
+                .setBody("{\"errcode\":310000,\"errmsg\":\"invalid token\"}"));
 
         UniMessage message = new UniMessage();
         message.setContent("test");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.FEISHU, "bad-token");
+        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.DINGTALK, "bad-token");
 
-        StepVerifier.create(handler.send(message, address))
+        StepVerifier.create(channel.send(message, address))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
-                        && e.getMessage().contains("FEISHU platform failure"))
+                        && e.getMessage().contains("DINGTALK platform failure"))
                 .verify();
     }
 
@@ -97,11 +98,11 @@ class FeishuWebhookChannelHandlerTest {
     void send_emptyRecipients_returnsIllegalArgumentException() {
         UniMessage message = new UniMessage();
         message.setContent("test");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.FEISHU);
+        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.DINGTALK);
 
-        StepVerifier.create(handler.send(message, address))
+        StepVerifier.create(channel.send(message, address))
                 .expectErrorMatches(e -> e instanceof IllegalArgumentException
-                        && e.getMessage().contains("FEISHU recipients required"))
+                        && e.getMessage().contains("DINGTALK recipients required"))
                 .verify();
     }
 }

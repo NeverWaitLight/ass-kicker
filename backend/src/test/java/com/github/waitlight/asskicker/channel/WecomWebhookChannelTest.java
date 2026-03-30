@@ -20,7 +20,7 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import reactor.test.StepVerifier;
 
-class WecomWebhookChannelHandlerTest {
+class WecomWebhookChannelTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -37,7 +37,7 @@ class WecomWebhookChannelHandlerTest {
     void send_success_verifiesRequestBodyAndPath() throws Exception {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
-        WecomWebhookChannelHandler handler = createHandler(mockWebServer.url("/").toString().replaceAll("/$", ""));
+        WecomWebhookChannel channel = createHandler(mockWebServer.url("/").toString().replaceAll("/$", ""));
 
         mockWebServer.enqueue(new MockResponse().setResponseCode(200)
                 .setHeader("Content-Type", "application/json")
@@ -48,7 +48,7 @@ class WecomWebhookChannelHandlerTest {
         message.setContent("正文");
         UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.WECOM, "wecom-key");
 
-        StepVerifier.create(handler.send(message, address))
+        StepVerifier.create(channel.send(message, address))
                 .expectNext("WECOM ok 1 recipient(s)")
                 .verifyComplete();
 
@@ -63,7 +63,7 @@ class WecomWebhookChannelHandlerTest {
     void send_platformFailure_returnsMappedException() throws Exception {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
-        WecomWebhookChannelHandler handler = createHandler(mockWebServer.url("/").toString().replaceAll("/$", ""));
+        WecomWebhookChannel channel = createHandler(mockWebServer.url("/").toString().replaceAll("/$", ""));
 
         mockWebServer.enqueue(new MockResponse().setResponseCode(200)
                 .setHeader("Content-Type", "application/json")
@@ -73,7 +73,7 @@ class WecomWebhookChannelHandlerTest {
         message.setContent("test");
         UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.WECOM, "bad-key");
 
-        StepVerifier.create(handler.send(message, address))
+        StepVerifier.create(channel.send(message, address))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
                         && e.getMessage().contains("WECOM platform failure"))
                 .verify();
@@ -93,19 +93,19 @@ class WecomWebhookChannelHandlerTest {
                 }
                 """;
         ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
-        WecomWebhookChannelHandler handler = new WecomWebhookChannelHandler(provider, WebClient.create());
+        WecomWebhookChannel channel = new WecomWebhookChannel(provider, WebClient.create());
 
         UniMessage message = new UniMessage();
         message.setContent("test");
         UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.WECOM, "wecom-key");
 
-        StepVerifier.create(handler.send(message, address))
+        StepVerifier.create(channel.send(message, address))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
                         && e.getMessage().contains("WECOM spec requires url"))
                 .verify();
     }
 
-    private WecomWebhookChannelHandler createHandler(String baseUrl) throws Exception {
+    private WecomWebhookChannel createHandler(String baseUrl) throws Exception {
         String providerJson = String.format("""
                 {
                   "code": "wecom-webhook-test",
@@ -118,6 +118,6 @@ class WecomWebhookChannelHandlerTest {
                 }
                 """, baseUrl);
         ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
-        return new WecomWebhookChannelHandler(provider, WebClient.create());
+        return new WecomWebhookChannel(provider, WebClient.create());
     }
 }

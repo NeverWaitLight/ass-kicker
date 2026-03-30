@@ -18,37 +18,37 @@ import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public class WecomWebhookChannelHandler extends ChannelHandler {
+public class FeishuWebhookChannel extends Channel {
 
     private final Spec spec;
     private final WebhookChannelSupport webhookSupport;
 
-    public WecomWebhookChannelHandler(ChannelProviderEntity provider, WebClient webClient) {
+    public FeishuWebhookChannel(ChannelProviderEntity provider, WebClient webClient) {
         super(webClient);
-        this.spec = WecomSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.spec = FeishuSpecMapper.INSTANCE.toSpec(provider.getProperties());
         this.webhookSupport = new WebhookChannelSupport(webClient);
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
-            List<String> recipients = webhookSupport.normalizeRecipients(uniAddress, "WECOM");
-            String baseUrl = webhookSupport.requireBaseUrl(spec.url(), "WECOM");
+            List<String> recipients = webhookSupport.normalizeRecipients(uniAddress, "FEISHU");
+            String baseUrl = webhookSupport.requireBaseUrl(spec.url(), "FEISHU");
 
             return Flux.fromIterable(recipients)
                     .concatMap(recipient -> {
-                        String endpoint = webhookSupport.buildQueryUrl(baseUrl, "key", recipient);
+                        String endpoint = webhookSupport.buildPathUrl(baseUrl, recipient);
                         byte[] body;
                         try {
                             body = webhookSupport.toJsonBytes(buildPayload(uniMessage));
                         } catch (Exception e) {
                             return Mono.error(e);
                         }
-                        return webhookSupport.postJson(endpoint, body, "WECOM")
+                        return webhookSupport.postJson(endpoint, body, "FEISHU")
                                 .flatMap(this::resolveResponse);
                     })
                     .collect(Collectors.joining(","))
-                    .map(ignore -> "WECOM ok " + recipients.size() + " recipient(s)");
+                    .map(ignore -> "FEISHU ok " + recipients.size() + " recipient(s)");
         });
     }
 
@@ -58,20 +58,20 @@ public class WecomWebhookChannelHandler extends ChannelHandler {
         String text = StringUtils.isNotBlank(title) ? title + "\n" + StringUtils.defaultString(content)
                 : StringUtils.defaultString(content);
 
-        Map<String, Object> markdown = new LinkedHashMap<>();
-        markdown.put("content", text);
+        Map<String, Object> contentMap = new LinkedHashMap<>();
+        contentMap.put("text", text);
 
         Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("msgtype", "markdown");
-        payload.put("markdown", markdown);
+        payload.put("msg_type", "text");
+        payload.put("content", contentMap);
         return payload;
     }
 
     private Mono<String> resolveResponse(Map<String, Object> response) {
-        int errcode = intValue(response.get("errcode"), -1);
-        if (errcode != 0) {
+        int code = intValue(response.get("code"), -1);
+        if (code != 0) {
             return Mono.error(new IllegalStateException(
-                    "WECOM platform failure errcode=" + errcode + " errmsg=" + String.valueOf(response.get("errmsg"))));
+                    "FEISHU platform failure code=" + code + " msg=" + String.valueOf(response.get("msg"))));
         }
         return Mono.just("ok");
     }
@@ -91,9 +91,9 @@ public class WecomWebhookChannelHandler extends ChannelHandler {
 }
 
 @Mapper
-interface WecomSpecMapper {
-    WecomSpecMapper INSTANCE = Mappers.getMapper(WecomSpecMapper.class);
+interface FeishuSpecMapper {
+    FeishuSpecMapper INSTANCE = Mappers.getMapper(FeishuSpecMapper.class);
 
     @Mapping(target = "url", source = "properties.url")
-    WecomWebhookChannelHandler.Spec toSpec(Map<String, String> properties);
+    FeishuWebhookChannel.Spec toSpec(Map<String, String> properties);
 }

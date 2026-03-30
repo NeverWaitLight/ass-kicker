@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * - Error scenarios (400, 401, 404, 500)
  * - Request validation (headers, payload structure)
  */
-class FcmChannelHandlerTest {
+class FcmChannelTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final String PROJECT_ID = "test-project-12345";
@@ -37,7 +37,7 @@ class FcmChannelHandlerTest {
     private static final String DEVICE_TOKEN_2 = "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0011223344556";
 
     private FcmMockServer mockServer;
-    private FcmChannelHandler handler;
+    private FcmChannel channel;
 
     /**
      * Creates a ChannelProviderEntity configured for testing.
@@ -70,7 +70,7 @@ class FcmChannelHandlerTest {
         mockServer.start();
 
         ChannelProviderEntity provider = createProvider(mockServer.getBaseUrl());
-        handler = new FcmChannelHandler(provider, WebClient.create());
+        channel = new FcmChannel(provider, WebClient.create());
     }
 
     @AfterEach
@@ -94,7 +94,7 @@ class FcmChannelHandlerTest {
 
         String expectedName = "projects/" + PROJECT_ID + "/messages/" + messageId;
 
-        StepVerifier.create(handler.send(message, address))
+        StepVerifier.create(channel.send(message, address))
                 .expectNext("FCM ok 1 device(s) name=" + expectedName)
                 .verifyComplete();
 
@@ -122,7 +122,7 @@ class FcmChannelHandlerTest {
         String name1 = "projects/" + PROJECT_ID + "/messages/" + messageId1;
         String name2 = "projects/" + PROJECT_ID + "/messages/" + messageId2;
 
-        StepVerifier.create(handler.send(message, address))
+        StepVerifier.create(channel.send(message, address))
                 .assertNext(result -> {
                     assertThat(result).startsWith("FCM ok 2 device(s) name=");
                     assertThat(result).contains(name1);
@@ -151,7 +151,7 @@ class FcmChannelHandlerTest {
         message.setContent("Content without title");
         UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
 
-        StepVerifier.create(handler.send(message, address))
+        StepVerifier.create(channel.send(message, address))
                 .assertNext(result -> assertThat(result).startsWith("FCM ok 1 device(s) name="))
                 .verifyComplete();
 
@@ -167,7 +167,7 @@ class FcmChannelHandlerTest {
         message.setContent("Test");
         UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
 
-        StepVerifier.create(handler.send(message, address))
+        StepVerifier.create(channel.send(message, address))
                 .assertNext(result -> {
                     assertThat(result).startsWith("FCM ok 1 device(s) name=");
                     assertThat(result).contains("projects/" + PROJECT_ID + "/messages/");
@@ -185,7 +185,7 @@ class FcmChannelHandlerTest {
         message.setContent("Test");
         UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
 
-        StepVerifier.create(handler.send(message, address))
+        StepVerifier.create(channel.send(message, address))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
                         && e.getMessage().contains("FCM 401"))
                 .verify();
@@ -199,7 +199,7 @@ class FcmChannelHandlerTest {
         message.setContent("Test");
         UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
 
-        StepVerifier.create(handler.send(message, address))
+        StepVerifier.create(channel.send(message, address))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
                         && e.getMessage().contains("FCM 400"))
                 .verify();
@@ -213,7 +213,7 @@ class FcmChannelHandlerTest {
         message.setContent("Test");
         UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
 
-        StepVerifier.create(handler.send(message, address))
+        StepVerifier.create(channel.send(message, address))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
                         && e.getMessage().contains("FCM 404"))
                 .verify();
@@ -227,7 +227,7 @@ class FcmChannelHandlerTest {
         message.setContent("Test");
         UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
 
-        StepVerifier.create(handler.send(message, address))
+        StepVerifier.create(channel.send(message, address))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
                         && e.getMessage().contains("FCM 500"))
                 .verify();
@@ -241,7 +241,7 @@ class FcmChannelHandlerTest {
         message.setContent("Test");
         UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM);
 
-        StepVerifier.create(handler.send(message, address))
+        StepVerifier.create(channel.send(message, address))
                 .expectErrorMatches(e -> e instanceof IllegalArgumentException
                         && e.getMessage().contains("FCM recipients required"))
                 .verify();
@@ -252,7 +252,7 @@ class FcmChannelHandlerTest {
         UniMessage message = new UniMessage();
         message.setContent("Test");
 
-        StepVerifier.create(handler.send(message, null))
+        StepVerifier.create(channel.send(message, null))
                 .expectErrorMatches(e -> e instanceof IllegalArgumentException
                         && e.getMessage().contains("FCM recipients required"))
                 .verify();
@@ -266,7 +266,7 @@ class FcmChannelHandlerTest {
         message.setContent("Test");
         UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
 
-        StepVerifier.create(handler.send(message, address))
+        StepVerifier.create(channel.send(message, address))
                 .expectNextCount(1)
                 .verifyComplete();
 
@@ -285,7 +285,7 @@ class FcmChannelHandlerTest {
         message.setContent("World");
         UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
 
-        StepVerifier.create(handler.send(message, address))
+        StepVerifier.create(channel.send(message, address))
                 .expectNextCount(1)
                 .verifyComplete();
 
@@ -302,7 +302,7 @@ class FcmChannelHandlerTest {
         message.setContent("Test");
         UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
 
-        StepVerifier.create(handler.send(message, address))
+        StepVerifier.create(channel.send(message, address))
                 .expectNextCount(1)
                 .verifyComplete();
 

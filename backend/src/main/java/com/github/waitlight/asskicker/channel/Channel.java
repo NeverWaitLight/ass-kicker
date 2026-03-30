@@ -6,11 +6,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import reactor.core.publisher.Mono;
 
-public abstract class ChannelHandler {
+public abstract class Channel {
 
     protected final WebClient webClient;
 
-    protected ChannelHandler(WebClient webClient) {
+    protected Channel(WebClient webClient) {
         this.webClient = webClient;
     }
 

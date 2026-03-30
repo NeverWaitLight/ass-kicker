@@ -21,23 +21,23 @@ public class ChannelFactory {
     @Qualifier("sharedWebClient")
     private final WebClient webClient;
 
-    public ChannelHandler create(ChannelProviderEntity provider) {
+    public Channel create(ChannelProviderEntity provider) {
         Assert.notNull(provider, "ChannelProviderEntity must not be null");
 
         try {
             return switch (provider.getProviderType()) {
-                case APNS -> new ApnsChannelHandler(provider, webClient);
-                case FCM -> new FcmChannelHandler(provider, webClient);
-                case DINGTALK -> new DingtalkWebhookChannelHandler(provider, webClient);
-                case WECOM -> new WecomWebhookChannelHandler(provider, webClient);
-                case FEISHU -> new FeishuWebhookChannelHandler(provider, webClient);
+                case APNS -> new ApnsChannel(provider, webClient);
+                case FCM -> new FcmChannel(provider, webClient);
+                case DINGTALK -> new DingtalkWebhookChannel(provider, webClient);
+                case WECOM -> new WecomWebhookChannel(provider, webClient);
+                case FEISHU -> new FeishuWebhookChannel(provider, webClient);
                 default -> {
                     log.warn("Unsupported channel provider type: {}", provider.getProviderType());
                     yield null;
                 }
             };
         } catch (Exception e) {
-            log.error("Failed to create ChannelHandler for channel {}: {}", provider.getCode(), e.getMessage(), e);
+            log.error("Failed to create Channel for channel {}: {}", provider.getCode(), e.getMessage(), e);
             return null;
         }
     }

@@ -34,13 +34,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
-public class ApnsChannelHandler extends ChannelHandler {
+public class ApnsChannel extends Channel {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final Spec spec;
 
-    public ApnsChannelHandler(ChannelProviderEntity provider, WebClient webClient) {
+    public ApnsChannel(ChannelProviderEntity provider, WebClient webClient) {
         super(webClient);
         this.spec = ApnsSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
@@ -205,5 +205,5 @@ interface ApnsSpecMapper {
     @Mapping(target = "keyId", source = "properties.keyId")
     @Mapping(target = "privateKeyPem", source = "properties.privateKeyPem")
     @Mapping(target = "apnsId", source = "properties.apnsId")
-    ApnsChannelHandler.Spec toSpec(Map<String, String> properties);
+    ApnsChannel.Spec toSpec(Map<String, String> properties);
 }

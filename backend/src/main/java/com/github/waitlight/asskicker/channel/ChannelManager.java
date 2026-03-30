@@ -25,13 +25,13 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class ChannelManager {
 
-    private static final Comparator<ChannelHandlerWrapper> BY_CODE = Comparator
-            .comparing(ChannelHandlerWrapper::getCode);
+    private static final Comparator<ChannelWrapper> BY_CODE = Comparator
+            .comparing(ChannelWrapper::getCode);
 
     private final ChannelProviderService channelProviderService;
     private final ChannelFactory channelFactory;
 
-    private final ConcurrentHashMap<String, ChannelHandlerWrapper> cache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ChannelWrapper> cache = new ConcurrentHashMap<>();
     private final ReentrantLock refreshLock = new ReentrantLock();
 
     @PostConstruct
@@ -42,57 +42,57 @@ public class ChannelManager {
         }
         int loaded = 0;
         for (ChannelProviderEntity entity : enabled) {
-            ChannelHandler handler = channelFactory.create(entity);
-            if (handler == null) {
-                log.warn("Skip channel {}, handler creation returned null", entity.getCode());
+            Channel channel = channelFactory.create(entity);
+            if (channel == null) {
+                log.warn("Skip channel {}, channel creation returned null", entity.getCode());
                 continue;
             }
-            ChannelHandlerWrapper wrapper = new ChannelHandlerWrapper(entity, handler);
+            ChannelWrapper wrapper = new ChannelWrapper(entity, channel);
             cache.put(entity.getId(), wrapper);
             loaded++;
         }
-        log.info("Loaded {} channel handler(s)", loaded);
+        log.info("Loaded {} channel channel(s)", loaded);
     }
 
-    public Mono<ChannelHandler> selectHandler(ChannelType channelType, String targetAddress) {
+    public Mono<Channel> selectChannel(ChannelType channelType, String targetAddress) {
         String addr = targetAddress == null ? "" : targetAddress;
-        List<ChannelHandlerWrapper> matching = cache.values().stream()
+        List<ChannelWrapper> matching = cache.values().stream()
                 .filter(w -> w.getChannelType() == channelType)
-                .filter(ChannelHandlerWrapper::isEnabled)
+                .filter(ChannelWrapper::isEnabled)
                 .filter(w -> !w.matchesExclude(addr))
                 .toList();
         if (matching.isEmpty()) {
             return Mono.empty();
         }
-        List<ChannelHandlerWrapper> priorityMatches = matching.stream()
+        List<ChannelWrapper> priorityMatches = matching.stream()
                 .filter(w -> w.matchesPriority(addr))
                 .sorted(BY_CODE)
                 .toList();
-        List<ChannelHandlerWrapper> candidates = priorityMatches.isEmpty()
+        List<ChannelWrapper> candidates = priorityMatches.isEmpty()
                 ? matching.stream().sorted(BY_CODE).toList()
                 : priorityMatches;
-        ChannelHandlerWrapper chosen = candidates.get(0);
+        ChannelWrapper chosen = candidates.get(0);
         log.debug("Selected channel {} for target address {}", chosen.getCode(), targetAddress);
-        return Mono.just(chosen.getHandler());
+        return Mono.just(chosen.getChannel());
     }
 
     public void refresh() {
         refreshLock.lock();
         try {
-            ConcurrentHashMap<String, ChannelHandlerWrapper> next = new ConcurrentHashMap<>();
+            ConcurrentHashMap<String, ChannelWrapper> next = new ConcurrentHashMap<>();
             List<ChannelProviderEntity> enabledProvider = channelProviderService.findEnabled().collectList().block();
             if (enabledProvider == null) {
                 enabledProvider = List.of();
             }
 
             for (ChannelProviderEntity provider : enabledProvider) {
-                ChannelHandler handler = channelFactory.create(provider);
-                ChannelHandlerWrapper wrapper = new ChannelHandlerWrapper(provider, handler);
+                Channel channel = channelFactory.create(provider);
+                ChannelWrapper wrapper = new ChannelWrapper(provider, channel);
                 next.put(provider.getId(), wrapper);
             }
             cache.clear();
             cache.putAll(next);
-            log.info("Refreshed channel cache, {} handler(s)", next.size());
+            log.info("Refreshed channel cache, {} channel(s)", next.size());
         } catch (Exception e) {
             log.error("Channel cache refresh failed, keeping previous cache", e);
         } finally {
@@ -100,21 +100,21 @@ public class ChannelManager {
         }
     }
 
-    public ChannelHandler getHandlerById(String id) {
-        ChannelHandlerWrapper w = cache.get(id);
-        return w == null ? null : w.getHandler();
+    public Channel getChannelById(String id) {
+        ChannelWrapper w = cache.get(id);
+        return w == null ? null : w.getChannel();
     }
 
-    public List<ChannelHandler> getAllHandlers() {
-        return cache.values().stream().map(ChannelHandlerWrapper::getHandler).toList();
+    public List<Channel> getAllChannels() {
+        return cache.values().stream().map(ChannelWrapper::getChannel).toList();
     }
 
-    public int getHandlerCount() {
+    public int getChannelCount() {
         return cache.size();
     }
 
     @Getter
-    static final class ChannelHandlerWrapper {
+    static final class ChannelWrapper {
 
         private final String id;
         private final String code;
@@ -122,14 +122,14 @@ public class ChannelManager {
         private final boolean enabled;
         private final Pattern priorityPattern;
         private final Pattern excludePattern;
-        private final ChannelHandler handler;
+        private final Channel channel;
 
-        ChannelHandlerWrapper(ChannelProviderEntity entity, ChannelHandler handler) {
+        ChannelWrapper(ChannelProviderEntity entity, Channel channel) {
             this.id = entity.getId();
             this.code = entity.getCode();
             this.channelType = entity.getChannelType();
             this.enabled = entity.isEnabled();
-            this.handler = handler;
+            this.channel = channel;
             this.priorityPattern = compilePattern(entity.getCode(), entity.getPriorityAddressRegex(),
                     "priorityAddressRegex");
             this.excludePattern = compilePattern(entity.getCode(), entity.getExcludeAddressRegex(),

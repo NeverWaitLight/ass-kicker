@@ -22,8 +22,8 @@ public class Sender {
 
     public Mono<String> send(UniSendMessageReq req, UniAddress uniAddress) {
         return messageTemplateEngine.fill(req).flatMap(uniMessage -> {
-            return channelManager.selectHandler(uniAddress.getChannelType(), uniAddress.getChannelProviderKey())
-                    .flatMap(channelHandler -> channelHandler.send(uniMessage, uniAddress)).map(sendResult -> {
+            return channelManager.selectChannel(uniAddress.getChannelType(), uniAddress.getChannelProviderKey())
+                    .flatMap(channel -> channel.send(uniMessage, uniAddress)).map(sendResult -> {
                         SendRecordEntity sendRecordEntity = new SendRecordEntity();
                         sendRecordEntity.setTaskId(null);
                         sendRecordEntity.setTemplateCode(req.getTemplateCode());

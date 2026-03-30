@@ -56,9 +56,9 @@ class ChannelManagerRefreshFailureTest {
                 }
                 """;
         ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
-        ApnsChannelHandler handler = new ApnsChannelHandler(entity, WebClient.create());
-        ChannelManager.ChannelHandlerWrapper wrapper = new ChannelManager.ChannelHandlerWrapper(entity, handler);
-        ConcurrentHashMap<String, ChannelManager.ChannelHandlerWrapper> map = new ConcurrentHashMap<>();
+        ApnsChannel channel = new ApnsChannel(entity, WebClient.create());
+        ChannelManager.ChannelWrapper wrapper = new ChannelManager.ChannelWrapper(entity, channel);
+        ConcurrentHashMap<String, ChannelManager.ChannelWrapper> map = new ConcurrentHashMap<>();
         map.put("id-1", wrapper);
         ReflectionTestUtils.setField(channelManager, "cache", map);
 
@@ -66,6 +66,6 @@ class ChannelManagerRefreshFailureTest {
 
         channelManager.refresh();
 
-        assertThat(channelManager.getHandlerCount()).isEqualTo(1);
+        assertThat(channelManager.getChannelCount()).isEqualTo(1);
     }
 }

@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * - Error scenarios (400, 401, 410, 500)
  * - Request validation (headers, payload structure)
  */
-class ApnsChannelHandlerTest {
+class ApnsChannelTest {
 
         private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -36,7 +36,7 @@ class ApnsChannelHandlerTest {
         private static final String DEVICE_TOKEN_2 = "1122334455667788990011223344556677889900aabbccddeeff001122334455";
 
         private ApnsMockServer mockServer;
-        private ApnsChannelHandler handler;
+        private ApnsChannel channel;
 
         /**
          * Creates a ChannelProviderEntity configured for testing.
@@ -81,7 +81,7 @@ class ApnsChannelHandlerTest {
 
                 // Create provider configuration using mock server URL
                 ChannelProviderEntity provider = createProvider(mockServer.getBaseUrl());
-                handler = new ApnsChannelHandler(provider, WebClient.create());
+                channel = new ApnsChannel(provider, WebClient.create());
         }
 
         // ==================== Success Scenarios ====================
@@ -103,7 +103,7 @@ class ApnsChannelHandlerTest {
                 message.setContent("Test Content");
                 UniAddress address = UniAddress.ofPush(ChannelProviderType.APNS, DEVICE_TOKEN_1);
 
-                StepVerifier.create(handler.send(message, address))
+                StepVerifier.create(channel.send(message, address))
                                 .expectNext("APNs ok 1 device(s) apns-id=" + apnsId)
                                 .verifyComplete();
 
@@ -129,7 +129,7 @@ class ApnsChannelHandlerTest {
                                 ChannelProviderType.APNS,
                                 DEVICE_TOKEN_1, DEVICE_TOKEN_2);
 
-                StepVerifier.create(handler.send(message, address))
+                StepVerifier.create(channel.send(message, address))
                                 .expectNext("APNs ok 2 device(s) apns-id=" + apnsId1 + "," + apnsId2)
                                 .verifyComplete();
 
@@ -160,7 +160,7 @@ class ApnsChannelHandlerTest {
                 message.setContent("Content without title");
                 UniAddress address = UniAddress.ofPush(ChannelProviderType.APNS, DEVICE_TOKEN_1);
 
-                StepVerifier.create(handler.send(message, address))
+                StepVerifier.create(channel.send(message, address))
                                 .expectNext("APNs ok 1 device(s) apns-id=" + apnsId)
                                 .verifyComplete();
 
@@ -178,7 +178,7 @@ class ApnsChannelHandlerTest {
                 message.setContent("Test");
                 UniAddress address = UniAddress.ofPush(ChannelProviderType.APNS, DEVICE_TOKEN_1);
 
-                StepVerifier.create(handler.send(message, address))
+                StepVerifier.create(channel.send(message, address))
                                 .assertNext(result -> {
                                         assertThat(result).startsWith("APNs ok 1 device(s) apns-id=");
                                         // Verify UUID format
@@ -197,7 +197,7 @@ class ApnsChannelHandlerTest {
                 message.setContent("Test");
                 UniAddress address = UniAddress.ofPush(ChannelProviderType.APNS, "invalid-token");
 
-                StepVerifier.create(handler.send(message, address))
+                StepVerifier.create(channel.send(message, address))
                                 .expectErrorMatches(e -> e instanceof IllegalStateException
                                                 && e.getMessage().contains("APNs 410")
                                                 && e.getMessage().contains("BadDeviceToken"))
@@ -212,7 +212,7 @@ class ApnsChannelHandlerTest {
                 message.setContent("Test");
                 UniAddress address = UniAddress.ofPush(ChannelProviderType.APNS, DEVICE_TOKEN_1);
 
-                StepVerifier.create(handler.send(message, address))
+                StepVerifier.create(channel.send(message, address))
                                 .expectErrorMatches(e -> e instanceof IllegalStateException
                                                 && e.getMessage().contains("APNs 401")
                                                 && e.getMessage().contains("InvalidProviderToken"))
@@ -227,7 +227,7 @@ class ApnsChannelHandlerTest {
                 message.setContent("Test");
                 UniAddress address = UniAddress.ofPush(ChannelProviderType.APNS, DEVICE_TOKEN_1);
 
-                StepVerifier.create(handler.send(message, address))
+                StepVerifier.create(channel.send(message, address))
                                 .expectErrorMatches(e -> e instanceof IllegalStateException
                                                 && e.getMessage().contains("APNs 400")
                                                 && e.getMessage().contains("BadMessageId"))
@@ -244,7 +244,7 @@ class ApnsChannelHandlerTest {
                 message.setContent("Test");
                 UniAddress address = UniAddress.ofPush(ChannelProviderType.APNS, DEVICE_TOKEN_1);
 
-                StepVerifier.create(handler.send(message, address))
+                StepVerifier.create(channel.send(message, address))
                                 .expectErrorMatches(e -> e instanceof IllegalStateException
                                                 && e.getMessage().contains("APNs 500")
                                                 && e.getMessage().contains("InternalServerError"))
@@ -257,7 +257,7 @@ class ApnsChannelHandlerTest {
                 message.setContent("Test");
                 UniAddress address = UniAddress.ofPush(ChannelProviderType.APNS); // No device tokens
 
-                StepVerifier.create(handler.send(message, address))
+                StepVerifier.create(channel.send(message, address))
                                 .expectErrorMatches(e -> e instanceof IllegalArgumentException
                                                 && e.getMessage().contains("APNs recipients required"))
                                 .verify();
@@ -268,7 +268,7 @@ class ApnsChannelHandlerTest {
                 UniMessage message = new UniMessage();
                 message.setContent("Test");
 
-                StepVerifier.create(handler.send(message, null))
+                StepVerifier.create(channel.send(message, null))
                                 .expectErrorMatches(e -> e instanceof IllegalArgumentException
                                                 && e.getMessage().contains("APNs recipients required"))
                                 .verify();
@@ -282,7 +282,7 @@ class ApnsChannelHandlerTest {
                 message.setContent("Test");
                 UniAddress address = UniAddress.ofPush(ChannelProviderType.APNS, DEVICE_TOKEN_1);
 
-                StepVerifier.create(handler.send(message, address))
+                StepVerifier.create(channel.send(message, address))
                                 .expectNextCount(1)
                                 .verifyComplete();
 
@@ -306,7 +306,7 @@ class ApnsChannelHandlerTest {
                 message.setContent("Test");
                 UniAddress address = UniAddress.ofPush(ChannelProviderType.APNS, DEVICE_TOKEN_1);
 
-                StepVerifier.create(handler.send(message, address))
+                StepVerifier.create(channel.send(message, address))
                                 .expectNextCount(1)
                                 .verifyComplete();
 

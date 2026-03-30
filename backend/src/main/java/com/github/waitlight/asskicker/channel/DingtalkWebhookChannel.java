@@ -18,60 +18,62 @@ import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public class FeishuWebhookChannelHandler extends ChannelHandler {
+public class DingtalkWebhookChannel extends Channel {
 
     private final Spec spec;
     private final WebhookChannelSupport webhookSupport;
 
-    public FeishuWebhookChannelHandler(ChannelProviderEntity provider, WebClient webClient) {
+    public DingtalkWebhookChannel(ChannelProviderEntity provider, WebClient webClient) {
         super(webClient);
-        this.spec = FeishuSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.spec = DingtalkSpecMapper.INSTANCE.toSpec(provider.getProperties());
         this.webhookSupport = new WebhookChannelSupport(webClient);
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
-            List<String> recipients = webhookSupport.normalizeRecipients(uniAddress, "FEISHU");
-            String baseUrl = webhookSupport.requireBaseUrl(spec.url(), "FEISHU");
+            List<String> recipients = webhookSupport.normalizeRecipients(uniAddress, "DINGTALK");
+            String baseUrl = webhookSupport.requireBaseUrl(spec.url(), "DINGTALK");
 
             return Flux.fromIterable(recipients)
                     .concatMap(recipient -> {
-                        String endpoint = webhookSupport.buildPathUrl(baseUrl, recipient);
+                        String endpoint = webhookSupport.buildQueryUrl(baseUrl, "access_token", recipient);
                         byte[] body;
                         try {
                             body = webhookSupport.toJsonBytes(buildPayload(uniMessage));
                         } catch (Exception e) {
                             return Mono.error(e);
                         }
-                        return webhookSupport.postJson(endpoint, body, "FEISHU")
+                        return webhookSupport.postJson(endpoint, body, "DINGTALK")
                                 .flatMap(this::resolveResponse);
                     })
                     .collect(Collectors.joining(","))
-                    .map(ignore -> "FEISHU ok " + recipients.size() + " recipient(s)");
+                    .map(ignore -> "DINGTALK ok " + recipients.size() + " recipient(s)");
         });
     }
 
     private Map<String, Object> buildPayload(UniMessage uniMessage) {
         String title = uniMessage != null ? uniMessage.getTitle() : null;
         String content = uniMessage != null ? uniMessage.getContent() : null;
-        String text = StringUtils.isNotBlank(title) ? title + "\n" + StringUtils.defaultString(content)
+
+        String text = StringUtils.isNotBlank(title) ? "### " + title + "\n" + StringUtils.defaultString(content)
                 : StringUtils.defaultString(content);
 
-        Map<String, Object> contentMap = new LinkedHashMap<>();
-        contentMap.put("text", text);
+        Map<String, Object> markdown = new LinkedHashMap<>();
+        markdown.put("title", StringUtils.defaultIfBlank(title, "Notification"));
+        markdown.put("text", text);
 
         Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("msg_type", "text");
-        payload.put("content", contentMap);
+        payload.put("msgtype", "markdown");
+        payload.put("markdown", markdown);
         return payload;
     }
 
     private Mono<String> resolveResponse(Map<String, Object> response) {
-        int code = intValue(response.get("code"), -1);
-        if (code != 0) {
+        int errcode = intValue(response.get("errcode"), -1);
+        if (errcode != 0) {
             return Mono.error(new IllegalStateException(
-                    "FEISHU platform failure code=" + code + " msg=" + String.valueOf(response.get("msg"))));
+                    "DINGTALK platform failure errcode=" + errcode + " errmsg=" + String.valueOf(response.get("errmsg"))));
         }
         return Mono.just("ok");
     }
@@ -91,9 +93,9 @@ public class FeishuWebhookChannelHandler extends ChannelHandler {
 }
 
 @Mapper
-interface FeishuSpecMapper {
-    FeishuSpecMapper INSTANCE = Mappers.getMapper(FeishuSpecMapper.class);
+interface DingtalkSpecMapper {
+    DingtalkSpecMapper INSTANCE = Mappers.getMapper(DingtalkSpecMapper.class);
 
     @Mapping(target = "url", source = "properties.url")
-    FeishuWebhookChannelHandler.Spec toSpec(Map<String, String> properties);
+    DingtalkWebhookChannel.Spec toSpec(Map<String, String> properties);
 }

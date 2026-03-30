@@ -59,8 +59,8 @@ class ChannelManagerTest {
 
         // 验证初始无处理器 刷新后可从仓库加载并按ID获取对应处理器
         @Test
-        void init_and_refresh_loadHandlers() throws Exception {
-                assertThat(channelManager.getHandlerCount()).isZero();
+        void init_and_refresh_loadChannels() throws Exception {
+                assertThat(channelManager.getChannelCount()).isZero();
 
                 String json = String.format("""
                                 {
@@ -77,20 +77,20 @@ class ChannelManagerTest {
                                 .verifyComplete();
 
                 channelManager.refresh();
-                assertThat(channelManager.getHandlerCount()).isEqualTo(1);
-                assertThat(channelManager.getAllHandlers()).hasSize(1);
+                assertThat(channelManager.getChannelCount()).isEqualTo(1);
+                assertThat(channelManager.getAllChannels()).hasSize(1);
                 StepVerifier.create(channelProviderRepository.findAll().collectList())
                                 .assertNext(list -> {
                                         String id = list.get(0).getId();
-                                        assertThat(channelManager.getHandlerById(id))
-                                                        .isInstanceOf(ApnsChannelHandler.class);
+                                        assertThat(channelManager.getChannelById(id))
+                                                        .isInstanceOf(ApnsChannel.class);
                                 })
                                 .verifyComplete();
         }
 
         // 验证选择处理器时优先级规则生效 且命中排除规则的候选会被跳过
         @Test
-        void selectHandler_respectsPriorityAndExclude() throws Exception {
+        void selectChannel_respectsPriorityAndExclude() throws Exception {
                 String common = """
                                 "channelType": "PUSH",
                                 "providerType": "APNS",
@@ -136,17 +136,17 @@ class ChannelManagerTest {
 
                 channelManager.refresh();
 
-                StepVerifier.create(channelManager.selectHandler(ChannelType.PUSH, "token-abc"))
-                                .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannelHandler.class))
+                StepVerifier.create(channelManager.selectChannel(ChannelType.PUSH, "token-abc"))
+                                .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannel.class))
                                 .verifyComplete();
-                StepVerifier.create(channelManager.selectHandler(ChannelType.PUSH, "token-X"))
-                                .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannelHandler.class))
+                StepVerifier.create(channelManager.selectChannel(ChannelType.PUSH, "token-X"))
+                                .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannel.class))
                                 .verifyComplete();
         }
 
         // 验证当同一渠道同时配置 priority 与 exclude 时 exclude 先于 priority 生效
         @Test
-        void selectHandler_whenBothPriorityAndExcludePresent_excludeWins() throws Exception {
+        void selectChannel_whenBothPriorityAndExcludePresent_excludeWins() throws Exception {
                 String common = """
                                 "channelType": "PUSH",
                                 "providerType": "APNS",
@@ -179,17 +179,17 @@ class ChannelManagerTest {
                                 .verifyComplete();
                 channelManager.refresh();
 
-                StepVerifier.create(channelManager.selectHandler(ChannelType.PUSH, "match"))
-                                .assertNext(selected -> assertThat(selected).isInstanceOf(FcmChannelHandler.class))
+                StepVerifier.create(channelManager.selectChannel(ChannelType.PUSH, "match"))
+                                .assertNext(selected -> assertThat(selected).isInstanceOf(FcmChannel.class))
                                 .verifyComplete();
-                StepVerifier.create(channelManager.selectHandler(ChannelType.PUSH, "other"))
-                                .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannelHandler.class))
+                StepVerifier.create(channelManager.selectChannel(ChannelType.PUSH, "other"))
+                                .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannel.class))
                                 .verifyComplete();
         }
 
         // 验证仅配置 priority 与仅配置 exclude 的渠道并存时 选择器按规则返回处理器
         @Test
-        void selectHandler_withPriorityOnlyAndExcludeOnly_selectsByRules() throws Exception {
+        void selectChannel_withPriorityOnlyAndExcludeOnly_selectsByRules() throws Exception {
                 String common = """
                                 "channelType": "PUSH",
                                 "providerType": "APNS",
@@ -220,20 +220,20 @@ class ChannelManagerTest {
                                 .verifyComplete();
                 channelManager.refresh();
 
-                StepVerifier.create(channelManager.selectHandler(ChannelType.PUSH, "p-target"))
-                                .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannelHandler.class))
+                StepVerifier.create(channelManager.selectChannel(ChannelType.PUSH, "p-target"))
+                                .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannel.class))
                                 .verifyComplete();
-                StepVerifier.create(channelManager.selectHandler(ChannelType.PUSH, "x-target"))
-                                .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannelHandler.class))
+                StepVerifier.create(channelManager.selectChannel(ChannelType.PUSH, "x-target"))
+                                .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannel.class))
                                 .verifyComplete();
-                StepVerifier.create(channelManager.selectHandler(ChannelType.PUSH, "normal"))
-                                .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannelHandler.class))
+                StepVerifier.create(channelManager.selectChannel(ChannelType.PUSH, "normal"))
+                                .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannel.class))
                                 .verifyComplete();
         }
 
         // 验证当所有候选都被排除时 选择结果为空流
         @Test
-        void selectHandler_whenAllCandidatesExcluded_returnsEmpty() throws Exception {
+        void selectChannel_whenAllCandidatesExcluded_returnsEmpty() throws Exception {
                 String json = String.format("""
                                 {
                                   "code": "solo-exclude",
@@ -251,7 +251,7 @@ class ChannelManagerTest {
                                 .verifyComplete();
                 channelManager.refresh();
 
-                StepVerifier.create(channelManager.selectHandler(ChannelType.PUSH, "solo"))
+                StepVerifier.create(channelManager.selectChannel(ChannelType.PUSH, "solo"))
                                 .verifyComplete();
         }
 

@@ -25,13 +25,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
-public class FcmChannelHandler extends ChannelHandler {
+public class FcmChannel extends Channel {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final Spec spec;
 
-    public FcmChannelHandler(ChannelProviderEntity provider, WebClient webClient) {
+    public FcmChannel(ChannelProviderEntity provider, WebClient webClient) {
         super(webClient);
         this.spec = FcmSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
@@ -167,5 +167,5 @@ interface FcmSpecMapper {
     @Mapping(target = "url", source = "properties.url")
     @Mapping(target = "projectId", source = "properties.projectId")
     @Mapping(target = "accessToken", source = "properties.accessToken")
-    FcmChannelHandler.Spec toSpec(Map<String, String> properties);
+    FcmChannel.Spec toSpec(Map<String, String> properties);
 }

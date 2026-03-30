@@ -19,8 +19,8 @@ class ChannelFactoryTest {
   private final ChannelFactory factory = new ChannelFactory(WebClient.create());
 
   @Test
-  @DisplayName("创建APNS渠道处理器")
-  void create_apns_returnsApnsHandler() throws Exception {
+  @DisplayName("创建APNS渠道")
+  void create_apns_returnsApnsChannel() throws Exception {
     String json = """
         {
           "code": "apns-factory",
@@ -37,12 +37,12 @@ class ChannelFactoryTest {
         }
         """;
     ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
-    assertThat(factory.create(entity)).isInstanceOf(ApnsChannelHandler.class);
+    assertThat(factory.create(entity)).isInstanceOf(ApnsChannel.class);
   }
 
   @Test
-  @DisplayName("创建FCM渠道处理器")
-  void create_fcm_returnsFcmHandler() throws Exception {
+  @DisplayName("创建FCM渠道")
+  void create_fcm_returnsFcmChannel() throws Exception {
     String json = """
         {
           "code": "fcm-factory",
@@ -57,12 +57,12 @@ class ChannelFactoryTest {
         }
         """;
     ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
-    assertThat(factory.create(entity)).isInstanceOf(FcmChannelHandler.class);
+    assertThat(factory.create(entity)).isInstanceOf(FcmChannel.class);
   }
 
   @Test
-  @DisplayName("创建钉钉Webhook渠道处理器")
-  void create_dingtalk_returnsDingtalkWebhookHandler() throws Exception {
+  @DisplayName("创建钉钉Webhook渠道")
+  void create_dingtalk_returnsDingtalkWebhookChannel() throws Exception {
     String json = """
         {
           "code": "dingtalk-factory",
@@ -75,12 +75,12 @@ class ChannelFactoryTest {
         }
         """;
     ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
-    assertThat(factory.create(entity)).isInstanceOf(DingtalkWebhookChannelHandler.class);
+    assertThat(factory.create(entity)).isInstanceOf(DingtalkWebhookChannel.class);
   }
 
   @Test
-  @DisplayName("创建企业微信Webhook渠道处理器")
-  void create_wecom_returnsWecomWebhookHandler() throws Exception {
+  @DisplayName("创建企业微信Webhook渠道")
+  void create_wecom_returnsWecomWebhookChannel() throws Exception {
     String json = """
         {
           "code": "wecom-factory",
@@ -93,12 +93,12 @@ class ChannelFactoryTest {
         }
         """;
     ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
-    assertThat(factory.create(entity)).isInstanceOf(WecomWebhookChannelHandler.class);
+    assertThat(factory.create(entity)).isInstanceOf(WecomWebhookChannel.class);
   }
 
   @Test
-  @DisplayName("创建飞书Webhook渠道处理器")
-  void create_feishu_returnsFeishuWebhookHandler() throws Exception {
+  @DisplayName("创建飞书Webhook渠道")
+  void create_feishu_returnsFeishuWebhookChannel() throws Exception {
     String json = """
         {
           "code": "feishu-factory",
@@ -111,11 +111,11 @@ class ChannelFactoryTest {
         }
         """;
     ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
-    assertThat(factory.create(entity)).isInstanceOf(FeishuWebhookChannelHandler.class);
+    assertThat(factory.create(entity)).isInstanceOf(FeishuWebhookChannel.class);
   }
 
   @Test
-  @DisplayName("创建不支持的渠道处理器")
+  @DisplayName("创建不支持的渠道")
   void create_unsupportedProvider_returnsNull() throws Exception {
     String json = """
         {

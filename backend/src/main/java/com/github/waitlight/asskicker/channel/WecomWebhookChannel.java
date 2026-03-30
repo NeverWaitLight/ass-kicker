@@ -18,50 +18,48 @@ import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public class DingtalkWebhookChannelHandler extends ChannelHandler {
+public class WecomWebhookChannel extends Channel {
 
     private final Spec spec;
     private final WebhookChannelSupport webhookSupport;
 
-    public DingtalkWebhookChannelHandler(ChannelProviderEntity provider, WebClient webClient) {
+    public WecomWebhookChannel(ChannelProviderEntity provider, WebClient webClient) {
         super(webClient);
-        this.spec = DingtalkSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.spec = WecomSpecMapper.INSTANCE.toSpec(provider.getProperties());
         this.webhookSupport = new WebhookChannelSupport(webClient);
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
-            List<String> recipients = webhookSupport.normalizeRecipients(uniAddress, "DINGTALK");
-            String baseUrl = webhookSupport.requireBaseUrl(spec.url(), "DINGTALK");
+            List<String> recipients = webhookSupport.normalizeRecipients(uniAddress, "WECOM");
+            String baseUrl = webhookSupport.requireBaseUrl(spec.url(), "WECOM");
 
             return Flux.fromIterable(recipients)
                     .concatMap(recipient -> {
-                        String endpoint = webhookSupport.buildQueryUrl(baseUrl, "access_token", recipient);
+                        String endpoint = webhookSupport.buildQueryUrl(baseUrl, "key", recipient);
                         byte[] body;
                         try {
                             body = webhookSupport.toJsonBytes(buildPayload(uniMessage));
                         } catch (Exception e) {
                             return Mono.error(e);
                         }
-                        return webhookSupport.postJson(endpoint, body, "DINGTALK")
+                        return webhookSupport.postJson(endpoint, body, "WECOM")
                                 .flatMap(this::resolveResponse);
                     })
                     .collect(Collectors.joining(","))
-                    .map(ignore -> "DINGTALK ok " + recipients.size() + " recipient(s)");
+                    .map(ignore -> "WECOM ok " + recipients.size() + " recipient(s)");
         });
     }
 
     private Map<String, Object> buildPayload(UniMessage uniMessage) {
         String title = uniMessage != null ? uniMessage.getTitle() : null;
         String content = uniMessage != null ? uniMessage.getContent() : null;
-
-        String text = StringUtils.isNotBlank(title) ? "### " + title + "\n" + StringUtils.defaultString(content)
+        String text = StringUtils.isNotBlank(title) ? title + "\n" + StringUtils.defaultString(content)
                 : StringUtils.defaultString(content);
 
         Map<String, Object> markdown = new LinkedHashMap<>();
-        markdown.put("title", StringUtils.defaultIfBlank(title, "Notification"));
-        markdown.put("text", text);
+        markdown.put("content", text);
 
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("msgtype", "markdown");
@@ -73,7 +71,7 @@ public class DingtalkWebhookChannelHandler extends ChannelHandler {
         int errcode = intValue(response.get("errcode"), -1);
         if (errcode != 0) {
             return Mono.error(new IllegalStateException(
-                    "DINGTALK platform failure errcode=" + errcode + " errmsg=" + String.valueOf(response.get("errmsg"))));
+                    "WECOM platform failure errcode=" + errcode + " errmsg=" + String.valueOf(response.get("errmsg"))));
         }
         return Mono.just("ok");
     }
@@ -93,9 +91,9 @@ public class DingtalkWebhookChannelHandler extends ChannelHandler {
 }
 
 @Mapper
-interface DingtalkSpecMapper {
-    DingtalkSpecMapper INSTANCE = Mappers.getMapper(DingtalkSpecMapper.class);
+interface WecomSpecMapper {
+    WecomSpecMapper INSTANCE = Mappers.getMapper(WecomSpecMapper.class);
 
     @Mapping(target = "url", source = "properties.url")
-    DingtalkWebhookChannelHandler.Spec toSpec(Map<String, String> properties);
+    WecomWebhookChannel.Spec toSpec(Map<String, String> properties);
 }
