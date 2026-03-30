@@ -1,16 +1,22 @@
 package com.github.waitlight.asskicker.channel;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
+import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
@@ -20,31 +26,31 @@ import reactor.core.publisher.Mono;
 
 public class WecomWebhookChannel extends Channel {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private final Spec spec;
-    private final WebhookChannelSupport webhookSupport;
 
     public WecomWebhookChannel(ChannelProviderEntity provider, WebClient webClient) {
         super(webClient);
         this.spec = WecomSpecMapper.INSTANCE.toSpec(provider.getProperties());
-        this.webhookSupport = new WebhookChannelSupport(webClient);
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
-            List<String> recipients = webhookSupport.normalizeRecipients(uniAddress, "WECOM");
-            String baseUrl = webhookSupport.requireBaseUrl(spec.url(), "WECOM");
+            List<String> recipients = normalizeRecipients(uniAddress, "WECOM");
+            String baseUrl = requireBaseUrl(spec.url(), "WECOM");
 
             return Flux.fromIterable(recipients)
                     .concatMap(recipient -> {
-                        String endpoint = webhookSupport.buildQueryUrl(baseUrl, "key", recipient);
+                        String endpoint = buildQueryUrl(baseUrl, "key", recipient);
                         byte[] body;
                         try {
-                            body = webhookSupport.toJsonBytes(buildPayload(uniMessage));
+                            body = toJsonBytes(buildPayload(uniMessage));
                         } catch (Exception e) {
                             return Mono.error(e);
                         }
-                        return webhookSupport.postJson(endpoint, body, "WECOM")
+                        return postJson(endpoint, body, "WECOM")
                                 .flatMap(this::resolveResponse);
                     })
                     .collect(Collectors.joining(","))
@@ -74,6 +80,61 @@ public class WecomWebhookChannel extends Channel {
                     "WECOM platform failure errcode=" + errcode + " errmsg=" + String.valueOf(response.get("errmsg"))));
         }
         return Mono.just("ok");
+    }
+
+    private List<String> normalizeRecipients(UniAddress uniAddress, String providerName) {
+        List<String> recipients = uniAddress == null || uniAddress.getRecipients() == null
+                ? List.of()
+                : uniAddress.getRecipients().stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(StringUtils::isNotBlank)
+                        .collect(Collectors.toList());
+        if (recipients.isEmpty()) {
+            throw new IllegalArgumentException(providerName + " recipients required");
+        }
+        return recipients;
+    }
+
+    private String requireBaseUrl(String url, String providerName) {
+        if (StringUtils.isBlank(url)) {
+            throw new IllegalStateException(providerName + " spec requires url");
+        }
+        return url.trim();
+    }
+
+    private String buildQueryUrl(String baseUrl, String queryKey, String recipient) {
+        String delimiter = baseUrl.contains("?") ? "&" : "?";
+        String encodedRecipient = URLEncoder.encode(recipient, StandardCharsets.UTF_8);
+        return baseUrl + delimiter + queryKey + "=" + encodedRecipient;
+    }
+
+    private byte[] toJsonBytes(Map<String, Object> payload) throws Exception {
+        return OBJECT_MAPPER.writeValueAsBytes(payload);
+    }
+
+    private Mono<Map<String, Object>> postJson(String endpoint, byte[] bodyBytes, String providerName) {
+        return webClient.post()
+                .uri(endpoint)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(bodyBytes)
+                .retrieve()
+                .bodyToMono(String.class)
+                .map(responseBody -> {
+                    try {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> map = OBJECT_MAPPER.readValue(responseBody, Map.class);
+                        return map;
+                    } catch (Exception e) {
+                        throw new IllegalStateException(providerName + " invalid response: " + responseBody, e);
+                    }
+                })
+                .onErrorMap(WebClientResponseException.class, ex -> new IllegalStateException(
+                        providerName + " " + ex.getStatusCode().value()
+                                + (StringUtils.isNotBlank(ex.getResponseBodyAsString())
+                                        ? ": " + ex.getResponseBodyAsString()
+                                        : ""),
+                        ex));
     }
 
     private static int intValue(Object value, int defaultValue) {

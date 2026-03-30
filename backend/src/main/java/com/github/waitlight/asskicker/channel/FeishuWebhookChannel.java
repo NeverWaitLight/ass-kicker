@@ -1,16 +1,22 @@
 package com.github.waitlight.asskicker.channel;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
+import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
@@ -20,31 +26,31 @@ import reactor.core.publisher.Mono;
 
 public class FeishuWebhookChannel extends Channel {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private final Spec spec;
-    private final WebhookChannelSupport webhookSupport;
 
     public FeishuWebhookChannel(ChannelProviderEntity provider, WebClient webClient) {
         super(webClient);
         this.spec = FeishuSpecMapper.INSTANCE.toSpec(provider.getProperties());
-        this.webhookSupport = new WebhookChannelSupport(webClient);
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
-            List<String> recipients = webhookSupport.normalizeRecipients(uniAddress, "FEISHU");
-            String baseUrl = webhookSupport.requireBaseUrl(spec.url(), "FEISHU");
+            List<String> recipients = normalizeRecipients(uniAddress, "FEISHU");
+            String baseUrl = requireBaseUrl(spec.url(), "FEISHU");
 
             return Flux.fromIterable(recipients)
                     .concatMap(recipient -> {
-                        String endpoint = webhookSupport.buildPathUrl(baseUrl, recipient);
+                        String endpoint = buildPathUrl(baseUrl, recipient);
                         byte[] body;
                         try {
-                            body = webhookSupport.toJsonBytes(buildPayload(uniMessage));
+                            body = toJsonBytes(buildPayload(uniMessage));
                         } catch (Exception e) {
                             return Mono.error(e);
                         }
-                        return webhookSupport.postJson(endpoint, body, "FEISHU")
+                        return postJson(endpoint, body, "FEISHU")
                                 .flatMap(this::resolveResponse);
                     })
                     .collect(Collectors.joining(","))
@@ -74,6 +80,61 @@ public class FeishuWebhookChannel extends Channel {
                     "FEISHU platform failure code=" + code + " msg=" + String.valueOf(response.get("msg"))));
         }
         return Mono.just("ok");
+    }
+
+    private List<String> normalizeRecipients(UniAddress uniAddress, String providerName) {
+        List<String> recipients = uniAddress == null || uniAddress.getRecipients() == null
+                ? List.of()
+                : uniAddress.getRecipients().stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(StringUtils::isNotBlank)
+                        .collect(Collectors.toList());
+        if (recipients.isEmpty()) {
+            throw new IllegalArgumentException(providerName + " recipients required");
+        }
+        return recipients;
+    }
+
+    private String requireBaseUrl(String url, String providerName) {
+        if (StringUtils.isBlank(url)) {
+            throw new IllegalStateException(providerName + " spec requires url");
+        }
+        return url.trim();
+    }
+
+    private String buildPathUrl(String baseUrl, String recipient) {
+        String normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+        String encodedRecipient = URLEncoder.encode(recipient, StandardCharsets.UTF_8);
+        return normalizedBaseUrl + "/" + encodedRecipient;
+    }
+
+    private byte[] toJsonBytes(Map<String, Object> payload) throws Exception {
+        return OBJECT_MAPPER.writeValueAsBytes(payload);
+    }
+
+    private Mono<Map<String, Object>> postJson(String endpoint, byte[] bodyBytes, String providerName) {
+        return webClient.post()
+                .uri(endpoint)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(bodyBytes)
+                .retrieve()
+                .bodyToMono(String.class)
+                .map(responseBody -> {
+                    try {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> map = OBJECT_MAPPER.readValue(responseBody, Map.class);
+                        return map;
+                    } catch (Exception e) {
+                        throw new IllegalStateException(providerName + " invalid response: " + responseBody, e);
+                    }
+                })
+                .onErrorMap(WebClientResponseException.class, ex -> new IllegalStateException(
+                        providerName + " " + ex.getStatusCode().value()
+                                + (StringUtils.isNotBlank(ex.getResponseBodyAsString())
+                                        ? ": " + ex.getResponseBodyAsString()
+                                        : ""),
+                        ex));
     }
 
     private static int intValue(Object value, int defaultValue) {

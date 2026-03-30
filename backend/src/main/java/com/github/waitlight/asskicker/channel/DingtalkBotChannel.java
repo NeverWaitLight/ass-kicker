@@ -3,12 +3,16 @@ package com.github.waitlight.asskicker.channel;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
+import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,21 +36,19 @@ public class DingtalkBotChannel extends Channel {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final Spec spec;
-    private final BotChannelSupport botSupport;
 
     public DingtalkBotChannel(ChannelProviderEntity provider, WebClient webClient) {
         super(webClient);
         this.spec = DingtalkBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
-        this.botSupport = new BotChannelSupport(webClient);
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
-            List<String> chatIds = botSupport.normalizeRecipients(uniAddress, "DINGTALK_BOT");
-            botSupport.requireNonBlank(spec.appKey(), "appKey", "DINGTALK_BOT");
-            botSupport.requireNonBlank(spec.appSecret(), "appSecret", "DINGTALK_BOT");
-            botSupport.requireNonBlank(spec.robotCode(), "robotCode", "DINGTALK_BOT");
+            List<String> chatIds = normalizeRecipients(uniAddress, "DINGTALK_BOT");
+            requireNonBlank(spec.appKey(), "appKey", "DINGTALK_BOT");
+            requireNonBlank(spec.appSecret(), "appSecret", "DINGTALK_BOT");
+            requireNonBlank(spec.robotCode(), "robotCode", "DINGTALK_BOT");
 
             String accessTokenUrl = StringUtils.defaultIfBlank(spec.accessTokenUrl(), DEFAULT_ACCESS_TOKEN_URL);
             String groupSendUrl = StringUtils.defaultIfBlank(spec.groupSendUrl(), DEFAULT_GROUP_SEND_URL);
@@ -74,11 +76,11 @@ public class DingtalkBotChannel extends Channel {
         body.put("appSecret", spec.appSecret().trim());
         byte[] bytes;
         try {
-            bytes = botSupport.toJsonBytes(body);
+            bytes = toJsonBytes(body);
         } catch (Exception e) {
             return Mono.error(e);
         }
-        return botSupport.postJson(accessTokenUrl, bytes, "DINGTALK_BOT")
+        return postJson(accessTokenUrl, bytes, "DINGTALK_BOT")
                 .flatMap(resp -> {
                     String token = stringOrNull(resp.get("accessToken"));
                     if (StringUtils.isBlank(token)) {
@@ -101,18 +103,18 @@ public class DingtalkBotChannel extends Channel {
         body.put("msgParam", msgParamJson);
         byte[] bytes;
         try {
-            bytes = botSupport.toJsonBytes(body);
+            bytes = toJsonBytes(body);
         } catch (Exception e) {
             return Mono.error(e);
         }
         Map<String, String> headers = Map.of(HEADER_ACCESS_TOKEN, accessToken);
-        return botSupport.postJson(groupSendUrl, bytes, headers, "DINGTALK_BOT")
+        return postJson(groupSendUrl, bytes, headers, "DINGTALK_BOT")
                 .flatMap(this::resolveGroupSendResponse);
     }
 
     private Mono<String> resolveGroupSendResponse(Map<String, Object> response) {
         if (response.containsKey("errcode")) {
-            int err = BotChannelSupport.intValue(response.get("errcode"), -1);
+            int err = intValue(response.get("errcode"), -1);
             if (err != 0) {
                 return Mono.error(new IllegalStateException(
                         "DINGTALK_BOT platform failure errcode=" + err + " errmsg="
@@ -120,6 +122,72 @@ public class DingtalkBotChannel extends Channel {
             }
         }
         return Mono.just("ok");
+    }
+
+    private List<String> normalizeRecipients(UniAddress uniAddress, String providerName) {
+        List<String> recipients = uniAddress == null || uniAddress.getRecipients() == null
+                ? List.of()
+                : uniAddress.getRecipients().stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(StringUtils::isNotBlank)
+                        .collect(Collectors.toList());
+        if (recipients.isEmpty()) {
+            throw new IllegalArgumentException(providerName + " recipients required (chat/session id)");
+        }
+        return recipients;
+    }
+
+    private String requireNonBlank(String value, String fieldName, String providerName) {
+        if (StringUtils.isBlank(value)) {
+            throw new IllegalStateException(providerName + " spec requires " + fieldName);
+        }
+        return value.trim();
+    }
+
+    private byte[] toJsonBytes(Map<String, Object> payload) throws Exception {
+        return MAPPER.writeValueAsBytes(payload);
+    }
+
+    private Mono<Map<String, Object>> postJson(String uri, byte[] bodyBytes, String providerName) {
+        return postJson(uri, bodyBytes, Map.of(), providerName);
+    }
+
+    private Mono<Map<String, Object>> postJson(String uri, byte[] bodyBytes, Map<String, String> headers,
+            String providerName) {
+        return webClient.post()
+                .uri(uri)
+                .headers(h -> headers.forEach(h::add))
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(bodyBytes)
+                .retrieve()
+                .bodyToMono(String.class)
+                .map(responseBody -> parseJsonMap(responseBody, providerName))
+                .onErrorMap(WebClientResponseException.class, ex -> new IllegalStateException(
+                        providerName + " " + ex.getStatusCode().value()
+                                + (StringUtils.isNotBlank(ex.getResponseBodyAsString())
+                                        ? ": " + ex.getResponseBodyAsString()
+                                        : ""),
+                        ex));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parseJsonMap(String responseBody, String providerName) {
+        try {
+            return MAPPER.readValue(responseBody, Map.class);
+        } catch (Exception e) {
+            throw new IllegalStateException(providerName + " invalid response: " + responseBody, e);
+        }
+    }
+
+    private static int intValue(Object value, int defaultValue) {
+        if (value instanceof Number n) {
+            return n.intValue();
+        }
+        if (value instanceof String s && StringUtils.isNumeric(s)) {
+            return Integer.parseInt(s);
+        }
+        return defaultValue;
     }
 
     private static String stringOrNull(Object o) {
