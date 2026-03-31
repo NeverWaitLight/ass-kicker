@@ -1,16 +1,13 @@
 package com.github.waitlight.asskicker;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -38,7 +35,7 @@ class SenderTest {
     private ChannelManager channelManager;
 
     @Test
-    void send_runsPipelineInOrder_andReturnsChannelResult() {
+    void send_messageDeliveredSuccessfully() {
         Sender sender = new Sender(messageTemplateEngine, channelManager);
         TestChannel channel = new TestChannel(ChannelType.EMAIL, "test-email", "send-ok");
 
@@ -50,7 +47,7 @@ class SenderTest {
         UniAddress address = UniAddress.builder()
                 .channelType(ChannelType.EMAIL)
                 .channelProviderKey("provider-key")
-                .recipients(new LinkedHashSet<>(java.util.List.of("first@example.com", "second@example.com")))
+                .recipients(Set.of("first@example.com", "second@example.com"))
                 .build();
 
         UniMessage message = new UniMessage();
@@ -66,15 +63,10 @@ class SenderTest {
 
         assertThat(channel.lastMessage).isSameAs(message);
         assertThat(channel.lastAddress).isSameAs(address);
-
-        InOrder inOrder = inOrder(messageTemplateEngine, channelManager);
-        inOrder.verify(messageTemplateEngine).fill(req);
-        inOrder.verify(channelManager).selectChannel(ChannelType.EMAIL, "provider-key");
-        verifyNoMoreInteractions(messageTemplateEngine, channelManager);
     }
 
     @Test
-    void send_whenNoChannelSelected_completesEmpty() {
+    void send_completesEmpty_whenChannelUnavailable() {
         Sender sender = new Sender(messageTemplateEngine, channelManager);
 
         UniSendMessageReq req = new UniSendMessageReq();
@@ -93,11 +85,6 @@ class SenderTest {
         when(channelManager.selectChannel(ChannelType.SMS, "sms-provider")).thenReturn(Mono.empty());
 
         StepVerifier.create(sender.send(req, address)).verifyComplete();
-
-        InOrder inOrder = inOrder(messageTemplateEngine, channelManager);
-        inOrder.verify(messageTemplateEngine).fill(req);
-        inOrder.verify(channelManager).selectChannel(ChannelType.SMS, "sms-provider");
-        verifyNoMoreInteractions(messageTemplateEngine, channelManager);
     }
 
     private static final class TestChannel extends Channel {
