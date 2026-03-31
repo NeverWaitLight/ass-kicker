@@ -7,6 +7,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import com.github.waitlight.asskicker.channel.AliyunRpcSigner;
+
 class AliyunRpcSignerTest {
 
     @Test

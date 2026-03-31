@@ -21,7 +21,6 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.aliyun.AliyunRpcSigner;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
@@ -60,7 +59,7 @@ public class AliyunSmsChannel extends Channel {
                 return Mono.error(e);
             }
 
-            String baseUrl = StringUtils.isNotBlank(spec.endpoint()) ? spec.endpoint().trim() : "https://dysmsapi.aliyuncs.com";
+            String baseUrl = spec.endpoint().trim();
 
             return Flux.fromIterable(recipients)
                     .concatMap(phone -> sendOne(baseUrl, phone, templateCode, templateParamJson))
@@ -73,6 +72,9 @@ public class AliyunSmsChannel extends Channel {
         if (StringUtils.isBlank(spec.accessKeyId()) || StringUtils.isBlank(spec.accessKeySecret())
                 || StringUtils.isBlank(spec.signName())) {
             throw new IllegalStateException("ALIYUN_SMS requires accessKeyId accessKeySecret signName");
+        }
+        if (StringUtils.isBlank(spec.endpoint())) {
+            throw new IllegalStateException("ALIYUN_SMS requires endpoint");
         }
     }
 

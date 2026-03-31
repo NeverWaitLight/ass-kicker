@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.channel.aliyun;
+package com.github.waitlight.asskicker.channel;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -34,12 +34,12 @@ public final class AliyunRpcSigner {
         }
     }
 
-    static String buildStringToSign(String httpMethod, Map<String, String> params) {
+    public static String buildStringToSign(String httpMethod, Map<String, String> params) {
         String canonical = canonicalizedQueryString(params);
         return percentEncode(httpMethod) + "&" + percentEncode("/") + "&" + percentEncode(canonical);
     }
 
-    static String canonicalizedQueryString(Map<String, String> params) {
+    public static String canonicalizedQueryString(Map<String, String> params) {
         TreeMap<String, String> sorted = new TreeMap<>();
         for (Map.Entry<String, String> e : params.entrySet()) {
             if ("Signature".equalsIgnoreCase(e.getKey())) {

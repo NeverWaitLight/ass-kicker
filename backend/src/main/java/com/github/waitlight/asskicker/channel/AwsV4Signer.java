@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.channel.aws;
+package com.github.waitlight.asskicker.channel;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -37,7 +37,7 @@ public final class AwsV4Signer {
     /**
      * 对 SNS Query API 的 POST 请求签名。
      *
-     * @param endpointUrlOverride 完整 base URL（含路径可为 /），为空则使用 https://sns.{region}.amazonaws.com/
+     * @param endpointUrlOverride 完整 base URL（含路径可为 /）
      */
     public static SignedRequest signSnsPublish(
             String region,
@@ -49,9 +49,10 @@ public final class AwsV4Signer {
             String message,
             Instant signingInstant) {
 
-        String url = StringUtils.isNotBlank(endpointUrlOverride)
-                ? normalizeEndpoint(endpointUrlOverride.trim())
-                : "https://sns." + region + ".amazonaws.com/";
+        if (StringUtils.isBlank(endpointUrlOverride)) {
+            throw new IllegalArgumentException("AWS SNS endpointUrlOverride required");
+        }
+        String url = normalizeEndpoint(endpointUrlOverride.trim());
         URI uri = URI.create(url);
         String host = hostHeader(uri);
         String canonicalUri = uri.getPath();
