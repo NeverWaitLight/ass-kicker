@@ -4,7 +4,6 @@ import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
-import com.github.waitlight.asskicker.dto.UniMessageReq;
 import com.github.waitlight.asskicker.model.SendRecordEntity;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,7 @@ public class Sender {
     private final MessageTemplateEngine messageTemplateEngine;
     private final ChannelManager channelManager;
 
-    public Mono<String> send(UniMessageReq req, UniAddress uniAddress) {
+    public Mono<String> send(UniMessage req, UniAddress uniAddress) {
         return Mono.just(new SendContext(req, uniAddress))
                 .flatMap(this::fillMessage)
                 .flatMap(this::selectChannel)
@@ -42,7 +41,7 @@ public class Sender {
     }
 
     private SendContext processSendRecord(SendContext context) {
-        UniMessageReq req = context.getReq();
+        UniMessage req = context.getReq();
         UniAddress uniAddress = context.getUniAddress();
         SendRecordEntity sendRecordEntity = new SendRecordEntity();
         sendRecordEntity.setTaskId(null);
@@ -74,7 +73,7 @@ public class Sender {
     @RequiredArgsConstructor
     private static final class SendContext {
 
-        private final UniMessageReq req;
+        private final UniMessage req;
         private final UniAddress uniAddress;
         private UniMessage uniMessage;
         private Channel channel;

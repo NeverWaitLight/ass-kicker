@@ -17,7 +17,6 @@ import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
-import com.github.waitlight.asskicker.dto.UniMessageReq;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.Language;
@@ -39,7 +38,7 @@ class SenderTest {
         Sender sender = new Sender(messageTemplateEngine, channelManager);
         TestChannel channel = new TestChannel(ChannelType.EMAIL, "test-email", "send-ok");
 
-        UniMessageReq req = new UniMessageReq();
+        UniMessage req = new UniMessage();
         req.setTemplateCode("tpl-code");
         req.setLanguage(Language.ZH_CN);
         req.setTemplateParams(Map.of("name", "lord"));
@@ -69,7 +68,7 @@ class SenderTest {
     void send_completesEmpty_whenChannelUnavailable() {
         Sender sender = new Sender(messageTemplateEngine, channelManager);
 
-        UniMessageReq req = new UniMessageReq();
+        UniMessage req = new UniMessage();
         req.setTemplateCode("tpl-code");
         req.setLanguage(Language.EN);
 

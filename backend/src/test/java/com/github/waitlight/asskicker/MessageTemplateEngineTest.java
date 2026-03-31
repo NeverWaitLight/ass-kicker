@@ -17,7 +17,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.mustachejava.Mustache;
 import com.github.waitlight.asskicker.config.CaffeineCacheProperties;
-import com.github.waitlight.asskicker.dto.UniMessageReq;
+import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.MessageTemplateEntity;
 import com.github.waitlight.asskicker.service.MessageTemplateEntityFixtures;
@@ -47,7 +47,7 @@ class MessageTemplateEngineTest {
         MessageTemplateEntity entity = MessageTemplateEntityFixtures.smsCaptchaZhCn();
         when(messageTemplateService.findByCode("sms_captcha")).thenReturn(Mono.just(entity));
 
-        UniMessageReq req = new UniMessageReq();
+        UniMessage req = new UniMessage();
         req.setTemplateCode("sms_captcha");
         req.setLanguage(Language.ZH_CN);
         Map<String, Object> params = new HashMap<>();
@@ -59,9 +59,13 @@ class MessageTemplateEngineTest {
         req.setExtraData(extra);
         StepVerifier.create(engine.fill(req))
                 .assertNext(msg -> {
+                    assertThat(msg.getTemplateCode()).isEqualTo("sms_captcha");
+                    assertThat(msg.getLanguage()).isEqualTo(Language.ZH_CN);
                     assertThat(msg.getTitle()).isEqualTo("验证码");
                     assertThat(msg.getContent()).isEqualTo("您好 王德发，您的验证码是 123456");
                     assertThat(msg.getExtraData()).isEqualTo(extra);
+                    assertThat(msg.getTemplateParams()).containsEntry("name", "王德发")
+                            .containsEntry("code", "123456");
                 })
                 .verifyComplete();
 
@@ -72,7 +76,7 @@ class MessageTemplateEngineTest {
     void fill_whenTemplateNotFound_completesEmpty() {
         when(messageTemplateService.findByCode("missing")).thenReturn(Mono.empty());
 
-        UniMessageReq req = new UniMessageReq();
+        UniMessage req = new UniMessage();
         req.setTemplateCode("missing");
         req.setLanguage(Language.ZH_CN);
 
@@ -84,7 +88,7 @@ class MessageTemplateEngineTest {
         MessageTemplateEntity entity = MessageTemplateEntityFixtures.localizedEmpty();
         when(messageTemplateService.findByCode("x")).thenReturn(Mono.just(entity));
 
-        UniMessageReq req = new UniMessageReq();
+        UniMessage req = new UniMessage();
         req.setTemplateCode("x");
         req.setLanguage(Language.EN);
 
@@ -95,7 +99,7 @@ class MessageTemplateEngineTest {
     void fill_whenLocalizedTemplatesNull_completesEmpty() {
         MessageTemplateEntity entity = MessageTemplateEntityFixtures.localizedTemplatesNull();
         when(messageTemplateService.findByCode("x")).thenReturn(Mono.just(entity));
-        UniMessageReq req = new UniMessageReq();
+        UniMessage req = new UniMessage();
         req.setTemplateCode("x");
         req.setLanguage(Language.ZH_CN);
         StepVerifier.create(engine.fill(req)).verifyComplete();
@@ -106,13 +110,16 @@ class MessageTemplateEngineTest {
         MessageTemplateEntity entity = MessageTemplateEntityFixtures.greetEn();
         when(messageTemplateService.findByCode("greet")).thenReturn(Mono.just(entity));
 
-        UniMessageReq req = new UniMessageReq();
+        UniMessage req = new UniMessage();
         req.setTemplateCode("greet");
         req.setLanguage(Language.EN);
         req.setTemplateParams(null);
 
         StepVerifier.create(engine.fill(req))
-                .assertNext(msg -> assertThat(msg.getContent()).isEqualTo("Hello "))
+                .assertNext(msg -> {
+                    assertThat(msg.getContent()).isEqualTo("Hello ");
+                    assertThat(msg.getTemplateParams()).isEmpty();
+                })
                 .verifyComplete();
     }
 
@@ -121,7 +128,7 @@ class MessageTemplateEngineTest {
         MessageTemplateEntity entity = MessageTemplateEntityFixtures.emptyBodyDe();
         when(messageTemplateService.findByCode("empty_body")).thenReturn(Mono.just(entity));
 
-        UniMessageReq req = new UniMessageReq();
+        UniMessage req = new UniMessage();
         req.setTemplateCode("empty_body");
         req.setLanguage(Language.DE);
 
@@ -136,7 +143,7 @@ class MessageTemplateEngineTest {
         MessageTemplateEntity entity = MessageTemplateEntityFixtures.invZhCn();
         when(messageTemplateService.findByCode("inv")).thenReturn(Mono.just(entity));
 
-        UniMessageReq req = new UniMessageReq();
+        UniMessage req = new UniMessage();
         req.setTemplateCode("inv");
         req.setLanguage(Language.ZH_CN);
         req.setTemplateParams(Map.of("p", "1"));
