@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
+import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelProviderType;
 
@@ -73,7 +74,7 @@ class WecomBotChannelTest {
         message.setContent("正文");
         UniAddress address = UniAddress.ofImBot(ChannelProviderType.WECOM_BOT, "ck", "chatid_1");
 
-        StepVerifier.create(channel.send(message, address))
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectNext("WECOM_BOT ok 1 chat(s)")
                 .verifyComplete();
 
@@ -106,7 +107,7 @@ class WecomBotChannelTest {
         message.setContent("x");
         UniAddress address = UniAddress.ofImBot(ChannelProviderType.WECOM_BOT, "k", "bad");
 
-        StepVerifier.create(channel.send(message, address))
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
                         && e.getMessage().contains("WECOM_BOT platform failure"))
                 .verify();
@@ -133,7 +134,7 @@ class WecomBotChannelTest {
         message.setContent("x");
         UniAddress address = UniAddress.ofImBot(ChannelProviderType.WECOM_BOT, "k", "cid");
 
-        StepVerifier.create(badChannel.send(message, address))
+        StepVerifier.create(badChannel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
                         && e.getMessage().contains("WECOM_BOT spec requires corpId"))
                 .verify();
@@ -161,7 +162,7 @@ class WecomBotChannelTest {
         message.setContent("x");
         UniAddress address = UniAddress.ofImBot(ChannelProviderType.WECOM_BOT, "k", "cid");
 
-        StepVerifier.create(ch.send(message, address))
+        StepVerifier.create(ch.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
                         && e.getMessage().contains("WECOM_BOT spec requires getTokenUrl"))
                 .verify();

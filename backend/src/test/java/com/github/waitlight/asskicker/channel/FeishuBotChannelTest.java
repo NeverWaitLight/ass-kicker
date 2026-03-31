@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
+import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelProviderType;
 
@@ -73,7 +74,7 @@ class FeishuBotChannelTest {
         message.setContent("内容");
         UniAddress address = UniAddress.ofImBot(ChannelProviderType.FEISHU_BOT, "ck", "oc_chat_1");
 
-        StepVerifier.create(channel.send(message, address))
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectNext("FEISHU_BOT ok 1 chat(s)")
                 .verifyComplete();
 
@@ -103,7 +104,7 @@ class FeishuBotChannelTest {
         message.setContent("x");
         UniAddress address = UniAddress.ofImBot(ChannelProviderType.FEISHU_BOT, "k", "oc");
 
-        StepVerifier.create(channel.send(message, address))
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
                         && e.getMessage().contains("FEISHU_BOT platform failure"))
                 .verify();
@@ -115,7 +116,7 @@ class FeishuBotChannelTest {
         message.setContent("x");
         UniAddress address = UniAddress.ofImBot(ChannelProviderType.FEISHU_BOT, "k");
 
-        StepVerifier.create(channel.send(message, address))
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalArgumentException
                         && e.getMessage().contains("FEISHU_BOT recipients required"))
                 .verify();
@@ -143,7 +144,7 @@ class FeishuBotChannelTest {
         message.setContent("x");
         UniAddress address = UniAddress.ofImBot(ChannelProviderType.FEISHU_BOT, "k", "oc");
 
-        StepVerifier.create(ch.send(message, address))
+        StepVerifier.create(ch.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
                         && e.getMessage().contains("FEISHU_BOT spec requires tenantTokenUrl"))
                 .verify();

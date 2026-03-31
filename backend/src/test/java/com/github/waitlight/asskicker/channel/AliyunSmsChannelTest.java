@@ -14,6 +14,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
+import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelProviderType;
 
@@ -79,7 +80,7 @@ class AliyunSmsChannelTest {
                 .recipients(java.util.Set.of("13800138000"))
                 .build();
 
-        StepVerifier.create(channel.send(message, address))
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectNext("ALIYUN_SMS ok 1 recipient(s)")
                 .verifyComplete();
 

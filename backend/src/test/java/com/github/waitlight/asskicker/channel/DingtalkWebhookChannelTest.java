@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
+import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelProviderType;
 
@@ -66,7 +67,7 @@ class DingtalkWebhookChannelTest {
         message.setContent("服务异常");
         UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.DINGTALK, "abc-token");
 
-        StepVerifier.create(channel.send(message, address))
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectNext("DINGTALK ok 1 recipient(s)")
                 .verifyComplete();
 
@@ -88,7 +89,7 @@ class DingtalkWebhookChannelTest {
         message.setContent("test");
         UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.DINGTALK, "bad-token");
 
-        StepVerifier.create(channel.send(message, address))
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
                         && e.getMessage().contains("DINGTALK platform failure"))
                 .verify();
@@ -100,7 +101,7 @@ class DingtalkWebhookChannelTest {
         message.setContent("test");
         UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.DINGTALK);
 
-        StepVerifier.create(channel.send(message, address))
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalArgumentException
                         && e.getMessage().contains("DINGTALK recipients required"))
                 .verify();

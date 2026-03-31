@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
+import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelProviderType;
 
@@ -66,7 +67,7 @@ class FeishuWebhookChannelTest {
         message.setContent("内容");
         UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.FEISHU, "token-001");
 
-        StepVerifier.create(channel.send(message, address))
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectNext("FEISHU ok 1 recipient(s)")
                 .verifyComplete();
 
@@ -87,7 +88,7 @@ class FeishuWebhookChannelTest {
         message.setContent("test");
         UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.FEISHU, "bad-token");
 
-        StepVerifier.create(channel.send(message, address))
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
                         && e.getMessage().contains("FEISHU platform failure"))
                 .verify();
@@ -99,7 +100,7 @@ class FeishuWebhookChannelTest {
         message.setContent("test");
         UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.FEISHU);
 
-        StepVerifier.create(channel.send(message, address))
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalArgumentException
                         && e.getMessage().contains("FEISHU recipients required"))
                 .verify();

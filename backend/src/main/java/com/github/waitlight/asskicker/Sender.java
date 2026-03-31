@@ -72,8 +72,15 @@ public class Sender {
     }
 
     private Mono<SendContext> sendByChannel(SendContext context) {
+        UniTask t = context.getTask();
+        UniTask sendTask = UniTask.builder()
+                .message(context.getUniMessage())
+                .address(t.getAddress())
+                .taskId(t.getTaskId())
+                .submittedAt(t.getSubmittedAt())
+                .build();
         return context.getChannel()
-                .send(context.getUniMessage(), context.getTask().getAddress())
+                .send(sendTask)
                 .map(context::withSendResult);
     }
 
