@@ -3,7 +3,7 @@ package com.github.waitlight.asskicker.mq;
 import com.github.waitlight.asskicker.Sender;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
-import com.github.waitlight.asskicker.dto.UniSendReq;
+import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.Language;
 import org.junit.jupiter.api.Assertions;
@@ -30,7 +30,7 @@ class SendTaskConsumerTest {
     @Test
     void consume_validTask_delegatesToSender() {
         SendTaskConsumer consumer = new SendTaskConsumer(sender);
-        UniSendReq task = buildTask();
+        UniTask task = buildTask();
 
         when(sender.send(task)).thenReturn(Mono.just("send-ok"));
 
@@ -51,10 +51,10 @@ class SendTaskConsumerTest {
     @Test
     void consume_missingMessageOrAddress_ignored() {
         SendTaskConsumer consumer = new SendTaskConsumer(sender);
-        UniSendReq task = buildTask();
+        UniTask task = buildTask();
 
-        consumer.consume(UniSendReq.builder().address(task.getAddress()).build());
-        consumer.consume(UniSendReq.builder().message(task.getMessage()).build());
+        consumer.consume(UniTask.builder().address(task.getAddress()).build());
+        consumer.consume(UniTask.builder().message(task.getMessage()).build());
 
         verify(sender, never()).send(any());
     }
@@ -62,7 +62,7 @@ class SendTaskConsumerTest {
     @Test
     void consume_senderFails_propagatesException() {
         SendTaskConsumer consumer = new SendTaskConsumer(sender);
-        UniSendReq task = buildTask();
+        UniTask task = buildTask();
 
         when(sender.send(task)).thenReturn(Mono.error(new IllegalStateException("send failed")));
 
@@ -70,7 +70,7 @@ class SendTaskConsumerTest {
         verify(sender).send(task);
     }
 
-    private UniSendReq buildTask() {
+    private UniTask buildTask() {
         UniMessage message = new UniMessage();
         message.setTemplateCode("tpl-code");
         message.setLanguage(Language.ZH_CN);
@@ -82,7 +82,7 @@ class SendTaskConsumerTest {
                 .recipients(Set.of("lord@winterfell.com"))
                 .build();
 
-        return UniSendReq.builder()
+        return UniTask.builder()
                 .message(message)
                 .address(address)
                 .taskId("task-001")

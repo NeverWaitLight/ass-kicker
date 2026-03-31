@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.mq;
 
-import com.github.waitlight.asskicker.dto.UniSendReq;
+import com.github.waitlight.asskicker.dto.UniTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -15,14 +15,14 @@ public class SendTaskProducer {
 
     private static final Logger logger = LoggerFactory.getLogger(SendTaskProducer.class);
 
-    private final KafkaTemplate<String, UniSendReq> kafkaTemplate;
+    private final KafkaTemplate<String, UniTask> kafkaTemplate;
 
-    public SendTaskProducer(KafkaTemplate<String, UniSendReq> kafkaTemplate) {
+    public SendTaskProducer(KafkaTemplate<String, UniTask> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public Mono<UniSendReq> publish(UniSendReq task) {
-        CompletableFuture<SendResult<String, UniSendReq>> future =
+    public Mono<UniTask> publish(UniTask task) {
+        CompletableFuture<SendResult<String, UniTask>> future =
                 kafkaTemplate.send(KafkaConfig.SEND_TASKS_TOPIC, task.getTaskId(), task);
         return Mono.fromFuture(future)
                 .doOnSuccess(result -> logger.debug("SendTask published taskId={}", task.getTaskId()))

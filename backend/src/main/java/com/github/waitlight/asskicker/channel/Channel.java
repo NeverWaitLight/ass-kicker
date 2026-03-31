@@ -9,10 +9,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
-import com.github.waitlight.asskicker.dto.UniSendReq;
+import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
-
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
@@ -43,18 +42,11 @@ public abstract class Channel {
         this.objectMapper = objectMapper;
     }
 
-    public final Mono<String> send(UniSendReq req) {
-        return doSend(req.getMessage(), req.getAddress());
-    }
-
-    public final Mono<String> send(UniMessage uniMessage, UniAddress uniAddress) {
-        if (uniMessage == null
-                || uniAddress == null
-                || uniAddress.getRecipients() == null
-                || uniAddress.getRecipients().isEmpty()) {
-            return Mono.empty();
+    public final Mono<String> send(UniTask task) {
+        if (task == null) {
+            return Mono.error(new IllegalArgumentException("task required"));
         }
-        return doSend(uniMessage, uniAddress);
+        return doSend(task.getMessage(), task.getAddress());
     }
 
     protected abstract Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress);

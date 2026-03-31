@@ -3,7 +3,7 @@ package com.github.waitlight.asskicker.handler;
 import com.github.waitlight.asskicker.Sender;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
-import com.github.waitlight.asskicker.dto.UniSendReq;
+import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.dto.send.SendResponse;
 import com.github.waitlight.asskicker.mq.SendTaskProducer;
 import lombok.RequiredArgsConstructor;
@@ -51,31 +51,31 @@ public class SendHandler {
                         .bodyValue(ex.getReason() == null ? "提交失败" : ex.getReason()));
     }
 
-    private Mono<UniSendReq> bodyToSendRequest(ServerRequest request) {
-        return request.bodyToMono(UniSendReq.class)
+    private Mono<UniTask> bodyToSendRequest(ServerRequest request) {
+        return request.bodyToMono(UniTask.class)
                 .onErrorMap(ServerWebInputException.class,
                         ex -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "请求数据格式错误"))
                 .onErrorMap(DecodingException.class,
                         ex -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "请求数据格式错误"));
     }
 
-    private Mono<String> validateAndExecute(UniSendReq body) {
-        UniSendReq task = validateAndEnrich(body);
+    private Mono<String> validateAndExecute(UniTask rawTask) {
+        UniTask task = validateAndEnrich(rawTask);
         return sender.send(task).thenReturn(task.getTaskId());
     }
 
-    private Mono<String> validateAndPublish(UniSendReq body) {
-        UniSendReq task = validateAndEnrich(body);
+    private Mono<String> validateAndPublish(UniTask rawTask) {
+        UniTask task = validateAndEnrich(rawTask);
         return sendTaskProducer.publish(task).thenReturn(task.getTaskId());
     }
 
-    private UniSendReq validateAndEnrich(UniSendReq body) {
-        if (body == null) {
+    private UniTask validateAndEnrich(UniTask task) {
+        if (task == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请求体不能为空");
         }
 
-        UniMessage message = body.getMessage();
-        UniAddress address = body.getAddress();
+        UniMessage message = task.getMessage();
+        UniAddress address = task.getAddress();
         if (message == null || address == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "message 和 address 不能为空");
         }
@@ -92,15 +92,15 @@ public class SendHandler {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "recipients 不能为空");
         }
 
-        return UniSendReq.builder()
+        return UniTask.builder()
                 .message(message)
                 .address(address)
-                .taskId(body.getTaskId() == null || body.getTaskId().isBlank()
+                .taskId(task.getTaskId() == null || task.getTaskId().isBlank()
                         ? UUID.randomUUID().toString()
-                        : body.getTaskId())
-                .submittedAt(body.getSubmittedAt() == null
+                        : task.getTaskId())
+                .submittedAt(task.getSubmittedAt() == null
                         ? Instant.now().toEpochMilli()
-                        : body.getSubmittedAt())
+                        : task.getSubmittedAt())
                 .build();
     }
 }

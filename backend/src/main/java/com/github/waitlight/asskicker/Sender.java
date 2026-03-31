@@ -4,9 +4,9 @@ import org.springframework.stereotype.Component;
 
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelManager;
-import com.github.waitlight.asskicker.dto.UniSendReq;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
+import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.SendRecordEntity;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
 import com.github.waitlight.asskicker.service.SendRecordService;
@@ -26,11 +26,11 @@ public class Sender {
     private final ChannelManager channelManager;
     private final SendRecordService sendRecordService;
 
-    public Mono<String> send(UniSendReq req) {
-        if (req == null || req.getMessage() == null || req.getAddress() == null) {
+    public Mono<String> send(UniTask task) {
+        if (task == null || task.getMessage() == null || task.getAddress() == null) {
             return Mono.empty();
         }
-        return Mono.just(new SendContext(req))
+        return Mono.just(new SendContext(task))
                 .flatMap(this::fillMessage)
                 .flatMap(this::choseChannel)
                 .flatMap(this::sendByChannel)
@@ -39,29 +39,29 @@ public class Sender {
     }
 
     private Mono<SendContext> fillMessage(SendContext context) {
-        return messageTemplateEngine.fill(context.getRequest().getMessage())
+        return messageTemplateEngine.fill(context.getTask().getMessage())
                 .map(context::withUniMessage);
     }
 
     private Mono<SendContext> choseChannel(SendContext context) {
-        UniAddress uniAddress = context.getRequest().getAddress();
+        UniAddress uniAddress = context.getTask().getAddress();
         return channelManager.chose(uniAddress.getChannelType(), uniAddress.getChannelProviderKey())
                 .map(context::withChannel);
     }
 
     private SendContext processSendRecord(SendContext context) {
-        UniSendReq request = context.getRequest();
-        UniMessage req = request.getMessage();
-        UniAddress uniAddress = request.getAddress();
+        UniTask task = context.getTask();
+        UniMessage message = task.getMessage();
+        UniAddress uniAddress = task.getAddress();
 
         SendRecordEntity sendRecordEntity = new SendRecordEntity();
-        sendRecordEntity.setTaskId(request.getTaskId());
-        sendRecordEntity.setTemplateCode(req.getTemplateCode());
-        sendRecordEntity.setLanguageCode(req.getLanguage().getCode());
-        sendRecordEntity.setParams(req.getTemplateParams());
+        sendRecordEntity.setTaskId(task.getTaskId());
+        sendRecordEntity.setTemplateCode(message.getTemplateCode());
+        sendRecordEntity.setLanguageCode(message.getLanguage().getCode());
+        sendRecordEntity.setParams(message.getTemplateParams());
         sendRecordEntity.setChannelId(context.getChannel().getId());
         sendRecordEntity.setRecipient(resolveRecipient(uniAddress));
-        sendRecordEntity.setSubmittedAt(resolveSubmittedAt(request));
+        sendRecordEntity.setSubmittedAt(resolveSubmittedAt(task));
         sendRecordEntity.setRenderedContent(context.getUniMessage().getContent());
         sendRecordEntity.setChannelType(context.getChannel().getChannelType());
         sendRecordEntity.setChannelName(context.getChannel().getCode());
@@ -73,7 +73,7 @@ public class Sender {
 
     private Mono<SendContext> sendByChannel(SendContext context) {
         return context.getChannel()
-                .send(context.getUniMessage(), context.getRequest().getAddress())
+                .send(context.getUniMessage(), context.getTask().getAddress())
                 .map(context::withSendResult);
     }
 
@@ -84,8 +84,8 @@ public class Sender {
         return uniAddress.getRecipients().iterator().next();
     }
 
-    private long resolveSubmittedAt(UniSendReq request) {
-        return request.getSubmittedAt() != null ? request.getSubmittedAt() : System.currentTimeMillis();
+    private long resolveSubmittedAt(UniTask task) {
+        return task.getSubmittedAt() != null ? task.getSubmittedAt() : System.currentTimeMillis();
     }
 
     @Getter
@@ -93,7 +93,7 @@ public class Sender {
     @RequiredArgsConstructor
     private static final class SendContext {
 
-        private final UniSendReq request;
+        private final UniTask task;
         private UniMessage uniMessage;
         private Channel channel;
         private String sendResult;

@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.mq;
 
-import com.github.waitlight.asskicker.dto.UniSendReq;
+import com.github.waitlight.asskicker.dto.UniTask;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -39,7 +39,7 @@ public class KafkaConfig {
     }
 
     @Bean
-    public ProducerFactory<String, UniSendReq> sendTaskProducerFactory() {
+    public ProducerFactory<String, UniTask> sendTaskProducerFactory() {
         Map<String, Object> config = new HashMap<>();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -48,13 +48,13 @@ public class KafkaConfig {
     }
 
     @Bean
-    public KafkaTemplate<String, UniSendReq> kafkaTemplate(
-            ProducerFactory<String, UniSendReq> sendTaskProducerFactory) {
+    public KafkaTemplate<String, UniTask> kafkaTemplate(
+            ProducerFactory<String, UniTask> sendTaskProducerFactory) {
         return new KafkaTemplate<>(sendTaskProducerFactory);
     }
 
     @Bean
-    public ConsumerFactory<String, UniSendReq> sendTaskConsumerFactory() {
+    public ConsumerFactory<String, UniTask> sendTaskConsumerFactory() {
         Map<String, Object> config = new HashMap<>();
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ConsumerConfig.GROUP_ID_CONFIG, "ass-kicker");
@@ -62,14 +62,14 @@ public class KafkaConfig {
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         config.put(JsonDeserializer.TRUSTED_PACKAGES,
                 "com.github.waitlight.asskicker.model,com.github.waitlight.asskicker.dto");
-        config.put(JsonDeserializer.VALUE_DEFAULT_TYPE, UniSendReq.class.getName());
+        config.put(JsonDeserializer.VALUE_DEFAULT_TYPE, UniTask.class.getName());
         return new DefaultKafkaConsumerFactory<>(config);
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, UniSendReq> sendTaskListenerContainerFactory(
-            ConsumerFactory<String, UniSendReq> sendTaskConsumerFactory) {
-        ConcurrentKafkaListenerContainerFactory<String, UniSendReq> factory =
+    public ConcurrentKafkaListenerContainerFactory<String, UniTask> sendTaskListenerContainerFactory(
+            ConsumerFactory<String, UniTask> sendTaskConsumerFactory) {
+        ConcurrentKafkaListenerContainerFactory<String, UniTask> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(sendTaskConsumerFactory);
         return factory;
