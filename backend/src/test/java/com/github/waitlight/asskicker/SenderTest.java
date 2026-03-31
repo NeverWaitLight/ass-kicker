@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -50,66 +51,80 @@ class SenderTest {
         @Mock
         private ChannelFactory channelFactory;
 
+        private MockWebServer awsServer;
+        private MockWebServer aliyunServer;
+
+        @AfterEach
+        void tearDown() throws Exception {
+                if (awsServer != null) {
+                        awsServer.shutdown();
+                        awsServer = null;
+                }
+                if (aliyunServer != null) {
+                        aliyunServer.shutdown();
+                        aliyunServer = null;
+                }
+        }
+
         @Test
         void send_smsUsesDifferentChannelsForDifferentCountryCodes() throws Exception {
-                try (MockWebServer awsServer = new MockWebServer();
-                                MockWebServer aliyunServer = new MockWebServer()) {
-                        awsServer.start();
-                        aliyunServer.start();
+                awsServer = new MockWebServer();
+                aliyunServer = new MockWebServer();
+                awsServer.start();
+                aliyunServer.start();
 
-                        awsServer.enqueue(new MockResponse().setResponseCode(200)
-                                        .setHeader("Content-Type", "text/xml")
-                                        .setBody("""
-                                                        <PublishResponse xmlns="http://sns.amazonaws.com/doc/2010-03-31/">
-                                                                <PublishResult>
-                                                                        <MessageId>aws-msg-1</MessageId>
-                                                                </PublishResult>
-                                                        </PublishResponse>
-                                                        """));
-                        aliyunServer.enqueue(new MockResponse().setResponseCode(200)
-                                        .setHeader("Content-Type", "application/json;charset=UTF-8")
-                                        .setBody("{\"Code\":\"OK\",\"Message\":\"OK\",\"RequestId\":\"aliyun-msg-1\"}"));
+                awsServer.enqueue(new MockResponse().setResponseCode(200)
+                                .setHeader("Content-Type", "text/xml")
+                                .setBody("""
+                                                <PublishResponse xmlns="http://sns.amazonaws.com/doc/2010-03-31/">
+                                                        <PublishResult>
+                                                                <MessageId>aws-msg-1</MessageId>
+                                                        </PublishResult>
+                                                </PublishResponse>
+                                                """));
+                aliyunServer.enqueue(new MockResponse().setResponseCode(200)
+                                .setHeader("Content-Type", "application/json;charset=UTF-8")
+                                .setBody("{\"Code\":\"OK\",\"Message\":\"OK\",\"RequestId\":\"aliyun-msg-1\"}"));
 
-                        ChannelProviderEntity usProvider = buildAwsProvider(awsServer.url("/").toString());
-                        ChannelProviderEntity cnProvider = buildAliyunProvider(aliyunServer.url("/").toString());
+                ChannelProviderEntity usProvider = buildAwsProvider(awsServer.url("/").toString());
+                ChannelProviderEntity cnProvider = buildAliyunProvider(aliyunServer.url("/").toString());
 
-                        AwsSnsSmsChannel usChannel = new AwsSnsSmsChannel(usProvider, WebClient.create(),
-                                        OBJECT_MAPPER);
-                        AliyunSmsChannel cnChannel = new AliyunSmsChannel(cnProvider, WebClient.create(),
-                                        OBJECT_MAPPER);
+                AwsSnsSmsChannel usChannel = new AwsSnsSmsChannel(usProvider, WebClient.create(),
+                                OBJECT_MAPPER);
+                AliyunSmsChannel cnChannel = new AliyunSmsChannel(cnProvider, WebClient.create(),
+                                OBJECT_MAPPER);
 
-                        when(channelProviderService.findEnabled()).thenReturn(Flux.just(usProvider, cnProvider));
-                        when(channelFactory.create(usProvider)).thenReturn(usChannel);
-                        when(channelFactory.create(cnProvider)).thenReturn(cnChannel);
+                when(channelProviderService.findEnabled()).thenReturn(Flux.just(usProvider, cnProvider));
+                when(channelFactory.create(usProvider)).thenReturn(usChannel);
+                when(channelFactory.create(cnProvider)).thenReturn(cnChannel);
 
-                        ChannelManager channelManager = new ChannelManager(channelProviderService, channelFactory);
-                        channelManager.refresh();
+                ChannelManager channelManager = new ChannelManager(channelProviderService, channelFactory);
+                channelManager.refresh();
 
-                        Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService);
-                        UniMessage template = buildTemplate();
-                        UniMessage renderedMessage = new UniMessage();
-                        renderedMessage.setContent("rendered-content");
-                        when(messageTemplateEngine.fill(template)).thenReturn(Mono.just(renderedMessage));
+                Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService);
+                UniMessage template = buildTemplate();
+                UniMessage renderedMessage = new UniMessage();
+                renderedMessage.setContent("rendered-content");
+                when(messageTemplateEngine.fill(template)).thenReturn(Mono.just(renderedMessage));
 
-                        UniTask usTask = UniTask.builder()
-                                        .message(template)
-                                        .address(UniAddress.ofSms("+14155550123"))
-                                        .build();
-                        UniTask cnTask = UniTask.builder()
-                                        .message(template)
-                                        .address(UniAddress.ofSms("+8613800138000"))
-                                        .build();
+                UniTask usTask = UniTask.builder()
+                                .message(template)
+                                .address(UniAddress.ofSms("+14155550123"))
+                                .build();
+                UniTask cnTask = UniTask.builder()
+                                .message(template)
+                                .address(UniAddress.ofSms("+8613800138000"))
+                                .build();
 
-                        StepVerifier.create(sender.send(usTask))
-                                        .expectNext("AWS_SMS ok 1 recipient(s)")
-                                        .verifyComplete();
-                        StepVerifier.create(sender.send(cnTask))
-                                        .expectNext("ALIYUN_SMS ok 1 recipient(s)")
-                                        .verifyComplete();
+                StepVerifier.create(sender.send(usTask))
+                                .expectNext("AWS_SMS ok 1 recipient(s)")
+                                .verifyComplete();
+                StepVerifier.create(sender.send(cnTask))
+                                .expectNext("ALIYUN_SMS ok 1 recipient(s)")
+                                .verifyComplete();
 
-                        assertThat(awsServer.takeRequest(5, TimeUnit.SECONDS)).isNotNull();
-                        assertThat(aliyunServer.takeRequest(5, TimeUnit.SECONDS)).isNotNull();
-                }
+                assertThat(awsServer.takeRequest(5, TimeUnit.SECONDS)).isNotNull();
+                assertThat(aliyunServer.takeRequest(5, TimeUnit.SECONDS)).isNotNull();
         }
 
         private static UniMessage buildTemplate() {
