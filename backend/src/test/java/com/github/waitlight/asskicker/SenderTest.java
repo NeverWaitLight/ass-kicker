@@ -54,6 +54,10 @@ class SenderTest {
                 .channelProviderKey("provider-key")
                 .recipients(Set.of("first@example.com", "second@example.com"))
                 .build();
+        UniSendReq task = UniSendReq.builder()
+                .message(req)
+                .address(address)
+                .build();
 
         UniMessage message = new UniMessage();
         message.setTitle("title");
@@ -62,7 +66,7 @@ class SenderTest {
         when(messageTemplateEngine.fill(req)).thenReturn(Mono.just(message));
         when(channelManager.chose(ChannelType.EMAIL, "provider-key")).thenReturn(Mono.just(channel));
 
-        StepVerifier.create(sender.send(req, address))
+        StepVerifier.create(sender.send(task))
                 .assertNext(result -> assertThat(result).isEqualTo("send-ok"))
                 .verifyComplete();
 
@@ -83,6 +87,10 @@ class SenderTest {
                 .channelType(ChannelType.SMS)
                 .channelProviderKey("sms-provider")
                 .build();
+        UniSendReq task = UniSendReq.builder()
+                .message(req)
+                .address(address)
+                .build();
 
         UniMessage message = new UniMessage();
         message.setContent("hello");
@@ -90,7 +98,7 @@ class SenderTest {
         when(messageTemplateEngine.fill(req)).thenReturn(Mono.just(message));
         when(channelManager.chose(ChannelType.SMS, "sms-provider")).thenReturn(Mono.empty());
 
-        StepVerifier.create(sender.send(req, address)).verifyComplete();
+        StepVerifier.create(sender.send(task)).verifyComplete();
     }
 
     @Test

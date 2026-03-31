@@ -4,9 +4,9 @@ import org.springframework.stereotype.Component;
 
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelManager;
+import com.github.waitlight.asskicker.dto.UniSendReq;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
-import com.github.waitlight.asskicker.dto.UniSendReq;
 import com.github.waitlight.asskicker.model.SendRecordEntity;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
 import com.github.waitlight.asskicker.service.SendRecordService;
@@ -36,13 +36,6 @@ public class Sender {
                 .flatMap(this::sendByChannel)
                 .map(this::processSendRecord)
                 .map(SendContext::getSendResult);
-    }
-
-    public Mono<String> send(UniMessage req, UniAddress uniAddress) {
-        return send(UniSendReq.builder()
-                .message(req)
-                .address(uniAddress)
-                .build());
     }
 
     private Mono<SendContext> fillMessage(SendContext context) {
