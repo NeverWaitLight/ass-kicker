@@ -49,25 +49,24 @@ public class ChannelManager {
         log.info("Loaded {} channel channel(s)", loaded);
     }
 
-    public Mono<Channel> selectChannel(ChannelType channelType, String targetAddress) {
-        String addr = targetAddress == null ? "" : targetAddress;
+    public Mono<Channel> chose(ChannelType channelType, String recipient) {
         List<Channel> matching = cache.values().stream()
-                .filter(w -> w.getChannelType() == channelType)
+                .filter(c -> c.getChannelType() == channelType)
                 .filter(Channel::isEnabled)
-                .filter(w -> !w.matchesExclude(addr))
+                .filter(c -> !c.matchesExclude(recipient))
                 .toList();
         if (matching.isEmpty()) {
             return Mono.empty();
         }
         List<Channel> priorityMatches = matching.stream()
-                .filter(w -> w.matchesPriority(addr))
+                .filter(c -> c.matchesPriority(recipient))
                 .sorted(BY_CODE)
                 .toList();
         List<Channel> candidates = priorityMatches.isEmpty()
                 ? matching.stream().sorted(BY_CODE).toList()
                 : priorityMatches;
         Channel chosen = candidates.get(0);
-        log.debug("Selected channel {} for target address {}", chosen.getCode(), targetAddress);
+        log.debug("Selected channel {} for recipient {}", chosen.getCode(), recipient);
         return Mono.just(chosen);
     }
 

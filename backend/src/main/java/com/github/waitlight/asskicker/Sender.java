@@ -1,5 +1,7 @@
 package com.github.waitlight.asskicker;
 
+import org.springframework.stereotype.Component;
+
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.dto.UniAddress;
@@ -8,11 +10,11 @@ import com.github.waitlight.asskicker.dto.UniSendReq;
 import com.github.waitlight.asskicker.model.SendRecordEntity;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
 import com.github.waitlight.asskicker.service.SendRecordService;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -30,7 +32,7 @@ public class Sender {
         }
         return Mono.just(new SendContext(req))
                 .flatMap(this::fillMessage)
-                .flatMap(this::selectChannel)
+                .flatMap(this::choseChannel)
                 .flatMap(this::sendByChannel)
                 .map(this::processSendRecord)
                 .map(SendContext::getSendResult);
@@ -48,9 +50,9 @@ public class Sender {
                 .map(context::withUniMessage);
     }
 
-    private Mono<SendContext> selectChannel(SendContext context) {
+    private Mono<SendContext> choseChannel(SendContext context) {
         UniAddress uniAddress = context.getRequest().getAddress();
-        return channelManager.selectChannel(uniAddress.getChannelType(), uniAddress.getChannelProviderKey())
+        return channelManager.chose(uniAddress.getChannelType(), uniAddress.getChannelProviderKey())
                 .map(context::withChannel);
     }
 

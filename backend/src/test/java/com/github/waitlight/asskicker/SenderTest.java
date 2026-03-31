@@ -60,7 +60,7 @@ class SenderTest {
         message.setContent("rendered-content");
 
         when(messageTemplateEngine.fill(req)).thenReturn(Mono.just(message));
-        when(channelManager.selectChannel(ChannelType.EMAIL, "provider-key")).thenReturn(Mono.just(channel));
+        when(channelManager.chose(ChannelType.EMAIL, "provider-key")).thenReturn(Mono.just(channel));
 
         StepVerifier.create(sender.send(req, address))
                 .assertNext(result -> assertThat(result).isEqualTo("send-ok"))
@@ -88,7 +88,7 @@ class SenderTest {
         message.setContent("hello");
 
         when(messageTemplateEngine.fill(req)).thenReturn(Mono.just(message));
-        when(channelManager.selectChannel(ChannelType.SMS, "sms-provider")).thenReturn(Mono.empty());
+        when(channelManager.chose(ChannelType.SMS, "sms-provider")).thenReturn(Mono.empty());
 
         StepVerifier.create(sender.send(req, address)).verifyComplete();
     }
@@ -121,7 +121,7 @@ class SenderTest {
                 .build();
 
         when(messageTemplateEngine.fill(req)).thenReturn(Mono.just(message));
-        when(channelManager.selectChannel(ChannelType.IM, "chat-target")).thenReturn(Mono.just(channel));
+        when(channelManager.chose(ChannelType.IM, "chat-target")).thenReturn(Mono.just(channel));
 
         StepVerifier.create(sender.send(task))
                 .assertNext(result -> assertThat(result).isEqualTo("mq-ok"))

@@ -9,6 +9,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
+import com.github.waitlight.asskicker.dto.UniSendReq;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 
@@ -31,32 +32,41 @@ public abstract class Channel {
     protected final ObjectMapper objectMapper;
 
     protected Channel(ChannelProviderEntity entity, WebClient webClient, ObjectMapper objectMapper) {
-        this.webClient = webClient;
-        this.objectMapper = objectMapper;
         this.id = entity.getId();
         this.code = entity.getCode();
         this.channelType = entity.getChannelType();
         this.enabled = entity.isEnabled();
-        this.priorityPattern = compilePattern(entity.getCode(), entity.getPriorityAddressRegex(),
-                "priorityAddressRegex");
-        this.excludePattern = compilePattern(entity.getCode(), entity.getExcludeAddressRegex(),
-                "excludeAddressRegex");
+        this.priorityPattern = compilePattern(entity.getPriorityAddressRegex());
+        this.excludePattern = compilePattern(entity.getExcludeAddressRegex());
+
+        this.webClient = webClient;
+        this.objectMapper = objectMapper;
+    }
+
+    public final Mono<String> send(UniSendReq req) {
+        return doSend(req.getMessage(), req.getAddress());
     }
 
     public final Mono<String> send(UniMessage uniMessage, UniAddress uniAddress) {
+        if (uniMessage == null
+                || uniAddress == null
+                || uniAddress.getRecipients() == null
+                || uniAddress.getRecipients().isEmpty()) {
+            return Mono.empty();
+        }
         return doSend(uniMessage, uniAddress);
     }
 
     protected abstract Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress);
 
-    private static Pattern compilePattern(String channelCode, String regex, String fieldName) {
+    private static Pattern compilePattern(String regex) {
         if (StringUtils.isBlank(regex)) {
             return null;
         }
         try {
             return Pattern.compile(regex);
         } catch (PatternSyntaxException e) {
-            log.error("Invalid {} for channel {}: {}", fieldName, channelCode, regex, e);
+            log.error("Invalid channel regex: {}", regex, e);
             return null;
         }
     }

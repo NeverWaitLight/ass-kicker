@@ -136,10 +136,10 @@ class ChannelManagerTest {
 
                 channelManager.refresh();
 
-                StepVerifier.create(channelManager.selectChannel(ChannelType.PUSH, "token-abc"))
+                StepVerifier.create(channelManager.chose(ChannelType.PUSH, "token-abc"))
                                 .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannel.class))
                                 .verifyComplete();
-                StepVerifier.create(channelManager.selectChannel(ChannelType.PUSH, "token-X"))
+                StepVerifier.create(channelManager.chose(ChannelType.PUSH, "token-X"))
                                 .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannel.class))
                                 .verifyComplete();
         }
@@ -179,10 +179,10 @@ class ChannelManagerTest {
                                 .verifyComplete();
                 channelManager.refresh();
 
-                StepVerifier.create(channelManager.selectChannel(ChannelType.PUSH, "match"))
+                StepVerifier.create(channelManager.chose(ChannelType.PUSH, "match"))
                                 .assertNext(selected -> assertThat(selected).isInstanceOf(FcmChannel.class))
                                 .verifyComplete();
-                StepVerifier.create(channelManager.selectChannel(ChannelType.PUSH, "other"))
+                StepVerifier.create(channelManager.chose(ChannelType.PUSH, "other"))
                                 .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannel.class))
                                 .verifyComplete();
         }
@@ -220,13 +220,13 @@ class ChannelManagerTest {
                                 .verifyComplete();
                 channelManager.refresh();
 
-                StepVerifier.create(channelManager.selectChannel(ChannelType.PUSH, "p-target"))
+                StepVerifier.create(channelManager.chose(ChannelType.PUSH, "p-target"))
                                 .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannel.class))
                                 .verifyComplete();
-                StepVerifier.create(channelManager.selectChannel(ChannelType.PUSH, "x-target"))
+                StepVerifier.create(channelManager.chose(ChannelType.PUSH, "x-target"))
                                 .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannel.class))
                                 .verifyComplete();
-                StepVerifier.create(channelManager.selectChannel(ChannelType.PUSH, "normal"))
+                StepVerifier.create(channelManager.chose(ChannelType.PUSH, "normal"))
                                 .assertNext(selected -> assertThat(selected).isInstanceOf(ApnsChannel.class))
                                 .verifyComplete();
         }
@@ -251,7 +251,7 @@ class ChannelManagerTest {
                                 .verifyComplete();
                 channelManager.refresh();
 
-                StepVerifier.create(channelManager.selectChannel(ChannelType.PUSH, "solo"))
+                StepVerifier.create(channelManager.chose(ChannelType.PUSH, "solo"))
                                 .verifyComplete();
         }
 
