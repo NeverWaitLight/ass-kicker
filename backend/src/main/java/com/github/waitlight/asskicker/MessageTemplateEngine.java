@@ -15,7 +15,7 @@ import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import com.github.waitlight.asskicker.config.CaffeineCacheProperties;
 import com.github.waitlight.asskicker.dto.UniMessage;
-import com.github.waitlight.asskicker.dto.UniSendMessageReq;
+import com.github.waitlight.asskicker.dto.UniMessageReq;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.service.MessageTemplateService;
 
@@ -40,7 +40,7 @@ public class MessageTemplateEngine {
                 .build();
     }
 
-    public Mono<UniMessage> fill(UniSendMessageReq req) {
+    public Mono<UniMessage> fill(UniMessageReq req) {
         return messageTemplateService.findByCode(req.getTemplateCode())
                 .flatMap(tpl -> Mono.justOrEmpty(
                         tpl.getLocalizedTemplates() != null

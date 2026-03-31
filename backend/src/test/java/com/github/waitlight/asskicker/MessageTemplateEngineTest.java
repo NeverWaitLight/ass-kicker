@@ -17,7 +17,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.mustachejava.Mustache;
 import com.github.waitlight.asskicker.config.CaffeineCacheProperties;
-import com.github.waitlight.asskicker.dto.UniSendMessageReq;
+import com.github.waitlight.asskicker.dto.UniMessageReq;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.MessageTemplateEntity;
 import com.github.waitlight.asskicker.service.MessageTemplateEntityFixtures;
@@ -47,7 +47,7 @@ class MessageTemplateEngineTest {
         MessageTemplateEntity entity = MessageTemplateEntityFixtures.smsCaptchaZhCn();
         when(messageTemplateService.findByCode("sms_captcha")).thenReturn(Mono.just(entity));
 
-        UniSendMessageReq req = new UniSendMessageReq();
+        UniMessageReq req = new UniMessageReq();
         req.setTemplateCode("sms_captcha");
         req.setLanguage(Language.ZH_CN);
         Map<String, Object> params = new HashMap<>();
@@ -72,7 +72,7 @@ class MessageTemplateEngineTest {
     void fill_whenTemplateNotFound_completesEmpty() {
         when(messageTemplateService.findByCode("missing")).thenReturn(Mono.empty());
 
-        UniSendMessageReq req = new UniSendMessageReq();
+        UniMessageReq req = new UniMessageReq();
         req.setTemplateCode("missing");
         req.setLanguage(Language.ZH_CN);
 
@@ -84,7 +84,7 @@ class MessageTemplateEngineTest {
         MessageTemplateEntity entity = MessageTemplateEntityFixtures.localizedEmpty();
         when(messageTemplateService.findByCode("x")).thenReturn(Mono.just(entity));
 
-        UniSendMessageReq req = new UniSendMessageReq();
+        UniMessageReq req = new UniMessageReq();
         req.setTemplateCode("x");
         req.setLanguage(Language.EN);
 
@@ -95,7 +95,7 @@ class MessageTemplateEngineTest {
     void fill_whenLocalizedTemplatesNull_completesEmpty() {
         MessageTemplateEntity entity = MessageTemplateEntityFixtures.localizedTemplatesNull();
         when(messageTemplateService.findByCode("x")).thenReturn(Mono.just(entity));
-        UniSendMessageReq req = new UniSendMessageReq();
+        UniMessageReq req = new UniMessageReq();
         req.setTemplateCode("x");
         req.setLanguage(Language.ZH_CN);
         StepVerifier.create(engine.fill(req)).verifyComplete();
@@ -106,7 +106,7 @@ class MessageTemplateEngineTest {
         MessageTemplateEntity entity = MessageTemplateEntityFixtures.greetEn();
         when(messageTemplateService.findByCode("greet")).thenReturn(Mono.just(entity));
 
-        UniSendMessageReq req = new UniSendMessageReq();
+        UniMessageReq req = new UniMessageReq();
         req.setTemplateCode("greet");
         req.setLanguage(Language.EN);
         req.setTemplateParams(null);
@@ -121,7 +121,7 @@ class MessageTemplateEngineTest {
         MessageTemplateEntity entity = MessageTemplateEntityFixtures.emptyBodyDe();
         when(messageTemplateService.findByCode("empty_body")).thenReturn(Mono.just(entity));
 
-        UniSendMessageReq req = new UniSendMessageReq();
+        UniMessageReq req = new UniMessageReq();
         req.setTemplateCode("empty_body");
         req.setLanguage(Language.DE);
 
@@ -136,7 +136,7 @@ class MessageTemplateEngineTest {
         MessageTemplateEntity entity = MessageTemplateEntityFixtures.invZhCn();
         when(messageTemplateService.findByCode("inv")).thenReturn(Mono.just(entity));
 
-        UniSendMessageReq req = new UniSendMessageReq();
+        UniMessageReq req = new UniMessageReq();
         req.setTemplateCode("inv");
         req.setLanguage(Language.ZH_CN);
         req.setTemplateParams(Map.of("p", "1"));

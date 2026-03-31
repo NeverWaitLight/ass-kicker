@@ -9,7 +9,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class UniSendMessageReq {
+public class UniMessageReq {
     private String templateCode;
     private Language language;
     private Map<String, Object> templateParams;
