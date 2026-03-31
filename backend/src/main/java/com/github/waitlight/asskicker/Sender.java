@@ -1,16 +1,16 @@
 package com.github.waitlight.asskicker;
 
-import org.springframework.stereotype.Component;
-
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniSendMessageReq;
 import com.github.waitlight.asskicker.model.SendRecordEntity;
-
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -69,6 +69,8 @@ public class Sender {
         return uniAddress.getRecipients().iterator().next();
     }
 
+    @Getter
+    @Setter
     @RequiredArgsConstructor
     private static final class SendContext {
 
@@ -77,26 +79,6 @@ public class Sender {
         private UniMessage uniMessage;
         private Channel channel;
         private String sendResult;
-
-        private UniSendMessageReq getReq() {
-            return req;
-        }
-
-        private UniAddress getUniAddress() {
-            return uniAddress;
-        }
-
-        private UniMessage getUniMessage() {
-            return uniMessage;
-        }
-
-        private Channel getChannel() {
-            return channel;
-        }
-
-        private String getSendResult() {
-            return sendResult;
-        }
 
         private SendContext withUniMessage(UniMessage uniMessage) {
             this.uniMessage = uniMessage;
