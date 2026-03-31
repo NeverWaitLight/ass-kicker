@@ -4,7 +4,10 @@ import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
+import com.github.waitlight.asskicker.dto.UniSendReq;
 import com.github.waitlight.asskicker.model.SendRecordEntity;
+import com.github.waitlight.asskicker.model.SendRecordStatus;
+import com.github.waitlight.asskicker.service.SendRecordService;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -19,9 +22,13 @@ public class Sender {
 
     private final MessageTemplateEngine messageTemplateEngine;
     private final ChannelManager channelManager;
+    private final SendRecordService sendRecordService;
 
-    public Mono<String> send(UniMessage req, UniAddress uniAddress) {
-        return Mono.just(new SendContext(req, uniAddress))
+    public Mono<String> send(UniSendReq req) {
+        if (req == null || req.getMessage() == null || req.getAddress() == null) {
+            return Mono.empty();
+        }
+        return Mono.just(new SendContext(req))
                 .flatMap(this::fillMessage)
                 .flatMap(this::selectChannel)
                 .flatMap(this::sendByChannel)
@@ -29,35 +36,49 @@ public class Sender {
                 .map(SendContext::getSendResult);
     }
 
+    public Mono<String> send(UniMessage req, UniAddress uniAddress) {
+        return send(UniSendReq.builder()
+                .message(req)
+                .address(uniAddress)
+                .build());
+    }
+
     private Mono<SendContext> fillMessage(SendContext context) {
-        return messageTemplateEngine.fill(context.getReq())
+        return messageTemplateEngine.fill(context.getRequest().getMessage())
                 .map(context::withUniMessage);
     }
 
     private Mono<SendContext> selectChannel(SendContext context) {
-        UniAddress uniAddress = context.getUniAddress();
+        UniAddress uniAddress = context.getRequest().getAddress();
         return channelManager.selectChannel(uniAddress.getChannelType(), uniAddress.getChannelProviderKey())
                 .map(context::withChannel);
     }
 
     private SendContext processSendRecord(SendContext context) {
-        UniMessage req = context.getReq();
-        UniAddress uniAddress = context.getUniAddress();
+        UniSendReq request = context.getRequest();
+        UniMessage req = request.getMessage();
+        UniAddress uniAddress = request.getAddress();
+
         SendRecordEntity sendRecordEntity = new SendRecordEntity();
-        sendRecordEntity.setTaskId(null);
+        sendRecordEntity.setTaskId(request.getTaskId());
         sendRecordEntity.setTemplateCode(req.getTemplateCode());
         sendRecordEntity.setLanguageCode(req.getLanguage().getCode());
         sendRecordEntity.setParams(req.getTemplateParams());
-        sendRecordEntity.setChannelId(uniAddress.getChannelProviderKey());
+        sendRecordEntity.setChannelId(context.getChannel().getId());
         sendRecordEntity.setRecipient(resolveRecipient(uniAddress));
-        sendRecordEntity.setSubmittedAt(System.currentTimeMillis());
+        sendRecordEntity.setSubmittedAt(resolveSubmittedAt(request));
         sendRecordEntity.setRenderedContent(context.getUniMessage().getContent());
+        sendRecordEntity.setChannelType(context.getChannel().getChannelType());
+        sendRecordEntity.setChannelName(context.getChannel().getCode());
+        sendRecordEntity.setStatus(SendRecordStatus.SUCCESS);
+        sendRecordEntity.setSentAt(System.currentTimeMillis());
+        sendRecordService.writeRecord(sendRecordEntity);
         return context;
     }
 
     private Mono<SendContext> sendByChannel(SendContext context) {
         return context.getChannel()
-                .send(context.getUniMessage(), context.getUniAddress())
+                .send(context.getUniMessage(), context.getRequest().getAddress())
                 .map(context::withSendResult);
     }
 
@@ -68,13 +89,16 @@ public class Sender {
         return uniAddress.getRecipients().iterator().next();
     }
 
+    private long resolveSubmittedAt(UniSendReq request) {
+        return request.getSubmittedAt() != null ? request.getSubmittedAt() : System.currentTimeMillis();
+    }
+
     @Getter
     @Setter
     @RequiredArgsConstructor
     private static final class SendContext {
 
-        private final UniMessage req;
-        private final UniAddress uniAddress;
+        private final UniSendReq request;
         private UniMessage uniMessage;
         private Channel channel;
         private String sendResult;
