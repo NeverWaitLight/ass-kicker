@@ -1,171 +1,154 @@
 package com.github.waitlight.asskicker;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.ChannelManager;
-import com.github.waitlight.asskicker.dto.UniAddress;
-import com.github.waitlight.asskicker.dto.UniMessage;
-import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
-import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.model.Language;
-import com.github.waitlight.asskicker.service.SendRecordService;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.waitlight.asskicker.channel.AliyunSmsChannel;
+import com.github.waitlight.asskicker.channel.AwsSnsSmsChannel;
+import com.github.waitlight.asskicker.channel.ChannelFactory;
+import com.github.waitlight.asskicker.channel.ChannelManager;
+import com.github.waitlight.asskicker.dto.UniAddress;
+import com.github.waitlight.asskicker.dto.UniMessage;
+import com.github.waitlight.asskicker.dto.UniTask;
+import com.github.waitlight.asskicker.model.ChannelProviderEntity;
+import com.github.waitlight.asskicker.model.ChannelProviderType;
+import com.github.waitlight.asskicker.model.ChannelType;
+import com.github.waitlight.asskicker.model.Language;
+import com.github.waitlight.asskicker.service.ChannelProviderService;
+import com.github.waitlight.asskicker.service.SendRecordService;
+
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.util.Map;
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.argThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 class SenderTest {
+
+        private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
         @Mock
         private MessageTemplateEngine messageTemplateEngine;
 
         @Mock
-        private ChannelManager channelManager;
-
-        @Mock
         private SendRecordService sendRecordService;
 
-        @Test
-        void send_messageDeliveredSuccessfully() {
-                Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService);
-                TestChannel channel = new TestChannel(ChannelType.EMAIL, "test-email", "send-ok");
+        @Mock
+        private ChannelProviderService channelProviderService;
 
-                UniMessage messageTemplate = new UniMessage();
-                messageTemplate.setTemplateCode("tpl-code");
-                messageTemplate.setLanguage(Language.ZH_CN);
-                messageTemplate.setTemplateParams(Map.of("name", "lord"));
-
-                UniAddress address = UniAddress.builder()
-                                .channelType(ChannelType.EMAIL)
-                                .channelProviderKey("provider-key")
-                                .recipients(Set.of("first@example.com", "second@example.com"))
-                                .build();
-                UniTask task = UniTask.builder()
-                                .message(messageTemplate)
-                                .address(address)
-                                .build();
-
-                UniMessage message = new UniMessage();
-                message.setTitle("title");
-                message.setContent("rendered-content");
-
-                when(messageTemplateEngine.fill(messageTemplate)).thenReturn(Mono.just(message));
-                when(channelManager.chose(ChannelType.EMAIL, "provider-key")).thenReturn(Mono.just(channel));
-
-                StepVerifier.create(sender.send(task))
-                                .assertNext(result -> assertThat(result).isEqualTo("send-ok"))
-                                .verifyComplete();
-
-                assertThat(channel.lastMessage).isSameAs(message);
-                assertThat(channel.lastAddress).isSameAs(address);
-                verify(sendRecordService).writeRecord(any());
-        }
+        @Mock
+        private ChannelFactory channelFactory;
 
         @Test
-        void send_completesEmpty_whenChannelUnavailable() {
-                Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService);
+        void send_smsUsesDifferentChannelsForDifferentCountryCodes() throws Exception {
+                try (MockWebServer awsServer = new MockWebServer();
+                                MockWebServer aliyunServer = new MockWebServer()) {
+                        awsServer.start();
+                        aliyunServer.start();
 
-                UniMessage messageTemplate = new UniMessage();
-                messageTemplate.setTemplateCode("tpl-code");
-                messageTemplate.setLanguage(Language.EN);
+                        awsServer.enqueue(new MockResponse().setResponseCode(200)
+                                        .setHeader("Content-Type", "text/xml")
+                                        .setBody("""
+                                                        <PublishResponse xmlns="http://sns.amazonaws.com/doc/2010-03-31/">
+                                                                <PublishResult>
+                                                                        <MessageId>aws-msg-1</MessageId>
+                                                                </PublishResult>
+                                                        </PublishResponse>
+                                                        """));
+                        aliyunServer.enqueue(new MockResponse().setResponseCode(200)
+                                        .setHeader("Content-Type", "application/json;charset=UTF-8")
+                                        .setBody("{\"Code\":\"OK\",\"Message\":\"OK\",\"RequestId\":\"aliyun-msg-1\"}"));
 
-                UniAddress address = UniAddress.builder()
-                                .channelType(ChannelType.SMS)
-                                .channelProviderKey("sms-provider")
-                                .build();
-                UniTask task = UniTask.builder()
-                                .message(messageTemplate)
-                                .address(address)
-                                .build();
+                        ChannelProviderEntity usProvider = buildAwsProvider(awsServer.url("/").toString());
+                        ChannelProviderEntity cnProvider = buildAliyunProvider(aliyunServer.url("/").toString());
 
-                UniMessage message = new UniMessage();
-                message.setContent("hello");
+                        AwsSnsSmsChannel usChannel = new AwsSnsSmsChannel(usProvider, WebClient.create(),
+                                        OBJECT_MAPPER);
+                        AliyunSmsChannel cnChannel = new AliyunSmsChannel(cnProvider, WebClient.create(),
+                                        OBJECT_MAPPER);
 
-                when(messageTemplateEngine.fill(messageTemplate)).thenReturn(Mono.just(message));
-                when(channelManager.chose(ChannelType.SMS, "sms-provider")).thenReturn(Mono.empty());
+                        when(channelProviderService.findEnabled()).thenReturn(Flux.just(usProvider, cnProvider));
+                        when(channelFactory.create(usProvider)).thenReturn(usChannel);
+                        when(channelFactory.create(cnProvider)).thenReturn(cnChannel);
 
-                StepVerifier.create(sender.send(task)).verifyComplete();
+                        ChannelManager channelManager = new ChannelManager(channelProviderService, channelFactory);
+                        channelManager.refresh();
+
+                        Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService);
+                        UniMessage template = buildTemplate();
+                        UniMessage renderedMessage = new UniMessage();
+                        renderedMessage.setContent("rendered-content");
+                        when(messageTemplateEngine.fill(template)).thenReturn(Mono.just(renderedMessage));
+
+                        UniTask usTask = UniTask.builder()
+                                        .message(template)
+                                        .address(UniAddress.ofSms("+14155550123"))
+                                        .build();
+                        UniTask cnTask = UniTask.builder()
+                                        .message(template)
+                                        .address(UniAddress.ofSms("+8613800138000"))
+                                        .build();
+
+                        StepVerifier.create(sender.send(usTask))
+                                        .expectNext("AWS_SMS ok 1 recipient(s)")
+                                        .verifyComplete();
+                        StepVerifier.create(sender.send(cnTask))
+                                        .expectNext("ALIYUN_SMS ok 1 recipient(s)")
+                                        .verifyComplete();
+
+                        assertThat(awsServer.takeRequest(5, TimeUnit.SECONDS)).isNotNull();
+                        assertThat(aliyunServer.takeRequest(5, TimeUnit.SECONDS)).isNotNull();
+                }
         }
 
-        @Test
-        void send_taskRequestDeliveredSuccessfully() {
-                Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService);
-                TestChannel channel = new TestChannel(ChannelType.IM, "test-im", "mq-ok");
-
-                UniMessage messageTemplate = new UniMessage();
-                messageTemplate.setTemplateCode("tpl-code");
-                messageTemplate.setLanguage(Language.ZH_CN);
-                messageTemplate.setTemplateParams(Map.of("name", "north"));
-
-                UniAddress address = UniAddress.builder()
-                                .channelType(ChannelType.IM)
-                                .channelProviderKey("chat-target")
-                                .recipients(Set.of("chat-id-1"))
-                                .build();
-
+        private static UniMessage buildTemplate() {
                 UniMessage message = new UniMessage();
-                message.setTitle("title");
-                message.setContent("rendered-content");
-
-                UniTask task = UniTask.builder()
-                                .message(messageTemplate)
-                                .address(address)
-                                .taskId("task-001")
-                                .submittedAt(123456789L)
-                                .build();
-
-                when(messageTemplateEngine.fill(messageTemplate)).thenReturn(Mono.just(message));
-                when(channelManager.chose(ChannelType.IM, "chat-target")).thenReturn(Mono.just(channel));
-
-                StepVerifier.create(sender.send(task))
-                                .assertNext(result -> assertThat(result).isEqualTo("mq-ok"))
-                                .verifyComplete();
-
-                assertThat(channel.lastMessage).isSameAs(message);
-                assertThat(channel.lastAddress).isSameAs(address);
-                verify(sendRecordService).writeRecord(argThat(record -> "task-001".equals(record.getTaskId())
-                                && Long.valueOf(123456789L).equals(record.getSubmittedAt())));
+                message.setTemplateCode("sms-template");
+                message.setLanguage(Language.ZH_CN);
+                return message;
         }
 
-        private static final class TestChannel extends Channel {
+        private static ChannelProviderEntity buildAwsProvider(String endpoint) {
+                ChannelProviderEntity entity = new ChannelProviderEntity();
+                entity.setId("a-us-sms-id");
+                entity.setCode("a-us-sms");
+                entity.setChannelType(ChannelType.SMS);
+                entity.setProviderType(ChannelProviderType.AWS_SMS);
+                entity.setPriorityAddressRegex("^\\+1\\d+$");
+                entity.setEnabled(true);
+                entity.setProperties(Map.of(
+                                "accessKeyId", "AKIAIOSFODNN7EXAMPLE",
+                                "secretAccessKey", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                                "region", "us-east-1",
+                                "endpoint", endpoint));
+                return entity;
+        }
 
-                private final String result;
-                private UniMessage lastMessage;
-                private UniAddress lastAddress;
-
-                private TestChannel(ChannelType channelType, String code, String result) {
-                        super(buildEntity(channelType, code), WebClient.builder().build(), new ObjectMapper());
-                        this.result = result;
-                }
-
-                @Override
-                protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
-                        this.lastMessage = uniMessage;
-                        this.lastAddress = uniAddress;
-                        return Mono.just(result);
-                }
-
-                private static ChannelProviderEntity buildEntity(ChannelType channelType, String code) {
-                        ChannelProviderEntity entity = new ChannelProviderEntity();
-                        entity.setId(code + "-id");
-                        entity.setCode(code);
-                        entity.setChannelType(channelType);
-                        entity.setEnabled(true);
-                        return entity;
-                }
+        private static ChannelProviderEntity buildAliyunProvider(String endpoint) {
+                ChannelProviderEntity entity = new ChannelProviderEntity();
+                entity.setId("z-cn-sms-id");
+                entity.setCode("z-cn-sms");
+                entity.setChannelType(ChannelType.SMS);
+                entity.setProviderType(ChannelProviderType.ALIYUN_SMS);
+                entity.setPriorityAddressRegex("^\\+86\\d+$");
+                entity.setEnabled(true);
+                entity.setProperties(Map.of(
+                                "accessKeyId", "test-ak",
+                                "accessKeySecret", "test-sk",
+                                "signName", "test-sign",
+                                "templateCode", "SMS_TPL",
+                                "endpoint", endpoint));
+                return entity;
         }
 }

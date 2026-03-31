@@ -45,7 +45,7 @@ public class Sender {
 
     private Mono<SendContext> choseChannel(SendContext context) {
         UniAddress uniAddress = context.getTask().getAddress();
-        return channelManager.chose(uniAddress.getChannelType(), uniAddress.getChannelProviderKey())
+        return channelManager.chose(uniAddress.getChannelType(), resolveRecipient(uniAddress))
                 .map(context::withChannel);
     }
 
