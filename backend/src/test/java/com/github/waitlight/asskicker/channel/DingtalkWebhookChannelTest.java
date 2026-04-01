@@ -38,7 +38,7 @@ class DingtalkWebhookChannelTest {
                 {
                   "code": "dingtalk-webhook-test",
                   "channelType": "IM",
-                  "providerType": "DINGTALK",
+                  "providerType": "DINGTALK_WEBHOOK",
                   "enabled": true,
                   "properties": {
                     "url": "%s/robot/send"
@@ -65,7 +65,7 @@ class DingtalkWebhookChannelTest {
         UniMessage message = new UniMessage();
         message.setTitle("告警");
         message.setContent("服务异常");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.DINGTALK, "abc-token");
+        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.DINGTALK_WEBHOOK, "abc-token");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectNext("DINGTALK ok 1 recipient(s)")
@@ -87,7 +87,7 @@ class DingtalkWebhookChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("test");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.DINGTALK, "bad-token");
+        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.DINGTALK_WEBHOOK, "bad-token");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
@@ -99,7 +99,7 @@ class DingtalkWebhookChannelTest {
     void send_emptyRecipients_returnsIllegalArgumentException() {
         UniMessage message = new UniMessage();
         message.setContent("test");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.DINGTALK);
+        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.DINGTALK_WEBHOOK);
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalArgumentException

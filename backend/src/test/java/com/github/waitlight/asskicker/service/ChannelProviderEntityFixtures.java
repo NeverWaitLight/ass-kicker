@@ -71,16 +71,16 @@ public final class ChannelProviderEntityFixtures {
     public static ChannelProviderEntity imSlackEnabled() {
         return read("""
                 {
-                  "name": "Slack Bot 渠道",
-                  "code": "slack-bot-prod",
+                  "name": "钉钉 Webhook 渠道",
+                  "code": "dingtalk-webhook-prod",
                   "channelType": "IM",
-                  "providerType": "SLACK",
-                  "description": "Slack IM",
+                  "providerType": "DINGTALK_WEBHOOK",
+                  "description": "DingTalk IM webhook",
                   "priorityAddressRegex": "^(C|G|D)[A-Z0-9]{8,}$|^#[a-z0-9._-]+$",
                   "excludeAddressRegex": "^D0[A-Z0-9]+$|^#archive-",
                   "enabled": true,
                   "properties": {
-                    "botToken": "xoxb-test-token",
+                    "url": "https://oapi.dingtalk.com/robot/send",
                     "maxRetries": "3",
                     "timeout": "10000",
                     "retryDelay": "1000"
@@ -92,16 +92,16 @@ public final class ChannelProviderEntityFixtures {
     public static ChannelProviderEntity imSlackDisabled() {
         return read("""
                 {
-                  "name": "Slack Bot 停用",
-                  "code": "slack-bot-disabled",
+                  "name": "钉钉 Webhook 停用",
+                  "code": "dingtalk-webhook-disabled",
                   "channelType": "IM",
-                  "providerType": "SLACK",
+                  "providerType": "DINGTALK_WEBHOOK",
                   "description": "disabled",
                   "priorityAddressRegex": "^(C|G|D)[A-Z0-9]{8,}$",
                   "excludeAddressRegex": "^#archive-",
                   "enabled": false,
                   "properties": {
-                    "botToken": "xoxb-off"
+                    "url": ""
                   }
                 }
                 """);

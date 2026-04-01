@@ -34,15 +34,15 @@ public class ChannelFactory {
             return switch (provider.getProviderType()) {
                 case APNS -> new ApnsChannel(provider, webClient, channelObjectMapper);
                 case FCM -> new FcmChannel(provider, webClient, channelObjectMapper);
-                case DINGTALK -> new DingtalkWebhookChannel(provider, webClient, channelObjectMapper);
-                case WECOM -> new WecomWebhookChannel(provider, webClient, channelObjectMapper);
-                case FEISHU -> new FeishuWebhookChannel(provider, webClient, channelObjectMapper);
+                case DINGTALK_WEBHOOK -> new DingtalkWebhookChannel(provider, webClient, channelObjectMapper);
+                case WECOM_WEBHOOK -> new WecomWebhookChannel(provider, webClient, channelObjectMapper);
+                case FEISHU_WEBHOOK -> new FeishuWebhookChannel(provider, webClient, channelObjectMapper);
                 case DINGTALK_BOT -> new DingtalkBotChannel(provider, webClient, channelObjectMapper);
                 case WECOM_BOT -> new WecomBotChannel(provider, webClient, channelObjectMapper);
                 case FEISHU_BOT -> new FeishuBotChannel(provider, webClient, channelObjectMapper);
                 case ALIYUN_SMS -> new AliyunSmsChannel(provider, webClient, channelObjectMapper);
                 case AWS_SMS -> new AwsSnsSmsChannel(provider, webClient, channelObjectMapper);
-                case SMTP, ALIYUN_EMAIL, AWS_EMAIL -> new SmtpChannel(provider, webClient, channelObjectMapper);
+                case SMTP -> new SmtpChannel(provider, webClient, channelObjectMapper);
                 default -> {
                     log.warn("Unsupported channel provider type: {}", provider.getProviderType());
                     yield null;
@@ -58,14 +58,12 @@ public class ChannelFactory {
         return List.of(
                 ChannelProviderType.ALIYUN_SMS,
                 ChannelProviderType.AWS_SMS,
-                ChannelProviderType.ALIYUN_EMAIL,
-                ChannelProviderType.AWS_EMAIL,
                 ChannelProviderType.SMTP,
                 ChannelProviderType.APNS,
                 ChannelProviderType.FCM,
-                ChannelProviderType.DINGTALK,
-                ChannelProviderType.WECOM,
-                ChannelProviderType.FEISHU,
+                ChannelProviderType.DINGTALK_WEBHOOK,
+                ChannelProviderType.WECOM_WEBHOOK,
+                ChannelProviderType.FEISHU_WEBHOOK,
                 ChannelProviderType.DINGTALK_BOT,
                 ChannelProviderType.WECOM_BOT,
                 ChannelProviderType.FEISHU_BOT);

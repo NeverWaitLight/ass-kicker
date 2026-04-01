@@ -47,7 +47,7 @@ class WecomWebhookChannelTest {
         UniMessage message = new UniMessage();
         message.setTitle("标题");
         message.setContent("正文");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.WECOM, "wecom-key");
+        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.WECOM_WEBHOOK, "wecom-key");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectNext("WECOM ok 1 recipient(s)")
@@ -72,7 +72,7 @@ class WecomWebhookChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("test");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.WECOM, "bad-key");
+        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.WECOM_WEBHOOK, "bad-key");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
@@ -86,7 +86,7 @@ class WecomWebhookChannelTest {
                 {
                   "code": "wecom-webhook-test",
                   "channelType": "IM",
-                  "providerType": "WECOM",
+                  "providerType": "WECOM_WEBHOOK",
                   "enabled": true,
                   "properties": {
                     "url": ""
@@ -98,7 +98,7 @@ class WecomWebhookChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("test");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.WECOM, "wecom-key");
+        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.WECOM_WEBHOOK, "wecom-key");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
@@ -111,7 +111,7 @@ class WecomWebhookChannelTest {
                 {
                   "code": "wecom-webhook-test",
                   "channelType": "IM",
-                  "providerType": "WECOM",
+                  "providerType": "WECOM_WEBHOOK",
                   "enabled": true,
                   "properties": {
                     "url": "%s/cgi-bin/webhook/send"

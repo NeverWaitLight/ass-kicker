@@ -8,13 +8,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.model.ChannelProviderType;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 
 class ChannelFactoryTest {
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final ObjectMapper MAPPER = new ObjectMapper()
+          .configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true);
 
   private final ChannelFactory factory = new ChannelFactory(WebClient.create(),
           ChannelTestObjectMappers.channelObjectMapper());
@@ -68,7 +70,7 @@ class ChannelFactoryTest {
         {
           "code": "dingtalk-factory",
           "channelType": "IM",
-          "providerType": "DINGTALK",
+          "providerType": "DINGTALK_WEBHOOK",
           "enabled": true,
           "properties": {
             "url": "https://oapi.dingtalk.com/robot/send"
@@ -86,7 +88,7 @@ class ChannelFactoryTest {
         {
           "code": "wecom-factory",
           "channelType": "IM",
-          "providerType": "WECOM",
+          "providerType": "WECOM_WEBHOOK",
           "enabled": true,
           "properties": {
             "url": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send"
@@ -104,7 +106,7 @@ class ChannelFactoryTest {
         {
           "code": "feishu-factory",
           "channelType": "IM",
-          "providerType": "FEISHU",
+          "providerType": "FEISHU_WEBHOOK",
           "enabled": true,
           "properties": {
             "url": "https://open.feishu.cn/open-apis/bot/v2/hook"
@@ -259,21 +261,19 @@ class ChannelFactoryTest {
     assertThat(factory.getSupportedTypes()).containsExactly(
         ChannelProviderType.ALIYUN_SMS,
         ChannelProviderType.AWS_SMS,
-        ChannelProviderType.ALIYUN_EMAIL,
-        ChannelProviderType.AWS_EMAIL,
         ChannelProviderType.SMTP,
         ChannelProviderType.APNS,
         ChannelProviderType.FCM,
-        ChannelProviderType.DINGTALK,
-        ChannelProviderType.WECOM,
-        ChannelProviderType.FEISHU,
+        ChannelProviderType.DINGTALK_WEBHOOK,
+        ChannelProviderType.WECOM_WEBHOOK,
+        ChannelProviderType.FEISHU_WEBHOOK,
         ChannelProviderType.DINGTALK_BOT,
         ChannelProviderType.WECOM_BOT,
         ChannelProviderType.FEISHU_BOT);
     assertThat(factory.getSupportedTypes()).containsAll(List.of(
-        ChannelProviderType.DINGTALK,
-        ChannelProviderType.WECOM,
-        ChannelProviderType.FEISHU,
+        ChannelProviderType.DINGTALK_WEBHOOK,
+        ChannelProviderType.WECOM_WEBHOOK,
+        ChannelProviderType.FEISHU_WEBHOOK,
         ChannelProviderType.DINGTALK_BOT,
         ChannelProviderType.WECOM_BOT,
         ChannelProviderType.FEISHU_BOT));

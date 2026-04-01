@@ -38,7 +38,7 @@ class FeishuWebhookChannelTest {
                 {
                   "code": "feishu-webhook-test",
                   "channelType": "IM",
-                  "providerType": "FEISHU",
+                  "providerType": "FEISHU_WEBHOOK",
                   "enabled": true,
                   "properties": {
                     "url": "%s/open-apis/bot/v2/hook"
@@ -65,7 +65,7 @@ class FeishuWebhookChannelTest {
         UniMessage message = new UniMessage();
         message.setTitle("标题");
         message.setContent("内容");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.FEISHU, "token-001");
+        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.FEISHU_WEBHOOK, "token-001");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectNext("FEISHU ok 1 recipient(s)")
@@ -86,7 +86,7 @@ class FeishuWebhookChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("test");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.FEISHU, "bad-token");
+        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.FEISHU_WEBHOOK, "bad-token");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
@@ -98,7 +98,7 @@ class FeishuWebhookChannelTest {
     void send_emptyRecipients_returnsIllegalArgumentException() {
         UniMessage message = new UniMessage();
         message.setContent("test");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.FEISHU);
+        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.FEISHU_WEBHOOK);
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalArgumentException
