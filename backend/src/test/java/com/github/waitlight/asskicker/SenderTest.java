@@ -33,6 +33,7 @@ import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelProviderType;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.Language;
+import com.github.waitlight.asskicker.model.SendRecordEntity;
 import com.github.waitlight.asskicker.service.ChannelProviderService;
 import com.github.waitlight.asskicker.service.SendRecordService;
 
@@ -147,23 +148,26 @@ class SenderTest {
                                                                 "AWS_SMS ok 1 recipient(s)"))
                                 .verifyComplete();
 
+                // send 完成后从 Mock 队列按顺序取出实际 HTTP 请求，校验发往各供应商的表单参数与收件人一致
                 assertThat(List.of(
                                 extractFormParam(takeRequest(awsServer), "PhoneNumber"),
                                 extractFormParam(takeRequest(awsServer), "PhoneNumber")))
                                 .containsExactly(usRecipient1, usRecipient2);
                 assertThat(extractFormParam(takeRequest(aliyunServer), "PhoneNumbers"))
                                 .isEqualTo(cnRecipient);
+                // 两边都不应再有未消费的请求
                 assertThat(awsServer.takeRequest(200, TimeUnit.MILLISECONDS)).isNull();
                 assertThat(aliyunServer.takeRequest(200, TimeUnit.MILLISECONDS)).isNull();
 
-                ArgumentCaptor<com.github.waitlight.asskicker.model.SendRecordEntity> recordCaptor = ArgumentCaptor
-                                .forClass(com.github.waitlight.asskicker.model.SendRecordEntity.class);
+                // 每个收件人写一条发送记录，收件人、渠道 id、渠道名称与路由结果一致（顺序不限）
+                ArgumentCaptor<SendRecordEntity> recordCaptor = ArgumentCaptor
+                                .forClass(SendRecordEntity.class);
                 verify(sendRecordService, times(3)).writeRecord(recordCaptor.capture());
                 assertThat(recordCaptor.getAllValues())
                                 .extracting(
-                                                com.github.waitlight.asskicker.model.SendRecordEntity::getRecipient,
-                                                com.github.waitlight.asskicker.model.SendRecordEntity::getChannelId,
-                                                com.github.waitlight.asskicker.model.SendRecordEntity::getChannelName)
+                                                SendRecordEntity::getRecipient,
+                                                SendRecordEntity::getChannelId,
+                                                SendRecordEntity::getChannelName)
                                 .containsExactlyInAnyOrder(
                                                 tuple(usRecipient1, "a-us-sms-id", "a-us-sms"),
                                                 tuple(cnRecipient, "z-cn-sms-id", "z-cn-sms"),
