@@ -1,5 +1,8 @@
 package com.github.waitlight.asskicker;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Component;
 
 import com.github.waitlight.asskicker.channel.Channel;
@@ -15,6 +18,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -30,12 +34,18 @@ public class Sender {
         if (task == null || task.getMessage() == null || task.getAddress() == null) {
             return Mono.empty();
         }
+
+        Set<String> recipients = task.getAddress().getRecipients();
+        if (recipients == null || recipients.isEmpty()) {
+            return Mono.empty();
+        }
+
         return Mono.just(new SendContext(task))
                 .flatMap(this::fillMessage)
-                .flatMap(this::choseChannel)
-                .flatMap(this::sendByChannel)
-                .map(this::processSendRecord)
-                .map(SendContext::getSendResult);
+                .flatMapMany(ctx -> Flux.fromIterable(recipients)
+                        .concatMap(recipient -> doSend(ctx, recipient)))
+                .map(SendContext::getSendResult)
+                .collect(Collectors.joining(","));
     }
 
     private Mono<SendContext> fillMessage(SendContext context) {
@@ -43,31 +53,41 @@ public class Sender {
                 .map(context::withUniMessage);
     }
 
-    private Mono<SendContext> choseChannel(SendContext context) {
-        UniAddress uniAddress = context.getTask().getAddress();
-        return channelManager.chose(uniAddress.getChannelType(), resolveRecipient(uniAddress))
-                .map(context::withChannel);
+    private Mono<SendContext> doSend(SendContext baseCtx, String recipient) {
+        UniAddress singleAddr = buildSingleRecipientAddress(baseCtx.getTask().getAddress(), recipient);
+        return channelManager.chose(singleAddr.getChannelType(), recipient)
+                .map(channel -> baseCtx.fork(recipient, channel, singleAddr))
+                .flatMap(this::sendByChannel)
+                .map(this::processSendRecord);
+    }
+
+    private UniAddress buildSingleRecipientAddress(UniAddress original, String recipient) {
+        return UniAddress.builder()
+                .channelType(original.getChannelType())
+                .channelProviderType(original.getChannelProviderType())
+                .channelProviderKey(original.getChannelProviderKey())
+                .recipients(Set.of(recipient))
+                .build();
     }
 
     private SendContext processSendRecord(SendContext context) {
         UniTask task = context.getTask();
         UniMessage message = task.getMessage();
-        UniAddress uniAddress = task.getAddress();
 
-        SendRecordEntity sendRecordEntity = new SendRecordEntity();
-        sendRecordEntity.setTaskId(task.getTaskId());
-        sendRecordEntity.setTemplateCode(message.getTemplateCode());
-        sendRecordEntity.setLanguageCode(message.getLanguage().getCode());
-        sendRecordEntity.setParams(message.getTemplateParams());
-        sendRecordEntity.setChannelId(context.getChannel().getId());
-        sendRecordEntity.setRecipient(resolveRecipient(uniAddress));
-        sendRecordEntity.setSubmittedAt(resolveSubmittedAt(task));
-        sendRecordEntity.setRenderedContent(context.getUniMessage().getContent());
-        sendRecordEntity.setChannelType(context.getChannel().getChannelType());
-        sendRecordEntity.setChannelName(context.getChannel().getCode());
-        sendRecordEntity.setStatus(SendRecordStatus.SUCCESS);
-        sendRecordEntity.setSentAt(System.currentTimeMillis());
-        sendRecordService.writeRecord(sendRecordEntity);
+        SendRecordEntity sr = new SendRecordEntity();
+        sr.setTaskId(task.getTaskId());
+        sr.setTemplateCode(message.getTemplateCode());
+        sr.setLanguageCode(message.getLanguage().getCode());
+        sr.setParams(message.getTemplateParams());
+        sr.setChannelId(context.getChannel().getId());
+        sr.setRecipient(context.getRecipient());
+        sr.setSubmittedAt(resolveSubmittedAt(task));
+        sr.setRenderedContent(context.getUniMessage().getContent());
+        sr.setChannelType(context.getChannel().getChannelType());
+        sr.setChannelName(context.getChannel().getCode());
+        sr.setStatus(SendRecordStatus.SUCCESS);
+        sr.setSentAt(System.currentTimeMillis());
+        sendRecordService.writeRecord(sr);
         return context;
     }
 
@@ -75,20 +95,13 @@ public class Sender {
         UniTask t = context.getTask();
         UniTask sendTask = UniTask.builder()
                 .message(context.getUniMessage())
-                .address(t.getAddress())
+                .address(context.getSingleAddress())
                 .taskId(t.getTaskId())
                 .submittedAt(t.getSubmittedAt())
                 .build();
         return context.getChannel()
                 .send(sendTask)
                 .map(context::withSendResult);
-    }
-
-    private String resolveRecipient(UniAddress uniAddress) {
-        if (uniAddress.getRecipients() == null || uniAddress.getRecipients().isEmpty()) {
-            return null;
-        }
-        return uniAddress.getRecipients().iterator().next();
     }
 
     private long resolveSubmittedAt(UniTask task) {
@@ -104,20 +117,26 @@ public class Sender {
         private UniMessage uniMessage;
         private Channel channel;
         private String sendResult;
+        private String recipient;
+        private UniAddress singleAddress;
 
         private SendContext withUniMessage(UniMessage uniMessage) {
             this.uniMessage = uniMessage;
             return this;
         }
 
-        private SendContext withChannel(Channel channel) {
-            this.channel = channel;
-            return this;
-        }
-
         private SendContext withSendResult(String sendResult) {
             this.sendResult = sendResult;
             return this;
+        }
+
+        private SendContext fork(String recipient, Channel channel, UniAddress singleAddress) {
+            SendContext forked = new SendContext(this.task);
+            forked.uniMessage = this.uniMessage;
+            forked.recipient = recipient;
+            forked.channel = channel;
+            forked.singleAddress = singleAddress;
+            return forked;
         }
     }
 }
