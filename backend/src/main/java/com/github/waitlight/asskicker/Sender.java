@@ -2,8 +2,11 @@ package com.github.waitlight.asskicker;
 
 import java.time.Instant;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
+import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Component;
 
 import com.github.waitlight.asskicker.channel.Channel;
@@ -32,6 +35,18 @@ public class Sender {
     private final SendRecordService sendRecordService;
     private final SnowflakeIdGenerator snowflakeIdGenerator;
 
+    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+
+    @PreDestroy
+    public void shutdown() throws InterruptedException {
+        log.info("Shutting down sender executor...");
+        executor.shutdown();
+        if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+            log.warn("Sender executor did not terminate in time, forcing shutdown");
+            executor.shutdownNow();
+        }
+    }
+
     public Mono<String> send(UniTask task) {
         if (task == null || task.getMessage() == null || task.getAddress() == null) {
             return Mono.empty();
@@ -44,9 +59,7 @@ public class Sender {
 
         normalize(task);
 
-        Thread.ofVirtual()
-                .name("send-task-" + task.getTaskId())
-                .start(() -> process(task));
+        executor.submit(() -> process(task));
 
         return Mono.just(task.getTaskId());
     }
@@ -61,30 +74,29 @@ public class Sender {
     }
 
     private void process(UniTask task) {
+        UniMessage filled = null;
         try {
-            UniMessage filled = messageTemplateEngine.fill(task.getMessage()).block();
+            filled = messageTemplateEngine.fill(task.getMessage()).block();
             if (filled == null) {
                 log.warn("Template fill returned null for taskId={}", task.getTaskId());
                 writeFailedRecord(task, null, null, "Template fill returned null");
                 return;
             }
-
-            Set<String> recipients = task.getAddress().getRecipients();
-            if (recipients == null || recipients.isEmpty()) {
-                return;
-            }
-
-            SendContext baseCtx = new SendContext(task);
-            baseCtx.setUniMessage(filled);
-
-            try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-                for (String recipient : recipients) {
-                    executor.submit(() -> doSendForRecipient(baseCtx, recipient));
-                }
-            }
         } catch (Exception e) {
-            log.error("Failed to process task taskId={}", task.getTaskId(), e);
-            writeFailedRecord(task, null, null, e.getMessage());
+            log.error("Failed to fill message template taskId={}", task.getTaskId(), e);
+            writeFailedRecord(task, null, null, "Template fill stage failed: " + e.getMessage());
+        }
+
+        Set<String> recipients = task.getAddress().getRecipients();
+        if (recipients == null || recipients.isEmpty()) {
+            return;
+        }
+
+        SendContext baseCtx = new SendContext(task);
+        baseCtx.setUniMessage(filled);
+
+        for (String recipient : recipients) {
+            executor.submit(() -> doSendForRecipient(baseCtx, recipient));
         }
     }
 
