@@ -41,7 +41,11 @@ public class Sender {
     public void shutdown() throws InterruptedException {
         log.info("Shutting down sender executor...");
         executor.shutdown();
-        if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(60);
+        while (!executor.isTerminated() && System.nanoTime() < deadline) {
+            executor.awaitTermination(1, TimeUnit.SECONDS);
+        }
+        if (!executor.isTerminated()) {
             log.warn("Sender executor did not terminate in time, forcing shutdown");
             executor.shutdownNow();
         }
