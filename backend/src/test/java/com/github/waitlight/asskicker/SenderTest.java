@@ -2,7 +2,9 @@ package com.github.waitlight.asskicker;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
-import static org.mockito.Mockito.times;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -11,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterEach;
@@ -38,6 +41,7 @@ import okhttp3.HttpUrl;
 import com.github.waitlight.asskicker.model.SendRecordEntity;
 import com.github.waitlight.asskicker.service.ChannelProviderService;
 import com.github.waitlight.asskicker.service.SendRecordService;
+import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -62,6 +66,12 @@ class SenderTest {
 
         @Mock
         private ChannelFactory channelFactory;
+
+        @Mock
+        private ChannelManager channelManager;
+
+        @Mock
+        private SnowflakeIdGenerator snowflakeIdGenerator;
 
         private MockWebServer awsServer;
         private MockWebServer aliyunServer;
@@ -122,7 +132,8 @@ class SenderTest {
                 ChannelManager channelManager = new ChannelManager(channelProviderService, channelFactory);
                 channelManager.refresh();
 
-                Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService);
+                Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService,
+                                snowflakeIdGenerator);
                 UniMessage template = buildTemplate();
                 UniMessage renderedMessage = new UniMessage();
                 renderedMessage.setContent("rendered-content");
@@ -133,6 +144,7 @@ class SenderTest {
                 String usRecipient2 = "+12065550100";
                 UniTask batchTask = UniTask.builder()
                                 .message(template)
+                                .taskId("batch-task-1")
                                 .address(UniAddress.builder()
                                                 .channelType(ChannelType.SMS)
                                                 .recipients(new LinkedHashSet<>(List.of(
@@ -143,27 +155,20 @@ class SenderTest {
                                 .build();
 
                 StepVerifier.create(sender.send(batchTask))
-                                .consumeNextWith(result -> assertThat(result.split(","))
-                                                .containsExactly(
-                                                                "AWS_SMS ok 1 recipient(s)",
-                                                                "ALIYUN_SMS ok 1 recipient(s)",
-                                                                "AWS_SMS ok 1 recipient(s)"))
+                                .expectNext("batch-task-1")
                                 .verifyComplete();
 
-                // send 完成后从 Mock 队列按顺序取出实际 HTTP 请求，校验发往各供应商的表单参数与收件人一致
+                ArgumentCaptor<SendRecordEntity> recordCaptor = ArgumentCaptor
+                                .forClass(SendRecordEntity.class);
+                verify(sendRecordService, timeout(10000).times(3)).writeRecord(recordCaptor.capture());
+
                 assertThat(List.of(
                                 extractFormParam(takeRequest(awsServer), "PhoneNumber"),
                                 extractFormParam(takeRequest(awsServer), "PhoneNumber")))
-                                .containsExactly(usRecipient1, usRecipient2);
+                                .containsExactlyInAnyOrder(usRecipient1, usRecipient2);
                 assertAliyunPayloadHasRecipient(recordedRequestPayload(takeRequest(aliyunServer)), cnRecipient);
-                // 两边都不应再有未消费的请求
                 assertThat(awsServer.takeRequest(200, TimeUnit.MILLISECONDS)).isNull();
                 assertThat(aliyunServer.takeRequest(200, TimeUnit.MILLISECONDS)).isNull();
-
-                // 每个收件人写一条发送记录，收件人、渠道 id、渠道名称与路由结果一致（顺序不限）
-                ArgumentCaptor<SendRecordEntity> recordCaptor = ArgumentCaptor
-                                .forClass(SendRecordEntity.class);
-                verify(sendRecordService, times(3)).writeRecord(recordCaptor.capture());
                 assertThat(recordCaptor.getAllValues())
                                 .extracting(
                                                 SendRecordEntity::getRecipient,
@@ -248,5 +253,166 @@ class SenderTest {
 
         private static String urlDecode(String value) {
                 return URLDecoder.decode(value, StandardCharsets.UTF_8);
+        }
+
+        @Test
+        void send_generatesTaskIdWhenMissingOrBlank() {
+                UniMessage template = buildTemplate();
+                UniMessage rendered = buildTemplate();
+                rendered.setContent("ok");
+                when(messageTemplateEngine.fill(any())).thenReturn(Mono.just(rendered));
+                when(channelManager.chose(any(ChannelType.class), anyString())).thenReturn(Mono.empty());
+                when(snowflakeIdGenerator.nextIdString()).thenReturn("snowflake-1", "snowflake-2");
+
+                Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService,
+                                snowflakeIdGenerator);
+                UniTask missingId = UniTask.builder()
+                                .message(template)
+                                .address(UniAddress.builder()
+                                                .channelType(ChannelType.SMS)
+                                                .recipients(Set.of("+14155550123"))
+                                                .build())
+                                .build();
+
+                StepVerifier.create(sender.send(missingId))
+                                .expectNext("snowflake-1")
+                                .verifyComplete();
+                assertThat(missingId.getTaskId()).isEqualTo("snowflake-1");
+
+                UniTask blankId = UniTask.builder()
+                                .message(template)
+                                .taskId("   ")
+                                .address(UniAddress.builder()
+                                                .channelType(ChannelType.SMS)
+                                                .recipients(Set.of("+14155550123"))
+                                                .build())
+                                .build();
+
+                StepVerifier.create(sender.send(blankId))
+                                .expectNext("snowflake-2")
+                                .verifyComplete();
+                assertThat(blankId.getTaskId()).isEqualTo("snowflake-2");
+        }
+
+        @Test
+        void send_preservesExistingTaskIdAndFillsSubmittedAtWhenMissing() {
+                UniMessage template = buildTemplate();
+                UniMessage rendered = buildTemplate();
+                rendered.setContent("ok");
+                when(messageTemplateEngine.fill(any())).thenReturn(Mono.just(rendered));
+                when(channelManager.chose(any(ChannelType.class), anyString())).thenReturn(Mono.empty());
+
+                Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService,
+                                snowflakeIdGenerator);
+                UniTask task = UniTask.builder()
+                                .message(template)
+                                .taskId("fixed-task-id")
+                                .address(UniAddress.builder()
+                                                .channelType(ChannelType.SMS)
+                                                .recipients(Set.of("+14155550123"))
+                                                .build())
+                                .build();
+
+                StepVerifier.create(sender.send(task))
+                                .expectNext("fixed-task-id")
+                                .verifyComplete();
+                assertThat(task.getTaskId()).isEqualTo("fixed-task-id");
+                assertThat(task.getSubmittedAt()).isNotNull();
+        }
+
+        @Test
+        void send_writesFailedRecordWhenTemplateFillReturnsNull() {
+                when(messageTemplateEngine.fill(any())).thenReturn(Mono.empty());
+
+                Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService,
+                                snowflakeIdGenerator);
+                UniTask task = UniTask.builder()
+                                .message(buildTemplate())
+                                .taskId("task-fill-null")
+                                .address(UniAddress.builder()
+                                                .channelType(ChannelType.SMS)
+                                                .recipients(Set.of("+14155550123", "+14155550124"))
+                                                .build())
+                                .build();
+
+                StepVerifier.create(sender.send(task))
+                                .expectNext("task-fill-null")
+                                .verifyComplete();
+
+                ArgumentCaptor<SendRecordEntity> captor = ArgumentCaptor.forClass(SendRecordEntity.class);
+                verify(sendRecordService, timeout(5000).times(1)).writeRecord(captor.capture());
+
+                SendRecordEntity record = captor.getValue();
+                assertThat(record.getTaskId()).isEqualTo("task-fill-null");
+                assertThat(record.getStatus()).isEqualTo(com.github.waitlight.asskicker.model.SendRecordStatus.FAILED);
+                assertThat(record.getRecipient()).isNull();
+                assertThat(record.getErrorMessage()).isNotBlank();
+        }
+
+        @Test
+        void send_writesFailedRecordWhenTemplateFillThrows() {
+                when(messageTemplateEngine.fill(any()))
+                                .thenReturn(Mono.error(new RuntimeException("template-engine-error")));
+
+                Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService,
+                                snowflakeIdGenerator);
+                UniTask task = UniTask.builder()
+                                .message(buildTemplate())
+                                .taskId("task-fill-throws")
+                                .address(UniAddress.builder()
+                                                .channelType(ChannelType.SMS)
+                                                .recipients(Set.of("+14155550123"))
+                                                .build())
+                                .build();
+
+                StepVerifier.create(sender.send(task))
+                                .expectNext("task-fill-throws")
+                                .verifyComplete();
+
+                ArgumentCaptor<SendRecordEntity> captor = ArgumentCaptor.forClass(SendRecordEntity.class);
+                verify(sendRecordService, timeout(5000).times(1)).writeRecord(captor.capture());
+
+                SendRecordEntity record = captor.getValue();
+                assertThat(record.getTaskId()).isEqualTo("task-fill-throws");
+                assertThat(record.getStatus()).isEqualTo(com.github.waitlight.asskicker.model.SendRecordStatus.FAILED);
+                assertThat(record.getRecipient()).isNull();
+                assertThat(record.getErrorMessage()).contains("template-engine-error");
+        }
+
+        @Test
+        void send_writesFailedRecordPerRecipientWhenChannelNotFound() {
+                UniMessage rendered = buildTemplate();
+                rendered.setContent("ok");
+                when(messageTemplateEngine.fill(any())).thenReturn(Mono.just(rendered));
+                when(channelManager.chose(any(ChannelType.class), anyString())).thenReturn(Mono.empty());
+
+                Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService,
+                                snowflakeIdGenerator);
+                String r1 = "+14155550123";
+                String r2 = "+14155550124";
+                UniTask task = UniTask.builder()
+                                .message(buildTemplate())
+                                .taskId("task-no-channel")
+                                .address(UniAddress.builder()
+                                                .channelType(ChannelType.SMS)
+                                                .recipients(new LinkedHashSet<>(List.of(r1, r2)))
+                                                .build())
+                                .build();
+
+                StepVerifier.create(sender.send(task))
+                                .expectNext("task-no-channel")
+                                .verifyComplete();
+
+                ArgumentCaptor<SendRecordEntity> captor = ArgumentCaptor.forClass(SendRecordEntity.class);
+                verify(sendRecordService, timeout(5000).times(2)).writeRecord(captor.capture());
+
+                assertThat(captor.getAllValues())
+                                .extracting(SendRecordEntity::getRecipient,
+                                                SendRecordEntity::getStatus)
+                                .containsExactlyInAnyOrder(
+                                                tuple(r1, com.github.waitlight.asskicker.model.SendRecordStatus.FAILED),
+                                                tuple(r2, com.github.waitlight.asskicker.model.SendRecordStatus.FAILED));
+                assertThat(captor.getAllValues())
+                                .allMatch(r -> r.getErrorMessage() != null && !r.getErrorMessage().isBlank());
         }
 }

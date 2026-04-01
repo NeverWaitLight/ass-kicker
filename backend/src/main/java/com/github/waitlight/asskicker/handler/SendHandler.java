@@ -61,7 +61,7 @@ public class SendHandler {
 
     private Mono<String> validateAndExecute(UniTask rawTask) {
         UniTask task = validateAndEnrich(rawTask);
-        return sender.send(task).thenReturn(task.getTaskId());
+        return sender.send(task);
     }
 
     private Mono<String> validateAndPublish(UniTask rawTask) {

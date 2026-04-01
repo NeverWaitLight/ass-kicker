@@ -32,7 +32,7 @@ class SendTaskConsumerTest {
         SendTaskConsumer consumer = new SendTaskConsumer(sender);
         UniTask task = buildTask();
 
-        when(sender.send(task)).thenReturn(Mono.just("send-ok"));
+        when(sender.send(task)).thenReturn(Mono.just("task-001"));
 
         consumer.consume(task);
 

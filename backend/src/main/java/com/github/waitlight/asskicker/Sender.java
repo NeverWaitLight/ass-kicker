@@ -1,7 +1,8 @@
 package com.github.waitlight.asskicker;
 
+import java.time.Instant;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.concurrent.Executors;
 
 import org.springframework.stereotype.Component;
 
@@ -13,12 +14,12 @@ import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.SendRecordEntity;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
 import com.github.waitlight.asskicker.service.SendRecordService;
+import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -29,6 +30,7 @@ public class Sender {
     private final MessageTemplateEngine messageTemplateEngine;
     private final ChannelManager channelManager;
     private final SendRecordService sendRecordService;
+    private final SnowflakeIdGenerator snowflakeIdGenerator;
 
     public Mono<String> send(UniTask task) {
         if (task == null || task.getMessage() == null || task.getAddress() == null) {
@@ -40,25 +42,80 @@ public class Sender {
             return Mono.empty();
         }
 
-        return Mono.just(new SendContext(task))
-                .flatMap(this::fillMessage)
-                .flatMapMany(ctx -> Flux.fromIterable(recipients)
-                        .concatMap(recipient -> doSend(ctx, recipient)))
-                .map(SendContext::getSendResult)
-                .collect(Collectors.joining(","));
+        normalize(task);
+
+        Thread.ofVirtual()
+                .name("send-task-" + task.getTaskId())
+                .start(() -> process(task));
+
+        return Mono.just(task.getTaskId());
     }
 
-    private Mono<SendContext> fillMessage(SendContext context) {
-        return messageTemplateEngine.fill(context.getTask().getMessage())
-                .map(context::withUniMessage);
+    private void normalize(UniTask task) {
+        if (task.getTaskId() == null || task.getTaskId().isBlank()) {
+            task.setTaskId(snowflakeIdGenerator.nextIdString());
+        }
+        if (task.getSubmittedAt() == null) {
+            task.setSubmittedAt(Instant.now().toEpochMilli());
+        }
     }
 
-    private Mono<SendContext> doSend(SendContext baseCtx, String recipient) {
-        UniAddress singleAddr = buildSingleRecipientAddress(baseCtx.getTask().getAddress(), recipient);
-        return channelManager.chose(singleAddr.getChannelType(), recipient)
-                .map(channel -> baseCtx.fork(recipient, channel, singleAddr))
-                .flatMap(this::sendByChannel)
-                .map(this::processSendRecord);
+    private void process(UniTask task) {
+        try {
+            UniMessage filled = messageTemplateEngine.fill(task.getMessage()).block();
+            if (filled == null) {
+                log.warn("Template fill returned null for taskId={}", task.getTaskId());
+                writeFailedRecord(task, null, null, "Template fill returned null");
+                return;
+            }
+
+            Set<String> recipients = task.getAddress().getRecipients();
+            if (recipients == null || recipients.isEmpty()) {
+                return;
+            }
+
+            SendContext baseCtx = new SendContext(task);
+            baseCtx.setUniMessage(filled);
+
+            try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+                for (String recipient : recipients) {
+                    executor.submit(() -> doSendForRecipient(baseCtx, recipient));
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to process task taskId={}", task.getTaskId(), e);
+            writeFailedRecord(task, null, null, e.getMessage());
+        }
+    }
+
+    private void doSendForRecipient(SendContext baseCtx, String recipient) {
+        Channel channel = null;
+        try {
+            UniAddress singleAddr = buildSingleRecipientAddress(baseCtx.getTask().getAddress(), recipient);
+            channel = channelManager.chose(singleAddr.getChannelType(), recipient).block();
+            if (channel == null) {
+                log.warn("No channel available for recipient={} taskId={}", recipient, baseCtx.getTask().getTaskId());
+                writeFailedRecord(baseCtx.getTask(), recipient, null, "No channel available");
+                return;
+            }
+
+            SendContext ctx = baseCtx.fork(recipient, channel, singleAddr);
+
+            UniTask sendTask = UniTask.builder()
+                    .message(ctx.getUniMessage())
+                    .address(ctx.getSingleAddress())
+                    .taskId(ctx.getTask().getTaskId())
+                    .submittedAt(ctx.getTask().getSubmittedAt())
+                    .build();
+
+            String result = channel.send(sendTask).block();
+            ctx.setSendResult(result);
+
+            processSendRecord(ctx);
+        } catch (Exception e) {
+            log.error("Failed to send to recipient={} taskId={}", recipient, baseCtx.getTask().getTaskId(), e);
+            writeFailedRecord(baseCtx.getTask(), recipient, channel, e.getMessage());
+        }
     }
 
     private UniAddress buildSingleRecipientAddress(UniAddress original, String recipient) {
@@ -70,7 +127,7 @@ public class Sender {
                 .build();
     }
 
-    private SendContext processSendRecord(SendContext context) {
+    private void processSendRecord(SendContext context) {
         UniTask task = context.getTask();
         UniMessage message = task.getMessage();
 
@@ -88,20 +145,30 @@ public class Sender {
         sr.setStatus(SendRecordStatus.SUCCESS);
         sr.setSentAt(System.currentTimeMillis());
         sendRecordService.writeRecord(sr);
-        return context;
     }
 
-    private Mono<SendContext> sendByChannel(SendContext context) {
-        UniTask t = context.getTask();
-        UniTask sendTask = UniTask.builder()
-                .message(context.getUniMessage())
-                .address(context.getSingleAddress())
-                .taskId(t.getTaskId())
-                .submittedAt(t.getSubmittedAt())
-                .build();
-        return context.getChannel()
-                .send(sendTask)
-                .map(context::withSendResult);
+    private void writeFailedRecord(UniTask task, String recipient, Channel channel, String errorMessage) {
+        UniMessage message = task.getMessage();
+
+        SendRecordEntity sr = new SendRecordEntity();
+        sr.setTaskId(task.getTaskId());
+        if (message != null) {
+            sr.setTemplateCode(message.getTemplateCode());
+            if (message.getLanguage() != null) {
+                sr.setLanguageCode(message.getLanguage().getCode());
+            }
+            sr.setParams(message.getTemplateParams());
+        }
+        sr.setRecipient(recipient);
+        if (channel != null) {
+            sr.setChannelId(channel.getId());
+            sr.setChannelType(channel.getChannelType());
+            sr.setChannelName(channel.getCode());
+        }
+        sr.setSubmittedAt(resolveSubmittedAt(task));
+        sr.setStatus(SendRecordStatus.FAILED);
+        sr.setErrorMessage(errorMessage);
+        sendRecordService.writeRecord(sr);
     }
 
     private long resolveSubmittedAt(UniTask task) {
@@ -119,16 +186,6 @@ public class Sender {
         private String sendResult;
         private String recipient;
         private UniAddress singleAddress;
-
-        private SendContext withUniMessage(UniMessage uniMessage) {
-            this.uniMessage = uniMessage;
-            return this;
-        }
-
-        private SendContext withSendResult(String sendResult) {
-            this.sendResult = sendResult;
-            return this;
-        }
 
         private SendContext fork(String recipient, Channel channel, UniAddress singleAddress) {
             SendContext forked = new SendContext(this.task);
