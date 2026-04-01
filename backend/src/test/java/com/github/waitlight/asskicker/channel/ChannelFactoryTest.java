@@ -2,15 +2,12 @@ package com.github.waitlight.asskicker.channel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.model.ChannelProviderType;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 
 class ChannelFactoryTest {
@@ -253,29 +250,5 @@ class ChannelFactoryTest {
         """;
     ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
     assertThat(factory.create(entity)).isInstanceOf(SmtpChannel.class);
-  }
-
-  @Test
-  @DisplayName("返回支持的渠道类型列表")
-  void getSupportedTypes_containsWebhookProviders() {
-    assertThat(factory.getSupportedTypes()).containsExactly(
-        ChannelProviderType.ALIYUN_SMS,
-        ChannelProviderType.AWS_SMS,
-        ChannelProviderType.SMTP,
-        ChannelProviderType.APNS,
-        ChannelProviderType.FCM,
-        ChannelProviderType.DINGTALK_WEBHOOK,
-        ChannelProviderType.WECOM_WEBHOOK,
-        ChannelProviderType.FEISHU_WEBHOOK,
-        ChannelProviderType.DINGTALK_BOT,
-        ChannelProviderType.WECOM_BOT,
-        ChannelProviderType.FEISHU_BOT);
-    assertThat(factory.getSupportedTypes()).containsAll(List.of(
-        ChannelProviderType.DINGTALK_WEBHOOK,
-        ChannelProviderType.WECOM_WEBHOOK,
-        ChannelProviderType.FEISHU_WEBHOOK,
-        ChannelProviderType.DINGTALK_BOT,
-        ChannelProviderType.WECOM_BOT,
-        ChannelProviderType.FEISHU_BOT));
   }
 }

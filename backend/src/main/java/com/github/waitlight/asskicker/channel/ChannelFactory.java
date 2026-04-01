@@ -1,7 +1,5 @@
 package com.github.waitlight.asskicker.channel;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
@@ -10,7 +8,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.config.ChannelObjectMapperConfig;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
-import com.github.waitlight.asskicker.model.ChannelProviderType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,20 +49,5 @@ public class ChannelFactory {
             log.error("Failed to create Channel for channel {}: {}", provider.getCode(), e.getMessage(), e);
             return null;
         }
-    }
-
-    public List<ChannelProviderType> getSupportedTypes() {
-        return List.of(
-                ChannelProviderType.ALIYUN_SMS,
-                ChannelProviderType.AWS_SMS,
-                ChannelProviderType.SMTP,
-                ChannelProviderType.APNS,
-                ChannelProviderType.FCM,
-                ChannelProviderType.DINGTALK_WEBHOOK,
-                ChannelProviderType.WECOM_WEBHOOK,
-                ChannelProviderType.FEISHU_WEBHOOK,
-                ChannelProviderType.DINGTALK_BOT,
-                ChannelProviderType.WECOM_BOT,
-                ChannelProviderType.FEISHU_BOT);
     }
 }
