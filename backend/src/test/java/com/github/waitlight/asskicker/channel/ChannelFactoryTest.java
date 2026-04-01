@@ -202,7 +202,8 @@ class ChannelFactoryTest {
             "accessKeyId": "a",
             "accessKeySecret": "s",
             "signName": "sig",
-            "templateCode": "SMS_1"
+            "templateCode": "SMS_1",
+            "endpoint": "dysmsapi.aliyuncs.com"
           }
         }
         """;

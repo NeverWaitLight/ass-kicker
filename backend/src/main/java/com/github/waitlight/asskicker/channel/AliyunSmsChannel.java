@@ -1,25 +1,22 @@
 package com.github.waitlight.asskicker.channel;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.util.LinkedHashMap;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
-import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.aliyun.dysmsapi20170525.Client;
+import com.aliyun.dysmsapi20170525.models.SendSmsRequest;
+import com.aliyun.dysmsapi20170525.models.SendSmsResponse;
+import com.aliyun.dysmsapi20170525.models.SendSmsResponseBody;
+import com.aliyun.teaopenapi.models.Config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
@@ -27,18 +24,58 @@ import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 public class AliyunSmsChannel extends Channel {
 
-    private static final DateTimeFormatter TIMESTAMP_FMT = DateTimeFormatter
-            .ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
-            .withZone(ZoneOffset.UTC);
-
     private final Spec spec;
+    private final Client aliyunClient;
 
     public AliyunSmsChannel(ChannelProviderEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.spec = AliyunSmsSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        try {
+            this.aliyunClient = new Client(buildConfig(spec));
+        } catch (Exception e) {
+            throw new IllegalStateException("ALIYUN_SMS SDK client init failed", e);
+        }
+    }
+
+    private static Config buildConfig(Spec spec) throws Exception {
+        Config config = new Config();
+        config.setAccessKeyId(spec.accessKeyId().trim());
+        config.setAccessKeySecret(spec.accessKeySecret().trim());
+        applyEndpoint(config, spec.endpoint().trim());
+        if (StringUtils.isNotBlank(spec.regionId())) {
+            config.setRegionId(spec.regionId().trim());
+        }
+        return config;
+    }
+
+    /**
+     * Tea 客户端使用 host 或 host:port；支持完整 URL（含 http/https）或裸域名。
+     */
+    static void applyEndpoint(Config config, String endpointRaw) {
+        String s = endpointRaw.trim();
+        URI uri = URI.create(s.contains("://") ? s : "https://" + s);
+        String scheme = uri.getScheme();
+        if (scheme != null) {
+            config.setProtocol(scheme.toLowerCase());
+        }
+        String host = uri.getHost();
+        if (StringUtils.isBlank(host)) {
+            throw new IllegalStateException("ALIYUN_SMS endpoint has no host: " + endpointRaw);
+        }
+        int port = uri.getPort();
+        if (port > 0) {
+            boolean defaultHttps = "https".equalsIgnoreCase(scheme) && port == 443;
+            boolean defaultHttp = "http".equalsIgnoreCase(scheme) && port == 80;
+            if (!defaultHttps && !defaultHttp) {
+                config.setEndpoint(host + ":" + port);
+                return;
+            }
+        }
+        config.setEndpoint(host);
     }
 
     @Override
@@ -49,7 +86,8 @@ public class AliyunSmsChannel extends Channel {
 
             String templateCode = resolveTemplateCode(uniMessage);
             if (StringUtils.isBlank(templateCode)) {
-                return Mono.error(new IllegalStateException("ALIYUN_SMS requires templateCode in channel properties or extraData.templateCode"));
+                return Mono.error(new IllegalStateException(
+                        "ALIYUN_SMS requires templateCode in channel properties or extraData.templateCode"));
             }
 
             String templateParamJson;
@@ -59,10 +97,9 @@ public class AliyunSmsChannel extends Channel {
                 return Mono.error(e);
             }
 
-            String baseUrl = spec.endpoint().trim();
-
+            String tpl = templateCode;
             return Flux.fromIterable(recipients)
-                    .concatMap(phone -> sendOne(baseUrl, phone, templateCode, templateParamJson))
+                    .concatMap(phone -> sendOne(phone, tpl, templateParamJson))
                     .collect(Collectors.joining(","))
                     .map(ignore -> "ALIYUN_SMS ok " + recipients.size() + " recipient(s)");
         });
@@ -96,58 +133,25 @@ public class AliyunSmsChannel extends Channel {
         return objectMapper.writeValueAsString(params);
     }
 
-    private Mono<String> sendOne(String baseUrl, String phoneNumbers, String templateCode, String templateParamJson) {
-        Map<String, String> params = new LinkedHashMap<>();
-        params.put("AccessKeyId", spec.accessKeyId().trim());
-        params.put("Action", "SendSms");
-        params.put("Format", "JSON");
-        params.put("PhoneNumbers", phoneNumbers);
-        params.put("SignatureMethod", "HMAC-SHA1");
-        params.put("SignatureNonce", UUID.randomUUID().toString());
-        params.put("SignatureVersion", "1.0");
-        params.put("SignName", spec.signName().trim());
-        params.put("TemplateCode", templateCode);
-        params.put("TemplateParam", templateParamJson);
-        params.put("Timestamp", TIMESTAMP_FMT.format(Instant.now()));
-        params.put("Version", "2017-05-25");
-        if (StringUtils.isNotBlank(spec.regionId())) {
-            params.put("RegionId", spec.regionId().trim());
-        }
-
-        AliyunRpcSigner.sign(params, "POST", spec.accessKeySecret().trim());
-        String body = AliyunRpcSigner.toFormBody(params);
-
-        return webClient.post()
-                .uri(baseUrl)
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .bodyValue(body.getBytes(StandardCharsets.UTF_8))
-                .retrieve()
-                .bodyToMono(String.class)
-                .flatMap(this::parseAliyunSmsResponse)
-                .onErrorMap(WebClientResponseException.class, ex -> new IllegalStateException(
-                        "ALIYUN_SMS " + ex.getStatusCode().value()
-                                + (StringUtils.isNotBlank(ex.getResponseBodyAsString())
-                                        ? ": " + ex.getResponseBodyAsString()
-                                        : ""),
-                        ex));
-    }
-
-    private Mono<String> parseAliyunSmsResponse(String responseBody) {
-        try {
-            JsonNode root = objectMapper.readTree(responseBody);
-            String code = textOrNull(root.get("Code"));
-            if ("OK".equalsIgnoreCase(code)) {
-                return Mono.just("ok");
+    private Mono<String> sendOne(String phoneNumbers, String templateCode, String templateParamJson) {
+        return Mono.fromCallable(() -> {
+            SendSmsRequest request = new SendSmsRequest()
+                    .setPhoneNumbers(phoneNumbers)
+                    .setSignName(spec.signName().trim())
+                    .setTemplateCode(templateCode)
+                    .setTemplateParam(templateParamJson);
+            SendSmsResponse response = aliyunClient.sendSms(request);
+            SendSmsResponseBody body = response.getBody();
+            if (body == null) {
+                throw new IllegalStateException("ALIYUN_SMS empty response body");
             }
-            String msg = textOrNull(root.get("Message"));
-            return Mono.error(new IllegalStateException("ALIYUN_SMS failure Code=" + code + " Message=" + msg));
-        } catch (Exception e) {
-            return Mono.error(new IllegalStateException("ALIYUN_SMS invalid response: " + responseBody, e));
-        }
-    }
-
-    private static String textOrNull(JsonNode node) {
-        return node == null || node.isNull() ? null : node.asText();
+            String code = body.getCode();
+            if ("OK".equalsIgnoreCase(code)) {
+                return "ok";
+            }
+            throw new IllegalStateException(
+                    "ALIYUN_SMS failure Code=" + code + " Message=" + body.getMessage());
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 
     private List<String> normalizeRecipients(UniAddress uniAddress, String providerName) {

@@ -33,6 +33,8 @@ import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelProviderType;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.Language;
+
+import okhttp3.HttpUrl;
 import com.github.waitlight.asskicker.model.SendRecordEntity;
 import com.github.waitlight.asskicker.service.ChannelProviderService;
 import com.github.waitlight.asskicker.service.SendRecordService;
@@ -153,8 +155,7 @@ class SenderTest {
                                 extractFormParam(takeRequest(awsServer), "PhoneNumber"),
                                 extractFormParam(takeRequest(awsServer), "PhoneNumber")))
                                 .containsExactly(usRecipient1, usRecipient2);
-                assertThat(extractFormParam(takeRequest(aliyunServer), "PhoneNumbers"))
-                                .isEqualTo(cnRecipient);
+                assertAliyunPayloadHasRecipient(recordedRequestPayload(takeRequest(aliyunServer)), cnRecipient);
                 // 两边都不应再有未消费的请求
                 assertThat(awsServer.takeRequest(200, TimeUnit.MILLISECONDS)).isNull();
                 assertThat(aliyunServer.takeRequest(200, TimeUnit.MILLISECONDS)).isNull();
@@ -232,6 +233,17 @@ class SenderTest {
                                 .findFirst()
                                 .orElseThrow(() -> new AssertionError(
                                                 "Missing form param: " + key + " in body " + body));
+        }
+
+        /** 阿里云官方 SDK 可能把参数放在 URL 或 JSON 体内，集成测试只要求能观察到收件人号码 */
+        private static String recordedRequestPayload(RecordedRequest request) {
+                HttpUrl url = request.getRequestUrl();
+                String body = request.getBody().readString(StandardCharsets.UTF_8);
+                return (url != null ? url.toString() : "") + "\n" + body;
+        }
+
+        private static void assertAliyunPayloadHasRecipient(String payload, String e164) {
+                assertThat(payload.contains(e164) || payload.contains(e164.replace("+", "%2B"))).isTrue();
         }
 
         private static String urlDecode(String value) {

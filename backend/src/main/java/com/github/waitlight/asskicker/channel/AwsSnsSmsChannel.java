@@ -1,12 +1,9 @@
 package com.github.waitlight.asskicker.channel;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -14,7 +11,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
@@ -23,17 +19,54 @@ import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.sns.SnsAsyncClient;
+import software.amazon.awssdk.services.sns.model.PublishRequest;
 
 public class AwsSnsSmsChannel extends Channel {
 
-    private static final Pattern ERROR_CODE = Pattern.compile("<Code>\\s*([^<]+)\\s*</Code>");
-    private static final Pattern ERROR_MSG = Pattern.compile("<Message>\\s*([^<]+)\\s*</Message>");
-
     private final Spec spec;
+    private final SnsAsyncClient snsClient;
 
     public AwsSnsSmsChannel(ChannelProviderEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.spec = AwsSnsSmsSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.snsClient = buildSnsClient();
+    }
+
+    private SnsAsyncClient buildSnsClient() {
+        String accessKeyId = spec.accessKeyId().trim();
+        String secret = spec.secretAccessKey().trim();
+        AwsCredentialsProvider credentialsProvider;
+        if (StringUtils.isNotBlank(spec.sessionToken())) {
+            credentialsProvider = StaticCredentialsProvider.create(AwsSessionCredentials.create(
+                    accessKeyId,
+                    secret,
+                    spec.sessionToken().trim()));
+        } else {
+            credentialsProvider = StaticCredentialsProvider.create(
+                    AwsBasicCredentials.create(accessKeyId, secret));
+        }
+        var builder = SnsAsyncClient.builder()
+                .region(Region.of(spec.region().trim()))
+                .credentialsProvider(credentialsProvider);
+        if (StringUtils.isNotBlank(spec.endpoint())) {
+            builder.endpointOverride(endpointOverrideUri(spec.endpoint().trim()));
+        }
+        return builder.build();
+    }
+
+    private static URI endpointOverrideUri(String raw) {
+        String s = raw.trim();
+        if (!s.endsWith("/")) {
+            s = s + "/";
+        }
+        return URI.create(s);
     }
 
     @Override
@@ -47,11 +80,8 @@ public class AwsSnsSmsChannel extends Channel {
                 return Mono.error(new IllegalArgumentException("AWS_SMS message content required"));
             }
 
-            String region = spec.region().trim();
-            Instant signingInstant = Instant.now();
-
             return Flux.fromIterable(recipients)
-                    .concatMap(phone -> sendOne(region, phone, messageText, signingInstant))
+                    .concatMap(phone -> sendOne(phone, messageText))
                     .collect(Collectors.joining(","))
                     .map(ignore -> "AWS_SMS ok " + recipients.size() + " recipient(s)");
         });
@@ -64,55 +94,29 @@ public class AwsSnsSmsChannel extends Channel {
         }
     }
 
-    private Mono<String> sendOne(String region, String phoneNumber, String messageText, Instant signingInstant) {
-        AwsV4Signer.SignedRequest signed = AwsV4Signer.signSnsPublish(
-                region,
-                spec.endpoint(),
-                spec.accessKeyId().trim(),
-                spec.secretAccessKey().trim(),
-                spec.sessionToken(),
-                phoneNumber.trim(),
-                messageText,
-                signingInstant);
-
-        return webClient.post()
-                .uri(signed.url())
-                .headers(h -> {
-                    for (Map.Entry<String, String> e : signed.headers().entrySet()) {
-                        h.add(e.getKey(), e.getValue());
+    private Mono<String> sendOne(String phoneNumber, String messageText) {
+        PublishRequest request = PublishRequest.builder()
+                .phoneNumber(phoneNumber.trim())
+                .message(messageText)
+                .build();
+        return Mono.fromFuture(snsClient.publish(request))
+                .map(response -> {
+                    if (response.messageId() == null || response.messageId().isBlank()) {
+                        throw new IllegalStateException("AWS_SMS publish returned empty messageId");
                     }
+                    return "ok";
                 })
-                .bodyValue(signed.body().getBytes(StandardCharsets.UTF_8))
-                .retrieve()
-                .bodyToMono(String.class)
-                .flatMap(this::parseSnsResponse)
-                .onErrorMap(WebClientResponseException.class, ex -> new IllegalStateException(
-                        "AWS_SMS " + ex.getStatusCode().value()
-                                + (StringUtils.isNotBlank(ex.getResponseBodyAsString())
-                                        ? ": " + ex.getResponseBodyAsString()
-                                        : ""),
-                        ex));
+                .onErrorMap(AwsSnsSmsChannel::mapAwsFailure);
     }
 
-    private Mono<String> parseSnsResponse(String xml) {
-        if (StringUtils.isBlank(xml)) {
-            return Mono.error(new IllegalStateException("AWS_SMS empty response"));
+    private static Throwable mapAwsFailure(Throwable t) {
+        if (t instanceof AwsServiceException ase) {
+            String msg = ase.awsErrorDetails() != null && StringUtils.isNotBlank(ase.awsErrorDetails().errorMessage())
+                    ? ase.awsErrorDetails().errorMessage()
+                    : ase.getMessage();
+            return new IllegalStateException("AWS_SMS " + ase.statusCode() + ": " + msg, t);
         }
-        if (xml.contains("<Error>")) {
-            String code = firstMatch(ERROR_CODE, xml);
-            String msg = firstMatch(ERROR_MSG, xml);
-            return Mono.error(new IllegalStateException(
-                    "AWS_SMS failure " + StringUtils.defaultString(code) + ": " + StringUtils.defaultString(msg)));
-        }
-        if (xml.contains("<MessageId>")) {
-            return Mono.just("ok");
-        }
-        return Mono.error(new IllegalStateException("AWS_SMS unexpected response: " + xml));
-    }
-
-    private static String firstMatch(Pattern p, String xml) {
-        Matcher m = p.matcher(xml);
-        return m.find() ? m.group(1).trim() : "";
+        return new IllegalStateException("AWS_SMS request failed", t);
     }
 
     private List<String> normalizeRecipients(UniAddress uniAddress, String providerName) {
