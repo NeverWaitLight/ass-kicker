@@ -4,7 +4,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
-import com.github.waitlight.asskicker.dto.channelprovider.ChannelProviderDTO;
+import com.github.waitlight.asskicker.dto.channel.ChannelProviderDTO;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 
 @Mapper(componentModel = "spring", uses = ChannelProviderPropertiesMapper.class)

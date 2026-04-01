@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.handler;
 
 import com.github.waitlight.asskicker.converter.MessageTemplateConverter;
-import com.github.waitlight.asskicker.dto.messagetemplate.MessageTemplateDTO;
+import com.github.waitlight.asskicker.dto.template.MessageTemplateDTO;
 import com.github.waitlight.asskicker.service.MessageTemplateService;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;

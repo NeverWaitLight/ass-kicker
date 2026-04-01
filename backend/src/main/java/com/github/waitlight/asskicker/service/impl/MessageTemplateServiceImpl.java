@@ -2,7 +2,7 @@ package com.github.waitlight.asskicker.service.impl;
 
 import com.github.waitlight.asskicker.converter.MessageTemplateConverter;
 import com.github.waitlight.asskicker.dto.common.PageResp;
-import com.github.waitlight.asskicker.dto.messagetemplate.MessageTemplateDTO;
+import com.github.waitlight.asskicker.dto.template.MessageTemplateDTO;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.MessageTemplateEntity;
 import com.github.waitlight.asskicker.repository.MessageTemplateRepository;

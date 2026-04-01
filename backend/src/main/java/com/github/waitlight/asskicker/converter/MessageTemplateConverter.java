@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.converter;
 
-import com.github.waitlight.asskicker.dto.messagetemplate.MessageTemplateDTO;
+import com.github.waitlight.asskicker.dto.template.MessageTemplateDTO;
 import com.github.waitlight.asskicker.model.MessageTemplateEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

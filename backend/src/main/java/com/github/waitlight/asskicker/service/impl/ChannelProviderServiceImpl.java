@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.service.impl;
 
 import com.github.waitlight.asskicker.converter.ChannelProviderConverter;
-import com.github.waitlight.asskicker.dto.channelprovider.ChannelProviderDTO;
+import com.github.waitlight.asskicker.dto.channel.ChannelProviderDTO;
 import com.github.waitlight.asskicker.dto.common.PageResp;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelType;

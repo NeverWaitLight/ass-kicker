@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.dto.messagetemplate;
+package com.github.waitlight.asskicker.dto.template;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;

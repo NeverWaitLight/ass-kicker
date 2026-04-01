@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.handler;
 
 import com.github.waitlight.asskicker.converter.ChannelProviderConverter;
-import com.github.waitlight.asskicker.dto.channelprovider.ChannelProviderDTO;
+import com.github.waitlight.asskicker.dto.channel.ChannelProviderDTO;
 import com.github.waitlight.asskicker.service.ChannelProviderService;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;

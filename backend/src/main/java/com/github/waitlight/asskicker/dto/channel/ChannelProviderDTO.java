@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.dto.channelprovider;
+package com.github.waitlight.asskicker.dto.channel;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
