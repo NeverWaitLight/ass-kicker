@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -292,6 +293,7 @@ class SenderTest {
                                 .expectNext("snowflake-2")
                                 .verifyComplete();
                 assertThat(blankId.getTaskId()).isEqualTo("snowflake-2");
+                verify(channelManager, timeout(5000).times(2)).chose(any(ChannelType.class), anyString());
         }
 
         @Test
@@ -318,6 +320,7 @@ class SenderTest {
                                 .verifyComplete();
                 assertThat(task.getTaskId()).isEqualTo("fixed-task-id");
                 assertThat(task.getSubmittedAt()).isNotNull();
+                verify(channelManager, timeout(5000)).chose(any(ChannelType.class), anyString());
         }
 
         @Test

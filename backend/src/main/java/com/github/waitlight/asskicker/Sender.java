@@ -89,6 +89,7 @@ public class Sender {
         } catch (Exception e) {
             log.error("Failed to fill message template taskId={}", task.getTaskId(), e);
             writeFailedRecord(task, null, null, "Template fill stage failed: " + e.getMessage());
+            return;
         }
 
         Set<String> recipients = task.getAddress().getRecipients();
