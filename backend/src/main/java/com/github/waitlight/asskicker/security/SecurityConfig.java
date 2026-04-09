@@ -77,8 +77,10 @@ public class SecurityConfig {
                 .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
                 .authorizeExchange(exchanges -> exchanges
+                        .pathMatchers("/v3/api-docs/**", "/v3/api-docs.yaml", "/scalar", "/scalar/**", "/webjars/**")
+                        .permitAll()
                         .pathMatchers("/v1/auth/login", "/v1/auth/register", "/v1/auth/refresh", "/v1/health",
-                                "/v1/status")
+                                "/v1/status", "/health", "/status")
                         .permitAll()
                         .pathMatchers(HttpMethod.GET, "/v1/auth/me").authenticated()
                         .pathMatchers(HttpMethod.PATCH, "/v1/users/me").authenticated()

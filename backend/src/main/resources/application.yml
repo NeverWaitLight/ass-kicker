@@ -47,3 +47,6 @@ logging:
     discarding-threshold: 0
 server:
   port: 8080
+scalar:
+  enabled: true
+  path: /scalar
