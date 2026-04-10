@@ -4,7 +4,7 @@ import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.auth.RegisterRequest;
-import com.github.waitlight.asskicker.dto.PageResult;
+import com.github.waitlight.asskicker.dto.PageRespWrapper;
 import com.github.waitlight.asskicker.dto.user.*;
 import com.github.waitlight.asskicker.model.UserEntity;
 import com.github.waitlight.asskicker.model.UserRole;
@@ -118,7 +118,7 @@ public class UserService {
                         .orElseGet(() -> Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在"))));
     }
 
-    public Mono<PageResult<UserView>> page(int page, int size, String keyword) {
+    public Mono<PageRespWrapper<UserView>> page(int page, int size, String keyword) {
         int normalizedPage = page <= 0 ? 1 : page;
         int normalizedSize = size <= 0 ? 10 : size;
         int offset = (normalizedPage - 1) * normalizedSize;
@@ -129,7 +129,7 @@ public class UserService {
                 .collectList();
 
         return Mono.zip(itemsMono, totalMono)
-                .map(tuple -> new PageResult<>(normalizedPage, normalizedSize, tuple.getT2(), tuple.getT1()));
+                .map(tuple -> PageRespWrapper.success(normalizedPage, normalizedSize, tuple.getT2(), tuple.getT1()));
     }
 
     public Mono<Void> delete(String id) {

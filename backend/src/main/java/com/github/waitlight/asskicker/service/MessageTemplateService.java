@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.service;
 
 import com.github.waitlight.asskicker.converter.MessageTemplateConverter;
-import com.github.waitlight.asskicker.dto.PageResult;
+import com.github.waitlight.asskicker.dto.PageRespWrapper;
 import com.github.waitlight.asskicker.dto.template.MessageTemplateDTO;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.MessageTemplateEntity;
@@ -35,7 +35,7 @@ public class MessageTemplateService {
                 .take(size);
     }
 
-    public Mono<PageResult<MessageTemplateDTO>> page(int page, int size) {
+    public Mono<PageRespWrapper<MessageTemplateDTO>> page(int page, int size) {
         int normalizedPage = page <= 0 ? 1 : page;
         int normalizedSize = size <= 0 ? 10 : size;
         int zeroBasedPage = normalizedPage - 1;
@@ -45,7 +45,7 @@ public class MessageTemplateService {
                         .map(messageTemplateConverter::toDto)
                         .collectList();
         return Mono.zip(itemsMono, totalMono)
-                .map(t -> new PageResult<>(normalizedPage, normalizedSize, t.getT2(), t.getT1()));
+                .map(t -> PageRespWrapper.success(normalizedPage, normalizedSize, t.getT2(), t.getT1()));
     }
 
     public Mono<MessageTemplateEntity> findById(String id) {
