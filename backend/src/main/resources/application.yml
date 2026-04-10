@@ -1,6 +1,8 @@
 spring:
   application:
     name: backend
+  messages:
+    encoding: UTF-8
   main:
     web-application-type: reactive
   data:

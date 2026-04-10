@@ -12,3 +12,4 @@
 **/__pycache__/
 **/openspec/
 **/.cursorignore
+**/*.iml

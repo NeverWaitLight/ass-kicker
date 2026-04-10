@@ -8,15 +8,15 @@ import jakarta.validation.constraints.Size;
 public record UserDTO(
         String id,
 
-        @NotBlank(message = "用户名不能为空", groups = Create.class)
-        @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "用户名只能包含英文字母和数字")
+        @NotBlank(message = "{user.username.notblank}", groups = Create.class)
+        @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "{user.username.pattern}")
         String username,
 
-        @NotBlank(message = "密码不能为空", groups = Create.class)
-        @Size(min = 8, message = "密码长度至少8位")
+        @NotBlank(message = "{user.password.notblank}", groups = Create.class)
+        @Size(min = 8, message = "{user.password.size}")
         String password,
 
-        @Size(min = 8, message = "当前密码长度至少8位")
+        @Size(min = 8, message = "{user.currPassword.size}")
         String currPassword
 ) {
 }
