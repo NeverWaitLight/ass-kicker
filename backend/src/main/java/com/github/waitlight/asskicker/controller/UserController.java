@@ -37,53 +37,53 @@ public class UserController {
 
     private final UserService userService;
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
-    public Mono<RespWrapper<UserView>> createUser(@RequestBody CreateUserRequest request) {
-        return userService.createUser(request).map(RespWrapper::success);
+    public Mono<RespWrapper<UserView>> create(@RequestBody CreateUserRequest request) {
+        return userService.create(request).map(RespWrapper::success);
     }
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
-    public Mono<PageRespWrapper<UserView>> listUsers(
+    public Mono<PageRespWrapper<UserView>> page(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String keyword) {
-        return userService.listUsers(page, size, keyword)
+        return userService.page(page, size, keyword)
                 .map(pr -> PageRespWrapper.success(pr.page(), pr.size(), pr.total(), pr.data()));
     }
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
-    public Mono<RespWrapper<UserView>> getUserById(@PathVariable String id) {
-        return userService.getUserById(id).map(RespWrapper::success);
+    public Mono<RespWrapper<UserView>> getById(@PathVariable String id) {
+        return userService.getById(id).map(RespWrapper::success);
     }
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "delete", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public Mono<Void> deleteUser(@PathVariable String id) {
-        return userService.deleteUser(id);
+    public Mono<Void> delete(@PathVariable String id) {
+        return userService.delete(id);
     }
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "resetPassword", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PutMapping("/{id}/password")
     public Mono<RespWrapper<UserView>> resetPassword(@PathVariable String id,
             @RequestBody ResetPasswordRequest request) {
         return userService.resetPassword(id, request.newPassword()).map(RespWrapper::success);
     }
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "updateUsername", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PatchMapping("/me")
-    public Mono<RespWrapper<UserView>> updateMeUsername(
+    public Mono<RespWrapper<UserView>> updateUsername(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody UpdateUsernameRequest request) {
         return userService.updateUsername(principal.userId(), request).map(RespWrapper::success);
     }
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "updatePassword", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PutMapping("/me/password")
-    public Mono<RespWrapper<UserView>> updateMePassword(
+    public Mono<RespWrapper<UserView>> updatePassword(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody UpdatePasswordRequest request) {
         return userService.updatePassword(principal.userId(), request).map(RespWrapper::success);

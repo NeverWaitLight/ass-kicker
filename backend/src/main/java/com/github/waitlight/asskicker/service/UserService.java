@@ -60,7 +60,7 @@ public class UserService {
                         .toFuture());
     }
 
-    public Mono<UserView> createUser(CreateUserRequest request) {
+    public Mono<UserView> create(CreateUserRequest request) {
         if (request == null || isBlank(request.username()) || isBlank(request.password())) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名或密码不能为空"));
         }
@@ -84,7 +84,7 @@ public class UserService {
                 });
     }
 
-    public Mono<UserView> registerUser(RegisterRequest request) {
+    public Mono<UserView> register(RegisterRequest request) {
         if (request == null || isBlank(request.username()) || isBlank(request.password())) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名或密码不能为空"));
         }
@@ -111,14 +111,14 @@ public class UserService {
                 });
     }
 
-    public Mono<UserView> getUserById(String id) {
+    public Mono<UserView> getById(String id) {
         return Mono.fromFuture(userByIdCache.get(id))
                 .flatMap(opt -> opt
                         .map(u -> Mono.just(userMapStructer.toView(u)))
                         .orElseGet(() -> Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在"))));
     }
 
-    public Mono<PageResult<UserView>> listUsers(int page, int size, String keyword) {
+    public Mono<PageResult<UserView>> page(int page, int size, String keyword) {
         int normalizedPage = page <= 0 ? 1 : page;
         int normalizedSize = size <= 0 ? 10 : size;
         int offset = (normalizedPage - 1) * normalizedSize;
@@ -132,7 +132,7 @@ public class UserService {
                 .map(tuple -> new PageResult<>(normalizedPage, normalizedSize, tuple.getT2(), tuple.getT1()));
     }
 
-    public Mono<Void> deleteUser(String id) {
+    public Mono<Void> delete(String id) {
         return userRepository.findActiveById(id)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在")))
                 .flatMap(user -> {

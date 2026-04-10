@@ -39,10 +39,10 @@ public class ChannelProviderController {
     private final ChannelProviderConverter channelProviderConverter;
     private final Validator validator;
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Mono<RespWrapper<ChannelProviderDTO>> createChannelProvider(@RequestBody ChannelProviderDTO request) {
+    public Mono<RespWrapper<ChannelProviderDTO>> create(@RequestBody ChannelProviderDTO request) {
         return validateDto(request)
                 .map(channelProviderConverter::toEntity)
                 .flatMap(channelProviderService::create)
@@ -53,21 +53,21 @@ public class ChannelProviderController {
                                 ex.getReason() == null ? "创建通道商失败" : ex.getReason())));
     }
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
-    public Mono<PageRespWrapper<ChannelProviderDTO>> listChannelProviders(
+    public Mono<PageRespWrapper<ChannelProviderDTO>> page(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return channelProviderService.listPage(page, size)
+        return channelProviderService.page(page, size)
                 .map(pr -> PageRespWrapper.success(pr.page(), pr.size(), pr.total(), pr.data()))
                 .onErrorResume(ResponseStatusException.class, ex -> Mono.just(
                         PageRespWrapper.error(String.valueOf(ex.getStatusCode().value()),
                                 ex.getReason() == null ? "获取通道商列表失败" : ex.getReason())));
     }
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
-    public Mono<RespWrapper<ChannelProviderDTO>> getChannelProviderById(@PathVariable String id) {
+    public Mono<RespWrapper<ChannelProviderDTO>> getById(@PathVariable String id) {
         return channelProviderService.findById(id)
                 .map(channelProviderConverter::toDto)
                 .map(RespWrapper::success)
@@ -77,9 +77,9 @@ public class ChannelProviderController {
                                 ex.getReason() == null ? "获取通道商失败" : ex.getReason())));
     }
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PutMapping("/{id}")
-    public Mono<RespWrapper<ChannelProviderDTO>> updateChannelProvider(
+    public Mono<RespWrapper<ChannelProviderDTO>> update(
             @PathVariable String id,
             @RequestBody ChannelProviderDTO request) {
         return validateDto(request)
@@ -93,10 +93,10 @@ public class ChannelProviderController {
                                 ex.getReason() == null ? "更新通道商失败" : ex.getReason())));
     }
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "delete", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public Mono<Void> deleteChannelProvider(@PathVariable String id) {
+    public Mono<Void> delete(@PathVariable String id) {
         return channelProviderService.delete(id)
                 .onErrorResume(ResponseStatusException.class, ex -> {
                     // 如果删除失败，抛出异常

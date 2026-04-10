@@ -33,28 +33,28 @@ public class ApiKeyController {
 
     private final ApiKeyService apiKeyService;
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
-    public Mono<RespWrapper<CreateApiKeyResponse>> createApiKey(
+    public Mono<RespWrapper<CreateApiKeyResponse>> create(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody CreateApiKeyRequest request) {
-        return apiKeyService.createApiKey(principal.userId(), request)
+        return apiKeyService.create(principal.userId(), request)
                 .map(RespWrapper::success);
     }
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "list", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
-    public Mono<RespWrapper<List<ApiKeyView>>> listApiKeys(@AuthenticationPrincipal UserPrincipal principal) {
-        return apiKeyService.listApiKeys(principal.userId())
+    public Mono<RespWrapper<List<ApiKeyView>>> list(@AuthenticationPrincipal UserPrincipal principal) {
+        return apiKeyService.list(principal.userId())
                 .map(RespWrapper::success);
     }
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "revoke", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public Mono<Void> revokeApiKey(
+    public Mono<Void> revoke(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable String id) {
-        return apiKeyService.revokeApiKey(principal.userId(), id);
+        return apiKeyService.revoke(principal.userId(), id);
     }
 }

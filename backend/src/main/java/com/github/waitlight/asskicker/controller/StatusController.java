@@ -15,9 +15,9 @@ import java.util.Map;
 @RequestMapping("/status")
 public class StatusController {
 
-    @Operation
+    @Operation(summary = "get")
     @GetMapping
-    public Mono<RespWrapper<Object>> getStatus() {
+    public Mono<RespWrapper<Object>> get() {
         return Mono.just(RespWrapper.success(Map.of("service", "ass-kicker", "status", "OK")));
     }
 }

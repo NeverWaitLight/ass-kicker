@@ -17,7 +17,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class HealthController {
 
-    @Operation
+    @Operation(summary = "health")
     @GetMapping
     public Mono<RespWrapper<Object>> health() {
         return Mono.just(RespWrapper.success(Map.of("status", "UP")));

@@ -26,7 +26,7 @@ public class ApiKeyService {
     private final ApiKeyAuthService apiKeyAuthService;
     private final SnowflakeIdGenerator snowflakeIdGenerator;
 
-    public Mono<CreateApiKeyResponse> createApiKey(String userId, CreateApiKeyRequest request) {
+    public Mono<CreateApiKeyResponse> create(String userId, CreateApiKeyRequest request) {
         String raw = "ak_" + snowflakeIdGenerator.nextIdString();
         String keyPrefix = raw.substring(0, 12);
         String keyHash = passwordEncoder.encode(raw);
@@ -54,7 +54,7 @@ public class ApiKeyService {
                 ));
     }
 
-    public Mono<List<ApiKeyView>> listApiKeys(String userId) {
+    public Mono<List<ApiKeyView>> list(String userId) {
         return apiKeyRepository.findByUserIdAndStatus(userId, ApiKeyStatus.ACTIVE)
                 .map(apiKey -> new ApiKeyView(
                         apiKey.getId(),
@@ -68,7 +68,7 @@ public class ApiKeyService {
                 .collectList();
     }
 
-    public Mono<Void> revokeApiKey(String userId, String id) {
+    public Mono<Void> revoke(String userId, String id) {
         return apiKeyRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "API Key 不存在")))
                 .flatMap(apiKey -> {

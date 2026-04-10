@@ -33,7 +33,7 @@ public class AuthController {
     private final AuthService authService;
     private final UserService userService;
 
-    @Operation
+    @Operation(summary = "login")
     @PostMapping("/login")
     public Mono<RespWrapper<TokenResponse>> login(@RequestBody LoginRequest request) {
         return authService.login(request)
@@ -43,17 +43,17 @@ public class AuthController {
                                 ex.getReason() == null ? "登录失败" : ex.getReason())));
     }
 
-    @Operation
+    @Operation(summary = "register")
     @PostMapping("/register")
     public Mono<RespWrapper<UserView>> register(@RequestBody RegisterRequest request) {
-        return userService.registerUser(request)
+        return userService.register(request)
                 .map(RespWrapper::success)
                 .onErrorResume(ResponseStatusException.class, ex ->
                         Mono.error(new ResponseStatusException(ex.getStatusCode(),
                                 ex.getReason() == null ? "注册失败" : ex.getReason())));
     }
 
-    @Operation
+    @Operation(summary = "refresh")
     @PostMapping("/refresh")
     public Mono<RespWrapper<TokenResponse>> refresh(@RequestBody RefreshRequest request) {
         return authService.refresh(request.refreshToken())
@@ -63,13 +63,13 @@ public class AuthController {
                                 ex.getReason() == null ? "刷新失败" : ex.getReason())));
     }
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "me", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/me")
     public Mono<RespWrapper<UserView>> me(@AuthenticationPrincipal UserPrincipal principal) {
         if (principal == null) {
             return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "未认证"));
         }
-        return userService.getUserById(principal.userId())
+        return userService.getById(principal.userId())
                 .map(RespWrapper::success)
                 .onErrorResume(ResponseStatusException.class, ex ->
                         Mono.error(new ResponseStatusException(ex.getStatusCode(),

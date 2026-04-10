@@ -43,7 +43,7 @@ public class ChannelProviderService {
                 .take(size);
     }
 
-    public Mono<PageResult<ChannelProviderDTO>> listPage(int page, int size) {
+    public Mono<PageResult<ChannelProviderDTO>> page(int page, int size) {
         int normalizedPage = page <= 0 ? 1 : page;
         int normalizedSize = size <= 0 ? 10 : size;
         int zeroBasedPage = normalizedPage - 1;

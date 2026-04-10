@@ -35,7 +35,7 @@ public class MessageTemplateService {
                 .take(size);
     }
 
-    public Mono<PageResult<MessageTemplateDTO>> listPage(int page, int size) {
+    public Mono<PageResult<MessageTemplateDTO>> page(int page, int size) {
         int normalizedPage = page <= 0 ? 1 : page;
         int normalizedSize = size <= 0 ? 10 : size;
         int zeroBasedPage = normalizedPage - 1;

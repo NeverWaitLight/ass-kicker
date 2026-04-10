@@ -9,8 +9,6 @@ import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.dto.send.SendResponse;
 import com.github.waitlight.asskicker.mq.SendTaskProducer;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -18,11 +16,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.codec.DecodingException;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
@@ -38,6 +37,7 @@ public class SendController {
     private final Sender sender;
 
     @Operation(
+        summary = "send",
         security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT),
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
             required = true,
@@ -67,6 +67,7 @@ public class SendController {
     }
 
     @Operation(
+        summary = "submit",
         security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT),
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
             required = true,

@@ -53,7 +53,7 @@ public class SendRecordService implements DisposableBean {
                         .toFuture());
     }
 
-    public Mono<PageResult<SendRecordView>> listRecords(int page, int size, String recipient, String channelType) {
+    public Mono<PageResult<SendRecordView>> page(int page, int size, String recipient, String channelType) {
         int normalizedPage = page <= 0 ? 1 : page;
         int normalizedSize = size <= 0 ? 10 : size;
         int offset = (normalizedPage - 1) * normalizedSize;

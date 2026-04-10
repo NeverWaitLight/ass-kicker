@@ -25,9 +25,9 @@ public class SendRecordController {
 
     private final SendRecordService sendRecordService;
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
-    public Mono<PageRespWrapper<SendRecordView>> listRecords(
+    public Mono<PageRespWrapper<SendRecordView>> page(
             @RequestParam(defaultValue = "1")
             @Parameter(description = "页码，从1开始", example = "1")
             int page,
@@ -41,13 +41,13 @@ public class SendRecordController {
             @Parameter(description = "渠道类型")
             String channelType) {
 
-        return sendRecordService.listRecords(page, size, recipient, channelType)
+        return sendRecordService.page(page, size, recipient, channelType)
                 .map(pr -> PageRespWrapper.success(pr.page(), pr.size(), pr.total(), pr.data()));
     }
 
-    @Operation(security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
-    public Mono<RespWrapper<SendRecordView>> getRecordById(
+    public Mono<RespWrapper<SendRecordView>> getById(
             @PathVariable
             @Parameter(description = "发送记录ID")
             String id) {
