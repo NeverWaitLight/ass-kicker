@@ -2,13 +2,14 @@ package com.github.waitlight.asskicker.service;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
-import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.model.UserEntity;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.model.UserStatus;
 import com.github.waitlight.asskicker.repository.UserRepository;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,28 +21,19 @@ import java.time.Instant;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     private static final long NOT_DELETED = 0L;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final UserConverter userConvertor;
     private final CaffeineCacheConfig caffeineCacheConfig;
     private final SnowflakeIdGenerator snowflakeIdGenerator;
 
     private AsyncLoadingCache<String, Optional<UserEntity>> userByIdCache;
     private AsyncLoadingCache<String, Optional<UserEntity>> userByUsernameCache;
-
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
-                       UserConverter userConvertor, CaffeineCacheConfig caffeineCacheConfig,
-                       SnowflakeIdGenerator snowflakeIdGenerator) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.userConvertor = userConvertor;
-        this.caffeineCacheConfig = caffeineCacheConfig;
-        this.snowflakeIdGenerator = snowflakeIdGenerator;
-    }
 
     @PostConstruct
     void initCaches() {
