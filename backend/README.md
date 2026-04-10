@@ -1,5 +1,9 @@
 本后端项目要实现的是基于 Spring 的全反应式链路。
 
+## 文档
+
+API 文档地址：http://127.0.0.1:8080/scala
+
 ## 技术栈
 
 Spring Boot 3.2 WebFlux、Java 21、R2DBC（PostgreSQL）、Spring Security（JWT）。Web 层为 RouterFunction + Handler 函数式端点，数据层与 HTTP 客户端均为非阻塞反应式。
