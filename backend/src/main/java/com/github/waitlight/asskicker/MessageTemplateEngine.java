@@ -13,7 +13,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-import com.github.waitlight.asskicker.config.CaffeineCacheProperties;
+import com.github.waitlight.asskicker.config.cache.CaffeineCacheProperties;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.service.MessageTemplateService;

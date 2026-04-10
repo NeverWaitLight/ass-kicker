@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.config;
+package com.github.waitlight.asskicker.config.snowflake;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

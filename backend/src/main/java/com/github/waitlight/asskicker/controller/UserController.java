@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.controller;
 
-import com.github.waitlight.asskicker.config.OpenApiConfig;
+import com.github.waitlight.asskicker.config.openapi.OpenApiConfig;
 import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.PageReq;
 import com.github.waitlight.asskicker.dto.PageResp;

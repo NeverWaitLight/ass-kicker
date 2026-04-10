@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.github.waitlight.asskicker.config.ChannelObjectMapperConfig;
+import com.github.waitlight.asskicker.config.channel.ChannelObjectMapperConfig;
 
 /**
  * 仅用于 ChannelProvider 嵌入式 Mongo 测试，避免 {@code @DataMongoTest} 向上解析到

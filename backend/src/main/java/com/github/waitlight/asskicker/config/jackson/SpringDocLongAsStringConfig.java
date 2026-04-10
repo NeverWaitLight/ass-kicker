@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.config;
+package com.github.waitlight.asskicker.config.jackson;
 
 import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.context.annotation.Configuration;

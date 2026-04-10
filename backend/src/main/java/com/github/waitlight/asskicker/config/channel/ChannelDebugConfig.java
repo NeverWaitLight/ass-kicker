@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.config;
+package com.github.waitlight.asskicker.config.channel;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;

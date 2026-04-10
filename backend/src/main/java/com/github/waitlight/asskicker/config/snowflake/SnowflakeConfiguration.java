@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.config;
+package com.github.waitlight.asskicker.config.snowflake;
 
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import com.github.waitlight.asskicker.util.SnowflakeMongoAllocator;

@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.util;
 
-import com.github.waitlight.asskicker.config.SnowflakeProperties;
+import com.github.waitlight.asskicker.config.snowflake.SnowflakeProperties;
 import org.bson.Document;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;

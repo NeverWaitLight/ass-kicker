@@ -1,14 +1,13 @@
 package com.github.waitlight.asskicker.service;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
-import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
+import com.github.waitlight.asskicker.config.cache.UserCacheConfig;
 import com.github.waitlight.asskicker.model.UserEntity;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.model.UserStatus;
 import com.github.waitlight.asskicker.repository.UserRepository;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import com.github.waitlight.asskicker.util.SoftDeleteConstants;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import org.springframework.util.StringUtils;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -28,28 +29,20 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final CaffeineCacheConfig caffeineCacheConfig;
+    private final UserCacheConfig userCacheConfig;
     private final SnowflakeIdGenerator snowflakeIdGenerator;
 
     private AsyncLoadingCache<String, Optional<UserEntity>> userByIdCache;
     private AsyncLoadingCache<String, Optional<UserEntity>> userByUsernameCache;
 
-    @PostConstruct
+    @jakarta.annotation.PostConstruct
     void initCaches() {
-        userByIdCache = caffeineCacheConfig.buildCache((id, executor) -> userRepository.findById(id)
-                .map(Optional::of)
-                .defaultIfEmpty(Optional.empty())
-                .toFuture());
-
-        userByUsernameCache = caffeineCacheConfig
-                .buildCache((username, executor) -> userRepository.findActiveByUsername(username)
-                        .map(Optional::of)
-                        .defaultIfEmpty(Optional.empty())
-                        .toFuture());
+        userByIdCache = userCacheConfig.getUserByIdCache();
+        userByUsernameCache = userCacheConfig.getUserByUsernameCache();
     }
 
     public Mono<UserEntity> create(UserEntity user) {
-        if (user == null || isBlank(user.getUsername()) || isBlank(user.getPassword())) {
+        if (user == null || !StringUtils.hasText(user.getUsername()) || !StringUtils.hasText(user.getPassword())) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名或密码不能为空"));
         }
 
@@ -107,7 +100,7 @@ public class UserService {
     }
 
     public Mono<UserEntity> resetPassword(String id, String newPassword, String oldPassword) {
-        if (isBlank(newPassword) || isBlank(oldPassword)) {
+        if (!StringUtils.hasText(newPassword) || !StringUtils.hasText(oldPassword)) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "密码不能为空"));
         }
 
@@ -127,54 +120,43 @@ public class UserService {
     }
 
     public Mono<UserEntity> update(UserEntity u) {
-        if (u == null || isBlank(u.getId())) {
+        if (u == null || !StringUtils.hasText(u.getId())) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户ID不能为空"));
         }
 
         return userRepository.findById(u.getId())
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在")))
-                .flatMap(this::doUpdate);
-    }
+                .flatMap(existing -> {
+                    String id = u.getId();
+                    String newUsername = u.getUsername();
+                    UserStatus newStatus = u.getStatus();
 
-    private Mono<UserEntity> doUpdate(UserEntity u) {
-        String id = u.getId();
-        String newUsername = u.getUsername();
-        UserStatus newStatus = u.getStatus();
-
-        if (newUsername == null || newUsername.isBlank()) {
-            return updateStatusOnly(u);
-        }
-
-        String trimmedUsername = newUsername.trim();
-        if (trimmedUsername.equals(u.getUsername())) {
-            return updateStatusOnly(u);
-        }
-
-        return Mono.fromFuture(userByUsernameCache.get(trimmedUsername))
-                .filter(Optional::isEmpty)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "用户名已存在")))
-                .flatMap(opt -> {
-                    String oldUsername = u.getUsername();
-                    u.setUsername(trimmedUsername);
-                    if (newStatus != null) {
-                        u.setStatus(newStatus);
+                    if (newUsername == null || newUsername.isBlank()) {
+                        return Mono.just(u);
                     }
-                    u.setUpdatedAt(Instant.now().toEpochMilli());
-                    return userRepository.save(u)
-                            .doOnSuccess(saved -> {
-                                userByIdCache.synchronous().invalidate(id);
-                                userByUsernameCache.synchronous().invalidate(oldUsername);
-                                userByUsernameCache.synchronous().invalidate(trimmedUsername);
+
+                    String trimmedUsername = newUsername.trim();
+                    if (trimmedUsername.equals(u.getUsername())) {
+                        return Mono.just(u);
+                    }
+
+                    return Mono.fromFuture(userByUsernameCache.get(trimmedUsername))
+                            .filter(Optional::isEmpty)
+                            .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "用户名已存在")))
+                            .flatMap(opt -> {
+                                String oldUsername = u.getUsername();
+                                u.setUsername(trimmedUsername);
+                                if (newStatus != null) {
+                                    u.setStatus(newStatus);
+                                }
+                                u.setUpdatedAt(Instant.now().toEpochMilli());
+                                return userRepository.save(u)
+                                        .doOnSuccess(saved -> {
+                                            userByIdCache.synchronous().invalidate(id);
+                                            userByUsernameCache.synchronous().invalidate(oldUsername);
+                                            userByUsernameCache.synchronous().invalidate(trimmedUsername);
+                                        });
                             });
                 });
-    }
-
-    private Mono<UserEntity> updateStatusOnly(UserEntity user) {
-        return Mono.just(user);
-
-    }
-
-    private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
     }
 }

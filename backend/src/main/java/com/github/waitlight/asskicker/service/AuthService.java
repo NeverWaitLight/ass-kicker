@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.service;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
-import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
+import com.github.waitlight.asskicker.config.cache.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.auth.LoginDTO;
 import com.github.waitlight.asskicker.dto.auth.TokenVO;

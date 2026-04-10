@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.util;
 
 import com.github.waitlight.asskicker.AssKickerTestApplication;
-import com.github.waitlight.asskicker.config.SnowflakeConfiguration;
+import com.github.waitlight.asskicker.config.snowflake.SnowflakeConfiguration;
 import org.bson.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.controller;
 
 import com.github.waitlight.asskicker.Sender;
-import com.github.waitlight.asskicker.config.OpenApiConfig;
+import com.github.waitlight.asskicker.config.openapi.OpenApiConfig;
 import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
