@@ -40,6 +40,33 @@ public class UserController {
         return userService.create(userConverter.toEntity(user)).map(RespWrapper::success);
     }
 
+    @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @PatchMapping
+    public Mono<RespWrapper<UserVO>> update(@RequestBody @Validated(Update.class) UserDTO user) {
+        return userService.update(userConverter.toUpdateEntity(user)).map(RespWrapper::success);
+    }
+
+    @Operation(summary = "resetPassword", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @PutMapping("/password")
+    public Mono<RespWrapper<UserVO>> resetPassword(
+            @RequestBody @Validated(ResetPassword.class) UserDTO user) {
+        return userService.resetPassword(user.id(), user.password(), user.currPassword())
+                .map(RespWrapper::success);
+    }
+
+    @Operation(summary = "delete", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Void> delete(@PathVariable @NotBlank String id) {
+        return userService.delete(id);
+    }
+
+    @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @GetMapping("/{id}")
+    public Mono<RespWrapper<UserVO>> getById(@PathVariable String id) {
+        return userService.getById(id).map(RespWrapper::success);
+    }
+
     @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
     public Mono<PageRespWrapper<UserVO>> page(
@@ -58,32 +85,5 @@ public class UserController {
                             .collectList()
                             .map(users -> PageRespWrapper.success(page, size, total, users));
                 });
-    }
-
-    @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-    @GetMapping("/{id}")
-    public Mono<RespWrapper<UserVO>> getById(@PathVariable String id) {
-        return userService.getById(id).map(RespWrapper::success);
-    }
-
-    @Operation(summary = "delete", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public Mono<Void> delete(@PathVariable @NotBlank String id) {
-        return userService.delete(id);
-    }
-
-    @Operation(summary = "resetPassword", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-    @PutMapping("/password")
-    public Mono<RespWrapper<UserVO>> resetPassword(
-            @RequestBody @Validated(ResetPassword.class) UserDTO user) {
-        return userService.resetPassword(user.id(), user.password(), user.currPassword())
-                .map(RespWrapper::success);
-    }
-
-    @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-    @PatchMapping
-    public Mono<RespWrapper<UserVO>> update(@RequestBody @Validated(Update.class) UserDTO user) {
-        return userService.update(userConverter.toUpdateEntity(user)).map(RespWrapper::success);
     }
 }
