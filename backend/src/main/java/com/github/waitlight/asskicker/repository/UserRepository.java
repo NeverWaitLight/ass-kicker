@@ -22,17 +22,17 @@ public class UserRepository {
         return mongoTemplate.save(entity);
     }
 
-    public Mono<UserEntity> findActiveById(String id) {
+    public Mono<UserEntity> findById(String id) {
         Query query = new Query();
         query.addCriteria(Criteria.where("_id").is(id));
-        query.addCriteria(notDeletedCriteria());
+        query.addCriteria(Criteria.where("deleted_at").is(NOT_DELETED));
         return mongoTemplate.findOne(query, UserEntity.class);
     }
 
     public Mono<UserEntity> findActiveByUsername(String username) {
         Query query = new Query();
         query.addCriteria(Criteria.where("username").is(username));
-        query.addCriteria(notDeletedCriteria());
+        query.addCriteria(Criteria.where("deleted_at").is(NOT_DELETED));
         return mongoTemplate.findOne(query, UserEntity.class);
     }
 
@@ -48,13 +48,9 @@ public class UserRepository {
         return mongoTemplate.count(query, UserEntity.class);
     }
 
-    private Criteria notDeletedCriteria() {
-        return Criteria.where("deleted_at").is(NOT_DELETED);
-    }
-
     private Query buildKeywordQuery(String keyword) {
         Query query = new Query();
-        query.addCriteria(notDeletedCriteria());
+        query.addCriteria(Criteria.where("deleted_at").is(NOT_DELETED));
         if (keyword != null && !keyword.isBlank()) {
             query.addCriteria(Criteria.where("username").regex(".*" + escapeRegex(keyword) + ".*", "i"));
         }
@@ -64,4 +60,5 @@ public class UserRepository {
     private String escapeRegex(String input) {
         return input.replaceAll("([\\\\\\[\\]{}()*+?.^$|])", "\\\\$1");
     }
+
 }

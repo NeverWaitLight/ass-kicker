@@ -1,12 +1,15 @@
 package com.github.waitlight.asskicker.controller;
 
 import com.github.waitlight.asskicker.config.OpenApiConfig;
+import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.auth.LoginDTO;
 import com.github.waitlight.asskicker.dto.auth.RefreshDTO;
 import com.github.waitlight.asskicker.dto.auth.RegisterDTO;
 import com.github.waitlight.asskicker.dto.auth.TokenVO;
 import com.github.waitlight.asskicker.dto.user.UserVO;
+import com.github.waitlight.asskicker.model.UserEntity;
+import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.service.AuthService;
 import com.github.waitlight.asskicker.service.UserService;
@@ -32,6 +35,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final UserService userService;
+    private final UserConverter userConverter;
 
     @Operation(summary = "login")
     @PostMapping("/login")
@@ -46,7 +50,15 @@ public class AuthController {
     @Operation(summary = "register")
     @PostMapping("/register")
     public Mono<Resp<UserVO>> register(@RequestBody RegisterDTO request) {
-        return userService.register(request)
+        return userService.count(null)
+                .flatMap(count -> {
+                    UserEntity user = new UserEntity();
+                    user.setUsername(request.username());
+                    user.setPassword(request.password());
+                    user.setRole(count == 0 ? UserRole.ADMIN : UserRole.MEMBER);
+                    return userService.create(user);
+                })
+                .map(userConverter::toView)
                 .map(Resp::success)
                 .onErrorResume(ResponseStatusException.class, ex ->
                         Mono.error(new ResponseStatusException(ex.getStatusCode(),

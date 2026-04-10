@@ -50,7 +50,7 @@ public class AuthService {
                         .toFuture());
 
         userByIdCache = caffeineCacheConfig
-                .buildCache((id, executor) -> userRepository.findActiveById(id)
+                .buildCache((id, executor) -> userRepository.findById(id)
                         .map(Optional::of)
                         .defaultIfEmpty(Optional.empty())
                         .toFuture());

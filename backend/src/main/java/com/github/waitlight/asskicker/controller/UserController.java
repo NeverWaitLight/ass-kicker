@@ -37,13 +37,17 @@ public class UserController {
     @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
     public Mono<Resp<UserVO>> create(@RequestBody @Validated CreateUserDTO user) {
-        return userService.create(userConverter.toEntity(user)).map(Resp::success);
+        return userService.create(userConverter.toEntity(user))
+                .map(userConverter::toView)
+                .map(Resp::success);
     }
 
     @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PatchMapping
     public Mono<Resp<UserVO>> update(@RequestBody @Validated UpdateUserDTO user) {
-        return userService.update(userConverter.toEntity(user)).map(Resp::success);
+        return userService.update(userConverter.toEntity(user))
+                .map(userConverter::toView)
+                .map(Resp::success);
     }
 
     @Operation(summary = "resetPassword", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
@@ -51,6 +55,7 @@ public class UserController {
     public Mono<Resp<UserVO>> resetPassword(
             @RequestBody @Validated ResetPasswordDTO user) {
         return userService.resetPassword(user.id(), user.password(), user.currPassword())
+                .map(userConverter::toView)
                 .map(Resp::success);
     }
 
@@ -64,7 +69,9 @@ public class UserController {
     @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
     public Mono<Resp<UserVO>> getById(@PathVariable String id) {
-        return userService.getById(id).map(Resp::success);
+        return userService.getById(id)
+                .map(userConverter::toView)
+                .map(Resp::success);
     }
 
     @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
