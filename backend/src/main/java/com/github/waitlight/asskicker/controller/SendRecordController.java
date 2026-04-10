@@ -1,8 +1,8 @@
 package com.github.waitlight.asskicker.controller;
 
 import com.github.waitlight.asskicker.config.OpenApiConfig;
-import com.github.waitlight.asskicker.dto.PageRespWrapper;
-import com.github.waitlight.asskicker.dto.RespWrapper;
+import com.github.waitlight.asskicker.dto.PageResp;
+import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.sendrecord.SendRecordVO;
 import com.github.waitlight.asskicker.service.SendRecordService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,7 +27,7 @@ public class SendRecordController {
 
     @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
-    public Mono<PageRespWrapper<SendRecordVO>> page(
+    public Mono<PageResp<SendRecordVO>> page(
             @RequestParam(defaultValue = "1")
             @Parameter(description = "页码，从1开始", example = "1")
             int page,
@@ -42,17 +42,17 @@ public class SendRecordController {
             String channelType) {
 
         return sendRecordService.page(page, size, recipient, channelType)
-                .map(pr -> PageRespWrapper.success(pr.page(), pr.size(), pr.total(), pr.data()));
+                .map(pr -> PageResp.success(pr.page(), pr.size(), pr.total(), pr.data()));
     }
 
     @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
-    public Mono<RespWrapper<SendRecordVO>> getById(
+    public Mono<Resp<SendRecordVO>> getById(
             @PathVariable
             @Parameter(description = "发送记录ID")
             String id) {
 
         return sendRecordService.getById(id)
-                .map(RespWrapper::success);
+                .map(Resp::success);
     }
 }

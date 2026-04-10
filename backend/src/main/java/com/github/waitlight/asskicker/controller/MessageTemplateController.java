@@ -2,8 +2,8 @@ package com.github.waitlight.asskicker.controller;
 
 import com.github.waitlight.asskicker.config.OpenApiConfig;
 import com.github.waitlight.asskicker.converter.MessageTemplateConverter;
-import com.github.waitlight.asskicker.dto.PageRespWrapper;
-import com.github.waitlight.asskicker.dto.RespWrapper;
+import com.github.waitlight.asskicker.dto.PageResp;
+import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.template.MessageTemplateDTO;
 import com.github.waitlight.asskicker.model.MessageTemplateEntity;
 import com.github.waitlight.asskicker.service.MessageTemplateService;
@@ -37,47 +37,47 @@ public class MessageTemplateController {
     @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Mono<RespWrapper<MessageTemplateDTO>> create(@Valid @RequestBody MessageTemplateDTO request) {
+    public Mono<Resp<MessageTemplateDTO>> create(@Valid @RequestBody MessageTemplateDTO request) {
         MessageTemplateEntity entity = messageTemplateConverter.toEntity(request);
         return messageTemplateService.create(entity)
                 .map(messageTemplateConverter::toDto)
-                .map(RespWrapper::success);
+                .map(Resp::success);
     }
 
     @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
-    public Mono<PageRespWrapper<MessageTemplateDTO>> page(
+    public Mono<PageResp<MessageTemplateDTO>> page(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
         return messageTemplateService.page(page, size)
-                .map(pr -> PageRespWrapper.success(pr.page(), pr.size(), pr.total(), pr.data()));
+                .map(pr -> PageResp.success(pr.page(), pr.size(), pr.total(), pr.data()));
     }
 
     @Operation(summary = "getByCode", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/code/{code}")
-    public Mono<RespWrapper<MessageTemplateDTO>> getByCode(@PathVariable String code) {
+    public Mono<Resp<MessageTemplateDTO>> getByCode(@PathVariable String code) {
         return messageTemplateService.findByCode(code)
                 .map(messageTemplateConverter::toDto)
-                .map(RespWrapper::success);
+                .map(Resp::success);
     }
 
     @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
-    public Mono<RespWrapper<MessageTemplateDTO>> getById(@PathVariable String id) {
+    public Mono<Resp<MessageTemplateDTO>> getById(@PathVariable String id) {
         return messageTemplateService.findById(id)
                 .map(messageTemplateConverter::toDto)
-                .map(RespWrapper::success);
+                .map(Resp::success);
     }
 
     @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PutMapping("/{id}")
-    public Mono<RespWrapper<MessageTemplateDTO>> update(
+    public Mono<Resp<MessageTemplateDTO>> update(
             @PathVariable String id,
             @Valid @RequestBody MessageTemplateDTO request) {
         MessageTemplateEntity entity = messageTemplateConverter.toEntity(request);
         return messageTemplateService.update(id, entity)
                 .map(messageTemplateConverter::toDto)
-                .map(RespWrapper::success);
+                .map(Resp::success);
     }
 
     @Operation(summary = "delete", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))

@@ -2,7 +2,7 @@ package com.github.waitlight.asskicker.service;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
-import com.github.waitlight.asskicker.dto.PageRespWrapper;
+import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.sendrecord.SendRecordVO;
 import com.github.waitlight.asskicker.model.SendRecordEntity;
 import com.github.waitlight.asskicker.repository.SendRecordRepository;
@@ -53,7 +53,7 @@ public class SendRecordService implements DisposableBean {
                         .toFuture());
     }
 
-    public Mono<PageRespWrapper<SendRecordVO>> page(int page, int size, String recipient, String channelType) {
+    public Mono<PageResp<SendRecordVO>> page(int page, int size, String recipient, String channelType) {
         int normalizedPage = page <= 0 ? 1 : page;
         int normalizedSize = size <= 0 ? 10 : size;
         int offset = (normalizedPage - 1) * normalizedSize;
@@ -66,7 +66,7 @@ public class SendRecordService implements DisposableBean {
                 .collectList();
 
         return Mono.zip(itemsMono, totalMono)
-                .map(tuple -> PageRespWrapper.success(normalizedPage, normalizedSize, tuple.getT2(), tuple.getT1()));
+                .map(tuple -> PageResp.success(normalizedPage, normalizedSize, tuple.getT2(), tuple.getT1()));
     }
 
     public Mono<SendRecordVO> getById(String id) {

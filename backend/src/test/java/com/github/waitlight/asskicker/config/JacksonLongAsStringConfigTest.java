@@ -7,7 +7,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.dto.PageRespWrapper;
+import com.github.waitlight.asskicker.dto.PageResp;
 
 class JacksonLongAsStringConfigTest {
 
@@ -21,7 +21,7 @@ class JacksonLongAsStringConfigTest {
         void serializesLongAndPrimitiveLongAsJsonStrings() throws Exception {
                 ObjectMapper mapper = newMapperWithLongAsString();
 
-                PageRespWrapper<String> page = PageRespWrapper.success(0, 10, 99L, List.of("a"));
+                PageResp<String> page = PageResp.success(0, 10, 99L, List.of("a"));
                 String json = mapper.writeValueAsString(page);
 
                 assertThat(json).contains("\"total\":\"99\"");
@@ -31,14 +31,14 @@ class JacksonLongAsStringConfigTest {
         void deserializesLongFromJsonStringOrNumber() throws Exception {
                 ObjectMapper mapper = newMapperWithLongAsString();
 
-                PageRespWrapper<?> fromString = mapper.readValue(
+                PageResp<?> fromString = mapper.readValue(
                                 "{\"code\":\"200\",\"message\":\"success\",\"data\":[],\"page\":0,\"size\":10,\"total\":\"42\"}",
-                                PageRespWrapper.class);
+                                PageResp.class);
                 assertThat(fromString.total()).isEqualTo(42L);
 
-                PageRespWrapper<?> fromNumber = mapper.readValue(
+                PageResp<?> fromNumber = mapper.readValue(
                                 "{\"code\":\"200\",\"message\":\"success\",\"data\":[],\"page\":0,\"size\":10,\"total\":43}",
-                                PageRespWrapper.class);
+                                PageResp.class);
                 assertThat(fromNumber.total()).isEqualTo(43L);
         }
 }

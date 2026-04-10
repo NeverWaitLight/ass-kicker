@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.controller;
 
-import com.github.waitlight.asskicker.dto.RespWrapper;
+import com.github.waitlight.asskicker.dto.Resp;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +17,7 @@ public class StatusController {
 
     @Operation(summary = "get")
     @GetMapping
-    public Mono<RespWrapper<Object>> get() {
-        return Mono.just(RespWrapper.success(Map.of("service", "ass-kicker", "status", "OK")));
+    public Mono<Resp<Object>> get() {
+        return Mono.just(Resp.success(Map.of("service", "ass-kicker", "status", "OK")));
     }
 }

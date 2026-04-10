@@ -2,8 +2,8 @@ package com.github.waitlight.asskicker.controller;
 
 import com.github.waitlight.asskicker.config.OpenApiConfig;
 import com.github.waitlight.asskicker.converter.ChannelProviderConverter;
-import com.github.waitlight.asskicker.dto.PageRespWrapper;
-import com.github.waitlight.asskicker.dto.RespWrapper;
+import com.github.waitlight.asskicker.dto.PageResp;
+import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.channel.ChannelProviderDTO;
 import com.github.waitlight.asskicker.service.ChannelProviderService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,54 +42,54 @@ public class ChannelProviderController {
     @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Mono<RespWrapper<ChannelProviderDTO>> create(@RequestBody ChannelProviderDTO request) {
+    public Mono<Resp<ChannelProviderDTO>> create(@RequestBody ChannelProviderDTO request) {
         return validateDto(request)
                 .map(channelProviderConverter::toEntity)
                 .flatMap(channelProviderService::create)
                 .map(channelProviderConverter::toDto)
-                .map(RespWrapper::success)
+                .map(Resp::success)
                 .onErrorResume(ResponseStatusException.class, ex -> Mono.just(
-                        RespWrapper.error(String.valueOf(ex.getStatusCode().value()),
+                        Resp.error(String.valueOf(ex.getStatusCode().value()),
                                 ex.getReason() == null ? "创建通道商失败" : ex.getReason())));
     }
 
     @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
-    public Mono<PageRespWrapper<ChannelProviderDTO>> page(
+    public Mono<PageResp<ChannelProviderDTO>> page(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
         return channelProviderService.page(page, size)
-                .map(pr -> PageRespWrapper.success(pr.page(), pr.size(), pr.total(), pr.data()))
+                .map(pr -> PageResp.success(pr.page(), pr.size(), pr.total(), pr.data()))
                 .onErrorResume(ResponseStatusException.class, ex -> Mono.just(
-                        PageRespWrapper.error(String.valueOf(ex.getStatusCode().value()),
+                        PageResp.error(String.valueOf(ex.getStatusCode().value()),
                                 ex.getReason() == null ? "获取通道商列表失败" : ex.getReason())));
     }
 
     @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
-    public Mono<RespWrapper<ChannelProviderDTO>> getById(@PathVariable String id) {
+    public Mono<Resp<ChannelProviderDTO>> getById(@PathVariable String id) {
         return channelProviderService.findById(id)
                 .map(channelProviderConverter::toDto)
-                .map(RespWrapper::success)
-                .switchIfEmpty(Mono.defer(() -> Mono.just(RespWrapper.error(String.valueOf(HttpStatus.NOT_FOUND.value()), "未找到通道商"))))
+                .map(Resp::success)
+                .switchIfEmpty(Mono.defer(() -> Mono.just(Resp.error(String.valueOf(HttpStatus.NOT_FOUND.value()), "未找到通道商"))))
                 .onErrorResume(ResponseStatusException.class, ex -> Mono.just(
-                        RespWrapper.error(String.valueOf(ex.getStatusCode().value()),
+                        Resp.error(String.valueOf(ex.getStatusCode().value()),
                                 ex.getReason() == null ? "获取通道商失败" : ex.getReason())));
     }
 
     @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PutMapping("/{id}")
-    public Mono<RespWrapper<ChannelProviderDTO>> update(
+    public Mono<Resp<ChannelProviderDTO>> update(
             @PathVariable String id,
             @RequestBody ChannelProviderDTO request) {
         return validateDto(request)
                 .map(channelProviderConverter::toEntity)
                 .flatMap(patch -> channelProviderService.update(id, patch))
                 .map(channelProviderConverter::toDto)
-                .map(RespWrapper::success)
-                .switchIfEmpty(Mono.defer(() -> Mono.just(RespWrapper.error(String.valueOf(HttpStatus.NOT_FOUND.value()), "未找到要更新的通道商"))))
+                .map(Resp::success)
+                .switchIfEmpty(Mono.defer(() -> Mono.just(Resp.error(String.valueOf(HttpStatus.NOT_FOUND.value()), "未找到要更新的通道商"))))
                 .onErrorResume(ResponseStatusException.class, ex -> Mono.just(
-                        RespWrapper.error(String.valueOf(ex.getStatusCode().value()),
+                        Resp.error(String.valueOf(ex.getStatusCode().value()),
                                 ex.getReason() == null ? "更新通道商失败" : ex.getReason())));
     }
 

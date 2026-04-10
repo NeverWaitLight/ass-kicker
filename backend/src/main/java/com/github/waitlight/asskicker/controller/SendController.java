@@ -2,7 +2,7 @@ package com.github.waitlight.asskicker.controller;
 
 import com.github.waitlight.asskicker.Sender;
 import com.github.waitlight.asskicker.config.OpenApiConfig;
-import com.github.waitlight.asskicker.dto.RespWrapper;
+import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
@@ -50,19 +50,19 @@ public class SendController {
             responseCode = "200",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = RespWrapper.class)
+                schema = @Schema(implementation = Resp.class)
             )
         )
     )
     @PostMapping("/send")
-    public Mono<RespWrapper<SendVO>> send(@Valid @RequestBody UniTask rawTask) {
+    public Mono<Resp<SendVO>> send(@Valid @RequestBody UniTask rawTask) {
         return Mono.just(rawTask)
                 .map(this::validateAndEnrich)
                 .flatMap(sender::send)
                 .map(SendVO::new)
-                .map(RespWrapper::success)
+                .map(Resp::success)
                 .onErrorResume(ResponseStatusException.class, ex -> Mono.just(
-                    RespWrapper.error(String.valueOf(ex.getStatusCode().value()),
+                    Resp.error(String.valueOf(ex.getStatusCode().value()),
                         ex.getReason() == null ? "发送失败" : ex.getReason())));
     }
 
@@ -80,19 +80,19 @@ public class SendController {
             responseCode = "200",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = RespWrapper.class)
+                schema = @Schema(implementation = Resp.class)
             )
         )
     )
     @PostMapping("/submit")
-    public Mono<RespWrapper<SendVO>> submit(@Valid @RequestBody UniTask rawTask) {
+    public Mono<Resp<SendVO>> submit(@Valid @RequestBody UniTask rawTask) {
         return Mono.just(rawTask)
                 .map(this::validateAndEnrich)
                 .flatMap(task -> sendTaskProducer.publish(task).thenReturn(task.getTaskId()))
                 .map(SendVO::new)
-                .map(RespWrapper::success)
+                .map(Resp::success)
                 .onErrorResume(ResponseStatusException.class, ex -> Mono.just(
-                    RespWrapper.error(String.valueOf(ex.getStatusCode().value()),
+                    Resp.error(String.valueOf(ex.getStatusCode().value()),
                         ex.getReason() == null ? "提交失败" : ex.getReason())));
     }
 

@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.controller;
 
 import com.github.waitlight.asskicker.config.OpenApiConfig;
-import com.github.waitlight.asskicker.dto.RespWrapper;
+import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.apikey.ApiKeyVO;
 import com.github.waitlight.asskicker.dto.apikey.CreateApiKeyDTO;
 import com.github.waitlight.asskicker.dto.apikey.CreateApiKeyVO;
@@ -35,18 +35,18 @@ public class ApiKeyController {
 
     @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
-    public Mono<RespWrapper<CreateApiKeyVO>> create(
+    public Mono<Resp<CreateApiKeyVO>> create(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody CreateApiKeyDTO request) {
         return apiKeyService.create(principal.userId(), request)
-                .map(RespWrapper::success);
+                .map(Resp::success);
     }
 
     @Operation(summary = "list", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
-    public Mono<RespWrapper<List<ApiKeyVO>>> list(@AuthenticationPrincipal UserPrincipal principal) {
+    public Mono<Resp<List<ApiKeyVO>>> list(@AuthenticationPrincipal UserPrincipal principal) {
         return apiKeyService.list(principal.userId())
-                .map(RespWrapper::success);
+                .map(Resp::success);
     }
 
     @Operation(summary = "revoke", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
