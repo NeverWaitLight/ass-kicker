@@ -5,7 +5,7 @@ import com.github.waitlight.asskicker.model.SendRecordStatus;
 
 import java.util.Map;
 
-public record SendRecordView(
+public record SendRecordVO(
         String id,
         String taskId,
         String templateCode,

@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.dto.send;
 
-public record SendResponse(
+public record SendVO(
         String taskId
 ) {
 }

@@ -3,7 +3,7 @@ package com.github.waitlight.asskicker.service;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.converter.UserConverter;
-import com.github.waitlight.asskicker.dto.auth.RegisterRequest;
+import com.github.waitlight.asskicker.dto.auth.RegisterDTO;
 import com.github.waitlight.asskicker.dto.PageRespWrapper;
 import com.github.waitlight.asskicker.dto.user.*;
 import com.github.waitlight.asskicker.model.UserEntity;
@@ -60,7 +60,7 @@ public class UserService {
                         .toFuture());
     }
 
-    public Mono<UserView> create(CreateUserRequest request) {
+    public Mono<UserVO> create(CreateUserDTO request) {
         if (request == null || isBlank(request.username()) || isBlank(request.password())) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名或密码不能为空"));
         }
@@ -84,7 +84,7 @@ public class UserService {
                 });
     }
 
-    public Mono<UserView> register(RegisterRequest request) {
+    public Mono<UserVO> register(RegisterDTO request) {
         if (request == null || isBlank(request.username()) || isBlank(request.password())) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名或密码不能为空"));
         }
@@ -111,20 +111,20 @@ public class UserService {
                 });
     }
 
-    public Mono<UserView> getById(String id) {
+    public Mono<UserVO> getById(String id) {
         return Mono.fromFuture(userByIdCache.get(id))
                 .flatMap(opt -> opt
                         .map(u -> Mono.just(userMapStructer.toView(u)))
                         .orElseGet(() -> Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在"))));
     }
 
-    public Mono<PageRespWrapper<UserView>> page(int page, int size, String keyword) {
+    public Mono<PageRespWrapper<UserVO>> page(int page, int size, String keyword) {
         int normalizedPage = page <= 0 ? 1 : page;
         int normalizedSize = size <= 0 ? 10 : size;
         int offset = (normalizedPage - 1) * normalizedSize;
 
         Mono<Long> totalMono = userRepository.countByKeyword(keyword);
-        Mono<List<UserView>> itemsMono = userRepository.findPage(keyword, normalizedSize, offset)
+        Mono<List<UserVO>> itemsMono = userRepository.findPage(keyword, normalizedSize, offset)
                 .map(userMapStructer::toView)
                 .collectList();
 
@@ -148,7 +148,7 @@ public class UserService {
                 });
     }
 
-    public Mono<UserView> resetPassword(String id, String newPassword) {
+    public Mono<UserVO> resetPassword(String id, String newPassword) {
         if (isBlank(newPassword)) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "新密码不能为空"));
         }
@@ -166,7 +166,7 @@ public class UserService {
                 .map(userMapStructer::toView);
     }
 
-    public Mono<UserView> updateUsername(String id, UpdateUsernameRequest request) {
+    public Mono<UserVO> updateUsername(String id, UpdateUsernameDTO request) {
         if (request == null || isBlank(request.username())) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名不能为空"));
         }
@@ -196,7 +196,7 @@ public class UserService {
                 .map(userMapStructer::toView);
     }
 
-    public Mono<UserView> updatePassword(String id, UpdatePasswordRequest request) {
+    public Mono<UserVO> updatePassword(String id, UpdatePasswordDTO request) {
         if (request == null || isBlank(request.oldPassword()) || isBlank(request.newPassword())) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "密码不能为空"));
         }

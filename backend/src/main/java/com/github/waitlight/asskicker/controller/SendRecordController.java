@@ -3,7 +3,7 @@ package com.github.waitlight.asskicker.controller;
 import com.github.waitlight.asskicker.config.OpenApiConfig;
 import com.github.waitlight.asskicker.dto.PageRespWrapper;
 import com.github.waitlight.asskicker.dto.RespWrapper;
-import com.github.waitlight.asskicker.dto.sendrecord.SendRecordView;
+import com.github.waitlight.asskicker.dto.sendrecord.SendRecordVO;
 import com.github.waitlight.asskicker.service.SendRecordService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,7 +27,7 @@ public class SendRecordController {
 
     @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
-    public Mono<PageRespWrapper<SendRecordView>> page(
+    public Mono<PageRespWrapper<SendRecordVO>> page(
             @RequestParam(defaultValue = "1")
             @Parameter(description = "页码，从1开始", example = "1")
             int page,
@@ -47,7 +47,7 @@ public class SendRecordController {
 
     @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
-    public Mono<RespWrapper<SendRecordView>> getById(
+    public Mono<RespWrapper<SendRecordVO>> getById(
             @PathVariable
             @Parameter(description = "发送记录ID")
             String id) {

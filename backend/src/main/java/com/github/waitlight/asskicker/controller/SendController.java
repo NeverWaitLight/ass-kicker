@@ -6,7 +6,7 @@ import com.github.waitlight.asskicker.dto.RespWrapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.dto.send.SendResponse;
+import com.github.waitlight.asskicker.dto.send.SendVO;
 import com.github.waitlight.asskicker.mq.SendTaskProducer;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -55,11 +55,11 @@ public class SendController {
         )
     )
     @PostMapping("/send")
-    public Mono<RespWrapper<SendResponse>> send(@Valid @RequestBody UniTask rawTask) {
+    public Mono<RespWrapper<SendVO>> send(@Valid @RequestBody UniTask rawTask) {
         return Mono.just(rawTask)
                 .map(this::validateAndEnrich)
                 .flatMap(sender::send)
-                .map(SendResponse::new)
+                .map(SendVO::new)
                 .map(RespWrapper::success)
                 .onErrorResume(ResponseStatusException.class, ex -> Mono.just(
                     RespWrapper.error(String.valueOf(ex.getStatusCode().value()),
@@ -85,11 +85,11 @@ public class SendController {
         )
     )
     @PostMapping("/submit")
-    public Mono<RespWrapper<SendResponse>> submit(@Valid @RequestBody UniTask rawTask) {
+    public Mono<RespWrapper<SendVO>> submit(@Valid @RequestBody UniTask rawTask) {
         return Mono.just(rawTask)
                 .map(this::validateAndEnrich)
                 .flatMap(task -> sendTaskProducer.publish(task).thenReturn(task.getTaskId()))
-                .map(SendResponse::new)
+                .map(SendVO::new)
                 .map(RespWrapper::success)
                 .onErrorResume(ResponseStatusException.class, ex -> Mono.just(
                     RespWrapper.error(String.valueOf(ex.getStatusCode().value()),

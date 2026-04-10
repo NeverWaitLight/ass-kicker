@@ -1,8 +1,8 @@
 package com.github.waitlight.asskicker.service;
 
-import com.github.waitlight.asskicker.dto.apikey.ApiKeyView;
-import com.github.waitlight.asskicker.dto.apikey.CreateApiKeyRequest;
-import com.github.waitlight.asskicker.dto.apikey.CreateApiKeyResponse;
+import com.github.waitlight.asskicker.dto.apikey.ApiKeyVO;
+import com.github.waitlight.asskicker.dto.apikey.CreateApiKeyDTO;
+import com.github.waitlight.asskicker.dto.apikey.CreateApiKeyVO;
 import com.github.waitlight.asskicker.model.ApiKeyEntity;
 import com.github.waitlight.asskicker.model.ApiKeyStatus;
 import com.github.waitlight.asskicker.repository.ApiKeyRepository;
@@ -26,7 +26,7 @@ public class ApiKeyService {
     private final ApiKeyAuthService apiKeyAuthService;
     private final SnowflakeIdGenerator snowflakeIdGenerator;
 
-    public Mono<CreateApiKeyResponse> create(String userId, CreateApiKeyRequest request) {
+    public Mono<CreateApiKeyVO> create(String userId, CreateApiKeyDTO request) {
         String raw = "ak_" + snowflakeIdGenerator.nextIdString();
         String keyPrefix = raw.substring(0, 12);
         String keyHash = passwordEncoder.encode(raw);
@@ -43,7 +43,7 @@ public class ApiKeyService {
         apiKey.setCreatedAt(now);
 
         return apiKeyRepository.save(apiKey)
-                .map(saved -> new CreateApiKeyResponse(
+                .map(saved -> new CreateApiKeyVO(
                         saved.getId(),
                         saved.getName(),
                         saved.getKeyPrefix(),
@@ -54,9 +54,9 @@ public class ApiKeyService {
                 ));
     }
 
-    public Mono<List<ApiKeyView>> list(String userId) {
+    public Mono<List<ApiKeyVO>> list(String userId) {
         return apiKeyRepository.findByUserIdAndStatus(userId, ApiKeyStatus.ACTIVE)
-                .map(apiKey -> new ApiKeyView(
+                .map(apiKey -> new ApiKeyVO(
                         apiKey.getId(),
                         apiKey.getName(),
                         apiKey.getKeyPrefix(),

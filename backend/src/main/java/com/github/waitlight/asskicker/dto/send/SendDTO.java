@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
 
-public record SendRequest(
+public record SendDTO(
         @NotBlank(message = "模板编码不能为空")
         String templateCode,
         @NotNull(message = "语言不能为空")

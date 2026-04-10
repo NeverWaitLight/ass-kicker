@@ -3,8 +3,8 @@ package com.github.waitlight.asskicker.service;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.converter.UserConverter;
-import com.github.waitlight.asskicker.dto.auth.LoginRequest;
-import com.github.waitlight.asskicker.dto.auth.TokenResponse;
+import com.github.waitlight.asskicker.dto.auth.LoginDTO;
+import com.github.waitlight.asskicker.dto.auth.TokenVO;
 import com.github.waitlight.asskicker.model.UserEntity;
 import com.github.waitlight.asskicker.model.UserStatus;
 import com.github.waitlight.asskicker.repository.UserRepository;
@@ -56,7 +56,7 @@ public class AuthService {
                         .toFuture());
     }
 
-    public Mono<TokenResponse> login(LoginRequest request) {
+    public Mono<TokenVO> login(LoginDTO request) {
         if (request == null || isBlank(request.username()) || isBlank(request.password())) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名或密码不能为空"));
         }
@@ -81,13 +81,13 @@ public class AuthService {
                                 userByIdCache.synchronous().invalidate(saved.getId());
                             });
                 })
-                .map(user -> new TokenResponse(
+                .map(user -> new TokenVO(
                         jwtService.generateAccessToken(user),
                         jwtService.generateRefreshToken(user),
                         userMapStructer.toView(user)));
     }
 
-    public Mono<TokenResponse> refresh(String refreshToken) {
+    public Mono<TokenVO> refresh(String refreshToken) {
         if (isBlank(refreshToken)) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "刷新令牌不能为空"));
         }
@@ -102,7 +102,7 @@ public class AuthService {
                             if (user.getStatus() == UserStatus.DISABLED) {
                                 return Mono.error(new ResponseStatusException(HttpStatus.FORBIDDEN, "用户已被禁用"));
                             }
-                            return Mono.just(new TokenResponse(
+                            return Mono.just(new TokenVO(
                                     jwtService.generateAccessToken(user),
                                     jwtService.generateRefreshToken(user),
                                     userMapStructer.toView(user)));

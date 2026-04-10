@@ -3,7 +3,7 @@ package com.github.waitlight.asskicker.service;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.dto.PageRespWrapper;
-import com.github.waitlight.asskicker.dto.sendrecord.SendRecordView;
+import com.github.waitlight.asskicker.dto.sendrecord.SendRecordVO;
 import com.github.waitlight.asskicker.model.SendRecordEntity;
 import com.github.waitlight.asskicker.repository.SendRecordRepository;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
@@ -34,7 +34,7 @@ public class SendRecordService implements DisposableBean {
     private int bufferSize;
     @Value("${send-record.flush-interval-ms:5000}")
     private long flushIntervalMs;
-    private AsyncLoadingCache<String, Optional<SendRecordView>> recordByIdCache;
+    private AsyncLoadingCache<String, Optional<SendRecordVO>> recordByIdCache;
 
     public SendRecordService(SendRecordRepository sendRecordRepository,
                              CaffeineCacheConfig caffeineCacheConfig,
@@ -53,7 +53,7 @@ public class SendRecordService implements DisposableBean {
                         .toFuture());
     }
 
-    public Mono<PageRespWrapper<SendRecordView>> page(int page, int size, String recipient, String channelType) {
+    public Mono<PageRespWrapper<SendRecordVO>> page(int page, int size, String recipient, String channelType) {
         int normalizedPage = page <= 0 ? 1 : page;
         int normalizedSize = size <= 0 ? 10 : size;
         int offset = (normalizedPage - 1) * normalizedSize;
@@ -61,7 +61,7 @@ public class SendRecordService implements DisposableBean {
         String channelTypeFilter = (channelType != null && !channelType.isBlank()) ? channelType.trim() : null;
 
         Mono<Long> totalMono = sendRecordRepository.countAll(recipientFilter, channelTypeFilter);
-        Mono<List<SendRecordView>> itemsMono = sendRecordRepository.findPage(normalizedSize, offset, recipientFilter, channelTypeFilter)
+        Mono<List<SendRecordVO>> itemsMono = sendRecordRepository.findPage(normalizedSize, offset, recipientFilter, channelTypeFilter)
                 .map(this::toView)
                 .collectList();
 
@@ -69,7 +69,7 @@ public class SendRecordService implements DisposableBean {
                 .map(tuple -> PageRespWrapper.success(normalizedPage, normalizedSize, tuple.getT2(), tuple.getT1()));
     }
 
-    public Mono<SendRecordView> getById(String id) {
+    public Mono<SendRecordVO> getById(String id) {
         return Mono.fromFuture(recordByIdCache.get(id))
                 .flatMap(opt -> opt
                         .map(Mono::just)
@@ -126,8 +126,8 @@ public class SendRecordService implements DisposableBean {
                 .subscribe();
     }
 
-    private SendRecordView toView(SendRecordEntity r) {
-        return new SendRecordView(
+    private SendRecordVO toView(SendRecordEntity r) {
+        return new SendRecordVO(
                 r.getId(),
                 r.getTaskId(),
                 r.getTemplateCode(),

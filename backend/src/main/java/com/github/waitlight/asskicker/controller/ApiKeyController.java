@@ -2,9 +2,9 @@ package com.github.waitlight.asskicker.controller;
 
 import com.github.waitlight.asskicker.config.OpenApiConfig;
 import com.github.waitlight.asskicker.dto.RespWrapper;
-import com.github.waitlight.asskicker.dto.apikey.ApiKeyView;
-import com.github.waitlight.asskicker.dto.apikey.CreateApiKeyRequest;
-import com.github.waitlight.asskicker.dto.apikey.CreateApiKeyResponse;
+import com.github.waitlight.asskicker.dto.apikey.ApiKeyVO;
+import com.github.waitlight.asskicker.dto.apikey.CreateApiKeyDTO;
+import com.github.waitlight.asskicker.dto.apikey.CreateApiKeyVO;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.service.ApiKeyService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,16 +35,16 @@ public class ApiKeyController {
 
     @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
-    public Mono<RespWrapper<CreateApiKeyResponse>> create(
+    public Mono<RespWrapper<CreateApiKeyVO>> create(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestBody CreateApiKeyRequest request) {
+            @RequestBody CreateApiKeyDTO request) {
         return apiKeyService.create(principal.userId(), request)
                 .map(RespWrapper::success);
     }
 
     @Operation(summary = "list", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
-    public Mono<RespWrapper<List<ApiKeyView>>> list(@AuthenticationPrincipal UserPrincipal principal) {
+    public Mono<RespWrapper<List<ApiKeyVO>>> list(@AuthenticationPrincipal UserPrincipal principal) {
         return apiKeyService.list(principal.userId())
                 .map(RespWrapper::success);
     }

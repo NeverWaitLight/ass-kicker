@@ -3,11 +3,11 @@ package com.github.waitlight.asskicker.controller;
 import com.github.waitlight.asskicker.config.OpenApiConfig;
 import com.github.waitlight.asskicker.dto.PageRespWrapper;
 import com.github.waitlight.asskicker.dto.RespWrapper;
-import com.github.waitlight.asskicker.dto.user.CreateUserRequest;
-import com.github.waitlight.asskicker.dto.user.ResetPasswordRequest;
-import com.github.waitlight.asskicker.dto.user.UpdatePasswordRequest;
-import com.github.waitlight.asskicker.dto.user.UpdateUsernameRequest;
-import com.github.waitlight.asskicker.dto.user.UserView;
+import com.github.waitlight.asskicker.dto.user.CreateUserDTO;
+import com.github.waitlight.asskicker.dto.user.ResetPasswordDTO;
+import com.github.waitlight.asskicker.dto.user.UpdatePasswordDTO;
+import com.github.waitlight.asskicker.dto.user.UpdateUsernameDTO;
+import com.github.waitlight.asskicker.dto.user.UserVO;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,13 +39,13 @@ public class UserController {
 
     @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
-    public Mono<RespWrapper<UserView>> create(@RequestBody CreateUserRequest request) {
+    public Mono<RespWrapper<UserVO>> create(@RequestBody CreateUserDTO request) {
         return userService.create(request).map(RespWrapper::success);
     }
 
     @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
-    public Mono<PageRespWrapper<UserView>> page(
+    public Mono<PageRespWrapper<UserVO>> page(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String keyword) {
@@ -55,7 +55,7 @@ public class UserController {
 
     @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
-    public Mono<RespWrapper<UserView>> getById(@PathVariable String id) {
+    public Mono<RespWrapper<UserVO>> getById(@PathVariable String id) {
         return userService.getById(id).map(RespWrapper::success);
     }
 
@@ -68,24 +68,24 @@ public class UserController {
 
     @Operation(summary = "resetPassword", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PutMapping("/{id}/password")
-    public Mono<RespWrapper<UserView>> resetPassword(@PathVariable String id,
-            @RequestBody ResetPasswordRequest request) {
+    public Mono<RespWrapper<UserVO>> resetPassword(@PathVariable String id,
+            @RequestBody ResetPasswordDTO request) {
         return userService.resetPassword(id, request.newPassword()).map(RespWrapper::success);
     }
 
     @Operation(summary = "updateUsername", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PatchMapping("/me")
-    public Mono<RespWrapper<UserView>> updateUsername(
+    public Mono<RespWrapper<UserVO>> updateUsername(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestBody UpdateUsernameRequest request) {
+            @RequestBody UpdateUsernameDTO request) {
         return userService.updateUsername(principal.userId(), request).map(RespWrapper::success);
     }
 
     @Operation(summary = "updatePassword", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PutMapping("/me/password")
-    public Mono<RespWrapper<UserView>> updatePassword(
+    public Mono<RespWrapper<UserVO>> updatePassword(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestBody UpdatePasswordRequest request) {
+            @RequestBody UpdatePasswordDTO request) {
         return userService.updatePassword(principal.userId(), request).map(RespWrapper::success);
     }
 }

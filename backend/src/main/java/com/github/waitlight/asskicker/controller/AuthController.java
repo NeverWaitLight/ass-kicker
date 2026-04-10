@@ -2,11 +2,11 @@ package com.github.waitlight.asskicker.controller;
 
 import com.github.waitlight.asskicker.config.OpenApiConfig;
 import com.github.waitlight.asskicker.dto.RespWrapper;
-import com.github.waitlight.asskicker.dto.auth.LoginRequest;
-import com.github.waitlight.asskicker.dto.auth.RefreshRequest;
-import com.github.waitlight.asskicker.dto.auth.RegisterRequest;
-import com.github.waitlight.asskicker.dto.auth.TokenResponse;
-import com.github.waitlight.asskicker.dto.user.UserView;
+import com.github.waitlight.asskicker.dto.auth.LoginDTO;
+import com.github.waitlight.asskicker.dto.auth.RefreshDTO;
+import com.github.waitlight.asskicker.dto.auth.RegisterDTO;
+import com.github.waitlight.asskicker.dto.auth.TokenVO;
+import com.github.waitlight.asskicker.dto.user.UserVO;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.service.AuthService;
 import com.github.waitlight.asskicker.service.UserService;
@@ -35,7 +35,7 @@ public class AuthController {
 
     @Operation(summary = "login")
     @PostMapping("/login")
-    public Mono<RespWrapper<TokenResponse>> login(@RequestBody LoginRequest request) {
+    public Mono<RespWrapper<TokenVO>> login(@RequestBody LoginDTO request) {
         return authService.login(request)
                 .map(RespWrapper::success)
                 .onErrorResume(ResponseStatusException.class, ex ->
@@ -45,7 +45,7 @@ public class AuthController {
 
     @Operation(summary = "register")
     @PostMapping("/register")
-    public Mono<RespWrapper<UserView>> register(@RequestBody RegisterRequest request) {
+    public Mono<RespWrapper<UserVO>> register(@RequestBody RegisterDTO request) {
         return userService.register(request)
                 .map(RespWrapper::success)
                 .onErrorResume(ResponseStatusException.class, ex ->
@@ -55,7 +55,7 @@ public class AuthController {
 
     @Operation(summary = "refresh")
     @PostMapping("/refresh")
-    public Mono<RespWrapper<TokenResponse>> refresh(@RequestBody RefreshRequest request) {
+    public Mono<RespWrapper<TokenVO>> refresh(@RequestBody RefreshDTO request) {
         return authService.refresh(request.refreshToken())
                 .map(RespWrapper::success)
                 .onErrorResume(ResponseStatusException.class, ex ->
@@ -65,7 +65,7 @@ public class AuthController {
 
     @Operation(summary = "me", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/me")
-    public Mono<RespWrapper<UserView>> me(@AuthenticationPrincipal UserPrincipal principal) {
+    public Mono<RespWrapper<UserVO>> me(@AuthenticationPrincipal UserPrincipal principal) {
         if (principal == null) {
             return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "未认证"));
         }

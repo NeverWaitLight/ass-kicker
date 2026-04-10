@@ -2,13 +2,13 @@ package com.github.waitlight.asskicker.dto.apikey;
 
 import com.github.waitlight.asskicker.model.ApiKeyStatus;
 
-public record CreateApiKeyResponse(
+public record ApiKeyVO(
         String id,
         String name,
         String keyPrefix,
-        String rawKey,
         Long expiresAt,
         ApiKeyStatus status,
-        Long createdAt
+        Long createdAt,
+        Long revokedAt
 ) {
 }

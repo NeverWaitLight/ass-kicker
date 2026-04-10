@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.dto.apikey;
 
-public record CreateApiKeyRequest(
+public record CreateApiKeyDTO(
         String name,
         Long expiresAt
 ) {
