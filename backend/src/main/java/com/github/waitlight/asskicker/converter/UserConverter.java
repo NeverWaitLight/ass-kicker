@@ -26,6 +26,14 @@ public interface UserConverter {
 
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "role", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "lastLoginAt", ignore = true)
+    @Mapping(target = "deletedAt", ignore = true)
+    UserEntity toUpdateEntity(UserDTO dto);
+
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "role", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
