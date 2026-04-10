@@ -2,6 +2,10 @@ package com.github.waitlight.asskicker.service;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.cache.UserCacheConfig;
+import com.github.waitlight.asskicker.exception.BadRequestException;
+import com.github.waitlight.asskicker.exception.ConflictException;
+import com.github.waitlight.asskicker.exception.NotFoundException;
+import com.github.waitlight.asskicker.exception.PermissionDeniedException;
 import com.github.waitlight.asskicker.model.UserEntity;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.model.UserStatus;
@@ -10,14 +14,11 @@ import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import com.github.waitlight.asskicker.util.SoftDeleteConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import org.springframework.util.StringUtils;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -43,13 +44,13 @@ public class UserService {
 
     public Mono<UserEntity> create(UserEntity user) {
         if (user == null || !StringUtils.hasText(user.getUsername()) || !StringUtils.hasText(user.getPassword())) {
-            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名或密码不能为空"));
+            return Mono.error(new BadRequestException("user.error.usernameOrPasswordEmpty"));
         }
 
         String username = user.getUsername().trim();
         return Mono.fromFuture(userByUsernameCache.get(username))
                 .filter(Optional::isEmpty)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "用户名已存在")))
+                .switchIfEmpty(Mono.error(new ConflictException("user.error.usernameExists")))
                 .flatMap(opt -> {
                     long now = Instant.now().toEpochMilli();
                     user.setId(snowflakeIdGenerator.nextIdString());
@@ -72,7 +73,7 @@ public class UserService {
         return Mono.fromFuture(userByIdCache.get(id))
                 .flatMap(opt -> opt
                         .map(Mono::just)
-                        .orElseGet(() -> Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在"))));
+                        .orElseGet(() -> Mono.error(new NotFoundException("user.error.userNotFound", id))));
     }
 
     public Mono<Long> count(String keyword) {
@@ -85,7 +86,7 @@ public class UserService {
 
     public Mono<Void> delete(String id) {
         return userRepository.findById(id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在")))
+                .switchIfEmpty(Mono.error(new NotFoundException("user.error.userNotFound", id)))
                 .flatMap(user -> {
                     long now = Instant.now().toEpochMilli();
                     user.setDeletedAt(now);
@@ -101,13 +102,13 @@ public class UserService {
 
     public Mono<UserEntity> resetPassword(String id, String newPassword, String oldPassword) {
         if (!StringUtils.hasText(newPassword) || !StringUtils.hasText(oldPassword)) {
-            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "密码不能为空"));
+            return Mono.error(new BadRequestException("user.error.passwordEmpty"));
         }
 
         return userRepository.findById(id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在")))
+                .switchIfEmpty(Mono.error(new NotFoundException("user.error.userNotFound", id)))
                 .filter(user -> passwordEncoder.matches(oldPassword, user.getPassword()))
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "旧密码错误")))
+                .switchIfEmpty(Mono.error(new PermissionDeniedException("user.error.oldPasswordIncorrect")))
                 .flatMap(user -> {
                     user.setPassword(passwordEncoder.encode(newPassword));
                     user.setUpdatedAt(Instant.now().toEpochMilli());
@@ -121,11 +122,11 @@ public class UserService {
 
     public Mono<UserEntity> update(UserEntity u) {
         if (u == null || !StringUtils.hasText(u.getId())) {
-            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户ID不能为空"));
+            return Mono.error(new BadRequestException("user.error.userIdEmpty"));
         }
 
         return userRepository.findById(u.getId())
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在")))
+                .switchIfEmpty(Mono.error(new NotFoundException("user.error.userNotFound", u.getId())))
                 .flatMap(existing -> {
                     String id = u.getId();
                     String newUsername = u.getUsername();
@@ -142,7 +143,7 @@ public class UserService {
 
                     return Mono.fromFuture(userByUsernameCache.get(trimmedUsername))
                             .filter(Optional::isEmpty)
-                            .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "用户名已存在")))
+                            .switchIfEmpty(Mono.error(new ConflictException("user.error.usernameExists")))
                             .flatMap(opt -> {
                                 String oldUsername = u.getUsername();
                                 u.setUsername(trimmedUsername);

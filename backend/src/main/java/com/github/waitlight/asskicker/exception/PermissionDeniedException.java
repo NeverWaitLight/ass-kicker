@@ -11,4 +11,8 @@ public class PermissionDeniedException extends BusinessException {
     public PermissionDeniedException(String message) {
         super("PERMISSION_DENIED", message);
     }
+
+    public PermissionDeniedException(String messageKey, Object... args) {
+        super("PERMISSION_DENIED", messageKey, args);
+    }
 }

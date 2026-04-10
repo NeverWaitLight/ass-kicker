@@ -7,4 +7,8 @@ public class ConflictException extends BusinessException {
     public ConflictException(String message) {
         super("CONFLICT", message);
     }
+
+    public ConflictException(String messageKey, Object... args) {
+        super("CONFLICT", messageKey, args);
+    }
 }

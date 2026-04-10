@@ -8,14 +8,27 @@ import lombok.Getter;
 @Getter
 public class BusinessException extends RuntimeException {
     private final String code;
+    private final String messageKey;
+    private final Object[] args;
 
     public BusinessException(String code, String message) {
         super(message);
         this.code = code;
+        this.messageKey = null;
+        this.args = null;
+    }
+
+    public BusinessException(String code, String messageKey, Object[] args) {
+        super(messageKey);
+        this.code = code;
+        this.messageKey = messageKey;
+        this.args = args;
     }
 
     public BusinessException(String code, String message, Throwable cause) {
         super(message, cause);
         this.code = code;
+        this.messageKey = null;
+        this.args = null;
     }
 }
