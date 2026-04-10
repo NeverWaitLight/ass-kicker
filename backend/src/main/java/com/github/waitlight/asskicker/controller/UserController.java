@@ -3,19 +3,22 @@ package com.github.waitlight.asskicker.controller;
 import com.github.waitlight.asskicker.config.OpenApiConfig;
 import com.github.waitlight.asskicker.dto.PageRespWrapper;
 import com.github.waitlight.asskicker.dto.RespWrapper;
-import com.github.waitlight.asskicker.dto.user.CreateUserDTO;
+import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.user.ResetPasswordDTO;
 import com.github.waitlight.asskicker.dto.user.UpdatePasswordDTO;
 import com.github.waitlight.asskicker.dto.user.UpdateUsernameDTO;
+import com.github.waitlight.asskicker.dto.user.UserDTO;
 import com.github.waitlight.asskicker.dto.user.UserVO;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.service.UserService;
+import com.github.waitlight.asskicker.validation.Create;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -36,11 +39,12 @@ import reactor.core.publisher.Mono;
 public class UserController {
 
     private final UserService userService;
+    private final UserConverter userConverter;
 
     @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
-    public Mono<RespWrapper<UserVO>> create(@RequestBody CreateUserDTO request) {
-        return userService.create(request).map(RespWrapper::success);
+    public Mono<RespWrapper<UserVO>> create(@RequestBody @Validated(Create.class) UserDTO user) {
+        return userService.create(userConverter.toEntity(user)).map(RespWrapper::success);
     }
 
     @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))

@@ -73,7 +73,7 @@ public class ApiKeyAuthService {
                                 if (!matches) {
                                     return Mono.error(new BadCredentialsException("Invalid API Key"));
                                 }
-                                UserPrincipal principal = new UserPrincipal(apiKey.getUserId(), UserRole.USER);
+                                UserPrincipal principal = new UserPrincipal(apiKey.getUserId(), UserRole.MEMBER);
                                 authCache.put(cacheKey, new CachedAuthResult(principal, apiKey.getExpiresAt()));
                                 return Mono.just(principal);
                             });

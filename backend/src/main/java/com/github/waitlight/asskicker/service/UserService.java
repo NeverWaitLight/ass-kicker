@@ -3,9 +3,11 @@ package com.github.waitlight.asskicker.service;
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.converter.UserConverter;
-import com.github.waitlight.asskicker.dto.auth.RegisterDTO;
 import com.github.waitlight.asskicker.dto.PageRespWrapper;
-import com.github.waitlight.asskicker.dto.user.*;
+import com.github.waitlight.asskicker.dto.auth.RegisterDTO;
+import com.github.waitlight.asskicker.dto.user.UpdatePasswordDTO;
+import com.github.waitlight.asskicker.dto.user.UpdateUsernameDTO;
+import com.github.waitlight.asskicker.dto.user.UserVO;
 import com.github.waitlight.asskicker.model.UserEntity;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.model.UserStatus;
@@ -60,23 +62,26 @@ public class UserService {
                         .toFuture());
     }
 
-    public Mono<UserVO> create(CreateUserDTO request) {
-        if (request == null || isBlank(request.username()) || isBlank(request.password())) {
+    public Mono<UserVO> create(UserEntity user) {
+        if (user == null || isBlank(user.getUsername()) || isBlank(user.getPassword())) {
             return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名或密码不能为空"));
         }
-        String username = request.username().trim();
+        String username = user.getUsername().trim();
         return Mono.fromFuture(userByUsernameCache.get(username))
                 .flatMap(cached -> {
                     if (cached.isPresent()) {
                         return Mono.error(new ResponseStatusException(HttpStatus.CONFLICT, "用户名已存在"));
                     }
-                    UserEntity user = new UserEntity();
                     long now = Instant.now().toEpochMilli();
                     user.setId(snowflakeIdGenerator.nextIdString());
                     user.setUsername(username);
-                    user.setPassword(passwordEncoder.encode(request.password()));
-                    user.setRole(request.role() == null ? UserRole.USER : request.role());
-                    user.setStatus(request.status() == null ? UserStatus.ACTIVE : request.status());
+                    user.setPassword(passwordEncoder.encode(user.getPassword()));
+                    if (user.getRole() == null) {
+                        user.setRole(UserRole.MEMBER);
+                    }
+                    if (user.getStatus() == null) {
+                        user.setStatus(UserStatus.ACTIVE);
+                    }
                     user.setCreatedAt(now);
                     user.setUpdatedAt(now);
                     user.setDeletedAt(NOT_DELETED);
@@ -102,7 +107,7 @@ public class UserService {
                     user.setId(snowflakeIdGenerator.nextIdString());
                     user.setUsername(username);
                     user.setPassword(passwordEncoder.encode(request.password()));
-                    user.setRole(count == 0 ? UserRole.ADMIN : UserRole.USER);
+                    user.setRole(count == 0 ? UserRole.ADMIN : UserRole.MEMBER);
                     user.setStatus(UserStatus.ACTIVE);
                     user.setCreatedAt(now);
                     user.setUpdatedAt(now);
