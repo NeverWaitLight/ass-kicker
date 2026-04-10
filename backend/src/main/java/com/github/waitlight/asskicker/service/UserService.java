@@ -7,6 +7,7 @@ import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.model.UserStatus;
 import com.github.waitlight.asskicker.repository.UserRepository;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
+import com.github.waitlight.asskicker.util.SoftDeleteConstants;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,8 +25,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 public class UserService {
-
-    private static final long NOT_DELETED = 0L;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -71,7 +70,7 @@ public class UserService {
                     }
                     user.setCreatedAt(now);
                     user.setUpdatedAt(now);
-                    user.setDeletedAt(NOT_DELETED);
+                    user.setDeletedAt(SoftDeleteConstants.NOT_DELETED);
                     return userRepository.save(user);
                 });
     }

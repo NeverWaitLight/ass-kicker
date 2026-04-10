@@ -1,6 +1,7 @@
 package com.github.waitlight.asskicker.repository;
 
 import com.github.waitlight.asskicker.model.UserEntity;
+import com.github.waitlight.asskicker.util.SoftDeleteConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
@@ -14,8 +15,6 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class UserRepository {
 
-    private static final long NOT_DELETED = 0L;
-
     private final ReactiveMongoTemplate mongoTemplate;
 
     public Mono<UserEntity> save(UserEntity entity) {
@@ -25,14 +24,14 @@ public class UserRepository {
     public Mono<UserEntity> findById(String id) {
         Query query = new Query();
         query.addCriteria(Criteria.where("_id").is(id));
-        query.addCriteria(Criteria.where("deleted_at").is(NOT_DELETED));
+        query.addCriteria(Criteria.where("deleted_at").is(SoftDeleteConstants.NOT_DELETED));
         return mongoTemplate.findOne(query, UserEntity.class);
     }
 
     public Mono<UserEntity> findActiveByUsername(String username) {
         Query query = new Query();
         query.addCriteria(Criteria.where("username").is(username));
-        query.addCriteria(Criteria.where("deleted_at").is(NOT_DELETED));
+        query.addCriteria(Criteria.where("deleted_at").is(SoftDeleteConstants.NOT_DELETED));
         return mongoTemplate.findOne(query, UserEntity.class);
     }
 
@@ -50,7 +49,7 @@ public class UserRepository {
 
     private Query buildKeywordQuery(String keyword) {
         Query query = new Query();
-        query.addCriteria(Criteria.where("deleted_at").is(NOT_DELETED));
+        query.addCriteria(Criteria.where("deleted_at").is(SoftDeleteConstants.NOT_DELETED));
         if (keyword != null && !keyword.isBlank()) {
             query.addCriteria(Criteria.where("username").regex(".*" + escapeRegex(keyword) + ".*", "i"));
         }

@@ -82,6 +82,7 @@ public class AuthController {
             return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "未认证"));
         }
         return userService.getById(principal.userId())
+                .map(userConverter::toView)
                 .map(Resp::success)
                 .onErrorResume(ResponseStatusException.class, ex ->
                         Mono.error(new ResponseStatusException(ex.getStatusCode(),
