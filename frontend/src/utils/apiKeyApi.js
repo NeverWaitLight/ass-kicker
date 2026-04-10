@@ -1,3 +1,4 @@
+import { unwrapData } from './apiPayload'
 import { apiFetch } from './v1'
 
 export const createApiKey = async (payload) => {
@@ -8,7 +9,8 @@ export const createApiKey = async (payload) => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }
 
 export const listApiKeys = async () => {
@@ -16,7 +18,8 @@ export const listApiKeys = async () => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }
 
 export const revokeApiKey = async (id) => {

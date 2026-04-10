@@ -1,3 +1,4 @@
+import { unwrapData } from './apiPayload'
 import { apiFetch } from './v1'
 
 export const fetchChannels = async () => {
@@ -5,7 +6,8 @@ export const fetchChannels = async () => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }
 
 export const fetchChannel = async (id) => {
@@ -13,7 +15,8 @@ export const fetchChannel = async (id) => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }
 
 export const fetchChannelTypes = async () => {
@@ -21,7 +24,8 @@ export const fetchChannelTypes = async () => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }
 
 export const fetchEmailProtocols = async () => {
@@ -29,7 +33,8 @@ export const fetchEmailProtocols = async () => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }
 
 export const fetchImTypes = async () => {
@@ -37,7 +42,8 @@ export const fetchImTypes = async () => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }
 
 export const createChannel = async (payload) => {
@@ -48,7 +54,8 @@ export const createChannel = async (payload) => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }
 
 export const updateChannel = async (id, payload) => {
@@ -59,7 +66,8 @@ export const updateChannel = async (id, payload) => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }
 
 export const deleteChannel = async (id) => {
@@ -80,5 +88,6 @@ export const testSendChannel = async (payload) => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }

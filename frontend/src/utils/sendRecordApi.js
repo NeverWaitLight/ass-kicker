@@ -1,3 +1,4 @@
+import { unwrapData, unwrapPage } from './apiPayload'
 import { apiFetch } from './v1'
 
 export const listSendRecords = async (page = 1, size = 10, recipient, channelType) => {
@@ -12,7 +13,8 @@ export const listSendRecords = async (page = 1, size = 10, recipient, channelTyp
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapPage(json)
 }
 
 export const getSendRecord = async (id) => {
@@ -20,5 +22,6 @@ export const getSendRecord = async (id) => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }

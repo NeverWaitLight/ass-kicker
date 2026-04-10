@@ -103,6 +103,7 @@
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { unwrapData } from '../utils/apiPayload'
 import { apiFetch } from '../utils/v1'
 import { setAuth } from '../utils/auth'
 import { currentUser, syncAuth } from '../stores/auth'
@@ -136,7 +137,7 @@ const submitUsername = async () => {
       return
     }
     const data = await response.json()
-    setAuth({ user: data })
+    setAuth({ user: unwrapData(data) })
     syncAuth()
     message.success('用户名已更新')
   } catch (error) {

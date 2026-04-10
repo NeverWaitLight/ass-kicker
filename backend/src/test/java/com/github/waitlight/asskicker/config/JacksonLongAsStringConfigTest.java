@@ -7,7 +7,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.dto.common.PageResp;
+import com.github.waitlight.asskicker.dto.PageRespWrapper;
 
 class JacksonLongAsStringConfigTest {
 
@@ -21,7 +21,7 @@ class JacksonLongAsStringConfigTest {
         void serializesLongAndPrimitiveLongAsJsonStrings() throws Exception {
                 ObjectMapper mapper = newMapperWithLongAsString();
 
-                PageResp<String> page = new PageResp<>(List.of("a"), 0, 10, 99L);
+                PageRespWrapper<String> page = PageRespWrapper.success(0, 10, 99L, List.of("a"));
                 String json = mapper.writeValueAsString(page);
 
                 assertThat(json).contains("\"total\":\"99\"");
@@ -31,14 +31,14 @@ class JacksonLongAsStringConfigTest {
         void deserializesLongFromJsonStringOrNumber() throws Exception {
                 ObjectMapper mapper = newMapperWithLongAsString();
 
-                PageResp<?> fromString = mapper.readValue(
-                                "{\"items\":[],\"page\":0,\"size\":10,\"total\":\"42\"}",
-                                PageResp.class);
+                PageRespWrapper<?> fromString = mapper.readValue(
+                                "{\"code\":\"200\",\"message\":\"success\",\"data\":[],\"page\":0,\"size\":10,\"total\":\"42\"}",
+                                PageRespWrapper.class);
                 assertThat(fromString.total()).isEqualTo(42L);
 
-                PageResp<?> fromNumber = mapper.readValue(
-                                "{\"items\":[],\"page\":0,\"size\":10,\"total\":43}",
-                                PageResp.class);
+                PageRespWrapper<?> fromNumber = mapper.readValue(
+                                "{\"code\":\"200\",\"message\":\"success\",\"data\":[],\"page\":0,\"size\":10,\"total\":43}",
+                                PageRespWrapper.class);
                 assertThat(fromNumber.total()).isEqualTo(43L);
         }
 }

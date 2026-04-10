@@ -1,3 +1,5 @@
+import { unwrapData } from './apiPayload'
+
 const ACCESS_TOKEN_KEY = 'access_token'
 const REFRESH_TOKEN_KEY = 'refresh_token'
 const USER_KEY = 'auth_user'
@@ -11,14 +13,15 @@ export const getUser = () => {
 
 export const setAuth = (tokenResponse) => {
   if (!tokenResponse) return
-  if (tokenResponse.accessToken) {
-    localStorage.setItem(ACCESS_TOKEN_KEY, tokenResponse.accessToken)
+  const t = unwrapData(tokenResponse) ?? tokenResponse
+  if (t.accessToken) {
+    localStorage.setItem(ACCESS_TOKEN_KEY, t.accessToken)
   }
-  if (tokenResponse.refreshToken) {
-    localStorage.setItem(REFRESH_TOKEN_KEY, tokenResponse.refreshToken)
+  if (t.refreshToken) {
+    localStorage.setItem(REFRESH_TOKEN_KEY, t.refreshToken)
   }
-  if (tokenResponse.user) {
-    localStorage.setItem(USER_KEY, JSON.stringify(tokenResponse.user))
+  if (t.user) {
+    localStorage.setItem(USER_KEY, JSON.stringify(t.user))
   }
 }
 

@@ -1,54 +1,60 @@
 package com.github.waitlight.asskicker.repository;
 
 import com.github.waitlight.asskicker.model.UserEntity;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
-public interface UserRepository extends ReactiveMongoRepository<UserEntity, String>, UserRepositoryCustom {
+@RequiredArgsConstructor
+public class UserRepository {
 
-    Mono<UserEntity> findByUsername(String username);
-
-    Mono<Boolean> existsByUsername(String username);
-}
-
-interface UserRepositoryCustom {
-
-    Flux<UserEntity> findPage(String keyword, int limit, int offset);
-
-    Mono<Long> count(String keyword);
-}
-
-class UserRepositoryCustomImpl implements UserRepositoryCustom {
+    private static final long NOT_DELETED = 0L;
 
     private final ReactiveMongoTemplate mongoTemplate;
 
-    UserRepositoryCustomImpl(ReactiveMongoTemplate mongoTemplate) {
-        this.mongoTemplate = mongoTemplate;
+    public Mono<UserEntity> save(UserEntity entity) {
+        return mongoTemplate.save(entity);
     }
 
-    @Override
+    public Mono<UserEntity> findActiveById(String id) {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("_id").is(id));
+        query.addCriteria(notDeletedCriteria());
+        return mongoTemplate.findOne(query, UserEntity.class);
+    }
+
+    public Mono<UserEntity> findActiveByUsername(String username) {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("username").is(username));
+        query.addCriteria(notDeletedCriteria());
+        return mongoTemplate.findOne(query, UserEntity.class);
+    }
+
     public Flux<UserEntity> findPage(String keyword, int limit, int offset) {
-        Query query = buildQuery(keyword);
+        Query query = buildKeywordQuery(keyword);
         query.with(Sort.by(Sort.Direction.DESC, "_id"));
         query.skip(offset).limit(limit);
         return mongoTemplate.find(query, UserEntity.class);
     }
 
-    @Override
-    public Mono<Long> count(String keyword) {
-        Query query = buildQuery(keyword);
+    public Mono<Long> countByKeyword(String keyword) {
+        Query query = buildKeywordQuery(keyword);
         return mongoTemplate.count(query, UserEntity.class);
     }
 
-    private Query buildQuery(String keyword) {
+    private Criteria notDeletedCriteria() {
+        return Criteria.where("deleted_at").is(NOT_DELETED);
+    }
+
+    private Query buildKeywordQuery(String keyword) {
         Query query = new Query();
+        query.addCriteria(notDeletedCriteria());
         if (keyword != null && !keyword.isBlank()) {
             query.addCriteria(Criteria.where("username").regex(".*" + escapeRegex(keyword) + ".*", "i"));
         }

@@ -1,29 +1,104 @@
 package com.github.waitlight.asskicker.service;
 
-import com.github.waitlight.asskicker.dto.common.PageResp;
+import com.github.waitlight.asskicker.converter.MessageTemplateConverter;
+import com.github.waitlight.asskicker.dto.PageResult;
 import com.github.waitlight.asskicker.dto.template.MessageTemplateDTO;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.MessageTemplateEntity;
+import com.github.waitlight.asskicker.repository.MessageTemplateRepository;
+import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public interface MessageTemplateService {
+import java.time.Instant;
+import java.util.List;
 
-    Flux<MessageTemplateEntity> findAll(int page, int size);
+@Service
+@RequiredArgsConstructor
+public class MessageTemplateService {
 
-    Mono<PageResp<MessageTemplateDTO>> listPage(int page, int size);
+    private final MessageTemplateRepository messageTemplateRepository;
+    private final MessageTemplateConverter messageTemplateConverter;
+    private final SnowflakeIdGenerator snowflakeIdGenerator;
 
-    Mono<MessageTemplateEntity> findById(String id);
+    public Flux<MessageTemplateEntity> findAll(int page, int size) {
+        if (page < 0 || size <= 0) {
+            return Flux.empty();
+        }
+        long offset = (long) page * (long) size;
+        return messageTemplateRepository.findAll()
+                .skip(offset)
+                .take(size);
+    }
 
-    Mono<MessageTemplateEntity> findByCode(String code);
+    public Mono<PageResult<MessageTemplateDTO>> listPage(int page, int size) {
+        int normalizedPage = page <= 0 ? 1 : page;
+        int normalizedSize = size <= 0 ? 10 : size;
+        int zeroBasedPage = normalizedPage - 1;
+        Mono<Long> totalMono = messageTemplateRepository.count();
+        Mono<List<MessageTemplateDTO>> itemsMono =
+                findAll(zeroBasedPage, normalizedSize)
+                        .map(messageTemplateConverter::toDto)
+                        .collectList();
+        return Mono.zip(itemsMono, totalMono)
+                .map(t -> new PageResult<>(normalizedPage, normalizedSize, t.getT2(), t.getT1()));
+    }
 
-    Mono<MessageTemplateEntity> findByCodeAndChannelType(String code, ChannelType channelType);
+    public Mono<MessageTemplateEntity> findById(String id) {
+        return messageTemplateRepository.findById(id);
+    }
 
-    Flux<MessageTemplateEntity> findByChannelType(ChannelType channelType);
+    public Mono<MessageTemplateEntity> findByCode(String code) {
+        return messageTemplateRepository.findByCode(code);
+    }
 
-    Mono<MessageTemplateEntity> create(MessageTemplateEntity entity);
+    public Mono<MessageTemplateEntity> findByCodeAndChannelType(String code, ChannelType channelType) {
+        return messageTemplateRepository.findByCodeAndChannelType(code, channelType);
+    }
 
-    Mono<MessageTemplateEntity> update(String id, MessageTemplateEntity entity);
+    public Flux<MessageTemplateEntity> findByChannelType(ChannelType channelType) {
+        return messageTemplateRepository.findByChannelType(channelType);
+    }
 
-    Mono<Void> delete(String id);
+    public Mono<MessageTemplateEntity> create(MessageTemplateEntity entity) {
+        MessageTemplateEntity toCreate = messageTemplateConverter.copyForCreate(entity);
+        toCreate.setId(null);
+        long now = Instant.now().toEpochMilli();
+        toCreate.setId(snowflakeIdGenerator.nextIdString());
+        toCreate.setCreatedAt(now);
+        toCreate.setUpdatedAt(now);
+        return ensureUniqueCode(toCreate.getCode(), null)
+                .then(Mono.defer(() -> messageTemplateRepository.save(toCreate)));
+    }
+
+    public Mono<MessageTemplateEntity> update(String id, MessageTemplateEntity entity) {
+        return messageTemplateRepository.findById(id)
+                .flatMap(existing -> ensureUniqueCode(entity.getCode(), id)
+                        .then(Mono.defer(() -> {
+                            messageTemplateConverter.merge(entity, existing);
+                            existing.setUpdatedAt(Instant.now().toEpochMilli());
+                            return messageTemplateRepository.save(existing);
+                        })));
+    }
+
+    public Mono<Void> delete(String id) {
+        return messageTemplateRepository.deleteById(id);
+    }
+
+    private Mono<Void> ensureUniqueCode(String code, String currentId) {
+        return messageTemplateRepository.findByCode(code)
+                .flatMap(existing -> {
+                    if (currentId != null && currentId.equals(existing.getId())) {
+                        return Mono.empty();
+                    }
+                    return Mono.error(new ResponseStatusException(
+                            HttpStatus.CONFLICT,
+                            "Message template already exists: " + code));
+                })
+                .then();
+    }
 }

@@ -1,3 +1,4 @@
+import { unwrapData } from './apiPayload'
 import { apiFetch } from './v1'
 
 export const fetchTemplates = async () => {
@@ -5,7 +6,8 @@ export const fetchTemplates = async () => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }
 
 export const fetchTemplate = async (id) => {
@@ -13,7 +15,8 @@ export const fetchTemplate = async (id) => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }
 
 export const createTemplate = async (payload) => {
@@ -24,7 +27,8 @@ export const createTemplate = async (payload) => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }
 
 export const updateTemplate = async (id, payload) => {
@@ -35,7 +39,8 @@ export const updateTemplate = async (id, payload) => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }
 
 export const deleteTemplate = async (id) => {
@@ -53,7 +58,8 @@ export const fetchTemplateContents = async (templateId) => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }
 
 export const saveLanguageContent = async (templateId, langCode, content) => {
@@ -65,7 +71,8 @@ export const saveLanguageContent = async (templateId, langCode, content) => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }
 
 export const deleteLanguageContent = async (templateId, langCode) => {
@@ -73,7 +80,8 @@ export const deleteLanguageContent = async (templateId, langCode) => {
   if (!contentsResponse.ok) {
     return true
   }
-  const lt = await contentsResponse.json()
+  const raw = await contentsResponse.json()
+  const lt = unwrapData(raw)
   if (!lt || !lt.id) return true
   const response = await apiFetch(`/v1/language-templates/${lt.id}`, {
     method: 'DELETE'

@@ -12,13 +12,13 @@ public interface UserConverter {
 
     UserView toView(UserEntity user);
 
-    @Mapping(target = "passwordHash", ignore = true)
+    @Mapping(target = "password", ignore = true)
     UserEntity toEntity(UserView view);
 
     @AfterMapping
-    default void clearPasswordHash(UserView view, @MappingTarget UserEntity user) {
+    default void clearPassword(UserView view, @MappingTarget UserEntity user) {
         if (user != null) {
-            user.setPasswordHash(null);
+            user.setPassword(null);
         }
     }
 }

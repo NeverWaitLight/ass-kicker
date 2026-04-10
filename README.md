@@ -22,6 +22,14 @@ mvn spring-boot:run
 
 - `http://localhost:8080/swagger-ui.html`
 
+## 架构变更
+
+项目已从 Router+Handler 模式迁移到 Controller 模式，所有 API 端点现在都使用标准的 Spring WebFlux 注解控制器实现，包括：
+
+- `@RestController` 和 `@RequestMapping` 注解
+- SpringDoc OpenAPI (Swagger) 注解 (`@Tag`, `@Operation`)
+- 统一的响应格式 (`RespWrapper`, `PageRespWrapper`)
+
 ## 渠道管理 API
 
 渠道接口需要携带登录后的 Bearer Token。

@@ -79,6 +79,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Modal, message } from 'ant-design-vue'
+import { unwrapPage } from '../utils/apiPayload'
 import { apiFetch } from '../utils/v1'
 import { formatTimestamp } from '../utils/time'
 
@@ -133,8 +134,9 @@ const loadUsers = async () => {
       return
     }
     const data = await response.json()
-    users.value = data.items || []
-    pagination.total = data.total || 0
+    const page = unwrapPage(data)
+    users.value = page.items || []
+    pagination.total = page.total || 0
   } catch (error) {
     message.error('获取用户列表失败')
   } finally {

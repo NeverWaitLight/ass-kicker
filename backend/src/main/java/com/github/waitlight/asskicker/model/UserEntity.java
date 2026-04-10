@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -11,6 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Setter
 @NoArgsConstructor
 @Document(collection = "t_user")
+@CompoundIndex(name = "uk_t_user_username_deleted_at", def = "{'username': 1, 'deleted_at': 1}", unique = true)
 public class UserEntity {
 
     @Id
@@ -19,8 +21,8 @@ public class UserEntity {
     @Field("username")
     private String username;
 
-    @Field("password_hash")
-    private String passwordHash;
+    @Field("password")
+    private String password;
 
     @Field("role")
     private UserRole role;
@@ -36,4 +38,7 @@ public class UserEntity {
 
     @Field("last_login_at")
     private Long lastLoginAt;
+
+    @Field("deleted_at")
+    private Long deletedAt;
 }

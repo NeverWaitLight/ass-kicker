@@ -1,3 +1,4 @@
+import { unwrapData } from './apiPayload'
 import { apiFetch } from './v1'
 
 export const submitSendTask = async (payload) => {
@@ -8,5 +9,6 @@ export const submitSendTask = async (payload) => {
   if (!response.ok) {
     throw new Error(await response.text())
   }
-  return response.json()
+  const json = await response.json()
+  return unwrapData(json)
 }
