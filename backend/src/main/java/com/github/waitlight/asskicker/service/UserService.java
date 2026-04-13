@@ -51,11 +51,13 @@ public class UserService {
             return Mono.error(new BadRequestException("user.usernameOrPassword.empty"));
         }
 
-        String username = u.getUsername().trim();
-        return Mono.fromFuture(userByUsernameCache.get(username))
-                .filter(Optional::isEmpty)
-                .switchIfEmpty(Mono.error(new ConflictException("user.username.exists")))
-                .flatMap(opt -> {
+        String username = u.getUsername();
+        return userRepository.findByUsername(username)
+                .hasElement()
+                .flatMap(exists -> {
+                    if (exists) {
+                        return Mono.error(new ConflictException("user.username.exists"));
+                    }
                     long now = Instant.now().toEpochMilli();
                     u.setId(snowflakeIdGenerator.nextIdString());
                     u.setUsername(username);
@@ -87,14 +89,14 @@ public class UserService {
      * Counts the total number of users matching the given keyword.
      */
     public Mono<Long> count(String keyword) {
-        return userRepository.countByKeyword(keyword);
+        return userRepository.count(keyword);
     }
 
     /**
      * Retrieves a paginated list of users matching the given keyword.
      */
     public Flux<UserEntity> list(String keyword, int limit, int offset) {
-        return userRepository.findPage(keyword, limit, offset);
+        return userRepository.list(keyword, limit, offset);
     }
 
     /**
@@ -163,11 +165,15 @@ public class UserService {
                         return Mono.just(u);
                     }
 
-                    return Mono.fromFuture(userByUsernameCache.get(trimmedUsername))
-                            .filter(Optional::isEmpty)
-                            .switchIfEmpty(Mono.error(new ConflictException("user.username.exists")))
-                            .flatMap(opt -> {
-                                String oldUsername = u.getUsername();
+                    return userRepository.findByUsername(trimmedUsername)
+                            .flatMap(found -> {
+                                if (id.equals(found.getId())) {
+                                    return Mono.empty();
+                                }
+                                return Mono.error(new ConflictException("user.username.exists"));
+                            })
+                            .then(Mono.defer(() -> {
+                                String oldUsername = existing.getUsername();
                                 u.setUsername(trimmedUsername);
                                 if (newStatus != null) {
                                     u.setStatus(newStatus);
@@ -179,7 +185,7 @@ public class UserService {
                                             userByUsernameCache.synchronous().invalidate(oldUsername);
                                             userByUsernameCache.synchronous().invalidate(trimmedUsername);
                                         });
-                            });
+                            }));
                 });
     }
 }

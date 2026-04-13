@@ -40,7 +40,7 @@ public class UserCacheConfig {
                 .defaultIfEmpty(Optional.empty())
                 .toFuture());
 
-        userByUsernameCache = buildCache((username, executor) -> userRepository.findActiveByUsername(username)
+        userByUsernameCache = buildCache((username, executor) -> userRepository.findByUsername(username)
                 .map(Optional::of)
                 .defaultIfEmpty(Optional.empty())
                 .toFuture());

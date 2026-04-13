@@ -28,21 +28,21 @@ public class UserRepository {
         return mongoTemplate.findOne(query, UserEntity.class);
     }
 
-    public Mono<UserEntity> findActiveByUsername(String username) {
+    public Mono<UserEntity> findByUsername(String username) {
         Query query = new Query();
         query.addCriteria(Criteria.where("username").is(username));
         query.addCriteria(Criteria.where("deleted_at").is(SoftDeleteConstants.NOT_DELETED));
         return mongoTemplate.findOne(query, UserEntity.class);
     }
 
-    public Flux<UserEntity> findPage(String keyword, int limit, int offset) {
+    public Flux<UserEntity> list(String keyword, int limit, int offset) {
         Query query = buildKeywordQuery(keyword);
         query.with(Sort.by(Sort.Direction.DESC, "_id"));
         query.skip(offset).limit(limit);
         return mongoTemplate.find(query, UserEntity.class);
     }
 
-    public Mono<Long> countByKeyword(String keyword) {
+    public Mono<Long> count(String keyword) {
         Query query = buildKeywordQuery(keyword);
         return mongoTemplate.count(query, UserEntity.class);
     }
@@ -51,13 +51,9 @@ public class UserRepository {
         Query query = new Query();
         query.addCriteria(Criteria.where("deleted_at").is(SoftDeleteConstants.NOT_DELETED));
         if (keyword != null && !keyword.isBlank()) {
-            query.addCriteria(Criteria.where("username").regex(".*" + escapeRegex(keyword) + ".*", "i"));
+            query.addCriteria(Criteria.where("username").regex(".*" + keyword + ".*", "i"));
         }
         return query;
-    }
-
-    private String escapeRegex(String input) {
-        return input.replaceAll("([\\\\\\[\\]{}()*+?.^$|])", "\\\\$1");
     }
 
 }

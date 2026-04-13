@@ -44,7 +44,7 @@ public class AuthService {
     @PostConstruct
     void initCaches() {
         userByUsernameCache = caffeineCacheConfig
-                .buildCache((username, executor) -> userRepository.findActiveByUsername(username)
+                .buildCache((username, executor) -> userRepository.findByUsername(username)
                         .map(Optional::of)
                         .defaultIfEmpty(Optional.empty())
                         .toFuture());
