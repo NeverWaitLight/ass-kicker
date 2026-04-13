@@ -33,15 +33,7 @@
         <a-card title="API Key 管理" bordered>
           <a-form :model="apiKeyForm" layout="inline" style="margin-bottom: 16px">
             <a-form-item label="备注名">
-              <a-input v-model:value="apiKeyForm.name" placeholder="可选" style="width: 160px" />
-            </a-form-item>
-            <a-form-item label="有效期">
-              <a-select v-model:value="apiKeyForm.expiry" style="width: 140px">
-                <a-select-option value="7">7 天</a-select-option>
-                <a-select-option value="30">30 天</a-select-option>
-                <a-select-option value="90">90 天</a-select-option>
-                <a-select-option value="">永不过期</a-select-option>
-              </a-select>
+              <a-input v-model:value="apiKeyForm.name" placeholder="可选，默认为'默认密钥'" style="width: 200px" />
             </a-form-item>
             <a-form-item>
               <a-button type="primary" :loading="creatingKey" @click="handleCreateApiKey">创建</a-button>
@@ -57,11 +49,8 @@
             size="small"
           >
             <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'keyPrefix'">
-                <a-typography-text code>{{ record.keyPrefix }}...</a-typography-text>
-              </template>
-              <template v-else-if="column.key === 'expiresAt'">
-                {{ record.expiresAt ? new Date(record.expiresAt).toLocaleDateString() : '永不过期' }}
+              <template v-if="column.key === 'maskedRawKey'">
+                <a-typography-text code>{{ record.maskedRawKey }}</a-typography-text>
               </template>
               <template v-else-if="column.key === 'createdAt'">
                 {{ new Date(record.createdAt).toLocaleDateString() }}
@@ -172,7 +161,7 @@ const submitPassword = async () => {
   }
 }
 
-const apiKeyForm = reactive({ name: '', expiry: '30' })
+const apiKeyForm = reactive({ name: '' })
 const apiKeys = ref([])
 const loadingKeys = ref(false)
 const creatingKey = ref(false)
@@ -181,8 +170,7 @@ const newKeyValue = ref('')
 
 const apiKeyColumns = [
   { title: '备注名', dataIndex: 'name', key: 'name' },
-  { title: 'Key 前缀', key: 'keyPrefix' },
-  { title: '有效期至', key: 'expiresAt' },
+  { title: 'Key 前缀', key: 'maskedRawKey' },
   { title: '创建时间', key: 'createdAt' },
   { title: '操作', key: 'action' }
 ]
@@ -202,15 +190,11 @@ const loadApiKeys = async () => {
 const handleCreateApiKey = async () => {
   creatingKey.value = true
   try {
-    let expiresAt = null
-    if (apiKeyForm.expiry) {
-      expiresAt = Date.now() + Number(apiKeyForm.expiry) * 24 * 60 * 60 * 1000
-    }
-    const data = await createApiKey({ name: apiKeyForm.name || null, expiresAt })
+    const name = apiKeyForm.name.trim() || '默认密钥'
+    const data = await createApiKey({ name })
     newKeyValue.value = data.rawKey
     newKeyModalVisible.value = true
     apiKeyForm.name = ''
-    apiKeyForm.expiry = '30'
     await loadApiKeys()
   } catch (error) {
     message.error('创建 API Key 失败')
