@@ -1,18 +1,13 @@
 package com.github.waitlight.asskicker.service;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.HexFormat;
-import java.util.concurrent.TimeUnit;
 
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
+import com.github.waitlight.asskicker.config.cache.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.exception.PermissionDeniedException;
 import com.github.waitlight.asskicker.model.ApiKeyEntity;
@@ -21,6 +16,7 @@ import com.github.waitlight.asskicker.repository.ApiKeyRepository;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -35,20 +31,24 @@ public class ApiKeyService {
     private final ApiKeyRepository apiKeyRepository;
     private final PasswordEncoder passwordEncoder;
     private final SnowflakeIdGenerator snowflakeIdGenerator;
+    private final CaffeineCacheConfig caffeineCacheConfig;
 
-    private final Cache<String, UserPrincipal> authCache = Caffeine.newBuilder()
-            .maximumSize(10000)
-            .expireAfterWrite(10, TimeUnit.MINUTES)
-            .build();
+    private AsyncLoadingCache<String, UserPrincipal> authCache;
 
-    private static String sha256(String input) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
+    @PostConstruct
+    public void init() {
+        authCache = caffeineCacheConfig.buildCache((rawKey, executor) ->
+                apiKeyRepository.findByKeyPrefix(rawKey.substring(0, 12))
+                        .switchIfEmpty(Mono.error(new BadCredentialsException("Invalid API Key")))
+                        .flatMap(apiKey -> Mono.fromCallable(() -> passwordEncoder.matches(rawKey, apiKey.getKeyHash()))
+                                .subscribeOn(Schedulers.boundedElastic())
+                                .flatMap(matches -> {
+                                    if (!matches) {
+                                        return Mono.error(new BadCredentialsException("Invalid API Key"));
+                                    }
+                                    return Mono.just(new UserPrincipal(apiKey.getUserId(), UserRole.MEMBER));
+                                }))
+                        .toFuture());
     }
 
     public record CreateResult(ApiKeyEntity entity, String rawKey) {
@@ -58,26 +58,7 @@ public class ApiKeyService {
         if (rawKey == null || rawKey.length() < 12) {
             return Mono.error(new BadCredentialsException("Invalid API Key"));
         }
-
-        String cacheKey = sha256(rawKey);
-        UserPrincipal cached = authCache.getIfPresent(cacheKey);
-        if (cached != null) {
-            return Mono.just(cached);
-        }
-
-        String keyPrefix = rawKey.substring(0, 12);
-        return apiKeyRepository.findByKeyPrefix(keyPrefix)
-                .switchIfEmpty(Mono.error(new BadCredentialsException("Invalid API Key")))
-                .flatMap(apiKey -> Mono.fromCallable(() -> passwordEncoder.matches(rawKey, apiKey.getKeyHash()))
-                        .subscribeOn(Schedulers.boundedElastic())
-                        .flatMap(matches -> {
-                            if (!matches) {
-                                return Mono.error(new BadCredentialsException("Invalid API Key"));
-                            }
-                            UserPrincipal principal = new UserPrincipal(apiKey.getUserId(), UserRole.MEMBER);
-                            authCache.put(cacheKey, principal);
-                            return Mono.just(principal);
-                        }));
+        return Mono.fromCompletionStage(authCache.get(rawKey));
     }
 
     public Mono<CreateResult> create(String userId, String name) {
@@ -110,7 +91,7 @@ public class ApiKeyService {
                         return Mono.error(new PermissionDeniedException("apikey.permission.denied"));
                     }
                     return apiKeyRepository.deleteById(id)
-                            .doOnSuccess(v -> authCache.invalidateAll());
+                            .doOnSuccess(v -> authCache.synchronous().invalidateAll());
                 });
     }
 
