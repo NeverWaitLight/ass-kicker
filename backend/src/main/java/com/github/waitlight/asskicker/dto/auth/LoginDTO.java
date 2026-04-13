@@ -1,4 +1,12 @@
 package com.github.waitlight.asskicker.dto.auth;
 
-public record LoginDTO(String username, String password) {
+import jakarta.validation.constraints.NotBlank;
+
+public record LoginDTO(
+        @NotBlank(message = "{user.username.notblank}")
+        String username,
+
+        @NotBlank(message = "{user.password.notblank}")
+        String password
+) {
 }

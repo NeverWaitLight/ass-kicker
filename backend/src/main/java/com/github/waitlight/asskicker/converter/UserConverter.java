@@ -10,7 +10,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface UserConverter {
 
-    UserVO toView(UserEntity user);
+    UserVO toVO(UserEntity user);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "role", ignore = true)

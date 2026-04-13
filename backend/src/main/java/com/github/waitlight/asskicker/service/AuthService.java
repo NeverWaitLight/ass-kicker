@@ -1,115 +1,69 @@
 package com.github.waitlight.asskicker.service;
 
-import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
-import com.github.waitlight.asskicker.config.cache.CaffeineCacheConfig;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.auth.LoginDTO;
 import com.github.waitlight.asskicker.dto.auth.TokenVO;
-import com.github.waitlight.asskicker.model.UserEntity;
+import com.github.waitlight.asskicker.exception.BadRequestException;
+import com.github.waitlight.asskicker.exception.NotFoundException;
+import com.github.waitlight.asskicker.exception.PermissionDeniedException;
+import com.github.waitlight.asskicker.exception.UnauthorizedException;
 import com.github.waitlight.asskicker.model.UserStatus;
-import com.github.waitlight.asskicker.repository.UserRepository;
 import com.github.waitlight.asskicker.security.JwtService;
-import jakarta.annotation.PostConstruct;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+
+import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
-import java.time.Instant;
-import java.util.Optional;
-
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final UserConverter userMapStructer;
-    private final CaffeineCacheConfig caffeineCacheConfig;
-
-    private AsyncLoadingCache<String, Optional<UserEntity>> userByUsernameCache;
-    private AsyncLoadingCache<String, Optional<UserEntity>> userByIdCache;
-
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
-                       JwtService jwtService, UserConverter userMapStructer,
-                       CaffeineCacheConfig caffeineCacheConfig) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
-        this.userMapStructer = userMapStructer;
-        this.caffeineCacheConfig = caffeineCacheConfig;
-    }
-
-    @PostConstruct
-    void initCaches() {
-        userByUsernameCache = caffeineCacheConfig
-                .buildCache((username, executor) -> userRepository.findByUsername(username)
-                        .map(Optional::of)
-                        .defaultIfEmpty(Optional.empty())
-                        .toFuture());
-
-        userByIdCache = caffeineCacheConfig
-                .buildCache((id, executor) -> userRepository.findById(id)
-                        .map(Optional::of)
-                        .defaultIfEmpty(Optional.empty())
-                        .toFuture());
-    }
+    private final UserConverter userConverter;
 
     public Mono<TokenVO> login(LoginDTO request) {
-        if (request == null || isBlank(request.username()) || isBlank(request.password())) {
-            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名或密码不能为空"));
+        if (request == null || StringUtils.isBlank(request.username()) || StringUtils.isBlank(request.password())) {
+            return Mono.error(new BadRequestException("auth.credentials.empty"));
         }
-        String username = request.username().trim();
-        return Mono.fromFuture(userByUsernameCache.get(username))
-                .flatMap(opt -> opt
-                        .map(Mono::just)
-                        .orElseGet(() -> Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户名或密码错误"))))
+        return userService.findByUsername(request.username())
+                .switchIfEmpty(Mono.error(new UnauthorizedException("auth.login.failed")))
                 .flatMap(user -> {
                     if (user.getStatus() == UserStatus.DISABLED) {
-                        return Mono.error(new ResponseStatusException(HttpStatus.FORBIDDEN, "用户已被禁用"));
+                        return Mono.error(new PermissionDeniedException("auth.user.disabled"));
                     }
                     if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-                        return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户名或密码错误"));
+                        return Mono.error(new UnauthorizedException("auth.login.failed"));
                     }
-                    long now = Instant.now().toEpochMilli();
-                    user.setLastLoginAt(now);
-                    user.setUpdatedAt(now);
-                    return userRepository.save(user)
-                            .doOnSuccess(saved -> {
-                                userByUsernameCache.synchronous().invalidate(username);
-                                userByIdCache.synchronous().invalidate(saved.getId());
-                            });
+                    return userService.recordLogin(user);
                 })
                 .map(user -> new TokenVO(
                         jwtService.generateAccessToken(user),
                         jwtService.generateRefreshToken(user),
-                        userMapStructer.toView(user)));
+                        userConverter.toVO(user)));
     }
 
     public Mono<TokenVO> refresh(String refreshToken) {
-        if (isBlank(refreshToken)) {
-            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "刷新令牌不能为空"));
+        if (StringUtils.isBlank(refreshToken)) {
+            return Mono.error(new BadRequestException("auth.refreshToken.empty"));
         }
         return Mono.fromCallable(() -> jwtService.parseRefreshToken(refreshToken))
-                .onErrorMap(ex -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "刷新令牌无效"))
-                .flatMap(payload -> Mono.fromFuture(userByIdCache.get(payload.userId()))
-                        .flatMap(opt -> opt
-                                .map(Mono::just)
-                                .orElseGet(() -> Mono
-                                        .error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户不存在"))))
+                .onErrorMap(ex -> new UnauthorizedException("auth.refreshToken.invalid"))
+                .flatMap(payload -> userService.getById(payload.userId())
+                        .onErrorResume(NotFoundException.class,
+                                e -> Mono.error(new UnauthorizedException("auth.user.notFound")))
                         .flatMap(user -> {
                             if (user.getStatus() == UserStatus.DISABLED) {
-                                return Mono.error(new ResponseStatusException(HttpStatus.FORBIDDEN, "用户已被禁用"));
+                                return Mono.error(new PermissionDeniedException("auth.user.disabled"));
                             }
                             return Mono.just(new TokenVO(
                                     jwtService.generateAccessToken(user),
                                     jwtService.generateRefreshToken(user),
-                                    userMapStructer.toView(user)));
+                                    userConverter.toVO(user)));
                         }));
-    }
-
-    private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
     }
 }

@@ -50,7 +50,7 @@ public class UserController {
     public Mono<Resp<UserVO>> create(@RequestBody @Validated CreateUserDTO user) {
         user = new CreateUserDTO(user.username().trim(), user.password());
         return userService.create(userConverter.toEntity(user))
-                .map(userConverter::toView)
+                .map(userConverter::toVO)
                 .map(Resp::success);
     }
 
@@ -58,7 +58,7 @@ public class UserController {
     @PatchMapping
     public Mono<Resp<UserVO>> update(@RequestBody @Validated UpdateUserDTO user) {
         return userService.update(userConverter.toEntity(user))
-                .map(userConverter::toView)
+                .map(userConverter::toVO)
                 .map(Resp::success);
     }
 
@@ -67,7 +67,7 @@ public class UserController {
     public Mono<Resp<UserVO>> resetPassword(
             @RequestBody @Validated ResetPasswordDTO user) {
         return userService.resetPassword(user.id(), user.password(), user.currPassword())
-                .map(userConverter::toView)
+                .map(userConverter::toVO)
                 .map(Resp::success);
     }
 
@@ -82,7 +82,7 @@ public class UserController {
     @GetMapping("/{id}")
     public Mono<Resp<UserVO>> getById(@PathVariable String id) {
         return userService.getById(id)
-                .map(userConverter::toView)
+                .map(userConverter::toVO)
                 .map(Resp::success);
     }
 
@@ -100,7 +100,7 @@ public class UserController {
                         return Mono.just(PageResp.success(page, size, total, List.of()));
                     }
                     return userService.list(keyword, size, offset)
-                            .map(userConverter::toView)
+                            .map(userConverter::toVO)
                             .collectList()
                             .map(users -> PageResp.success(page, size, total, users));
                 });

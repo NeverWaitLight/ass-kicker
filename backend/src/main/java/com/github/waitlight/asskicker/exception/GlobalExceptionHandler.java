@@ -30,6 +30,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(ex.getCode(), message);
         HttpStatus httpStatus = switch (ex.getCode()) {
             case "BAD_REQUEST" -> HttpStatus.BAD_REQUEST;
+            case "UNAUTHORIZED" -> HttpStatus.UNAUTHORIZED;
             case "RESOURCE_NOT_FOUND" -> HttpStatus.NOT_FOUND;
             case "CONFLICT" -> HttpStatus.CONFLICT;
             case "PERMISSION_DENIED" -> HttpStatus.FORBIDDEN;

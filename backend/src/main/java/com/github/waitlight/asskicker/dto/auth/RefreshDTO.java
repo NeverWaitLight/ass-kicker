@@ -1,4 +1,9 @@
 package com.github.waitlight.asskicker.dto.auth;
 
-public record RefreshDTO(String refreshToken) {
+import jakarta.validation.constraints.NotBlank;
+
+public record RefreshDTO(
+        @NotBlank(message = "{auth.refreshToken.notblank}")
+        String refreshToken
+) {
 }

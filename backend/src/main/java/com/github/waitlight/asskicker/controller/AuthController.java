@@ -1,32 +1,26 @@
 package com.github.waitlight.asskicker.controller;
 
-import com.github.waitlight.asskicker.config.openapi.OpenApiConfig;
-import com.github.waitlight.asskicker.converter.UserConverter;
-import com.github.waitlight.asskicker.dto.Resp;
-import com.github.waitlight.asskicker.dto.auth.LoginDTO;
-import com.github.waitlight.asskicker.dto.auth.RefreshDTO;
-import com.github.waitlight.asskicker.dto.auth.RegisterDTO;
-import com.github.waitlight.asskicker.dto.auth.TokenVO;
-import com.github.waitlight.asskicker.dto.user.UserVO;
-import com.github.waitlight.asskicker.model.UserEntity;
-import com.github.waitlight.asskicker.model.UserRole;
-import com.github.waitlight.asskicker.security.UserPrincipal;
-import com.github.waitlight.asskicker.service.AuthService;
-import com.github.waitlight.asskicker.service.UserService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
-
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
+
+import com.github.waitlight.asskicker.converter.UserConverter;
+import com.github.waitlight.asskicker.dto.Resp;
+import com.github.waitlight.asskicker.dto.auth.LoginDTO;
+import com.github.waitlight.asskicker.dto.auth.RefreshDTO;
+import com.github.waitlight.asskicker.dto.auth.TokenVO;
+import com.github.waitlight.asskicker.dto.user.CreateUserDTO;
+import com.github.waitlight.asskicker.dto.user.UserVO;
+import com.github.waitlight.asskicker.model.UserEntity;
+import com.github.waitlight.asskicker.model.UserRole;
+import com.github.waitlight.asskicker.service.AuthService;
+import com.github.waitlight.asskicker.service.UserService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
 @Tag(name = "AuthController")
@@ -41,53 +35,32 @@ public class AuthController {
 
         @Operation(summary = "login")
         @PostMapping("/login")
-        public Mono<Resp<TokenVO>> login(@RequestBody LoginDTO request) {
+        public Mono<Resp<TokenVO>> login(@RequestBody @Validated LoginDTO request) {
+                request = new LoginDTO(request.username().trim(), request.password());
                 return authService.login(request)
-                                .map(Resp::success)
-                                .onErrorResume(ResponseStatusException.class,
-                                                ex -> Mono.error(new ResponseStatusException(ex.getStatusCode(),
-                                                                ex.getReason() == null ? "登录失败" : ex.getReason())));
+                                .map(Resp::success);
         }
 
         @Operation(summary = "register")
         @PostMapping("/register")
-        public Mono<Resp<UserVO>> register(@RequestBody RegisterDTO request) {
+        public Mono<Resp<UserVO>> register(@RequestBody @Validated CreateUserDTO request) {
+                request = new CreateUserDTO(request.username().trim(), request.password());
+                UserEntity entity = userConverter.toEntity(request);
                 return userService.count(null)
                                 .flatMap(count -> {
-                                        UserEntity user = new UserEntity();
-                                        user.setUsername(StringUtils.trim(request.username()));
-                                        user.setPassword(request.password());
-                                        user.setRole(count == 0 ? UserRole.ADMIN : UserRole.MEMBER);
-                                        return userService.create(user);
+                                        if (count == 0) {
+                                                entity.setRole(UserRole.ADMIN);
+                                        }
+                                        return userService.create(entity);
                                 })
-                                .map(userConverter::toView)
-                                .map(Resp::success)
-                                .onErrorResume(ResponseStatusException.class,
-                                                ex -> Mono.error(new ResponseStatusException(ex.getStatusCode(),
-                                                                ex.getReason() == null ? "注册失败" : ex.getReason())));
+                                .map(userConverter::toVO)
+                                .map(Resp::success);
         }
 
         @Operation(summary = "refresh")
         @PostMapping("/refresh")
-        public Mono<Resp<TokenVO>> refresh(@RequestBody RefreshDTO request) {
+        public Mono<Resp<TokenVO>> refresh(@RequestBody @Validated RefreshDTO request) {
                 return authService.refresh(request.refreshToken())
-                                .map(Resp::success)
-                                .onErrorResume(ResponseStatusException.class,
-                                                ex -> Mono.error(new ResponseStatusException(ex.getStatusCode(),
-                                                                ex.getReason() == null ? "刷新失败" : ex.getReason())));
-        }
-
-        @Operation(summary = "me", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-        @GetMapping("/me")
-        public Mono<Resp<UserVO>> me(@AuthenticationPrincipal UserPrincipal principal) {
-                if (principal == null) {
-                        return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "未认证"));
-                }
-                return userService.getById(principal.userId())
-                                .map(userConverter::toView)
-                                .map(Resp::success)
-                                .onErrorResume(ResponseStatusException.class,
-                                                ex -> Mono.error(new ResponseStatusException(ex.getStatusCode(),
-                                                                ex.getReason() == null ? "获取用户失败" : ex.getReason())));
+                                .map(Resp::success);
         }
 }

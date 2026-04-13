@@ -71,8 +71,14 @@ const rules = {
 }
 
 const registerRules = {
-  username: [{ required: true, message: '请输入用户名' }],
-  password: [{ required: true, message: '请输入密码' }],
+  username: [
+    { required: true, message: '请输入用户名' },
+    { pattern: /^[a-zA-Z0-9]+$/, message: '用户名只能包含字母和数字' }
+  ],
+  password: [
+    { required: true, message: '请输入密码' },
+    { min: 8, message: '密码长度不能少于8位' }
+  ],
   confirmPassword: [
     { required: true, message: '请再次输入密码' },
     {
@@ -95,8 +101,15 @@ const onSubmit = async () => {
       body: JSON.stringify(form)
     })
     if (!response.ok) {
-      const errorText = await response.text()
-      message.error(errorText || '登录失败')
+      let errorMsg = '登录失败'
+      try {
+        const errorData = await response.json()
+        errorMsg = errorData.message || errorMsg
+      } catch {
+        const errorText = await response.text()
+        if (errorText) errorMsg = errorText
+      }
+      message.error(errorMsg)
       return
     }
     const data = await response.json()
@@ -123,8 +136,15 @@ const onRegister = async () => {
       })
     })
     if (!response.ok) {
-      const errorText = await response.text()
-      message.error(errorText || '注册失败')
+      let errorMsg = '注册失败'
+      try {
+        const errorData = await response.json()
+        errorMsg = errorData.message || errorMsg
+      } catch {
+        const errorText = await response.text()
+        if (errorText) errorMsg = errorText
+      }
+      message.error(errorMsg)
       return
     }
     message.success('注册成功，请登录')

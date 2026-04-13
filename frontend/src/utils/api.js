@@ -1,21 +1,39 @@
 import { clearAuth, getAccessToken, getRefreshToken, setAuth } from './auth'
 import { syncAuth } from '../stores/auth'
 
+let isRefreshing = false
+let refreshPromise = null
+
 const refreshAccessToken = async () => {
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise
+  }
   const refreshToken = getRefreshToken()
   if (!refreshToken) return false
-  const response = await fetch('/v1/auth/refresh', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken })
-  })
-  if (!response.ok) {
-    return false
-  }
-  const data = await response.json()
-  setAuth(data)
-  syncAuth()
-  return true
+
+  isRefreshing = true
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch('/v1/auth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken })
+      })
+      if (!response.ok) {
+        return false
+      }
+      const data = await response.json()
+      setAuth(data)
+      syncAuth()
+      return true
+    } catch {
+      return false
+    } finally {
+      isRefreshing = false
+      refreshPromise = null
+    }
+  })()
+  return refreshPromise
 }
 
 export const apiFetch = async (url, options = {}) => {

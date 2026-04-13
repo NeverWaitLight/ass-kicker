@@ -80,6 +80,23 @@ public class UserService {
                         .orElseGet(() -> Mono.error(new NotFoundException("user.id.notFound", id))));
     }
 
+    public Mono<UserEntity> findByUsername(String username) {
+        if (!StringUtils.hasText(username)) {
+            return Mono.empty();
+        }
+        String key = username.trim();
+        return Mono.fromFuture(userByUsernameCache.get(key))
+                .flatMap(opt -> opt.map(Mono::just).orElse(Mono.empty()));
+    }
+
+    public Mono<UserEntity> recordLogin(UserEntity user) {
+        long now = Instant.now().toEpochMilli();
+        user.setLastLoginAt(now);
+        user.setUpdatedAt(now);
+        return userRepository.save(user)
+                .doOnSuccess(saved -> invalidateUserCaches(user, saved));
+    }
+
     public Mono<Long> count(String keyword) {
         return userRepository.count(keyword);
     }

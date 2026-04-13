@@ -106,6 +106,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
+import { apiFetch } from '../../utils/api';
 import { formatTimestamp } from '../../utils/time';
 
 export default {
@@ -129,7 +130,7 @@ export default {
     // 加载模板列表
     const loadTemplates = async () => {
       try {
-        const response = await fetch('/v1/templates');
+        const response = await apiFetch('/v1/templates');
         const data = await response.json();
         templates.value = data;
         filteredTemplates.value = [...data];
@@ -192,9 +193,8 @@ export default {
           content: currentTemplate.value.content
         };
         
-        const response = await fetch(url, {
+        const response = await apiFetch(url, {
           method: method,
-          headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(payload)
@@ -215,7 +215,7 @@ export default {
     const deleteTemplate = async (id) => {
       if (confirm('确定要删除这个模板吗？')) {
         try {
-          const response = await fetch(`/v1/templates/${id}`, {
+          const response = await apiFetch(`/v1/templates/${id}`, {
             method: 'DELETE'
           });
 
