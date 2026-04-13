@@ -2,7 +2,6 @@ package com.github.waitlight.asskicker.service;
 
 import java.time.Instant;
 
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -10,6 +9,7 @@ import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.cache.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.exception.PermissionDeniedException;
+import com.github.waitlight.asskicker.exception.UnauthorizedException;
 import com.github.waitlight.asskicker.model.ApiKeyEntity;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.repository.ApiKeyRepository;
@@ -39,12 +39,12 @@ public class ApiKeyService {
     public void init() {
         authCache = caffeineCacheConfig.buildCache((rawKey, executor) ->
                 apiKeyRepository.findByKeyPrefix(rawKey.substring(0, 12))
-                        .switchIfEmpty(Mono.error(new BadCredentialsException("Invalid API Key")))
+                        .switchIfEmpty(Mono.error(new UnauthorizedException("apikey.invalid")))
                         .flatMap(apiKey -> Mono.fromCallable(() -> passwordEncoder.matches(rawKey, apiKey.getKeyHash()))
                                 .subscribeOn(Schedulers.boundedElastic())
                                 .flatMap(matches -> {
                                     if (!matches) {
-                                        return Mono.error(new BadCredentialsException("Invalid API Key"));
+                                        return Mono.error(new UnauthorizedException("apikey.invalid"));
                                     }
                                     return Mono.just(new UserPrincipal(apiKey.getUserId(), UserRole.MEMBER));
                                 }))
@@ -56,7 +56,7 @@ public class ApiKeyService {
 
     public Mono<UserPrincipal> authenticate(String rawKey) {
         if (rawKey == null || rawKey.length() < 12) {
-            return Mono.error(new BadCredentialsException("Invalid API Key"));
+            return Mono.error(new UnauthorizedException("apikey.invalid"));
         }
         return Mono.fromCompletionStage(authCache.get(rawKey));
     }
