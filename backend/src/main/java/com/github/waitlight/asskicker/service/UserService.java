@@ -59,28 +59,21 @@ public class UserService {
             return Mono.error(new BadRequestException("user.usernameOrPassword.empty"));
         }
 
-        String username = u.getUsername();
-        return userRepository.findByUsername(username)
-                .hasElement()
-                .flatMap(exists -> {
-                    if (exists) {
-                        return Mono.error(new ConflictException("user.username.exists"));
-                    }
-                    long now = Instant.now().toEpochMilli();
-                    u.setId(snowflakeIdGenerator.nextIdString());
-                    u.setUsername(username);
-                    u.setPassword(passwordEncoder.encode(u.getPassword()));
-                    if (u.getRole() == null) {
-                        u.setRole(UserRole.MEMBER);
-                    }
-                    if (u.getStatus() == null) {
-                        u.setStatus(UserStatus.ACTIVE);
-                    }
-                    u.setCreatedAt(now);
-                    u.setUpdatedAt(now);
-                    u.setDeletedAt(SoftDeleteConstants.NOT_DELETED);
-                    return userRepository.save(u);
-                });
+        return userRepository.findByUsername(u.getUsername())
+                .flatMap(existing -> Mono.<UserEntity>error(new ConflictException("user.username.exists")))
+                .switchIfEmpty(Mono.defer(() -> userRepository.save(initNewUser(u))));
+    }
+
+    private UserEntity initNewUser(UserEntity u) {
+        long now = Instant.now().toEpochMilli();
+        u.setId(snowflakeIdGenerator.nextIdString());
+        u.setPassword(passwordEncoder.encode(u.getPassword()));
+        u.setRole(Optional.ofNullable(u.getRole()).orElse(UserRole.MEMBER));
+        u.setStatus(Optional.ofNullable(u.getStatus()).orElse(UserStatus.ACTIVE));
+        u.setCreatedAt(now);
+        u.setUpdatedAt(now);
+        u.setDeletedAt(SoftDeleteConstants.NOT_DELETED);
+        return u;
     }
 
     /**
@@ -113,17 +106,16 @@ public class UserService {
     public Mono<Void> delete(String id) {
         return userRepository.findById(id)
                 .switchIfEmpty(Mono.error(new NotFoundException("user.id.notFound", id)))
-                .flatMap(user -> {
-                    long now = Instant.now().toEpochMilli();
-                    user.setDeletedAt(now);
-                    user.setUpdatedAt(now);
-                    return userRepository.save(user);
-                })
-                .flatMap(saved -> {
-                    userByIdCache.synchronous().invalidate(id);
-                    userByUsernameCache.synchronous().invalidate(saved.getUsername());
-                    return Mono.empty();
-                });
+                .flatMap(user -> userRepository.save(markAsDeleted(user))
+                        .doOnSuccess(saved -> invalidateUserCaches(user, saved)))
+                .then();
+    }
+
+    private UserEntity markAsDeleted(UserEntity user) {
+        long now = Instant.now().toEpochMilli();
+        user.setDeletedAt(now);
+        user.setUpdatedAt(now);
+        return user;
     }
 
     /**
@@ -138,15 +130,14 @@ public class UserService {
                 .switchIfEmpty(Mono.error(new NotFoundException("user.id.notFound", id)))
                 .filter(user -> passwordEncoder.matches(oldPassword, user.getPassword()))
                 .switchIfEmpty(Mono.error(new PermissionDeniedException("user.oldPassword.incorrect")))
-                .flatMap(user -> {
-                    user.setPassword(passwordEncoder.encode(newPassword));
-                    user.setUpdatedAt(Instant.now().toEpochMilli());
-                    return userRepository.save(user)
-                            .doOnSuccess(saved -> {
-                                userByIdCache.synchronous().invalidate(id);
-                                userByUsernameCache.synchronous().invalidate(saved.getUsername());
-                            });
-                });
+                .flatMap(user -> userRepository.save(applyNewPassword(user, newPassword))
+                        .doOnSuccess(saved -> invalidateUserCaches(user, saved)));
+    }
+
+    private UserEntity applyNewPassword(UserEntity user, String newPassword) {
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setUpdatedAt(Instant.now().toEpochMilli());
+        return user;
     }
 
     /**
@@ -159,41 +150,28 @@ public class UserService {
 
         return userRepository.findById(u.getId())
                 .switchIfEmpty(Mono.error(new NotFoundException("user.id.notFound", u.getId())))
-                .flatMap(existing -> {
-                    String id = u.getId();
-                    String newUsername = u.getUsername();
-                    UserStatus newStatus = u.getStatus();
+                .flatMap(existing -> ensureUsernameAvailable(u, existing)
+                        .then(Mono.defer(() -> {
+                            u.setUpdatedAt(Instant.now().toEpochMilli());
+                            return userRepository.save(u)
+                                    .doOnSuccess(saved -> invalidateUserCaches(existing, saved));
+                        })));
+    }
 
-                    if (newUsername == null || newUsername.isBlank()) {
-                        return Mono.just(u);
-                    }
+    private Mono<Void> ensureUsernameAvailable(UserEntity u, UserEntity existing) {
+        String newUsername = u.getUsername();
+        if (!StringUtils.hasText(newUsername) || newUsername.trim().equals(existing.getUsername())) {
+            return Mono.empty();
+        }
+        u.setUsername(newUsername.trim());
+        return userRepository.findByUsername(u.getUsername())
+                .filter(found -> !found.getId().equals(u.getId()))
+                .flatMap(found -> Mono.<Void>error(new ConflictException("user.username.exists")));
+    }
 
-                    String trimmedUsername = newUsername.trim();
-                    if (trimmedUsername.equals(u.getUsername())) {
-                        return Mono.just(u);
-                    }
-
-                    return userRepository.findByUsername(trimmedUsername)
-                            .flatMap(found -> {
-                                if (id.equals(found.getId())) {
-                                    return Mono.empty();
-                                }
-                                return Mono.error(new ConflictException("user.username.exists"));
-                            })
-                            .then(Mono.defer(() -> {
-                                String oldUsername = existing.getUsername();
-                                u.setUsername(trimmedUsername);
-                                if (newStatus != null) {
-                                    u.setStatus(newStatus);
-                                }
-                                u.setUpdatedAt(Instant.now().toEpochMilli());
-                                return userRepository.save(u)
-                                        .doOnSuccess(saved -> {
-                                            userByIdCache.synchronous().invalidate(id);
-                                            userByUsernameCache.synchronous().invalidate(oldUsername);
-                                            userByUsernameCache.synchronous().invalidate(trimmedUsername);
-                                        });
-                            }));
-                });
+    private void invalidateUserCaches(UserEntity existing, UserEntity saved) {
+        userByIdCache.synchronous().invalidate(saved.getId());
+        userByUsernameCache.synchronous().invalidate(existing.getUsername());
+        userByUsernameCache.synchronous().invalidate(saved.getUsername());
     }
 }
