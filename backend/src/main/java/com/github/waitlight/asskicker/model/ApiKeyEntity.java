@@ -32,15 +32,6 @@ public class ApiKeyEntity {
     @Field("masked_raw_key")
     private String maskedRawKey;
 
-    @Field("expires_at")
-    private Long expiresAt;
-
-    @Field("status")
-    private ApiKeyStatus status;
-
     @Field("created_at")
     private Long createdAt;
-
-    @Field("revoked_at")
-    private Long revokedAt;
 }

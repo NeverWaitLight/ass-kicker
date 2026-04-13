@@ -17,10 +17,7 @@ public interface ApiKeyConverter {
     @Mapping(target = "keyHash", ignore = true)
     @Mapping(target = "keyPrefix", ignore = true)
     @Mapping(target = "maskedRawKey", ignore = true)
-    @Mapping(target = "expiresAt", ignore = true)
-    @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "revokedAt", ignore = true)
     ApiKeyEntity toEntity(CreateApiKeyDTO dto);
 
     default CreateApiKeyVO toCreateVO(ApiKeyEntity entity, String rawKey) {
@@ -31,8 +28,6 @@ public interface ApiKeyConverter {
                 entity.getId(),
                 entity.getName(),
                 rawKey,
-                entity.getExpiresAt(),
-                entity.getStatus(),
                 entity.getCreatedAt());
     }
 }

@@ -26,11 +26,15 @@ ass-kicker:
   snowflake:
     # 机房 ID（0–31），按部署环境写死；同机房实例应使用相同值
     datacenter-id: 0
-    # 机器 ID（0–31）留空则从 Mongo 集合 snowflake_counters 按机房递增分配；本地可写死例如 0 以避免抢号
+    # 机器 ID（0–31）留空则启动时通过心跳注册表线性探测分配；本地可写死例如 0 以避免网络依赖
     # worker-id: 0
     mongo-allocation-enabled: true
     counter-collection: snowflake_counters
     allocation-block-timeout: PT30S
+    # 心跳续期间隔（默认 PT1M）
+    heartbeat-interval: PT1M
+    # 超过此时间无心跳视为下线，其 workerId 可被复用（默认 PT3M）
+    heartbeat-timeout: PT3M
   cache:
     maximum-size: 1000
     expire-after-write-minutes: 10

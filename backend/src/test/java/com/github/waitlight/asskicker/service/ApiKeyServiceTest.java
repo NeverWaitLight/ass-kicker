@@ -1,7 +1,6 @@
 package com.github.waitlight.asskicker.service;
 
 import com.github.waitlight.asskicker.model.ApiKeyEntity;
-import com.github.waitlight.asskicker.model.ApiKeyStatus;
 import com.github.waitlight.asskicker.repository.ApiKeyRepository;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import org.junit.jupiter.api.Test;
@@ -39,79 +38,98 @@ class ApiKeyServiceTest {
     private ApiKeyService apiKeyService;
 
     @Test
-    void revoke_fails_when_api_key_not_found() {
+    void delete_fails_when_api_key_not_found() {
         when(apiKeyRepository.findById("ak_1")).thenReturn(Mono.empty());
 
-        StepVerifier.create(apiKeyService.revoke("u_1", "ak_1"))
+        StepVerifier.create(apiKeyService.delete("u_1", "ak_1"))
                 .expectErrorSatisfies(ex -> {
                     assertThat(ex).isInstanceOf(ResponseStatusException.class);
                     ResponseStatusException rse = (ResponseStatusException) ex;
                     assertThat(rse.getStatusCode().value()).isEqualTo(404);
-                    assertThat(rse.getReason()).isEqualTo("API Key 不存在");
                 })
                 .verify();
 
-        verify(apiKeyRepository, never()).save(any(ApiKeyEntity.class));
+        verify(apiKeyRepository, never()).deleteById(any(String.class));
     }
 
     @Test
-    void revoke_fails_when_user_has_no_permission() {
+    void delete_fails_when_user_has_no_permission() {
         ApiKeyEntity entity = new ApiKeyEntity();
         entity.setId("ak_1");
         entity.setUserId("owner");
-        entity.setStatus(ApiKeyStatus.ACTIVE);
         when(apiKeyRepository.findById("ak_1")).thenReturn(Mono.just(entity));
 
-        StepVerifier.create(apiKeyService.revoke("other_user", "ak_1"))
+        StepVerifier.create(apiKeyService.delete("other_user", "ak_1"))
                 .expectErrorSatisfies(ex -> {
                     assertThat(ex).isInstanceOf(ResponseStatusException.class);
                     ResponseStatusException rse = (ResponseStatusException) ex;
                     assertThat(rse.getStatusCode().value()).isEqualTo(403);
-                    assertThat(rse.getReason()).isEqualTo("无权操作");
                 })
                 .verify();
 
-        verify(apiKeyRepository, never()).save(any(ApiKeyEntity.class));
+        verify(apiKeyRepository, never()).deleteById(any(String.class));
         verify(apiKeyAuthService, never()).invalidateCache(any(String.class));
     }
 
     @Test
-    void revoke_fails_when_api_key_already_revoked() {
+    void delete_success_removes_entity_and_invalidates_cache() {
         ApiKeyEntity entity = new ApiKeyEntity();
         entity.setId("ak_1");
         entity.setUserId("u_1");
-        entity.setStatus(ApiKeyStatus.REVOKED);
+        entity.setKeyPrefix("ak_123456789");
         when(apiKeyRepository.findById("ak_1")).thenReturn(Mono.just(entity));
+        when(apiKeyRepository.deleteById("ak_1")).thenReturn(Mono.empty());
 
-        StepVerifier.create(apiKeyService.revoke("u_1", "ak_1"))
+        StepVerifier.create(apiKeyService.delete("u_1", "ak_1"))
+                .verifyComplete();
+
+        verify(apiKeyRepository).deleteById("ak_1");
+        verify(apiKeyAuthService).invalidateCache("ak_123456789");
+    }
+
+    @Test
+    void update_fails_when_api_key_not_found() {
+        when(apiKeyRepository.findById("ak_1")).thenReturn(Mono.empty());
+
+        StepVerifier.create(apiKeyService.update("u_1", "ak_1", "new name"))
                 .expectErrorSatisfies(ex -> {
                     assertThat(ex).isInstanceOf(ResponseStatusException.class);
                     ResponseStatusException rse = (ResponseStatusException) ex;
-                    assertThat(rse.getStatusCode().value()).isEqualTo(400);
-                    assertThat(rse.getReason()).isEqualTo("API Key 已销毁");
+                    assertThat(rse.getStatusCode().value()).isEqualTo(404);
+                })
+                .verify();
+    }
+
+    @Test
+    void update_fails_when_user_has_no_permission() {
+        ApiKeyEntity entity = new ApiKeyEntity();
+        entity.setId("ak_1");
+        entity.setUserId("owner");
+        when(apiKeyRepository.findById("ak_1")).thenReturn(Mono.just(entity));
+
+        StepVerifier.create(apiKeyService.update("other_user", "ak_1", "new name"))
+                .expectErrorSatisfies(ex -> {
+                    assertThat(ex).isInstanceOf(ResponseStatusException.class);
+                    ResponseStatusException rse = (ResponseStatusException) ex;
+                    assertThat(rse.getStatusCode().value()).isEqualTo(403);
                 })
                 .verify();
 
         verify(apiKeyRepository, never()).save(any(ApiKeyEntity.class));
-        verify(apiKeyAuthService, never()).invalidateCache(any(String.class));
     }
 
     @Test
-    void revoke_success_updates_status_and_invalidates_cache() {
+    void update_success_changes_name() {
         ApiKeyEntity entity = new ApiKeyEntity();
         entity.setId("ak_1");
         entity.setUserId("u_1");
-        entity.setStatus(ApiKeyStatus.ACTIVE);
-        entity.setKeyPrefix("ak_123456789");
+        entity.setName("old name");
         when(apiKeyRepository.findById("ak_1")).thenReturn(Mono.just(entity));
         when(apiKeyRepository.save(any(ApiKeyEntity.class)))
                 .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
 
-        StepVerifier.create(apiKeyService.revoke("u_1", "ak_1"))
+        StepVerifier.create(apiKeyService.update("u_1", "ak_1", "new name"))
+                .assertNext(saved -> assertThat(saved.getName()).isEqualTo("new name"))
                 .verifyComplete();
-
-        assertThat(entity.getStatus()).isEqualTo(ApiKeyStatus.REVOKED);
-        assertThat(entity.getRevokedAt()).isNotNull();
-        verify(apiKeyAuthService).invalidateCache("ak_123456789");
     }
 }

@@ -35,7 +35,7 @@ public class SnowflakeProperties {
     private boolean mongoAllocationEnabled = true;
 
     /**
-     * 存放 worker 计数器的集合名。
+     * 存放 worker 注册记录的集合名。
      */
     private String counterCollection = "snowflake_counters";
 
@@ -43,4 +43,14 @@ public class SnowflakeProperties {
      * 启动时从 Mongo 分配 workerId 的一次性阻塞超时。
      */
     private Duration allocationBlockTimeout = Duration.ofSeconds(30);
+
+    /**
+     * 心跳续期间隔（默认 1 分钟）。
+     */
+    private Duration heartbeatInterval = Duration.ofMinutes(1);
+
+    /**
+     * 超过此时间无心跳的注册记录视为已下线，其 workerId 可被新实例复用（默认 3 分钟）。
+     */
+    private Duration heartbeatTimeout = Duration.ofMinutes(3);
 }

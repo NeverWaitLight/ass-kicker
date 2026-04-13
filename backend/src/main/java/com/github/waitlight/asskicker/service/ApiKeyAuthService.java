@@ -2,7 +2,6 @@ package com.github.waitlight.asskicker.service;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.waitlight.asskicker.model.ApiKeyStatus;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.repository.ApiKeyRepository;
 import com.github.waitlight.asskicker.security.UserPrincipal;
@@ -16,7 +15,6 @@ import reactor.core.scheduler.Schedulers;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.Instant;
 import java.util.HexFormat;
 import java.util.concurrent.TimeUnit;
 
@@ -27,7 +25,7 @@ public class ApiKeyAuthService {
     private final ApiKeyRepository apiKeyRepository;
     private final PasswordEncoder passwordEncoder;
 
-    private final Cache<String, CachedAuthResult> authCache = Caffeine.newBuilder()
+    private final Cache<String, UserPrincipal> authCache = Caffeine.newBuilder()
             .maximumSize(10000)
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .build();
@@ -48,42 +46,27 @@ public class ApiKeyAuthService {
         }
 
         String cacheKey = sha256(rawKey);
-        CachedAuthResult cached = authCache.getIfPresent(cacheKey);
+        UserPrincipal cached = authCache.getIfPresent(cacheKey);
         if (cached != null) {
-            if (cached.expiresAt() != null && cached.expiresAt() < Instant.now().toEpochMilli()) {
-                authCache.invalidate(cacheKey);
-                return Mono.error(new BadCredentialsException("API Key expired"));
-            }
-            return Mono.just(cached.principal());
+            return Mono.just(cached);
         }
 
         String keyPrefix = rawKey.substring(0, 12);
         return apiKeyRepository.findByKeyPrefix(keyPrefix)
                 .switchIfEmpty(Mono.error(new BadCredentialsException("Invalid API Key")))
-                .flatMap(apiKey -> {
-                    if (apiKey.getStatus() == ApiKeyStatus.REVOKED) {
-                        return Mono.error(new BadCredentialsException("API Key revoked"));
-                    }
-                    if (apiKey.getExpiresAt() != null && apiKey.getExpiresAt() < Instant.now().toEpochMilli()) {
-                        return Mono.error(new BadCredentialsException("API Key expired"));
-                    }
-                    return Mono.fromCallable(() -> passwordEncoder.matches(rawKey, apiKey.getKeyHash()))
-                            .subscribeOn(Schedulers.boundedElastic())
-                            .flatMap(matches -> {
-                                if (!matches) {
-                                    return Mono.error(new BadCredentialsException("Invalid API Key"));
-                                }
-                                UserPrincipal principal = new UserPrincipal(apiKey.getUserId(), UserRole.MEMBER);
-                                authCache.put(cacheKey, new CachedAuthResult(principal, apiKey.getExpiresAt()));
-                                return Mono.just(principal);
-                            });
-                });
+                .flatMap(apiKey -> Mono.fromCallable(() -> passwordEncoder.matches(rawKey, apiKey.getKeyHash()))
+                        .subscribeOn(Schedulers.boundedElastic())
+                        .flatMap(matches -> {
+                            if (!matches) {
+                                return Mono.error(new BadCredentialsException("Invalid API Key"));
+                            }
+                            UserPrincipal principal = new UserPrincipal(apiKey.getUserId(), UserRole.MEMBER);
+                            authCache.put(cacheKey, principal);
+                            return Mono.just(principal);
+                        }));
     }
 
     public void invalidateCache(String keyPrefix) {
-        authCache.asMap().keySet().removeIf(k -> true);
-    }
-
-    record CachedAuthResult(UserPrincipal principal, Long expiresAt) {
+        authCache.invalidateAll();
     }
 }

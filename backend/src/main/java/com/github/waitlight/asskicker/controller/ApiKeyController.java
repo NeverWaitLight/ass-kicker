@@ -7,6 +7,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,6 +21,7 @@ import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.apikey.ApiKeyVO;
 import com.github.waitlight.asskicker.dto.apikey.CreateApiKeyDTO;
 import com.github.waitlight.asskicker.dto.apikey.CreateApiKeyVO;
+import com.github.waitlight.asskicker.dto.apikey.UpdateApiKeyDTO;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.service.ApiKeyService;
 
@@ -45,8 +47,8 @@ public class ApiKeyController {
     public Mono<Resp<CreateApiKeyVO>> create(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody @Validated CreateApiKeyDTO req) {
-        req = new CreateApiKeyDTO(req.name().trim(), req.expiresIn());
-        return apiKeyService.create(principal.userId(), req.name(), req.expiresIn())
+        req = new CreateApiKeyDTO(req.name().trim());
+        return apiKeyService.create(principal.userId(), req.name())
                 .map(result -> apiKeyConverter.toCreateVO(result.entity(), result.rawKey()))
                 .map(Resp::success);
     }
@@ -60,12 +62,23 @@ public class ApiKeyController {
                 .map(Resp::success);
     }
 
-    @Operation(summary = "revoke", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @PatchMapping("/{id}")
+    public Mono<Resp<ApiKeyVO>> update(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable @NotBlank String id,
+            @RequestBody @Validated UpdateApiKeyDTO req) {
+        return apiKeyService.update(principal.userId(), id, req.name().trim())
+                .map(apiKeyConverter::toVO)
+                .map(Resp::success);
+    }
+
+    @Operation(summary = "delete", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public Mono<Void> revoke(
+    public Mono<Void> delete(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable @NotBlank String id) {
-        return apiKeyService.revoke(principal.userId(), id);
+        return apiKeyService.delete(principal.userId(), id);
     }
 }
