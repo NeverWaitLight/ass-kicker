@@ -4,8 +4,9 @@ import com.github.waitlight.asskicker.model.ApiKeyStatus;
 
 public record ApiKeyVO(
         String id,
+        String userId,
         String name,
-        String keyPrefix,
+        String maskedRawKey,
         Long expiresAt,
         ApiKeyStatus status,
         Long createdAt,

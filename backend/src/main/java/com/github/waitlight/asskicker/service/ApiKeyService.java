@@ -1,21 +1,21 @@
 package com.github.waitlight.asskicker.service;
 
-import com.github.waitlight.asskicker.dto.apikey.ApiKeyVO;
-import com.github.waitlight.asskicker.dto.apikey.CreateApiKeyDTO;
-import com.github.waitlight.asskicker.dto.apikey.CreateApiKeyVO;
-import com.github.waitlight.asskicker.model.ApiKeyEntity;
-import com.github.waitlight.asskicker.model.ApiKeyStatus;
-import com.github.waitlight.asskicker.repository.ApiKeyRepository;
-import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
-import lombok.RequiredArgsConstructor;
+import java.time.Instant;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import reactor.core.publisher.Mono;
 
-import java.time.Instant;
-import java.util.List;
+import com.github.waitlight.asskicker.dto.apikey.ExpiresIn;
+import com.github.waitlight.asskicker.model.ApiKeyEntity;
+import com.github.waitlight.asskicker.model.ApiKeyStatus;
+import com.github.waitlight.asskicker.repository.ApiKeyRepository;
+import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
+
+import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +26,10 @@ public class ApiKeyService {
     private final ApiKeyAuthService apiKeyAuthService;
     private final SnowflakeIdGenerator snowflakeIdGenerator;
 
-    public Mono<CreateApiKeyVO> create(String userId, CreateApiKeyDTO request) {
+    public record CreateResult(ApiKeyEntity entity, String rawKey) {
+    }
+
+    public Mono<CreateResult> create(String userId, String name, ExpiresIn expiresIn) {
         String raw = "ak_" + snowflakeIdGenerator.nextIdString();
         String keyPrefix = raw.substring(0, 12);
         String keyHash = passwordEncoder.encode(raw);
@@ -35,37 +38,24 @@ public class ApiKeyService {
         ApiKeyEntity apiKey = new ApiKeyEntity();
         apiKey.setId(snowflakeIdGenerator.nextIdString());
         apiKey.setUserId(userId);
-        apiKey.setName(request.name());
+        apiKey.setName(name);
         apiKey.setKeyHash(keyHash);
         apiKey.setKeyPrefix(keyPrefix);
-        apiKey.setExpiresAt(request.expiresAt());
+        apiKey.setExpiresAt(expiresIn.calculateExpiresAt());
         apiKey.setStatus(ApiKeyStatus.ACTIVE);
         apiKey.setCreatedAt(now);
 
         return apiKeyRepository.save(apiKey)
-                .map(saved -> new CreateApiKeyVO(
-                        saved.getId(),
-                        saved.getName(),
-                        saved.getKeyPrefix(),
-                        raw,
-                        saved.getExpiresAt(),
-                        saved.getStatus(),
-                        saved.getCreatedAt()
-                ));
+                .map(saved -> new CreateResult(saved, raw));
     }
 
-    public Mono<List<ApiKeyVO>> list(String userId) {
-        return apiKeyRepository.findByUserIdAndStatus(userId, ApiKeyStatus.ACTIVE)
-                .map(apiKey -> new ApiKeyVO(
-                        apiKey.getId(),
-                        apiKey.getName(),
-                        apiKey.getKeyPrefix(),
-                        apiKey.getExpiresAt(),
-                        apiKey.getStatus(),
-                        apiKey.getCreatedAt(),
-                        apiKey.getRevokedAt()
-                ))
-                .collectList();
+    public Mono<ApiKeyEntity> findById(String userId, String id) {
+        return apiKeyRepository.findById(id)
+                .filter(apiKey -> userId.equals(apiKey.getUserId()));
+    }
+
+    public Flux<ApiKeyEntity> list(String userId) {
+        return apiKeyRepository.findByUserIdAndStatus(userId, ApiKeyStatus.ACTIVE);
     }
 
     public Mono<Void> revoke(String userId, String id) {

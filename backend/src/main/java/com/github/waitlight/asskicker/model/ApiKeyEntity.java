@@ -1,11 +1,12 @@
 package com.github.waitlight.asskicker.model;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -27,6 +28,9 @@ public class ApiKeyEntity {
 
     @Field("key_prefix")
     private String keyPrefix;
+
+    @Field("masked_raw_key")
+    private String maskedRawKey;
 
     @Field("expires_at")
     private Long expiresAt;

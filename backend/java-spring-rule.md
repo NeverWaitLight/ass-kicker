@@ -135,3 +135,68 @@ public class TemplateService {
     }
 }
 ```
+
+## 参数校验国际化规范
+
+### 校验注解消息国际化
+
+所有 `@Validated` 相关校验注解的错误消息必须使用国际化，禁止硬编码消息文本。
+
+#### 配置文件
+
+国际化消息存放在 `src/main/resources/` 目录下：
+- `ValidationMessages.properties` - 默认（英文）消息
+- `ValidationMessages_zh_CN.properties` - 中文消息
+
+#### 命名规范
+
+消息 key 采用 `{模块}.{字段}.{校验类型}` 格式：
+- 模块：如 `user`、`apikey`、`auth` 等
+- 字段：如 `name`、`password`、`expiresIn` 等
+- 校验类型：如 `notblank`、`notnull`、`size`、`pattern` 等
+
+```properties
+# ValidationMessages.properties
+apikey.name.notblank=API Key name cannot be empty
+apikey.name.size=API Key name cannot exceed 100 characters
+apikey.expiresIn.notnull=Expiration time cannot be empty
+
+# ValidationMessages_zh_CN.properties
+apikey.name.notblank=API Key 名称不能为空
+apikey.name.size=API Key 名称不能超过100个字符
+apikey.expiresIn.notnull=过期时间不能为空
+```
+
+#### DTO 校验示例
+
+```java
+public record CreateApiKeyDTO(
+        @NotBlank(message = "{apikey.name.notblank}")
+        @Size(max = 100, message = "{apikey.name.size}")
+        String name,
+        @NotNull(message = "{apikey.expiresIn.notnull}")
+        ExpiresIn expiresIn
+) {
+}
+```
+
+#### Controller 校验示例
+
+```java
+@Validated
+@RestController
+public class ApiKeyController {
+
+    @PostMapping
+    public Mono<Resp<CreateApiKeyVO>> create(
+            @RequestBody @Validated CreateApiKeyDTO request) {
+        // ...
+    }
+
+    @DeleteMapping("/{id}")
+    public Mono<Void> revoke(
+            @PathVariable @NotBlank(message = "{apikey.id.notblank}") String id) {
+        // ...
+    }
+}
+```
