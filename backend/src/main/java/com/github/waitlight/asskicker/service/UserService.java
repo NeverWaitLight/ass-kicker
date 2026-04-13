@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.service;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
-import com.github.waitlight.asskicker.config.cache.UserCacheConfig;
+import com.github.waitlight.asskicker.config.cache.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.exception.BadRequestException;
 import com.github.waitlight.asskicker.exception.ConflictException;
 import com.github.waitlight.asskicker.exception.NotFoundException;
@@ -31,7 +31,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final UserCacheConfig userCacheConfig;
+    private final CaffeineCacheConfig caffeineCacheConfig;
     private final SnowflakeIdGenerator snowflakeIdGenerator;
 
     private AsyncLoadingCache<String, Optional<UserEntity>> userByIdCache;
@@ -39,8 +39,16 @@ public class UserService {
 
     @PostConstruct
     void initCaches() {
-        userByIdCache = userCacheConfig.getUserByIdCache();
-        userByUsernameCache = userCacheConfig.getUserByUsernameCache();
+        userByIdCache = caffeineCacheConfig.buildCache((id, executor) -> userRepository.findById(id)
+                .map(Optional::of)
+                .defaultIfEmpty(Optional.empty())
+                .toFuture());
+
+        userByUsernameCache = caffeineCacheConfig
+                .buildCache((username, executor) -> userRepository.findByUsername(username)
+                        .map(Optional::of)
+                        .defaultIfEmpty(Optional.empty())
+                        .toFuture());
     }
 
     /**
