@@ -7,6 +7,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.waitlight.asskicker.config.jackson.JacksonLongAsStringConfig;
 import com.github.waitlight.asskicker.dto.PageResp;
 
 class JacksonLongAsStringConfigTest {

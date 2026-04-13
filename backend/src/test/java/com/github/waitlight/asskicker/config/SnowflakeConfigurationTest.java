@@ -1,6 +1,8 @@
 package com.github.waitlight.asskicker.config;
 
 import com.github.waitlight.asskicker.AssKickerTestApplication;
+import com.github.waitlight.asskicker.config.snowflake.SnowflakeConfiguration;
+import com.github.waitlight.asskicker.config.snowflake.SnowflakeProperties;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

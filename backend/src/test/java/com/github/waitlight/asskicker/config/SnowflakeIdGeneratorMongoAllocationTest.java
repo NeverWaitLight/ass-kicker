@@ -1,6 +1,8 @@
 package com.github.waitlight.asskicker.config;
 
 import com.github.waitlight.asskicker.AssKickerTestApplication;
+import com.github.waitlight.asskicker.config.snowflake.SnowflakeConfiguration;
+import com.github.waitlight.asskicker.config.snowflake.SnowflakeProperties;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,9 +14,6 @@ import reactor.test.StepVerifier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * 未配置 worker-id 时由 Mongo 在启动阶段分配 worker 0。
- */
 @SpringBootTest(classes = {AssKickerTestApplication.class, SnowflakeConfiguration.class})
 @TestPropertySource(
         properties = {

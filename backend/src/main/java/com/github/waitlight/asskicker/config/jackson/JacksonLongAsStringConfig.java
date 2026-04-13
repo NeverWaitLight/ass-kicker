@@ -31,7 +31,7 @@ public class JacksonLongAsStringConfig {
         return builder -> builder.modules(longAsStringModule());
     }
 
-    static SimpleModule longAsStringModule() {
+    public static SimpleModule longAsStringModule() {
         SimpleModule module = new SimpleModule("LongAsString");
         module.addSerializer(Long.class, ToStringSerializer.instance);
         module.addSerializer(Long.TYPE, ToStringSerializer.instance);

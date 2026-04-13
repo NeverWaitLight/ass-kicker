@@ -1,5 +1,7 @@
 package com.github.waitlight.asskicker.config;
 
+import com.github.waitlight.asskicker.config.snowflake.SnowflakeConfiguration;
+import com.github.waitlight.asskicker.config.snowflake.SnowflakeProperties;
 import com.github.waitlight.asskicker.util.SnowflakeMongoAllocator;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
