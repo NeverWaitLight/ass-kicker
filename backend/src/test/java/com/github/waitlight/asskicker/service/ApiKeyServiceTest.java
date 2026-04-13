@@ -1,5 +1,7 @@
 package com.github.waitlight.asskicker.service;
 
+import com.github.waitlight.asskicker.exception.NotFoundException;
+import com.github.waitlight.asskicker.exception.PermissionDeniedException;
 import com.github.waitlight.asskicker.model.ApiKeyEntity;
 import com.github.waitlight.asskicker.repository.ApiKeyRepository;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
@@ -9,7 +11,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -29,9 +30,6 @@ class ApiKeyServiceTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private ApiKeyAuthService apiKeyAuthService;
-
-    @Mock
     private SnowflakeIdGenerator snowflakeIdGenerator;
 
     @InjectMocks
@@ -43,9 +41,7 @@ class ApiKeyServiceTest {
 
         StepVerifier.create(apiKeyService.delete("u_1", "ak_1"))
                 .expectErrorSatisfies(ex -> {
-                    assertThat(ex).isInstanceOf(ResponseStatusException.class);
-                    ResponseStatusException rse = (ResponseStatusException) ex;
-                    assertThat(rse.getStatusCode().value()).isEqualTo(404);
+                    assertThat(ex).isInstanceOf(NotFoundException.class);
                 })
                 .verify();
 
@@ -61,18 +57,15 @@ class ApiKeyServiceTest {
 
         StepVerifier.create(apiKeyService.delete("other_user", "ak_1"))
                 .expectErrorSatisfies(ex -> {
-                    assertThat(ex).isInstanceOf(ResponseStatusException.class);
-                    ResponseStatusException rse = (ResponseStatusException) ex;
-                    assertThat(rse.getStatusCode().value()).isEqualTo(403);
+                    assertThat(ex).isInstanceOf(PermissionDeniedException.class);
                 })
                 .verify();
 
         verify(apiKeyRepository, never()).deleteById(any(String.class));
-        verify(apiKeyAuthService, never()).invalidateCache(any(String.class));
     }
 
     @Test
-    void delete_success_removes_entity_and_invalidates_cache() {
+    void delete_success_removes_entity() {
         ApiKeyEntity entity = new ApiKeyEntity();
         entity.setId("ak_1");
         entity.setUserId("u_1");
@@ -84,7 +77,6 @@ class ApiKeyServiceTest {
                 .verifyComplete();
 
         verify(apiKeyRepository).deleteById("ak_1");
-        verify(apiKeyAuthService).invalidateCache("ak_123456789");
     }
 
     @Test
@@ -93,9 +85,7 @@ class ApiKeyServiceTest {
 
         StepVerifier.create(apiKeyService.update("u_1", "ak_1", "new name"))
                 .expectErrorSatisfies(ex -> {
-                    assertThat(ex).isInstanceOf(ResponseStatusException.class);
-                    ResponseStatusException rse = (ResponseStatusException) ex;
-                    assertThat(rse.getStatusCode().value()).isEqualTo(404);
+                    assertThat(ex).isInstanceOf(NotFoundException.class);
                 })
                 .verify();
     }
@@ -109,9 +99,7 @@ class ApiKeyServiceTest {
 
         StepVerifier.create(apiKeyService.update("other_user", "ak_1", "new name"))
                 .expectErrorSatisfies(ex -> {
-                    assertThat(ex).isInstanceOf(ResponseStatusException.class);
-                    ResponseStatusException rse = (ResponseStatusException) ex;
-                    assertThat(rse.getStatusCode().value()).isEqualTo(403);
+                    assertThat(ex).isInstanceOf(PermissionDeniedException.class);
                 })
                 .verify();
 

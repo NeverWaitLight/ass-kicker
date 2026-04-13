@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.security;
 
-import com.github.waitlight.asskicker.service.ApiKeyAuthService;
+import com.github.waitlight.asskicker.service.ApiKeyService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,9 +28,9 @@ public class SecurityConfig {
     @Order(0)
     public SecurityWebFilterChain sendSubmitFilterChain(ServerHttpSecurity http,
                                                         JwtService jwtService,
-                                                        ApiKeyAuthService apiKeyAuthService) {
+                                                        ApiKeyService apiKeyService) {
         JwtReactiveAuthenticationManager jwtManager = new JwtReactiveAuthenticationManager(jwtService);
-        ApiKeyReactiveAuthenticationManager apiKeyManager = new ApiKeyReactiveAuthenticationManager(apiKeyAuthService);
+        ApiKeyReactiveAuthenticationManager apiKeyManager = new ApiKeyReactiveAuthenticationManager(apiKeyService);
         OrReactiveAuthenticationManager combinedManager = new OrReactiveAuthenticationManager(jwtManager, apiKeyManager);
 
         AuthenticationWebFilter combinedFilter = new AuthenticationWebFilter(combinedManager);
