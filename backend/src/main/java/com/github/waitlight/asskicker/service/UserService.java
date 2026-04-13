@@ -42,30 +42,30 @@ public class UserService {
         userByUsernameCache = userCacheConfig.getUserByUsernameCache();
     }
 
-    public Mono<UserEntity> create(UserEntity user) {
-        if (user == null || !StringUtils.hasText(user.getUsername()) || !StringUtils.hasText(user.getPassword())) {
-            return Mono.error(new BadRequestException("user.error.usernameOrPasswordEmpty"));
+    public Mono<UserEntity> create(UserEntity u) {
+        if (u == null || !StringUtils.hasText(u.getUsername()) || !StringUtils.hasText(u.getPassword())) {
+            return Mono.error(new BadRequestException("user.usernameOrPassword.empty"));
         }
 
-        String username = user.getUsername().trim();
+        String username = u.getUsername().trim();
         return Mono.fromFuture(userByUsernameCache.get(username))
                 .filter(Optional::isEmpty)
-                .switchIfEmpty(Mono.error(new ConflictException("user.error.usernameExists")))
+                .switchIfEmpty(Mono.error(new ConflictException("user.username.exists")))
                 .flatMap(opt -> {
                     long now = Instant.now().toEpochMilli();
-                    user.setId(snowflakeIdGenerator.nextIdString());
-                    user.setUsername(username);
-                    user.setPassword(passwordEncoder.encode(user.getPassword()));
-                    if (user.getRole() == null) {
-                        user.setRole(UserRole.MEMBER);
+                    u.setId(snowflakeIdGenerator.nextIdString());
+                    u.setUsername(username);
+                    u.setPassword(passwordEncoder.encode(u.getPassword()));
+                    if (u.getRole() == null) {
+                        u.setRole(UserRole.MEMBER);
                     }
-                    if (user.getStatus() == null) {
-                        user.setStatus(UserStatus.ACTIVE);
+                    if (u.getStatus() == null) {
+                        u.setStatus(UserStatus.ACTIVE);
                     }
-                    user.setCreatedAt(now);
-                    user.setUpdatedAt(now);
-                    user.setDeletedAt(SoftDeleteConstants.NOT_DELETED);
-                    return userRepository.save(user);
+                    u.setCreatedAt(now);
+                    u.setUpdatedAt(now);
+                    u.setDeletedAt(SoftDeleteConstants.NOT_DELETED);
+                    return userRepository.save(u);
                 });
     }
 
@@ -73,7 +73,7 @@ public class UserService {
         return Mono.fromFuture(userByIdCache.get(id))
                 .flatMap(opt -> opt
                         .map(Mono::just)
-                        .orElseGet(() -> Mono.error(new NotFoundException("user.error.userNotFound", id))));
+                        .orElseGet(() -> Mono.error(new NotFoundException("user.id.notFound", id))));
     }
 
     public Mono<Long> count(String keyword) {
@@ -86,7 +86,7 @@ public class UserService {
 
     public Mono<Void> delete(String id) {
         return userRepository.findById(id)
-                .switchIfEmpty(Mono.error(new NotFoundException("user.error.userNotFound", id)))
+                .switchIfEmpty(Mono.error(new NotFoundException("user.id.notFound", id)))
                 .flatMap(user -> {
                     long now = Instant.now().toEpochMilli();
                     user.setDeletedAt(now);
@@ -102,13 +102,13 @@ public class UserService {
 
     public Mono<UserEntity> resetPassword(String id, String newPassword, String oldPassword) {
         if (!StringUtils.hasText(newPassword) || !StringUtils.hasText(oldPassword)) {
-            return Mono.error(new BadRequestException("user.error.passwordEmpty"));
+            return Mono.error(new BadRequestException("user.password.empty"));
         }
 
         return userRepository.findById(id)
-                .switchIfEmpty(Mono.error(new NotFoundException("user.error.userNotFound", id)))
+                .switchIfEmpty(Mono.error(new NotFoundException("user.id.notFound", id)))
                 .filter(user -> passwordEncoder.matches(oldPassword, user.getPassword()))
-                .switchIfEmpty(Mono.error(new PermissionDeniedException("user.error.oldPasswordIncorrect")))
+                .switchIfEmpty(Mono.error(new PermissionDeniedException("user.oldPassword.incorrect")))
                 .flatMap(user -> {
                     user.setPassword(passwordEncoder.encode(newPassword));
                     user.setUpdatedAt(Instant.now().toEpochMilli());
@@ -122,11 +122,11 @@ public class UserService {
 
     public Mono<UserEntity> update(UserEntity u) {
         if (u == null || !StringUtils.hasText(u.getId())) {
-            return Mono.error(new BadRequestException("user.error.userIdEmpty"));
+            return Mono.error(new BadRequestException("user.id.empty"));
         }
 
         return userRepository.findById(u.getId())
-                .switchIfEmpty(Mono.error(new NotFoundException("user.error.userNotFound", u.getId())))
+                .switchIfEmpty(Mono.error(new NotFoundException("user.id.notFound", u.getId())))
                 .flatMap(existing -> {
                     String id = u.getId();
                     String newUsername = u.getUsername();
@@ -143,7 +143,7 @@ public class UserService {
 
                     return Mono.fromFuture(userByUsernameCache.get(trimmedUsername))
                             .filter(Optional::isEmpty)
-                            .switchIfEmpty(Mono.error(new ConflictException("user.error.usernameExists")))
+                            .switchIfEmpty(Mono.error(new ConflictException("user.username.exists")))
                             .flatMap(opt -> {
                                 String oldUsername = u.getUsername();
                                 u.setUsername(trimmedUsername);
