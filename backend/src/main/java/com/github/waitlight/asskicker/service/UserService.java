@@ -12,6 +12,7 @@ import com.github.waitlight.asskicker.model.UserStatus;
 import com.github.waitlight.asskicker.repository.UserRepository;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import com.github.waitlight.asskicker.util.SoftDeleteConstants;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,12 +37,15 @@ public class UserService {
     private AsyncLoadingCache<String, Optional<UserEntity>> userByIdCache;
     private AsyncLoadingCache<String, Optional<UserEntity>> userByUsernameCache;
 
-    @jakarta.annotation.PostConstruct
+    @PostConstruct
     void initCaches() {
         userByIdCache = userCacheConfig.getUserByIdCache();
         userByUsernameCache = userCacheConfig.getUserByUsernameCache();
     }
 
+    /**
+     * Creates a new user with the provided user entity data.
+     */
     public Mono<UserEntity> create(UserEntity u) {
         if (u == null || !StringUtils.hasText(u.getUsername()) || !StringUtils.hasText(u.getPassword())) {
             return Mono.error(new BadRequestException("user.usernameOrPassword.empty"));
@@ -69,6 +73,9 @@ public class UserService {
                 });
     }
 
+    /**
+     * Retrieves a user entity by its unique identifier.
+     */
     public Mono<UserEntity> getById(String id) {
         return Mono.fromFuture(userByIdCache.get(id))
                 .flatMap(opt -> opt
@@ -76,14 +83,23 @@ public class UserService {
                         .orElseGet(() -> Mono.error(new NotFoundException("user.id.notFound", id))));
     }
 
+    /**
+     * Counts the total number of users matching the given keyword.
+     */
     public Mono<Long> count(String keyword) {
         return userRepository.countByKeyword(keyword);
     }
 
+    /**
+     * Retrieves a paginated list of users matching the given keyword.
+     */
     public Flux<UserEntity> list(String keyword, int limit, int offset) {
         return userRepository.findPage(keyword, limit, offset);
     }
 
+    /**
+     * Soft deletes a user by marking it as deleted.
+     */
     public Mono<Void> delete(String id) {
         return userRepository.findById(id)
                 .switchIfEmpty(Mono.error(new NotFoundException("user.id.notFound", id)))
@@ -100,6 +116,9 @@ public class UserService {
                 });
     }
 
+    /**
+     * Resets a user's password after validating the old password.
+     */
     public Mono<UserEntity> resetPassword(String id, String newPassword, String oldPassword) {
         if (!StringUtils.hasText(newPassword) || !StringUtils.hasText(oldPassword)) {
             return Mono.error(new BadRequestException("user.password.empty"));
@@ -120,6 +139,9 @@ public class UserService {
                 });
     }
 
+    /**
+     * Updates an existing user's information.
+     */
     public Mono<UserEntity> update(UserEntity u) {
         if (u == null || !StringUtils.hasText(u.getId())) {
             return Mono.error(new BadRequestException("user.id.empty"));
