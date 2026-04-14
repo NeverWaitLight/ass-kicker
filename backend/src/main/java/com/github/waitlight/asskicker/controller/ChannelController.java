@@ -1,10 +1,10 @@
 package com.github.waitlight.asskicker.controller;
 
 import com.github.waitlight.asskicker.config.openapi.OpenApiConfig;
-import com.github.waitlight.asskicker.converter.ChannelProviderConverter;
+import com.github.waitlight.asskicker.converter.ChannelConverter;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
-import com.github.waitlight.asskicker.dto.channel.ChannelProviderDTO;
+import com.github.waitlight.asskicker.dto.channel.ChannelDTO;
 import com.github.waitlight.asskicker.service.ChannelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -29,24 +29,24 @@ import reactor.core.publisher.Mono;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Tag(name = "ChannelProviderController")
+@Tag(name = "ChannelController")
 @RestController
 @RequestMapping("/v1/channels")
 @RequiredArgsConstructor
 public class ChannelController {
 
     private final ChannelService channelService;
-    private final ChannelProviderConverter channelProviderConverter;
+    private final ChannelConverter channelConverter;
     private final Validator validator;
 
     @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Mono<Resp<ChannelProviderDTO>> create(@RequestBody ChannelProviderDTO request) {
+    public Mono<Resp<ChannelDTO>> create(@RequestBody ChannelDTO request) {
         return validateDto(request)
-                .map(channelProviderConverter::toEntity)
+                .map(channelConverter::toEntity)
                 .flatMap(channelService::create)
-                .map(channelProviderConverter::toDto)
+                .map(channelConverter::toDto)
                 .map(Resp::success)
                 .onErrorResume(ResponseStatusException.class, ex -> Mono.just(
                         Resp.error(String.valueOf(ex.getStatusCode().value()),
@@ -55,7 +55,7 @@ public class ChannelController {
 
     @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
-    public Mono<PageResp<ChannelProviderDTO>> page(
+    public Mono<PageResp<ChannelDTO>> page(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
         return channelService.page(page, size)
@@ -67,9 +67,9 @@ public class ChannelController {
 
     @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
-    public Mono<Resp<ChannelProviderDTO>> getById(@PathVariable String id) {
+    public Mono<Resp<ChannelDTO>> getById(@PathVariable String id) {
         return channelService.findById(id)
-                .map(channelProviderConverter::toDto)
+                .map(channelConverter::toDto)
                 .map(Resp::success)
                 .switchIfEmpty(Mono.defer(() -> Mono.just(Resp.error(String.valueOf(HttpStatus.NOT_FOUND.value()), "未找到通道商"))))
                 .onErrorResume(ResponseStatusException.class, ex -> Mono.just(
@@ -79,11 +79,11 @@ public class ChannelController {
 
     @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PutMapping
-    public Mono<Resp<ChannelProviderDTO>> update(@RequestBody ChannelProviderDTO request) {
+    public Mono<Resp<ChannelDTO>> update(@RequestBody ChannelDTO request) {
         return validateDto(request)
-                .map(channelProviderConverter::toEntity)
+                .map(channelConverter::toEntity)
                 .flatMap(patch -> channelService.update(request.getId(), patch))
-                .map(channelProviderConverter::toDto)
+                .map(channelConverter::toDto)
                 .map(Resp::success)
                 .switchIfEmpty(Mono.defer(() -> Mono.just(Resp.error(String.valueOf(HttpStatus.NOT_FOUND.value()), "未找到要更新的通道商"))))
                 .onErrorResume(ResponseStatusException.class, ex -> Mono.just(
@@ -104,8 +104,8 @@ public class ChannelController {
                 });
     }
 
-    private Mono<ChannelProviderDTO> validateDto(ChannelProviderDTO dto) {
-        Set<ConstraintViolation<ChannelProviderDTO>> violations = validator.validate(dto);
+    private Mono<ChannelDTO> validateDto(ChannelDTO dto) {
+        Set<ConstraintViolation<ChannelDTO>> violations = validator.validate(dto);
         if (!violations.isEmpty()) {
             String message = violations.stream()
                     .map(ConstraintViolation::getMessage)

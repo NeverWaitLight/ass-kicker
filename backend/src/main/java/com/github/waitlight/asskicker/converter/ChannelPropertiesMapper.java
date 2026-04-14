@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class ChannelProviderPropertiesMapper {
+public class ChannelPropertiesMapper {
 
     private final ObjectMapper objectMapper;
 

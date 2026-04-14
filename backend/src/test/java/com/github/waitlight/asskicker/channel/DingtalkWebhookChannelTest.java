@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.model.ChannelProviderType;
+import com.github.waitlight.asskicker.model.ProviderType;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -65,7 +65,7 @@ class DingtalkWebhookChannelTest {
         UniMessage message = new UniMessage();
         message.setTitle("告警");
         message.setContent("服务异常");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.DINGTALK_WEBHOOK, "abc-token");
+        UniAddress address = UniAddress.ofImWebhook(ProviderType.DINGTALK_WEBHOOK, "abc-token");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectNext("DINGTALK ok 1 recipient(s)")
@@ -87,7 +87,7 @@ class DingtalkWebhookChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("test");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.DINGTALK_WEBHOOK, "bad-token");
+        UniAddress address = UniAddress.ofImWebhook(ProviderType.DINGTALK_WEBHOOK, "bad-token");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
@@ -99,7 +99,7 @@ class DingtalkWebhookChannelTest {
     void send_emptyRecipients_returnsIllegalArgumentException() {
         UniMessage message = new UniMessage();
         message.setContent("test");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.DINGTALK_WEBHOOK);
+        UniAddress address = UniAddress.ofImWebhook(ProviderType.DINGTALK_WEBHOOK);
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalArgumentException

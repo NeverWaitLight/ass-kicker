@@ -5,7 +5,7 @@ import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.ChannelEntity;
-import com.github.waitlight.asskicker.model.ChannelProviderType;
+import com.github.waitlight.asskicker.model.ProviderType;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -91,7 +91,7 @@ class FcmChannelTest {
         UniMessage message = new UniMessage();
         message.setTitle("Test Title");
         message.setContent("Test Content");
-        UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
+        UniAddress address = UniAddress.ofPush(ProviderType.FCM, DEVICE_TOKEN_1);
 
         String expectedName = "projects/" + PROJECT_ID + "/messages/" + messageId;
 
@@ -117,7 +117,7 @@ class FcmChannelTest {
         message.setTitle("Multi Device Test");
         message.setContent("Testing multiple devices");
         UniAddress address = UniAddress.ofPush(
-                ChannelProviderType.FCM,
+                ProviderType.FCM,
                 DEVICE_TOKEN_1, DEVICE_TOKEN_2);
 
         String name1 = "projects/" + PROJECT_ID + "/messages/" + messageId1;
@@ -150,7 +150,7 @@ class FcmChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("Content without title");
-        UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
+        UniAddress address = UniAddress.ofPush(ProviderType.FCM, DEVICE_TOKEN_1);
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .assertNext(result -> assertThat(result).startsWith("FCM ok 1 device(s) name="))
@@ -166,7 +166,7 @@ class FcmChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("Test");
-        UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
+        UniAddress address = UniAddress.ofPush(ProviderType.FCM, DEVICE_TOKEN_1);
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .assertNext(result -> {
@@ -184,7 +184,7 @@ class FcmChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("Test");
-        UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
+        UniAddress address = UniAddress.ofPush(ProviderType.FCM, DEVICE_TOKEN_1);
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
@@ -198,7 +198,7 @@ class FcmChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("Test");
-        UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
+        UniAddress address = UniAddress.ofPush(ProviderType.FCM, DEVICE_TOKEN_1);
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
@@ -212,7 +212,7 @@ class FcmChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("Test");
-        UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
+        UniAddress address = UniAddress.ofPush(ProviderType.FCM, DEVICE_TOKEN_1);
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
@@ -226,7 +226,7 @@ class FcmChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("Test");
-        UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
+        UniAddress address = UniAddress.ofPush(ProviderType.FCM, DEVICE_TOKEN_1);
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
@@ -240,7 +240,7 @@ class FcmChannelTest {
     void send_emptyRecipients_throwsIllegalArgumentException() {
         UniMessage message = new UniMessage();
         message.setContent("Test");
-        UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM);
+        UniAddress address = UniAddress.ofPush(ProviderType.FCM);
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalArgumentException
@@ -265,7 +265,7 @@ class FcmChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("Test");
-        UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
+        UniAddress address = UniAddress.ofPush(ProviderType.FCM, DEVICE_TOKEN_1);
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectNextCount(1)
@@ -284,7 +284,7 @@ class FcmChannelTest {
         UniMessage message = new UniMessage();
         message.setTitle("Hello");
         message.setContent("World");
-        UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
+        UniAddress address = UniAddress.ofPush(ProviderType.FCM, DEVICE_TOKEN_1);
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectNextCount(1)
@@ -301,7 +301,7 @@ class FcmChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("Test");
-        UniAddress address = UniAddress.ofPush(ChannelProviderType.FCM, DEVICE_TOKEN_1);
+        UniAddress address = UniAddress.ofPush(ProviderType.FCM, DEVICE_TOKEN_1);
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectNextCount(1)

@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.model.ChannelProviderType;
+import com.github.waitlight.asskicker.model.ProviderType;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -72,7 +72,7 @@ class WecomBotChannelTest {
         UniMessage message = new UniMessage();
         message.setTitle("标题");
         message.setContent("正文");
-        UniAddress address = UniAddress.ofImBot(ChannelProviderType.WECOM_BOT, "ck", "chatid_1");
+        UniAddress address = UniAddress.ofImBot(ProviderType.WECOM_BOT, "ck", "chatid_1");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectNext("WECOM_BOT ok 1 chat(s)")
@@ -105,7 +105,7 @@ class WecomBotChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("x");
-        UniAddress address = UniAddress.ofImBot(ChannelProviderType.WECOM_BOT, "k", "bad");
+        UniAddress address = UniAddress.ofImBot(ProviderType.WECOM_BOT, "k", "bad");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
@@ -132,7 +132,7 @@ class WecomBotChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("x");
-        UniAddress address = UniAddress.ofImBot(ChannelProviderType.WECOM_BOT, "k", "cid");
+        UniAddress address = UniAddress.ofImBot(ProviderType.WECOM_BOT, "k", "cid");
 
         StepVerifier.create(badChannel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
@@ -160,7 +160,7 @@ class WecomBotChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("x");
-        UniAddress address = UniAddress.ofImBot(ChannelProviderType.WECOM_BOT, "k", "cid");
+        UniAddress address = UniAddress.ofImBot(ProviderType.WECOM_BOT, "k", "cid");
 
         StepVerifier.create(ch.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException

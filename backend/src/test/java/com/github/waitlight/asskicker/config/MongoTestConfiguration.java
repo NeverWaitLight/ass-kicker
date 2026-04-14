@@ -2,8 +2,8 @@ package com.github.waitlight.asskicker.config;
 
 import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.channel.ChannelManager;
-import com.github.waitlight.asskicker.converter.ChannelProviderConverterImpl;
-import com.github.waitlight.asskicker.converter.ChannelProviderPropertiesMapper;
+import com.github.waitlight.asskicker.converter.ChannelConverterImpl;
+import com.github.waitlight.asskicker.converter.ChannelPropertiesMapper;
 import com.github.waitlight.asskicker.converter.TemplateConverterImpl;
 import com.github.waitlight.asskicker.repository.ChannelRepository;
 import com.github.waitlight.asskicker.repository.TemplateRepository;
@@ -27,8 +27,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Import({
         JacksonAutoConfiguration.class,
         MongoJsonNodeConfig.class,
-        ChannelProviderPropertiesMapper.class,
-        ChannelProviderConverterImpl.class,
+        ChannelPropertiesMapper.class,
+        ChannelConverterImpl.class,
         ChannelRepository.class,
         ChannelService.class,
         ChannelFactory.class,

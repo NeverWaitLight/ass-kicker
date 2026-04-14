@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum ChannelProviderType {
+public enum ProviderType {
     ALIYUN_SMS(ChannelType.SMS),
     AWS_SMS(ChannelType.SMS),
 

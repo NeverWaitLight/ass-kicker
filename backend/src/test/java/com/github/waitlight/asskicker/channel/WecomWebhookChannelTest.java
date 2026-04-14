@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.model.ChannelProviderType;
+import com.github.waitlight.asskicker.model.ProviderType;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -47,7 +47,7 @@ class WecomWebhookChannelTest {
         UniMessage message = new UniMessage();
         message.setTitle("标题");
         message.setContent("正文");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.WECOM_WEBHOOK, "wecom-key");
+        UniAddress address = UniAddress.ofImWebhook(ProviderType.WECOM_WEBHOOK, "wecom-key");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectNext("WECOM ok 1 recipient(s)")
@@ -72,7 +72,7 @@ class WecomWebhookChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("test");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.WECOM_WEBHOOK, "bad-key");
+        UniAddress address = UniAddress.ofImWebhook(ProviderType.WECOM_WEBHOOK, "bad-key");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
@@ -98,7 +98,7 @@ class WecomWebhookChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("test");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.WECOM_WEBHOOK, "wecom-key");
+        UniAddress address = UniAddress.ofImWebhook(ProviderType.WECOM_WEBHOOK, "wecom-key");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException

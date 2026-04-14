@@ -15,7 +15,7 @@ import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.ChannelEntity;
-import com.github.waitlight.asskicker.model.ChannelProviderType;
+import com.github.waitlight.asskicker.model.ProviderType;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -75,7 +75,7 @@ class AliyunSmsChannelTest {
         message.setTemplateParams(Map.of("code", "1234"));
         UniAddress address = UniAddress.builder()
                 .channelType(com.github.waitlight.asskicker.model.ChannelType.SMS)
-                .channelProviderType(ChannelProviderType.ALIYUN_SMS)
+                .providerType(ProviderType.ALIYUN_SMS)
                 .recipients(java.util.Set.of("13800138000"))
                 .build();
 

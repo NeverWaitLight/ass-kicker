@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ChannelProviderDTO {
+public class ChannelDTO {
 
     @NotBlank(message = "{channelProvider.id.notblank}")
     private String id;

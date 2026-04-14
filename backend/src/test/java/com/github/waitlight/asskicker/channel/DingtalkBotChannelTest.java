@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.model.ChannelProviderType;
+import com.github.waitlight.asskicker.model.ProviderType;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -73,7 +73,7 @@ class DingtalkBotChannelTest {
         UniMessage message = new UniMessage();
         message.setTitle("告警");
         message.setContent("服务异常");
-        UniAddress address = UniAddress.ofImBot(ChannelProviderType.DINGTALK_BOT, "ch-1", "cid-open-1");
+        UniAddress address = UniAddress.ofImBot(ProviderType.DINGTALK_BOT, "ch-1", "cid-open-1");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectNext("DINGTALK_BOT ok 1 chat(s)")
@@ -105,7 +105,7 @@ class DingtalkBotChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("x");
-        UniAddress address = UniAddress.ofImBot(ChannelProviderType.DINGTALK_BOT, "k", "cid");
+        UniAddress address = UniAddress.ofImBot(ProviderType.DINGTALK_BOT, "k", "cid");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
@@ -117,7 +117,7 @@ class DingtalkBotChannelTest {
     void send_emptyRecipients_returnsIllegalArgumentException() {
         UniMessage message = new UniMessage();
         message.setContent("x");
-        UniAddress address = UniAddress.ofImBot(ChannelProviderType.DINGTALK_BOT, "k");
+        UniAddress address = UniAddress.ofImBot(ProviderType.DINGTALK_BOT, "k");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalArgumentException
@@ -146,7 +146,7 @@ class DingtalkBotChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("x");
-        UniAddress address = UniAddress.ofImBot(ChannelProviderType.DINGTALK_BOT, "k", "cid");
+        UniAddress address = UniAddress.ofImBot(ProviderType.DINGTALK_BOT, "k", "cid");
 
         StepVerifier.create(ch.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException

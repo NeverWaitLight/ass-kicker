@@ -12,7 +12,7 @@ import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.ChannelEntity;
-import com.github.waitlight.asskicker.model.ChannelProviderType;
+import com.github.waitlight.asskicker.model.ProviderType;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.icegreen.greenmail.junit5.GreenMailExtension;
 import com.icegreen.greenmail.util.ServerSetupTest;
@@ -68,7 +68,7 @@ class SmtpChannelTest {
         message.setContent("body text");
         UniAddress address = UniAddress.builder()
                 .channelType(ChannelType.EMAIL)
-                .channelProviderType(ChannelProviderType.SMTP)
+                .providerType(ProviderType.SMTP)
                 .recipients(java.util.Set.of("recv@localhost"))
                 .build();
 

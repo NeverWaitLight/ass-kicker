@@ -188,7 +188,7 @@ class SenderTest {
                 entity.setId("a-us-sms-id");
                 entity.setCode("a-us-sms");
                 entity.setChannelType(ChannelType.SMS);
-                entity.setProviderType(ChannelProviderType.AWS_SMS);
+                entity.setProviderType(ProviderType.AWS_SMS);
                 entity.setPriorityAddressRegex("^\\+1\\d+$");
                 entity.setEnabled(true);
                 entity.setProperties(Map.of(
@@ -204,7 +204,7 @@ class SenderTest {
                 entity.setId("z-cn-sms-id");
                 entity.setCode("z-cn-sms");
                 entity.setChannelType(ChannelType.SMS);
-                entity.setProviderType(ChannelProviderType.ALIYUN_SMS);
+                entity.setProviderType(ProviderType.ALIYUN_SMS);
                 entity.setPriorityAddressRegex("^\\+86\\d+$");
                 entity.setEnabled(true);
                 entity.setProperties(Map.of(

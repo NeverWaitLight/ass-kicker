@@ -15,7 +15,7 @@ import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.ChannelEntity;
-import com.github.waitlight.asskicker.model.ChannelProviderType;
+import com.github.waitlight.asskicker.model.ProviderType;
 import com.github.waitlight.asskicker.model.ChannelType;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -77,7 +77,7 @@ class AwsSnsSmsChannelTest {
         message.setContent("hello sns");
         UniAddress address = UniAddress.builder()
                 .channelType(ChannelType.SMS)
-                .channelProviderType(ChannelProviderType.AWS_SMS)
+                .providerType(ProviderType.AWS_SMS)
                 .recipients(java.util.Set.of("+12065550100"))
                 .build();
 

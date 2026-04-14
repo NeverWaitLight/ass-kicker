@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.service;
 
-import com.github.waitlight.asskicker.converter.ChannelProviderConverter;
-import com.github.waitlight.asskicker.dto.channel.ChannelProviderDTO;
+import com.github.waitlight.asskicker.converter.ChannelConverter;
+import com.github.waitlight.asskicker.dto.channel.ChannelDTO;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
@@ -23,7 +23,7 @@ import java.util.List;
 public class ChannelService {
 
     private final ChannelRepository channelRepository;
-    private final ChannelProviderConverter channelProviderConverter;
+    private final ChannelConverter channelConverter;
     private final SnowflakeIdGenerator snowflakeIdGenerator;
 
     public Flux<ChannelEntity> findAll() {
@@ -44,14 +44,14 @@ public class ChannelService {
                 .take(size);
     }
 
-    public Mono<PageResp<ChannelProviderDTO>> page(int page, int size) {
+    public Mono<PageResp<ChannelDTO>> page(int page, int size) {
         int normalizedPage = page <= 0 ? 1 : page;
         int normalizedSize = size <= 0 ? 10 : size;
         int zeroBasedPage = normalizedPage - 1;
         Mono<Long> totalMono = channelRepository.count(null);
-        Mono<List<ChannelProviderDTO>> itemsMono =
+        Mono<List<ChannelDTO>> itemsMono =
                 findAll(zeroBasedPage, normalizedSize)
-                        .map(channelProviderConverter::toDto)
+                        .map(channelConverter::toDto)
                         .collectList();
         return Mono.zip(itemsMono, totalMono)
                 .map(t -> PageResp.success(normalizedPage, normalizedSize, t.getT2(), t.getT1()));
@@ -74,7 +74,7 @@ public class ChannelService {
     }
 
     public Mono<ChannelEntity> create(ChannelEntity entity) {
-        ChannelEntity toCreate = channelProviderConverter.copyForCreate(entity);
+        ChannelEntity toCreate = channelConverter.copyForCreate(entity);
         toCreate.setId(null);
         long now = Instant.now().toEpochMilli();
         toCreate.setId(snowflakeIdGenerator.nextIdString());
@@ -89,7 +89,7 @@ public class ChannelService {
         return channelRepository.findById(id)
                 .flatMap(existing -> ensureUniqueKey(patch.getCode(), id)
                         .then(Mono.defer(() -> {
-                            channelProviderConverter.merge(patch, existing);
+                            channelConverter.merge(patch, existing);
                             existing.setUpdatedAt(Instant.now().toEpochMilli());
                             return channelRepository.save(existing);
                         })));

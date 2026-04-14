@@ -138,7 +138,7 @@ public class Sender {
     private UniAddress buildSingleRecipientAddress(UniAddress original, String recipient) {
         return UniAddress.builder()
                 .channelType(original.getChannelType())
-                .channelProviderType(original.getChannelProviderType())
+                .providerType(original.getProviderType())
                 .channelProviderKey(original.getChannelProviderKey())
                 .recipients(Set.of(recipient))
                 .build();

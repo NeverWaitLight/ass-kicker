@@ -29,7 +29,7 @@ public class ChannelEntity {
         @Field("channel_type")
         private ChannelType channelType;
         @Field("provider_type")
-        private ChannelProviderType providerType;
+        private ProviderType providerType;
 
         private String description;
 

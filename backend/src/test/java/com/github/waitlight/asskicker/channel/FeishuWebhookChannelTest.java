@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.model.ChannelProviderType;
+import com.github.waitlight.asskicker.model.ProviderType;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -65,7 +65,7 @@ class FeishuWebhookChannelTest {
         UniMessage message = new UniMessage();
         message.setTitle("标题");
         message.setContent("内容");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.FEISHU_WEBHOOK, "token-001");
+        UniAddress address = UniAddress.ofImWebhook(ProviderType.FEISHU_WEBHOOK, "token-001");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectNext("FEISHU ok 1 recipient(s)")
@@ -86,7 +86,7 @@ class FeishuWebhookChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("test");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.FEISHU_WEBHOOK, "bad-token");
+        UniAddress address = UniAddress.ofImWebhook(ProviderType.FEISHU_WEBHOOK, "bad-token");
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
@@ -98,7 +98,7 @@ class FeishuWebhookChannelTest {
     void send_emptyRecipients_returnsIllegalArgumentException() {
         UniMessage message = new UniMessage();
         message.setContent("test");
-        UniAddress address = UniAddress.ofImWebhook(ChannelProviderType.FEISHU_WEBHOOK);
+        UniAddress address = UniAddress.ofImWebhook(ProviderType.FEISHU_WEBHOOK);
 
         StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalArgumentException

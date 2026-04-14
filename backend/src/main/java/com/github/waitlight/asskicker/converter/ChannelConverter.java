@@ -1,26 +1,25 @@
 package com.github.waitlight.asskicker.converter;
 
+import com.github.waitlight.asskicker.dto.channel.ChannelDTO;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
-import com.github.waitlight.asskicker.dto.channel.ChannelProviderDTO;
-
-@Mapper(componentModel = "spring", uses = ChannelProviderPropertiesMapper.class)
-public interface ChannelProviderConverter {
+@Mapper(componentModel = "spring", uses = ChannelPropertiesMapper.class)
+public interface ChannelConverter {
 
     @Mapping(target = "properties", qualifiedByName = "channelProviderPropertiesToJson")
-    ChannelProviderDTO toDto(ChannelEntity entity);
+    ChannelDTO toDto(ChannelEntity entity);
 
     @Mapping(target = "properties", qualifiedByName = "channelProviderJsonToProperties")
-    ChannelEntity toEntity(ChannelProviderDTO dto);
+    ChannelEntity toEntity(ChannelDTO dto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "properties", qualifiedByName = "channelProviderJsonToProperties")
-    void merge(ChannelProviderDTO dto, @MappingTarget ChannelEntity entity);
+    void merge(ChannelDTO dto, @MappingTarget ChannelEntity entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
