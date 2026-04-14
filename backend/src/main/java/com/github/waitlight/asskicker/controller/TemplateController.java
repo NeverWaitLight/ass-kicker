@@ -3,7 +3,6 @@ package com.github.waitlight.asskicker.controller;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,7 +35,6 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/v1/templates")
 @RequiredArgsConstructor
 @Validated
-@PreAuthorize("hasRole('ADMIN')")
 public class TemplateController {
 
     private final TemplateService templateService;
