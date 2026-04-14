@@ -4,10 +4,10 @@ import java.io.UncheckedIOException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.model.MessageTemplateEntity;
+import com.github.waitlight.asskicker.model.TemplateEntity;
 
 /**
- * {@link MessageTemplateEntity} 测试用固定样例，风格与
+ * {@link TemplateEntity} 测试用固定样例，风格与
  * {@link ChannelProviderEntityFixtures} 一致；仅使用 {@code localizedTemplates} 等当前字段
  */
 public final class MessageTemplateEntityFixtures {
@@ -20,7 +20,7 @@ public final class MessageTemplateEntityFixtures {
   /**
    * 供 {@link com.github.waitlight.asskicker.service.MessageTemplateServiceTest}
    */
-  public static MessageTemplateEntity smsCaptcha() {
+  public static TemplateEntity smsCaptcha() {
     return read("""
         {
           "code": "captcha",
@@ -33,7 +33,7 @@ public final class MessageTemplateEntityFixtures {
         """);
   }
 
-  public static MessageTemplateEntity emailCaptcha() {
+  public static TemplateEntity emailCaptcha() {
     return read("""
         {
           "code": "email-captcha",
@@ -46,7 +46,7 @@ public final class MessageTemplateEntityFixtures {
         """);
   }
 
-  public static MessageTemplateEntity imOpsAlert() {
+  public static TemplateEntity imOpsAlert() {
     return read("""
         {
           "code": "ops_alert",
@@ -59,7 +59,7 @@ public final class MessageTemplateEntityFixtures {
         """);
   }
 
-  public static MessageTemplateEntity pushNewMessage() {
+  public static TemplateEntity pushNewMessage() {
     return read("""
         {
           "code": "new_message_push",
@@ -72,7 +72,7 @@ public final class MessageTemplateEntityFixtures {
         """);
   }
 
-  public static MessageTemplateEntity welcomeEmail() {
+  public static TemplateEntity welcomeEmail() {
     return read("""
         {
           "code": "welcome",
@@ -85,7 +85,7 @@ public final class MessageTemplateEntityFixtures {
         """);
   }
 
-  public static MessageTemplateEntity smsCaptchaZhCn() {
+  public static TemplateEntity smsCaptchaZhCn() {
     return read("""
         {
           "code": "sms_captcha",
@@ -97,7 +97,7 @@ public final class MessageTemplateEntityFixtures {
         """);
   }
 
-  public static MessageTemplateEntity localizedEmpty() {
+  public static TemplateEntity localizedEmpty() {
     return read("""
         {
           "code": "x",
@@ -107,7 +107,7 @@ public final class MessageTemplateEntityFixtures {
         """);
   }
 
-  public static MessageTemplateEntity localizedTemplatesNull() {
+  public static TemplateEntity localizedTemplatesNull() {
     return read("""
         {
           "code": "x",
@@ -117,7 +117,7 @@ public final class MessageTemplateEntityFixtures {
         """);
   }
 
-  public static MessageTemplateEntity greetEn() {
+  public static TemplateEntity greetEn() {
     return read("""
         {
           "code": "greet",
@@ -129,7 +129,7 @@ public final class MessageTemplateEntityFixtures {
         """);
   }
 
-  public static MessageTemplateEntity emptyBodyDe() {
+  public static TemplateEntity emptyBodyDe() {
     return read("""
         {
           "code": "empty_body",
@@ -141,7 +141,7 @@ public final class MessageTemplateEntityFixtures {
         """);
   }
 
-  public static MessageTemplateEntity invZhCn() {
+  public static TemplateEntity invZhCn() {
     return read("""
         {
           "code": "inv",
@@ -153,9 +153,9 @@ public final class MessageTemplateEntityFixtures {
         """);
   }
 
-  private static MessageTemplateEntity read(String json) {
+  private static TemplateEntity read(String json) {
     try {
-      return MAPPER.readValue(json, MessageTemplateEntity.class);
+      return MAPPER.readValue(json, TemplateEntity.class);
     } catch (JsonProcessingException e) {
       throw new UncheckedIOException(e);
     }

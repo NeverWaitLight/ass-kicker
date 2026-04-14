@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.repository;
 
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.model.MessageTemplateEntity;
+import com.github.waitlight.asskicker.model.TemplateEntity;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -19,55 +19,55 @@ public class MessageTemplateRepository {
 
     private final ReactiveMongoTemplate mongoTemplate;
 
-    public Mono<MessageTemplateEntity> save(MessageTemplateEntity entity) {
+    public Mono<TemplateEntity> save(TemplateEntity entity) {
         return mongoTemplate.save(entity);
     }
 
-    public Mono<MessageTemplateEntity> findById(String id) {
+    public Mono<TemplateEntity> findById(String id) {
         Query query = new Query();
         query.addCriteria(Criteria.where("_id").is(id));
-        return mongoTemplate.findOne(query, MessageTemplateEntity.class);
+        return mongoTemplate.findOne(query, TemplateEntity.class);
     }
 
     public Mono<Void> deleteById(String id) {
         Query query = new Query();
         query.addCriteria(Criteria.where("_id").is(id));
-        return mongoTemplate.remove(query, MessageTemplateEntity.class).then();
+        return mongoTemplate.remove(query, TemplateEntity.class).then();
     }
 
-    public Mono<MessageTemplateEntity> findByCode(String code) {
+    public Mono<TemplateEntity> findByCode(String code) {
         Query query = new Query();
         query.addCriteria(Criteria.where("code").is(code));
-        return mongoTemplate.findOne(query, MessageTemplateEntity.class);
+        return mongoTemplate.findOne(query, TemplateEntity.class);
     }
 
-    public Mono<MessageTemplateEntity> findByCodeAndChannelType(String code, ChannelType channelType) {
+    public Mono<TemplateEntity> findByCodeAndChannelType(String code, ChannelType channelType) {
         Query query = new Query();
         query.addCriteria(Criteria.where("code").is(code));
         query.addCriteria(Criteria.where("channelType").is(channelType));
-        return mongoTemplate.findOne(query, MessageTemplateEntity.class);
+        return mongoTemplate.findOne(query, TemplateEntity.class);
     }
 
-    public Flux<MessageTemplateEntity> findByChannelType(ChannelType channelType) {
+    public Flux<TemplateEntity> findByChannelType(ChannelType channelType) {
         Query query = new Query();
         query.addCriteria(Criteria.where("channelType").is(channelType));
-        return mongoTemplate.find(query, MessageTemplateEntity.class);
+        return mongoTemplate.find(query, TemplateEntity.class);
     }
 
-    public Flux<MessageTemplateEntity> list(String keyword, int limit, int offset) {
+    public Flux<TemplateEntity> list(String keyword, int limit, int offset) {
         Query query = buildKeywordQuery(keyword);
         query.with(Sort.by(Sort.Direction.DESC, "_id"));
         query.skip(offset).limit(limit);
-        return mongoTemplate.find(query, MessageTemplateEntity.class);
+        return mongoTemplate.find(query, TemplateEntity.class);
     }
 
     public Mono<Void> deleteAll() {
-        return mongoTemplate.remove(new Query(), MessageTemplateEntity.class).then();
+        return mongoTemplate.remove(new Query(), TemplateEntity.class).then();
     }
 
     public Mono<Long> count(String keyword) {
         Query query = buildKeywordQuery(keyword);
-        return mongoTemplate.count(query, MessageTemplateEntity.class);
+        return mongoTemplate.count(query, TemplateEntity.class);
     }
 
     private Query buildKeywordQuery(String keyword) {

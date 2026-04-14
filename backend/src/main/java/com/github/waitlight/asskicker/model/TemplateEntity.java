@@ -15,7 +15,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Document(collection = "message_template")
-public class MessageTemplateEntity {
+public class TemplateEntity {
 
         @Id
         private String id;

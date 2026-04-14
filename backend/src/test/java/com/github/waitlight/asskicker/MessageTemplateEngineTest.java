@@ -19,7 +19,7 @@ import com.github.mustachejava.Mustache;
 import com.github.waitlight.asskicker.config.cache.CaffeineCacheProperties;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.Language;
-import com.github.waitlight.asskicker.model.MessageTemplateEntity;
+import com.github.waitlight.asskicker.model.TemplateEntity;
 import com.github.waitlight.asskicker.service.MessageTemplateEntityFixtures;
 import com.github.waitlight.asskicker.service.MessageTemplateService;
 
@@ -44,7 +44,7 @@ class MessageTemplateEngineTest {
 
     @Test
     void fill_rendersMustache_andCopiesTitleAndExtraData() {
-        MessageTemplateEntity entity = MessageTemplateEntityFixtures.smsCaptchaZhCn();
+        TemplateEntity entity = MessageTemplateEntityFixtures.smsCaptchaZhCn();
         when(messageTemplateService.findByCode("sms_captcha")).thenReturn(Mono.just(entity));
 
         UniMessage req = new UniMessage();
@@ -85,7 +85,7 @@ class MessageTemplateEngineTest {
 
     @Test
     void fill_whenLocalizedMissing_completesEmpty() {
-        MessageTemplateEntity entity = MessageTemplateEntityFixtures.localizedEmpty();
+        TemplateEntity entity = MessageTemplateEntityFixtures.localizedEmpty();
         when(messageTemplateService.findByCode("x")).thenReturn(Mono.just(entity));
 
         UniMessage req = new UniMessage();
@@ -97,7 +97,7 @@ class MessageTemplateEngineTest {
 
     @Test
     void fill_whenLocalizedTemplatesNull_completesEmpty() {
-        MessageTemplateEntity entity = MessageTemplateEntityFixtures.localizedTemplatesNull();
+        TemplateEntity entity = MessageTemplateEntityFixtures.localizedTemplatesNull();
         when(messageTemplateService.findByCode("x")).thenReturn(Mono.just(entity));
         UniMessage req = new UniMessage();
         req.setTemplateCode("x");
@@ -107,7 +107,7 @@ class MessageTemplateEngineTest {
 
     @Test
     void fill_whenTemplateParamsNull_rendersWithoutSubstitution() {
-        MessageTemplateEntity entity = MessageTemplateEntityFixtures.greetEn();
+        TemplateEntity entity = MessageTemplateEntityFixtures.greetEn();
         when(messageTemplateService.findByCode("greet")).thenReturn(Mono.just(entity));
 
         UniMessage req = new UniMessage();
@@ -125,7 +125,7 @@ class MessageTemplateEngineTest {
 
     @Test
     void fill_whenTemplateContentNull_rendersEmptyString() {
-        MessageTemplateEntity entity = MessageTemplateEntityFixtures.emptyBodyDe();
+        TemplateEntity entity = MessageTemplateEntityFixtures.emptyBodyDe();
         when(messageTemplateService.findByCode("empty_body")).thenReturn(Mono.just(entity));
 
         UniMessage req = new UniMessage();
@@ -140,7 +140,7 @@ class MessageTemplateEngineTest {
     @Test
     @SuppressWarnings("unchecked")
     void invalidateCompiledTemplates_removesCacheEntriesForPrefix() {
-        MessageTemplateEntity entity = MessageTemplateEntityFixtures.invZhCn();
+        TemplateEntity entity = MessageTemplateEntityFixtures.invZhCn();
         when(messageTemplateService.findByCode("inv")).thenReturn(Mono.just(entity));
 
         UniMessage req = new UniMessage();

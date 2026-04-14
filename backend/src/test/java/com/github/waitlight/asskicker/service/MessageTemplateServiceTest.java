@@ -4,8 +4,8 @@ import com.github.waitlight.asskicker.AssKickerTestApplication;
 import com.github.waitlight.asskicker.config.MongoTestConfiguration;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.Language;
-import com.github.waitlight.asskicker.model.MessageTemplateEntity;
-import com.github.waitlight.asskicker.model.MessageTemplateEntity.LocalizedTemplate;
+import com.github.waitlight.asskicker.model.TemplateEntity;
+import com.github.waitlight.asskicker.model.TemplateEntity.LocalizedTemplate;
 import com.github.waitlight.asskicker.repository.MessageTemplateRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,15 +45,15 @@ class MessageTemplateServiceTest {
 
         @Test
         void create_smsCaptcha_findById_and_findByCodeAndChannelType_returnsFullPayload() {
-                MessageTemplateEntity input = MessageTemplateEntityFixtures.smsCaptcha();
+                TemplateEntity input = MessageTemplateEntityFixtures.smsCaptcha();
 
                 StepVerifier.create(messageTemplateService.create(input)
                                 .flatMap(saved -> messageTemplateService.findById(saved.getId())
                                                 .zipWith(messageTemplateService.findByCodeAndChannelType(
                                                                 saved.getCode(), saved.getChannelType()))))
                                 .assertNext(tuple -> {
-                                        MessageTemplateEntity byId = tuple.getT1();
-                                        MessageTemplateEntity byKey = tuple.getT2();
+                                        TemplateEntity byId = tuple.getT1();
+                                        TemplateEntity byKey = tuple.getT2();
                                         assertThat(byId.getId()).isNotBlank();
                                         assertThat(byId.getCreatedAt()).isNotNull();
                                         assertThat(byId.getUpdatedAt()).isNotNull();
@@ -74,9 +74,9 @@ class MessageTemplateServiceTest {
 
         @Test
         void findByChannelType_im_onlyReturnsImTemplates() {
-                MessageTemplateEntity sms = MessageTemplateEntityFixtures.smsCaptcha();
-                MessageTemplateEntity email = MessageTemplateEntityFixtures.emailCaptcha();
-                MessageTemplateEntity im = MessageTemplateEntityFixtures.imOpsAlert();
+                TemplateEntity sms = MessageTemplateEntityFixtures.smsCaptcha();
+                TemplateEntity email = MessageTemplateEntityFixtures.emailCaptcha();
+                TemplateEntity im = MessageTemplateEntityFixtures.imOpsAlert();
 
                 StepVerifier.create(messageTemplateService.create(sms)
                                 .then(messageTemplateService.create(email))
@@ -84,7 +84,7 @@ class MessageTemplateServiceTest {
                                 .thenMany(messageTemplateService.findByChannelType(ChannelType.IM).collectList()))
                                 .assertNext(list -> {
                                         assertThat(list).hasSize(1);
-                                        MessageTemplateEntity e = list.get(0);
+                                        TemplateEntity e = list.get(0);
                                         assertThat(e.getChannelType()).isEqualTo(ChannelType.IM);
                                         assertThat(e.getCode()).isEqualTo(im.getCode());
                                         assertTemplateContentEqual(im, e);
@@ -94,8 +94,8 @@ class MessageTemplateServiceTest {
 
         @Test
         void create_sameCodeAndChannelType_conflicts() {
-                MessageTemplateEntity first = MessageTemplateEntityFixtures.smsCaptcha();
-                MessageTemplateEntity second = MessageTemplateEntityFixtures.smsCaptcha();
+                TemplateEntity first = MessageTemplateEntityFixtures.smsCaptcha();
+                TemplateEntity second = MessageTemplateEntityFixtures.smsCaptcha();
 
                 StepVerifier.create(messageTemplateService.create(first)
                                 .then(messageTemplateService.create(second)))
@@ -106,8 +106,8 @@ class MessageTemplateServiceTest {
 
         @Test
         void create_sameCodeDifferentChannelType_conflicts() {
-                MessageTemplateEntity sms = MessageTemplateEntityFixtures.smsCaptcha();
-                MessageTemplateEntity sameCodeEmail = MessageTemplateEntityFixtures.smsCaptcha();
+                TemplateEntity sms = MessageTemplateEntityFixtures.smsCaptcha();
+                TemplateEntity sameCodeEmail = MessageTemplateEntityFixtures.smsCaptcha();
                 sameCodeEmail.setChannelType(ChannelType.EMAIL);
 
                 StepVerifier.create(messageTemplateService.create(sms)
@@ -119,7 +119,7 @@ class MessageTemplateServiceTest {
 
         @Test
         void update_pushTemplate_replacesPayloadAndRefreshesUpdatedAt() {
-                MessageTemplateEntity input = MessageTemplateEntityFixtures.pushNewMessage();
+                TemplateEntity input = MessageTemplateEntityFixtures.pushNewMessage();
 
                 StepVerifier.create(messageTemplateService.create(input)
                                 .flatMap(saved -> {
@@ -132,7 +132,7 @@ class MessageTemplateServiceTest {
                                         loc.put(Language.ZH_CN,
                                                         new LocalizedTemplate(zh.getTitle(), "patched-zh-body"));
 
-                                        MessageTemplateEntity patch = new MessageTemplateEntity();
+                                        TemplateEntity patch = new TemplateEntity();
                                         patch.setCode(saved.getCode());
                                         patch.setChannelType(saved.getChannelType());
                                         patch.setLocalizedTemplates(loc);
@@ -159,20 +159,20 @@ class MessageTemplateServiceTest {
                                 .verifyComplete();
         }
 
-        private record UpdatedPushAssert(long beforeUpdatedAt, MessageTemplateEntity input,
-                        MessageTemplateEntity reloaded) {
+        private record UpdatedPushAssert(long beforeUpdatedAt, TemplateEntity input,
+                        TemplateEntity reloaded) {
         }
 
         @Test
         void update_welcomeEmail_toCaptchaSms_whenSmsExists_conflicts() {
-                MessageTemplateEntity sms = MessageTemplateEntityFixtures.smsCaptcha();
-                MessageTemplateEntity welcome = MessageTemplateEntityFixtures.welcomeEmail();
+                TemplateEntity sms = MessageTemplateEntityFixtures.smsCaptcha();
+                TemplateEntity welcome = MessageTemplateEntityFixtures.welcomeEmail();
 
                 StepVerifier.create(messageTemplateService.create(sms)
                                 .then(messageTemplateService.create(welcome))
                                 .then(messageTemplateService.findByCodeAndChannelType("welcome", ChannelType.EMAIL)
                                                 .flatMap(w -> {
-                                                        MessageTemplateEntity patch = new MessageTemplateEntity();
+                                                        TemplateEntity patch = new TemplateEntity();
                                                         patch.setCode("captcha");
                                                         patch.setChannelType(ChannelType.SMS);
                                                         patch.setLocalizedTemplates(w.getLocalizedTemplates());
@@ -185,7 +185,7 @@ class MessageTemplateServiceTest {
 
         @Test
         void delete_emailTemplate_removesDocument() {
-                MessageTemplateEntity email = MessageTemplateEntityFixtures.emailCaptcha();
+                TemplateEntity email = MessageTemplateEntityFixtures.emailCaptcha();
 
                 StepVerifier.create(messageTemplateService.create(email)
                                 .flatMap(saved -> messageTemplateService.delete(saved.getId())
@@ -207,9 +207,9 @@ class MessageTemplateServiceTest {
 
         @Test
         void list_pagination_returnsExpectedCounts() {
-                MessageTemplateEntity a = MessageTemplateEntityFixtures.smsCaptcha();
-                MessageTemplateEntity b = MessageTemplateEntityFixtures.imOpsAlert();
-                MessageTemplateEntity c = MessageTemplateEntityFixtures.pushNewMessage();
+                TemplateEntity a = MessageTemplateEntityFixtures.smsCaptcha();
+                TemplateEntity b = MessageTemplateEntityFixtures.imOpsAlert();
+                TemplateEntity c = MessageTemplateEntityFixtures.pushNewMessage();
 
                 StepVerifier.create(messageTemplateService.create(a)
                                 .then(messageTemplateService.create(b))
@@ -224,7 +224,7 @@ class MessageTemplateServiceTest {
                                 .verifyComplete();
         }
 
-        private static void assertTemplateContentEqual(MessageTemplateEntity expected, MessageTemplateEntity actual) {
+        private static void assertTemplateContentEqual(TemplateEntity expected, TemplateEntity actual) {
                 assertThat(actual.getCode()).isEqualTo(expected.getCode());
                 assertThat(actual.getChannelType()).isEqualTo(expected.getChannelType());
                 Map<Language, LocalizedTemplate> exp = expected.getLocalizedTemplates();

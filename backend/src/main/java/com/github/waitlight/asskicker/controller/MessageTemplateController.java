@@ -21,7 +21,7 @@ import com.github.waitlight.asskicker.dto.PageReq;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.template.MessageTemplateDTO;
-import com.github.waitlight.asskicker.model.MessageTemplateEntity;
+import com.github.waitlight.asskicker.model.TemplateEntity;
 import com.github.waitlight.asskicker.service.MessageTemplateService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,7 +45,7 @@ public class MessageTemplateController {
     @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
     public Mono<Resp<MessageTemplateDTO>> create(@RequestBody @Validated MessageTemplateDTO request) {
-        MessageTemplateEntity entity = messageTemplateConverter.toEntity(request);
+        TemplateEntity entity = messageTemplateConverter.toEntity(request);
         return messageTemplateService.create(entity)
                 .map(messageTemplateConverter::toDto)
                 .map(Resp::success);
@@ -56,7 +56,7 @@ public class MessageTemplateController {
     public Mono<Resp<MessageTemplateDTO>> update(
             @PathVariable @NotBlank String id,
             @RequestBody @Validated MessageTemplateDTO request) {
-        MessageTemplateEntity entity = messageTemplateConverter.toEntity(request);
+        TemplateEntity entity = messageTemplateConverter.toEntity(request);
         return messageTemplateService.update(id, entity)
                 .map(messageTemplateConverter::toDto)
                 .map(Resp::success);

@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.converter;
 
 import com.github.waitlight.asskicker.dto.template.MessageTemplateDTO;
-import com.github.waitlight.asskicker.model.MessageTemplateEntity;
+import com.github.waitlight.asskicker.model.TemplateEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -9,17 +9,17 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface MessageTemplateConverter {
 
-    MessageTemplateDTO toDto(MessageTemplateEntity entity);
+    MessageTemplateDTO toDto(TemplateEntity entity);
 
-    MessageTemplateEntity toEntity(MessageTemplateDTO dto);
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    MessageTemplateEntity copyForCreate(MessageTemplateEntity source);
+    TemplateEntity toEntity(MessageTemplateDTO dto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    void merge(MessageTemplateEntity patch, @MappingTarget MessageTemplateEntity target);
+    TemplateEntity copyForCreate(TemplateEntity source);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    void merge(TemplateEntity patch, @MappingTarget TemplateEntity target);
 }
