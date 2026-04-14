@@ -6,7 +6,7 @@ import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.TemplateEntity;
 import com.github.waitlight.asskicker.model.TemplateEntity.LocalizedTemplate;
-import com.github.waitlight.asskicker.repository.MessageTemplateRepository;
+import com.github.waitlight.asskicker.repository.TemplateRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,26 +30,26 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "spring.main.web-application-type=none",
                 "de.flapdoodle.mongodb.embedded.version=7.0.14"
 })
-class MessageTemplateServiceTest {
+class TemplateServiceTest {
 
         @Autowired
-        private MessageTemplateService messageTemplateService;
+        private TemplateService templateService;
 
         @Autowired
-        private MessageTemplateRepository messageTemplateRepository;
+        private TemplateRepository templateRepository;
 
         @BeforeEach
         void clearTemplates() {
-                StepVerifier.create(messageTemplateRepository.deleteAll()).verifyComplete();
+                StepVerifier.create(templateRepository.deleteAll()).verifyComplete();
         }
 
         @Test
         void create_smsCaptcha_findById_and_findByCodeAndChannelType_returnsFullPayload() {
-                TemplateEntity input = MessageTemplateEntityFixtures.smsCaptcha();
+                TemplateEntity input = TemplateEntityFixtures.smsCaptcha();
 
-                StepVerifier.create(messageTemplateService.create(input)
-                                .flatMap(saved -> messageTemplateService.findById(saved.getId())
-                                                .zipWith(messageTemplateService.findByCodeAndChannelType(
+                StepVerifier.create(templateService.create(input)
+                                .flatMap(saved -> templateService.findById(saved.getId())
+                                                .zipWith(templateService.findByCodeAndChannelType(
                                                                 saved.getCode(), saved.getChannelType()))))
                                 .assertNext(tuple -> {
                                         TemplateEntity byId = tuple.getT1();
@@ -66,7 +66,7 @@ class MessageTemplateServiceTest {
 
         @Test
         void findById_unknownId_throwsNotFoundException() {
-                StepVerifier.create(messageTemplateService.findById("507f1f77bcf86cd799439011"))
+                StepVerifier.create(templateService.findById("507f1f77bcf86cd799439011"))
                                 .expectErrorSatisfies(ex -> assertThat(ex)
                                                 .isInstanceOf(NotFoundException.class))
                                 .verify();
@@ -74,14 +74,14 @@ class MessageTemplateServiceTest {
 
         @Test
         void findByChannelType_im_onlyReturnsImTemplates() {
-                TemplateEntity sms = MessageTemplateEntityFixtures.smsCaptcha();
-                TemplateEntity email = MessageTemplateEntityFixtures.emailCaptcha();
-                TemplateEntity im = MessageTemplateEntityFixtures.imOpsAlert();
+                TemplateEntity sms = TemplateEntityFixtures.smsCaptcha();
+                TemplateEntity email = TemplateEntityFixtures.emailCaptcha();
+                TemplateEntity im = TemplateEntityFixtures.imOpsAlert();
 
-                StepVerifier.create(messageTemplateService.create(sms)
-                                .then(messageTemplateService.create(email))
-                                .then(messageTemplateService.create(im))
-                                .thenMany(messageTemplateService.findByChannelType(ChannelType.IM).collectList()))
+                StepVerifier.create(templateService.create(sms)
+                                .then(templateService.create(email))
+                                .then(templateService.create(im))
+                                .thenMany(templateService.findByChannelType(ChannelType.IM).collectList()))
                                 .assertNext(list -> {
                                         assertThat(list).hasSize(1);
                                         TemplateEntity e = list.get(0);
@@ -94,11 +94,11 @@ class MessageTemplateServiceTest {
 
         @Test
         void create_sameCodeAndChannelType_conflicts() {
-                TemplateEntity first = MessageTemplateEntityFixtures.smsCaptcha();
-                TemplateEntity second = MessageTemplateEntityFixtures.smsCaptcha();
+                TemplateEntity first = TemplateEntityFixtures.smsCaptcha();
+                TemplateEntity second = TemplateEntityFixtures.smsCaptcha();
 
-                StepVerifier.create(messageTemplateService.create(first)
-                                .then(messageTemplateService.create(second)))
+                StepVerifier.create(templateService.create(first)
+                                .then(templateService.create(second)))
                                 .expectErrorSatisfies(ex -> assertThat(ex)
                                                 .isInstanceOf(ConflictException.class))
                                 .verify();
@@ -106,12 +106,12 @@ class MessageTemplateServiceTest {
 
         @Test
         void create_sameCodeDifferentChannelType_conflicts() {
-                TemplateEntity sms = MessageTemplateEntityFixtures.smsCaptcha();
-                TemplateEntity sameCodeEmail = MessageTemplateEntityFixtures.smsCaptcha();
+                TemplateEntity sms = TemplateEntityFixtures.smsCaptcha();
+                TemplateEntity sameCodeEmail = TemplateEntityFixtures.smsCaptcha();
                 sameCodeEmail.setChannelType(ChannelType.EMAIL);
 
-                StepVerifier.create(messageTemplateService.create(sms)
-                                .then(messageTemplateService.create(sameCodeEmail)))
+                StepVerifier.create(templateService.create(sms)
+                                .then(templateService.create(sameCodeEmail)))
                                 .expectErrorSatisfies(ex -> assertThat(ex)
                                                 .isInstanceOf(ConflictException.class))
                                 .verify();
@@ -119,9 +119,9 @@ class MessageTemplateServiceTest {
 
         @Test
         void update_pushTemplate_replacesPayloadAndRefreshesUpdatedAt() {
-                TemplateEntity input = MessageTemplateEntityFixtures.pushNewMessage();
+                TemplateEntity input = TemplateEntityFixtures.pushNewMessage();
 
-                StepVerifier.create(messageTemplateService.create(input)
+                StepVerifier.create(templateService.create(input)
                                 .flatMap(saved -> {
                                         assertThat(saved.getId()).isNotBlank();
                                         long before = saved.getUpdatedAt();
@@ -138,8 +138,8 @@ class MessageTemplateServiceTest {
                                         patch.setLocalizedTemplates(loc);
 
                                         return Mono.delay(Duration.ofMillis(2))
-                                                        .then(messageTemplateService.update(saved.getId(), patch))
-                                                        .flatMap(updated -> messageTemplateService
+                                                        .then(templateService.update(saved.getId(), patch))
+                                                        .flatMap(updated -> templateService
                                                                         .findById(updated.getId()))
                                                         .map(reloaded -> new UpdatedPushAssert(before, input,
                                                                         reloaded));
@@ -165,18 +165,18 @@ class MessageTemplateServiceTest {
 
         @Test
         void update_welcomeEmail_toCaptchaSms_whenSmsExists_conflicts() {
-                TemplateEntity sms = MessageTemplateEntityFixtures.smsCaptcha();
-                TemplateEntity welcome = MessageTemplateEntityFixtures.welcomeEmail();
+                TemplateEntity sms = TemplateEntityFixtures.smsCaptcha();
+                TemplateEntity welcome = TemplateEntityFixtures.welcomeEmail();
 
-                StepVerifier.create(messageTemplateService.create(sms)
-                                .then(messageTemplateService.create(welcome))
-                                .then(messageTemplateService.findByCodeAndChannelType("welcome", ChannelType.EMAIL)
+                StepVerifier.create(templateService.create(sms)
+                                .then(templateService.create(welcome))
+                                .then(templateService.findByCodeAndChannelType("welcome", ChannelType.EMAIL)
                                                 .flatMap(w -> {
                                                         TemplateEntity patch = new TemplateEntity();
                                                         patch.setCode("captcha");
                                                         patch.setChannelType(ChannelType.SMS);
                                                         patch.setLocalizedTemplates(w.getLocalizedTemplates());
-                                                        return messageTemplateService.update(w.getId(), patch);
+                                                        return templateService.update(w.getId(), patch);
                                                 })))
                                 .expectErrorSatisfies(ex -> assertThat(ex)
                                                 .isInstanceOf(ConflictException.class))
@@ -185,38 +185,38 @@ class MessageTemplateServiceTest {
 
         @Test
         void delete_emailTemplate_removesDocument() {
-                TemplateEntity email = MessageTemplateEntityFixtures.emailCaptcha();
+                TemplateEntity email = TemplateEntityFixtures.emailCaptcha();
 
-                StepVerifier.create(messageTemplateService.create(email)
-                                .flatMap(saved -> messageTemplateService.delete(saved.getId())
+                StepVerifier.create(templateService.create(email)
+                                .flatMap(saved -> templateService.delete(saved.getId())
                                                 // 直接通过 repository 验证数据库中的文档已被删除
-                                                .then(messageTemplateRepository.findById(saved.getId()))))
+                                                .then(templateRepository.findById(saved.getId()))))
                                 .verifyComplete();
         }
 
         @Test
         void list_invalidLimitOrOffset_returnsEmpty() {
-                StepVerifier.create(messageTemplateService.list(null, 10, -1).collectList())
+                StepVerifier.create(templateService.list(null, 10, -1).collectList())
                                 .assertNext(list -> assertThat(list).isEmpty())
                                 .verifyComplete();
 
-                StepVerifier.create(messageTemplateService.list(null, 0, 0).collectList())
+                StepVerifier.create(templateService.list(null, 0, 0).collectList())
                                 .assertNext(list -> assertThat(list).isEmpty())
                                 .verifyComplete();
         }
 
         @Test
         void list_pagination_returnsExpectedCounts() {
-                TemplateEntity a = MessageTemplateEntityFixtures.smsCaptcha();
-                TemplateEntity b = MessageTemplateEntityFixtures.imOpsAlert();
-                TemplateEntity c = MessageTemplateEntityFixtures.pushNewMessage();
+                TemplateEntity a = TemplateEntityFixtures.smsCaptcha();
+                TemplateEntity b = TemplateEntityFixtures.imOpsAlert();
+                TemplateEntity c = TemplateEntityFixtures.pushNewMessage();
 
-                StepVerifier.create(messageTemplateService.create(a)
-                                .then(messageTemplateService.create(b))
-                                .then(messageTemplateService.create(c))
+                StepVerifier.create(templateService.create(a)
+                                .then(templateService.create(b))
+                                .then(templateService.create(c))
                                 .thenMany(Flux.zip(
-                                                messageTemplateService.list(null, 2, 0).collectList(),
-                                                messageTemplateService.list(null, 2, 2).collectList())))
+                                                templateService.list(null, 2, 0).collectList(),
+                                                templateService.list(null, 2, 2).collectList())))
                                 .assertNext(tuple -> {
                                         assertThat(tuple.getT1()).hasSize(2);
                                         assertThat(tuple.getT2()).hasSize(1);

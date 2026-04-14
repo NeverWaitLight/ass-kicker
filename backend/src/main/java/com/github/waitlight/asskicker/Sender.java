@@ -30,7 +30,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class Sender {
 
-    private final MessageTemplateEngine messageTemplateEngine;
+    private final TemplateEngine templateEngine;
     private final ChannelManager channelManager;
     private final SendRecordService sendRecordService;
     private final SnowflakeIdGenerator snowflakeIdGenerator;
@@ -80,7 +80,7 @@ public class Sender {
     private void process(UniTask task) {
         UniMessage filled = null;
         try {
-            filled = messageTemplateEngine.fill(task.getMessage()).block();
+            filled = templateEngine.fill(task.getMessage()).block();
             if (filled == null) {
                 log.warn("Template fill returned null for taskId={}", task.getTaskId());
                 writeFailedRecord(task, null, null, "Template fill returned null");

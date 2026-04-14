@@ -16,22 +16,22 @@ import com.github.mustachejava.MustacheFactory;
 import com.github.waitlight.asskicker.config.cache.CaffeineCacheProperties;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.Language;
-import com.github.waitlight.asskicker.service.MessageTemplateService;
+import com.github.waitlight.asskicker.service.TemplateService;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 @Component
 @Slf4j
-public class MessageTemplateEngine {
+public class TemplateEngine {
 
-    private final MessageTemplateService messageTemplateService;
+    private final TemplateService templateService;
     private final MustacheFactory mustacheFactory;
     private final Cache<String, Mustache> compiledTemplateCache;
 
-    public MessageTemplateEngine(MessageTemplateService messageTemplateService,
+    public TemplateEngine(TemplateService templateService,
             CaffeineCacheProperties cacheProperties) {
-        this.messageTemplateService = messageTemplateService;
+        this.templateService = templateService;
         this.mustacheFactory = new DefaultMustacheFactory();
         this.compiledTemplateCache = Caffeine.newBuilder()
                 .maximumSize(cacheProperties.getMaximumSize())
@@ -40,7 +40,7 @@ public class MessageTemplateEngine {
     }
 
     public Mono<UniMessage> fill(UniMessage req) {
-        return messageTemplateService.findByCode(req.getTemplateCode())
+        return templateService.findByCode(req.getTemplateCode())
                 .flatMap(tpl -> Mono.justOrEmpty(
                         tpl.getLocalizedTemplates() != null
                                 ? tpl.getLocalizedTemplates().get(req.getLanguage())

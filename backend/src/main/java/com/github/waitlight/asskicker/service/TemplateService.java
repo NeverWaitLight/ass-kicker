@@ -2,13 +2,13 @@ package com.github.waitlight.asskicker.service;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.cache.CaffeineCacheConfig;
-import com.github.waitlight.asskicker.converter.MessageTemplateConverter;
+import com.github.waitlight.asskicker.converter.TemplateConverter;
 import com.github.waitlight.asskicker.exception.BadRequestException;
 import com.github.waitlight.asskicker.exception.ConflictException;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.TemplateEntity;
-import com.github.waitlight.asskicker.repository.MessageTemplateRepository;
+import com.github.waitlight.asskicker.repository.TemplateRepository;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +24,10 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class MessageTemplateService {
+public class TemplateService {
 
-    private final MessageTemplateRepository messageTemplateRepository;
-    private final MessageTemplateConverter messageTemplateConverter;
+    private final TemplateRepository templateRepository;
+    private final TemplateConverter templateConverter;
     private final SnowflakeIdGenerator snowflakeIdGenerator;
     private final CaffeineCacheConfig caffeineCacheConfig;
 
@@ -36,13 +36,13 @@ public class MessageTemplateService {
 
     @PostConstruct
     void initCaches() {
-        templateByIdCache = caffeineCacheConfig.buildCache((id, executor) -> messageTemplateRepository.findById(id)
+        templateByIdCache = caffeineCacheConfig.buildCache((id, executor) -> templateRepository.findById(id)
                 .map(Optional::of)
                 .defaultIfEmpty(Optional.empty())
                 .toFuture());
 
         templateByCodeCache = caffeineCacheConfig
-                .buildCache((code, executor) -> messageTemplateRepository.findByCode(code)
+                .buildCache((code, executor) -> templateRepository.findByCode(code)
                         .map(Optional::of)
                         .defaultIfEmpty(Optional.empty())
                         .toFuture());
@@ -53,15 +53,15 @@ public class MessageTemplateService {
             return Mono.error(new BadRequestException("template.code.empty"));
         }
 
-        return messageTemplateRepository.findByCode(entity.getCode())
+        return templateRepository.findByCode(entity.getCode())
                 .flatMap(existing -> Mono.<TemplateEntity>error(new ConflictException("template.code.exists")))
                 .switchIfEmpty(Mono.defer(() -> {
-                    TemplateEntity toCreate = messageTemplateConverter.copyForCreate(entity);
+                    TemplateEntity toCreate = templateConverter.copyForCreate(entity);
                     long now = Instant.now().toEpochMilli();
                     toCreate.setId(snowflakeIdGenerator.nextIdString());
                     toCreate.setCreatedAt(now);
                     toCreate.setUpdatedAt(now);
-                    return messageTemplateRepository.save(toCreate)
+                    return templateRepository.save(toCreate)
                             .doOnSuccess(saved -> invalidateTemplateCaches(saved, saved));
                 }));
     }
@@ -90,25 +90,25 @@ public class MessageTemplateService {
     }
 
     public Mono<TemplateEntity> findByCodeAndChannelType(String code, ChannelType channelType) {
-        return messageTemplateRepository.findByCodeAndChannelType(code, channelType);
+        return templateRepository.findByCodeAndChannelType(code, channelType);
     }
 
     public Flux<TemplateEntity> findByChannelType(ChannelType channelType) {
-        return messageTemplateRepository.findByChannelType(channelType);
+        return templateRepository.findByChannelType(channelType);
     }
 
     public Mono<Long> count(String keyword) {
-        return messageTemplateRepository.count(keyword);
+        return templateRepository.count(keyword);
     }
 
     public Flux<TemplateEntity> list(String keyword, int limit, int offset) {
-        return messageTemplateRepository.list(keyword, limit, offset);
+        return templateRepository.list(keyword, limit, offset);
     }
 
     public Mono<Void> delete(String id) {
-        return messageTemplateRepository.findById(id)
+        return templateRepository.findById(id)
                 .switchIfEmpty(Mono.error(new NotFoundException("template.id.notFound", id)))
-                .flatMap(template -> messageTemplateRepository.deleteById(template.getId())
+                .flatMap(template -> templateRepository.deleteById(template.getId())
                         .doOnSuccess(v -> invalidateTemplateCaches(template, template)));
     }
 
@@ -117,13 +117,13 @@ public class MessageTemplateService {
             return Mono.error(new BadRequestException("template.id.empty"));
         }
 
-        return messageTemplateRepository.findById(id)
+        return templateRepository.findById(id)
                 .switchIfEmpty(Mono.error(new NotFoundException("template.id.notFound", id)))
                 .flatMap(existing -> ensureCodeAvailable(entity, existing)
                         .then(Mono.defer(() -> {
-                            messageTemplateConverter.merge(entity, existing);
+                            templateConverter.merge(entity, existing);
                             existing.setUpdatedAt(Instant.now().toEpochMilli());
-                            return messageTemplateRepository.save(existing)
+                            return templateRepository.save(existing)
                                     .doOnSuccess(saved -> invalidateTemplateCaches(existing, saved));
                         })));
     }
@@ -140,7 +140,7 @@ public class MessageTemplateService {
             return Mono.empty();
         }
         entity.setCode(newCode.trim());
-        return messageTemplateRepository.findByCode(entity.getCode())
+        return templateRepository.findByCode(entity.getCode())
                 .filter(found -> !found.getId().equals(existing.getId()))
                 .flatMap(found -> Mono.<Void>error(new ConflictException("template.code.exists")));
     }

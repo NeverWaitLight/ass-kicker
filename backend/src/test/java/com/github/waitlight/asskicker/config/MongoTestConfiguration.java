@@ -4,12 +4,12 @@ import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.converter.ChannelProviderConverterImpl;
 import com.github.waitlight.asskicker.converter.ChannelProviderPropertiesMapper;
-import com.github.waitlight.asskicker.converter.MessageTemplateConverterImpl;
+import com.github.waitlight.asskicker.converter.TemplateConverterImpl;
 import com.github.waitlight.asskicker.repository.ChannelProviderRepository;
-import com.github.waitlight.asskicker.repository.MessageTemplateRepository;
+import com.github.waitlight.asskicker.repository.TemplateRepository;
 import com.github.waitlight.asskicker.repository.UserRepository;
 import com.github.waitlight.asskicker.service.ChannelProviderService;
-import com.github.waitlight.asskicker.service.MessageTemplateService;
+import com.github.waitlight.asskicker.service.TemplateService;
 import com.github.waitlight.asskicker.service.UserService;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import com.github.waitlight.asskicker.config.cache.CaffeineCacheConfig;
@@ -33,9 +33,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
         ChannelProviderService.class,
         ChannelFactory.class,
         ChannelManager.class,
-        MessageTemplateConverterImpl.class,
-        MessageTemplateRepository.class,
-        MessageTemplateService.class,
+        TemplateConverterImpl.class,
+        TemplateRepository.class,
+        TemplateService.class,
         UserRepository.class,
         UserService.class,
         CaffeineCacheConfig.class

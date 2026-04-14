@@ -20,32 +20,32 @@ import com.github.waitlight.asskicker.config.cache.CaffeineCacheProperties;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.TemplateEntity;
-import com.github.waitlight.asskicker.service.MessageTemplateEntityFixtures;
-import com.github.waitlight.asskicker.service.MessageTemplateService;
+import com.github.waitlight.asskicker.service.TemplateEntityFixtures;
+import com.github.waitlight.asskicker.service.TemplateService;
 
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 @ExtendWith(MockitoExtension.class)
-class MessageTemplateEngineTest {
+class TemplateEngineTest {
 
     @Mock
-    private MessageTemplateService messageTemplateService;
+    private TemplateService templateService;
 
-    private MessageTemplateEngine engine;
+    private TemplateEngine engine;
 
     @BeforeEach
     void setUp() {
         CaffeineCacheProperties cacheProperties = new CaffeineCacheProperties();
         cacheProperties.setMaximumSize(100);
         cacheProperties.setExpireAfterWriteMinutes(60);
-        engine = new MessageTemplateEngine(messageTemplateService, cacheProperties);
+        engine = new TemplateEngine(templateService, cacheProperties);
     }
 
     @Test
     void fill_rendersMustache_andCopiesTitleAndExtraData() {
-        TemplateEntity entity = MessageTemplateEntityFixtures.smsCaptchaZhCn();
-        when(messageTemplateService.findByCode("sms_captcha")).thenReturn(Mono.just(entity));
+        TemplateEntity entity = TemplateEntityFixtures.smsCaptchaZhCn();
+        when(templateService.findByCode("sms_captcha")).thenReturn(Mono.just(entity));
 
         UniMessage req = new UniMessage();
         req.setTemplateCode("sms_captcha");
@@ -69,12 +69,12 @@ class MessageTemplateEngineTest {
                 })
                 .verifyComplete();
 
-        verify(messageTemplateService).findByCode("sms_captcha");
+        verify(templateService).findByCode("sms_captcha");
     }
 
     @Test
     void fill_whenTemplateNotFound_completesEmpty() {
-        when(messageTemplateService.findByCode("missing")).thenReturn(Mono.empty());
+        when(templateService.findByCode("missing")).thenReturn(Mono.empty());
 
         UniMessage req = new UniMessage();
         req.setTemplateCode("missing");
@@ -85,8 +85,8 @@ class MessageTemplateEngineTest {
 
     @Test
     void fill_whenLocalizedMissing_completesEmpty() {
-        TemplateEntity entity = MessageTemplateEntityFixtures.localizedEmpty();
-        when(messageTemplateService.findByCode("x")).thenReturn(Mono.just(entity));
+        TemplateEntity entity = TemplateEntityFixtures.localizedEmpty();
+        when(templateService.findByCode("x")).thenReturn(Mono.just(entity));
 
         UniMessage req = new UniMessage();
         req.setTemplateCode("x");
@@ -97,8 +97,8 @@ class MessageTemplateEngineTest {
 
     @Test
     void fill_whenLocalizedTemplatesNull_completesEmpty() {
-        TemplateEntity entity = MessageTemplateEntityFixtures.localizedTemplatesNull();
-        when(messageTemplateService.findByCode("x")).thenReturn(Mono.just(entity));
+        TemplateEntity entity = TemplateEntityFixtures.localizedTemplatesNull();
+        when(templateService.findByCode("x")).thenReturn(Mono.just(entity));
         UniMessage req = new UniMessage();
         req.setTemplateCode("x");
         req.setLanguage(Language.ZH_CN);
@@ -107,8 +107,8 @@ class MessageTemplateEngineTest {
 
     @Test
     void fill_whenTemplateParamsNull_rendersWithoutSubstitution() {
-        TemplateEntity entity = MessageTemplateEntityFixtures.greetEn();
-        when(messageTemplateService.findByCode("greet")).thenReturn(Mono.just(entity));
+        TemplateEntity entity = TemplateEntityFixtures.greetEn();
+        when(templateService.findByCode("greet")).thenReturn(Mono.just(entity));
 
         UniMessage req = new UniMessage();
         req.setTemplateCode("greet");
@@ -125,8 +125,8 @@ class MessageTemplateEngineTest {
 
     @Test
     void fill_whenTemplateContentNull_rendersEmptyString() {
-        TemplateEntity entity = MessageTemplateEntityFixtures.emptyBodyDe();
-        when(messageTemplateService.findByCode("empty_body")).thenReturn(Mono.just(entity));
+        TemplateEntity entity = TemplateEntityFixtures.emptyBodyDe();
+        when(templateService.findByCode("empty_body")).thenReturn(Mono.just(entity));
 
         UniMessage req = new UniMessage();
         req.setTemplateCode("empty_body");
@@ -140,8 +140,8 @@ class MessageTemplateEngineTest {
     @Test
     @SuppressWarnings("unchecked")
     void invalidateCompiledTemplates_removesCacheEntriesForPrefix() {
-        TemplateEntity entity = MessageTemplateEntityFixtures.invZhCn();
-        when(messageTemplateService.findByCode("inv")).thenReturn(Mono.just(entity));
+        TemplateEntity entity = TemplateEntityFixtures.invZhCn();
+        when(templateService.findByCode("inv")).thenReturn(Mono.just(entity));
 
         UniMessage req = new UniMessage();
         req.setTemplateCode("inv");

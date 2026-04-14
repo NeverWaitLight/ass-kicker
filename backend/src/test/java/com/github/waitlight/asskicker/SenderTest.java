@@ -57,7 +57,7 @@ class SenderTest {
         private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
         @Mock
-        private MessageTemplateEngine messageTemplateEngine;
+        private TemplateEngine templateEngine;
 
         @Mock
         private SendRecordService sendRecordService;
@@ -133,12 +133,12 @@ class SenderTest {
                 ChannelManager channelManager = new ChannelManager(channelProviderService, channelFactory);
                 channelManager.refresh();
 
-                Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService,
+                Sender sender = new Sender(templateEngine, channelManager, sendRecordService,
                                 snowflakeIdGenerator);
                 UniMessage template = buildTemplate();
                 UniMessage renderedMessage = new UniMessage();
                 renderedMessage.setContent("rendered-content");
-                when(messageTemplateEngine.fill(template)).thenReturn(Mono.just(renderedMessage));
+                when(templateEngine.fill(template)).thenReturn(Mono.just(renderedMessage));
 
                 String usRecipient1 = "+14155550123";
                 String cnRecipient = "+8613800138000";
@@ -261,11 +261,11 @@ class SenderTest {
                 UniMessage template = buildTemplate();
                 UniMessage rendered = buildTemplate();
                 rendered.setContent("ok");
-                when(messageTemplateEngine.fill(any())).thenReturn(Mono.just(rendered));
+                when(templateEngine.fill(any())).thenReturn(Mono.just(rendered));
                 when(channelManager.chose(any(ChannelType.class), anyString())).thenReturn(Mono.empty());
                 when(snowflakeIdGenerator.nextIdString()).thenReturn("snowflake-1", "snowflake-2");
 
-                Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService,
+                Sender sender = new Sender(templateEngine, channelManager, sendRecordService,
                                 snowflakeIdGenerator);
                 UniTask missingId = UniTask.builder()
                                 .message(template)
@@ -301,10 +301,10 @@ class SenderTest {
                 UniMessage template = buildTemplate();
                 UniMessage rendered = buildTemplate();
                 rendered.setContent("ok");
-                when(messageTemplateEngine.fill(any())).thenReturn(Mono.just(rendered));
+                when(templateEngine.fill(any())).thenReturn(Mono.just(rendered));
                 when(channelManager.chose(any(ChannelType.class), anyString())).thenReturn(Mono.empty());
 
-                Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService,
+                Sender sender = new Sender(templateEngine, channelManager, sendRecordService,
                                 snowflakeIdGenerator);
                 UniTask task = UniTask.builder()
                                 .message(template)
@@ -325,9 +325,9 @@ class SenderTest {
 
         @Test
         void send_writesFailedRecordWhenTemplateFillReturnsNull() {
-                when(messageTemplateEngine.fill(any())).thenReturn(Mono.empty());
+                when(templateEngine.fill(any())).thenReturn(Mono.empty());
 
-                Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService,
+                Sender sender = new Sender(templateEngine, channelManager, sendRecordService,
                                 snowflakeIdGenerator);
                 UniTask task = UniTask.builder()
                                 .message(buildTemplate())
@@ -354,10 +354,10 @@ class SenderTest {
 
         @Test
         void send_writesFailedRecordWhenTemplateFillThrows() {
-                when(messageTemplateEngine.fill(any()))
+                when(templateEngine.fill(any()))
                                 .thenReturn(Mono.error(new RuntimeException("template-engine-error")));
 
-                Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService,
+                Sender sender = new Sender(templateEngine, channelManager, sendRecordService,
                                 snowflakeIdGenerator);
                 UniTask task = UniTask.builder()
                                 .message(buildTemplate())
@@ -386,10 +386,10 @@ class SenderTest {
         void send_writesFailedRecordPerRecipientWhenChannelNotFound() {
                 UniMessage rendered = buildTemplate();
                 rendered.setContent("ok");
-                when(messageTemplateEngine.fill(any())).thenReturn(Mono.just(rendered));
+                when(templateEngine.fill(any())).thenReturn(Mono.just(rendered));
                 when(channelManager.chose(any(ChannelType.class), anyString())).thenReturn(Mono.empty());
 
-                Sender sender = new Sender(messageTemplateEngine, channelManager, sendRecordService,
+                Sender sender = new Sender(templateEngine, channelManager, sendRecordService,
                                 snowflakeIdGenerator);
                 String r1 = "+14155550123";
                 String r2 = "+14155550124";

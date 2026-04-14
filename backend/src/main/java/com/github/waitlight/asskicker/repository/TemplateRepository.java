@@ -15,7 +15,7 @@ import reactor.core.publisher.Mono;
 
 @Repository
 @RequiredArgsConstructor
-public class MessageTemplateRepository {
+public class TemplateRepository {
 
     private final ReactiveMongoTemplate mongoTemplate;
 

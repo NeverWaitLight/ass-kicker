@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MessageTemplateDTO {
+public class TemplateDTO {
 
     @NotBlank(message = "{template.id.notblank}")
     private String id;
