@@ -29,6 +29,12 @@ public class ApiKeyRepository {
         return mongoTemplate.findOne(query, ApiKeyEntity.class);
     }
 
+    public Mono<Void> deleteById(String id) {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("_id").is(id));
+        return mongoTemplate.remove(query, ApiKeyEntity.class).then();
+    }
+
     public Mono<ApiKeyEntity> findByKeyPrefix(String keyPrefix) {
         Query query = new Query();
         query.addCriteria(Criteria.where("key_prefix").is(keyPrefix));

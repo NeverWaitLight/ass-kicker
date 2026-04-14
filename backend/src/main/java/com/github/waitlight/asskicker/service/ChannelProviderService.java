@@ -47,7 +47,7 @@ public class ChannelProviderService {
         int normalizedPage = page <= 0 ? 1 : page;
         int normalizedSize = size <= 0 ? 10 : size;
         int zeroBasedPage = normalizedPage - 1;
-        Mono<Long> totalMono = channelProviderRepository.count();
+        Mono<Long> totalMono = channelProviderRepository.count(null);
         Mono<List<ChannelProviderDTO>> itemsMono =
                 findAll(zeroBasedPage, normalizedSize)
                         .map(channelProviderConverter::toDto)

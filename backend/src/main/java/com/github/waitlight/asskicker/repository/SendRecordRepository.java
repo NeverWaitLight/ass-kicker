@@ -10,6 +10,8 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @Repository
 @RequiredArgsConstructor
 public class SendRecordRepository {
@@ -18,6 +20,13 @@ public class SendRecordRepository {
 
     public Mono<SendRecordEntity> save(SendRecordEntity entity) {
         return mongoTemplate.save(entity);
+    }
+
+    public Mono<Void> saveAll(List<SendRecordEntity> entities) {
+        if (entities == null || entities.isEmpty()) {
+            return Mono.empty();
+        }
+        return Flux.fromIterable(entities).concatMap(mongoTemplate::save).then();
     }
 
     public Mono<SendRecordEntity> findById(String id) {

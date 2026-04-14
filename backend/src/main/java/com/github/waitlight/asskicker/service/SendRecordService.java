@@ -116,7 +116,7 @@ public class SendRecordService implements DisposableBean {
         if (toFlush != null && !toFlush.isEmpty()) {
             sendRecordRepository.saveAll(toFlush)
                     .doOnError(e -> log.error("SEND_RECORD_BATCH_SAVE_FAILED on shutdown size={} error={}", toFlush.size(), e.getMessage()))
-                    .blockLast();
+                    .block();
         }
     }
 
