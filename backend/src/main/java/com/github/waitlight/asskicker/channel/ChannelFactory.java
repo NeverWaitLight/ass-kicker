@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.channel;
 
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
@@ -7,7 +8,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.config.channel.ChannelObjectMapperConfig;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,7 +24,7 @@ public class ChannelFactory {
         this.channelObjectMapper = channelObjectMapper;
     }
 
-    public Channel create(ChannelProviderEntity provider) {
+    public Channel create(ChannelEntity provider) {
         Assert.notNull(provider, "ChannelProviderEntity must not be null");
 
         try {

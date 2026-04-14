@@ -16,7 +16,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Document(collection = "notification_channels")
-public class ChannelProviderEntity {
+public class ChannelEntity {
 
         @Id
         private String id;

@@ -18,7 +18,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
+import com.github.waitlight.asskicker.model.ChannelEntity;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -29,7 +29,7 @@ public class FcmChannel extends Channel {
 
     private final Spec spec;
 
-    public FcmChannel(ChannelProviderEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public FcmChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.spec = FcmSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }

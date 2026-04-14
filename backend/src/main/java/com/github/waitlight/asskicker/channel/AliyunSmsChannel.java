@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -20,7 +21,6 @@ import com.aliyun.teaopenapi.models.Config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -31,7 +31,7 @@ public class AliyunSmsChannel extends Channel {
     private final Spec spec;
     private final Client aliyunClient;
 
-    public AliyunSmsChannel(ChannelProviderEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public AliyunSmsChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.spec = AliyunSmsSpecMapper.INSTANCE.toSpec(provider.getProperties());
         try {

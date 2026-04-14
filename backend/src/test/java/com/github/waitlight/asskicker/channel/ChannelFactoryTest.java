@@ -2,13 +2,13 @@ package com.github.waitlight.asskicker.channel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 
 class ChannelFactoryTest {
 
@@ -36,7 +36,7 @@ class ChannelFactoryTest {
           }
         }
         """;
-    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
     assertThat(factory.create(entity)).isInstanceOf(ApnsChannel.class);
   }
 
@@ -56,7 +56,7 @@ class ChannelFactoryTest {
           }
         }
         """;
-    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
     assertThat(factory.create(entity)).isInstanceOf(FcmChannel.class);
   }
 
@@ -74,7 +74,7 @@ class ChannelFactoryTest {
           }
         }
         """;
-    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
     assertThat(factory.create(entity)).isInstanceOf(DingtalkWebhookChannel.class);
   }
 
@@ -92,7 +92,7 @@ class ChannelFactoryTest {
           }
         }
         """;
-    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
     assertThat(factory.create(entity)).isInstanceOf(WecomWebhookChannel.class);
   }
 
@@ -110,7 +110,7 @@ class ChannelFactoryTest {
           }
         }
         """;
-    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
     assertThat(factory.create(entity)).isInstanceOf(FeishuWebhookChannel.class);
   }
 
@@ -130,7 +130,7 @@ class ChannelFactoryTest {
           }
         }
         """;
-    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
     assertThat(factory.create(entity)).isInstanceOf(DingtalkBotChannel.class);
   }
 
@@ -149,7 +149,7 @@ class ChannelFactoryTest {
           }
         }
         """;
-    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
     assertThat(factory.create(entity)).isInstanceOf(WecomBotChannel.class);
   }
 
@@ -168,7 +168,7 @@ class ChannelFactoryTest {
           }
         }
         """;
-    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
     assertThat(factory.create(entity)).isInstanceOf(FeishuBotChannel.class);
   }
 
@@ -184,7 +184,7 @@ class ChannelFactoryTest {
           "properties": {}
         }
         """;
-    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
     assertThat(factory.create(entity)).isNull();
   }
 
@@ -206,7 +206,7 @@ class ChannelFactoryTest {
           }
         }
         """;
-    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
     assertThat(factory.create(entity)).isInstanceOf(AliyunSmsChannel.class);
   }
 
@@ -226,7 +226,7 @@ class ChannelFactoryTest {
           }
         }
         """;
-    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
     assertThat(factory.create(entity)).isInstanceOf(AwsSnsSmsChannel.class);
   }
 
@@ -248,7 +248,7 @@ class ChannelFactoryTest {
           }
         }
         """;
-    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
     assertThat(factory.create(entity)).isInstanceOf(SmtpChannel.class);
   }
 }

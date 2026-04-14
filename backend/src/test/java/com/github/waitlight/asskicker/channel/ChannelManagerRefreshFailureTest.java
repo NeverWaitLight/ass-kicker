@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,8 +17,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
-import com.github.waitlight.asskicker.service.ChannelProviderService;
+import com.github.waitlight.asskicker.service.ChannelService;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -28,7 +28,7 @@ class ChannelManagerRefreshFailureTest {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Mock
-    private ChannelProviderService channelProviderService;
+    private ChannelService channelService;
 
     @Mock
     private ChannelFactory channelFactory;
@@ -37,7 +37,7 @@ class ChannelManagerRefreshFailureTest {
 
     @BeforeEach
     void setUp() {
-        channelManager = new ChannelManager(channelProviderService, channelFactory);
+        channelManager = new ChannelManager(channelService, channelFactory);
     }
 
     @Test
@@ -51,14 +51,14 @@ class ChannelManagerRefreshFailureTest {
                   "enabled": true
                 }
                 """;
-        ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+        ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
         Channel channel = new NoOpChannel(entity, WebClient.create(),
                 ChannelTestObjectMappers.channelObjectMapper());
         ConcurrentHashMap<String, Channel> map = new ConcurrentHashMap<>();
         map.put("id-1", channel);
         ReflectionTestUtils.setField(channelManager, "cache", map);
 
-        when(channelProviderService.findEnabled()).thenReturn(Flux.error(new RuntimeException("db unavailable")));
+        when(channelService.findEnabled()).thenReturn(Flux.error(new RuntimeException("db unavailable")));
 
         channelManager.refresh();
 
@@ -68,7 +68,7 @@ class ChannelManagerRefreshFailureTest {
     /** Avoids MapStruct-backed channels so this test does not depend on generated mapper classes. */
     private static final class NoOpChannel extends Channel {
 
-        NoOpChannel(ChannelProviderEntity entity, WebClient webClient, ObjectMapper objectMapper) {
+        NoOpChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
             super(entity, webClient, objectMapper);
         }
 

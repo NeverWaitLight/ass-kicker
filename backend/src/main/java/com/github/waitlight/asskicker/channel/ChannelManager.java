@@ -7,9 +7,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.springframework.stereotype.Component;
 
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.service.ChannelProviderService;
+import com.github.waitlight.asskicker.service.ChannelService;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ public class ChannelManager {
     private static final Comparator<Channel> BY_CODE = Comparator
             .comparing(Channel::getCode);
 
-    private final ChannelProviderService channelProviderService;
+    private final ChannelService channelService;
     private final ChannelFactory channelFactory;
 
     private final ConcurrentHashMap<String, Channel> cache = new ConcurrentHashMap<>();
@@ -32,12 +32,12 @@ public class ChannelManager {
 
     @PostConstruct
     void init() {
-        List<ChannelProviderEntity> enabled = channelProviderService.findEnabled().collectList().block();
+        List<ChannelEntity> enabled = channelService.findEnabled().collectList().block();
         if (enabled == null) {
             enabled = List.of();
         }
         int loaded = 0;
-        for (ChannelProviderEntity entity : enabled) {
+        for (ChannelEntity entity : enabled) {
             Channel channel = channelFactory.create(entity);
             if (channel == null) {
                 log.warn("Skip channel {}, channel creation returned null", entity.getCode());
@@ -74,12 +74,12 @@ public class ChannelManager {
         refreshLock.lock();
         try {
             ConcurrentHashMap<String, Channel> next = new ConcurrentHashMap<>();
-            List<ChannelProviderEntity> enabledProvider = channelProviderService.findEnabled().collectList().block();
+            List<ChannelEntity> enabledProvider = channelService.findEnabled().collectList().block();
             if (enabledProvider == null) {
                 enabledProvider = List.of();
             }
 
-            for (ChannelProviderEntity provider : enabledProvider) {
+            for (ChannelEntity provider : enabledProvider) {
                 Channel channel = channelFactory.create(provider);
                 if (channel != null) {
                     next.put(provider.getId(), channel);

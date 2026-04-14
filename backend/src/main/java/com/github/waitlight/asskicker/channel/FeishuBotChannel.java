@@ -18,7 +18,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
+import com.github.waitlight.asskicker.model.ChannelEntity;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -32,7 +32,7 @@ public class FeishuBotChannel extends Channel {
 
     private final Spec spec;
 
-    public FeishuBotChannel(ChannelProviderEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public FeishuBotChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.spec = FeishuBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }

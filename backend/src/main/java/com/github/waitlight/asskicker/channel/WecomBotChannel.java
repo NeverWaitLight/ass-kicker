@@ -20,7 +20,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
+import com.github.waitlight.asskicker.model.ChannelEntity;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -32,7 +32,7 @@ public class WecomBotChannel extends Channel {
 
     private final Spec spec;
 
-    public WecomBotChannel(ChannelProviderEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public WecomBotChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.spec = WecomBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }

@@ -2,7 +2,7 @@ package com.github.waitlight.asskicker.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
+import com.github.waitlight.asskicker.model.ChannelEntity;
 
 import java.io.UncheckedIOException;
 
@@ -10,14 +10,14 @@ import java.io.UncheckedIOException;
  * 文档 {@code docs/message-template-and-channel-provider.md} 中四类渠道的代表性样例，
  * 用于 ChannelProviderService 内存 Mongo 测试。
  */
-public final class ChannelProviderEntityFixtures {
+public final class ChannelEntityFixtures {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private ChannelProviderEntityFixtures() {
+    private ChannelEntityFixtures() {
     }
 
-    public static ChannelProviderEntity smsAliyun() {
+    public static ChannelEntity smsAliyun() {
         return read("""
                 {
                   "name": "阿里云短信",
@@ -42,7 +42,7 @@ public final class ChannelProviderEntityFixtures {
                 """);
     }
 
-    public static ChannelProviderEntity emailSmtp() {
+    public static ChannelEntity emailSmtp() {
         return read("""
                 {
                   "name": "SMTP 邮件",
@@ -70,7 +70,7 @@ public final class ChannelProviderEntityFixtures {
                 """);
     }
 
-    public static ChannelProviderEntity imSlackEnabled() {
+    public static ChannelEntity imSlackEnabled() {
         return read("""
                 {
                   "name": "钉钉 Webhook 渠道",
@@ -92,7 +92,7 @@ public final class ChannelProviderEntityFixtures {
                 """);
     }
 
-    public static ChannelProviderEntity imSlackDisabled() {
+    public static ChannelEntity imSlackDisabled() {
         return read("""
                 {
                   "name": "钉钉 Webhook 停用",
@@ -111,7 +111,7 @@ public final class ChannelProviderEntityFixtures {
                 """);
     }
 
-    public static ChannelProviderEntity pushApnsEnabled() {
+    public static ChannelEntity pushApnsEnabled() {
         return read("""
                 {
                   "name": "苹果推送",
@@ -137,7 +137,7 @@ public final class ChannelProviderEntityFixtures {
                 """);
     }
 
-    public static ChannelProviderEntity pushApnsDisabled() {
+    public static ChannelEntity pushApnsDisabled() {
         return read("""
                 {
                   "name": "苹果推送停用",
@@ -160,9 +160,9 @@ public final class ChannelProviderEntityFixtures {
                 """);
     }
 
-    private static ChannelProviderEntity read(String json) {
+    private static ChannelEntity read(String json) {
         try {
-            return MAPPER.readValue(json, ChannelProviderEntity.class);
+            return MAPPER.readValue(json, ChannelEntity.class);
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }

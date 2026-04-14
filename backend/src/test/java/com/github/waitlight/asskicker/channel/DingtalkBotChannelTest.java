@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.concurrent.TimeUnit;
 
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelProviderType;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -50,7 +50,7 @@ class DingtalkBotChannelTest {
                   }
                 }
                 """, base, base);
-        ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
+        ChannelEntity provider = MAPPER.readValue(providerJson, ChannelEntity.class);
         channel = new DingtalkBotChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
     }
 
@@ -141,7 +141,7 @@ class DingtalkBotChannelTest {
                   }
                 }
                 """;
-        ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
+        ChannelEntity provider = MAPPER.readValue(providerJson, ChannelEntity.class);
         DingtalkBotChannel ch = new DingtalkBotChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
 
         UniMessage message = new UniMessage();

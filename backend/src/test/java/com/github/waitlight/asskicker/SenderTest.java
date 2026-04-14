@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -17,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import com.github.waitlight.asskicker.model.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,14 +33,9 @@ import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
-import com.github.waitlight.asskicker.model.ChannelProviderType;
-import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.model.Language;
 
 import okhttp3.HttpUrl;
-import com.github.waitlight.asskicker.model.SendRecordEntity;
-import com.github.waitlight.asskicker.service.ChannelProviderService;
+import com.github.waitlight.asskicker.service.ChannelService;
 import com.github.waitlight.asskicker.service.SendRecordService;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 
@@ -63,7 +58,7 @@ class SenderTest {
         private SendRecordService sendRecordService;
 
         @Mock
-        private ChannelProviderService channelProviderService;
+        private ChannelService channelService;
 
         @Mock
         private ChannelFactory channelFactory;
@@ -118,19 +113,19 @@ class SenderTest {
                                 .setHeader("Content-Type", "application/json;charset=UTF-8")
                                 .setBody("{\"Code\":\"OK\",\"Message\":\"OK\",\"RequestId\":\"aliyun-msg-1\"}"));
 
-                ChannelProviderEntity usProvider = buildAwsProvider(awsServer.url("/").toString());
-                ChannelProviderEntity cnProvider = buildAliyunProvider(aliyunServer.url("/").toString());
+                ChannelEntity usProvider = buildAwsProvider(awsServer.url("/").toString());
+                ChannelEntity cnProvider = buildAliyunProvider(aliyunServer.url("/").toString());
 
                 AwsSnsSmsChannel usChannel = new AwsSnsSmsChannel(usProvider, WebClient.create(),
                                 OBJECT_MAPPER);
                 AliyunSmsChannel cnChannel = new AliyunSmsChannel(cnProvider, WebClient.create(),
                                 OBJECT_MAPPER);
 
-                when(channelProviderService.findEnabled()).thenReturn(Flux.just(usProvider, cnProvider));
+                when(channelService.findEnabled()).thenReturn(Flux.just(usProvider, cnProvider));
                 when(channelFactory.create(usProvider)).thenReturn(usChannel);
                 when(channelFactory.create(cnProvider)).thenReturn(cnChannel);
 
-                ChannelManager channelManager = new ChannelManager(channelProviderService, channelFactory);
+                ChannelManager channelManager = new ChannelManager(channelService, channelFactory);
                 channelManager.refresh();
 
                 Sender sender = new Sender(templateEngine, channelManager, sendRecordService,
@@ -188,8 +183,8 @@ class SenderTest {
                 return message;
         }
 
-        private static ChannelProviderEntity buildAwsProvider(String endpoint) {
-                ChannelProviderEntity entity = new ChannelProviderEntity();
+        private static ChannelEntity buildAwsProvider(String endpoint) {
+                ChannelEntity entity = new ChannelEntity();
                 entity.setId("a-us-sms-id");
                 entity.setCode("a-us-sms");
                 entity.setChannelType(ChannelType.SMS);
@@ -204,8 +199,8 @@ class SenderTest {
                 return entity;
         }
 
-        private static ChannelProviderEntity buildAliyunProvider(String endpoint) {
-                ChannelProviderEntity entity = new ChannelProviderEntity();
+        private static ChannelEntity buildAliyunProvider(String endpoint) {
+                ChannelEntity entity = new ChannelEntity();
                 entity.setId("z-cn-sms-id");
                 entity.setCode("z-cn-sms");
                 entity.setChannelType(ChannelType.SMS);

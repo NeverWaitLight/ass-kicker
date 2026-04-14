@@ -12,7 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
+import com.github.waitlight.asskicker.model.ChannelEntity;
 
 import jakarta.mail.Authenticator;
 import jakarta.mail.Message;
@@ -28,7 +28,7 @@ public class SmtpChannel extends Channel {
 
     private final Spec spec;
 
-    public SmtpChannel(ChannelProviderEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public SmtpChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.spec = Spec.fromProperties(provider.getProperties());
     }

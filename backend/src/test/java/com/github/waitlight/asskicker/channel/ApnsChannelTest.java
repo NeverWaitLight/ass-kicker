@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProviderType;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
@@ -44,7 +44,7 @@ class ApnsChannelTest {
          *
          * @param mockServerUrl The base URL of the mock server
          */
-        private static ChannelProviderEntity createProvider(String mockServerUrl) throws Exception {
+        private static ChannelEntity createProvider(String mockServerUrl) throws Exception {
                 // Use a valid EC private key for JWT signing (test key, not for production)
                 String testPrivateKey = """
                                 -----BEGIN PRIVATE KEY-----
@@ -72,7 +72,7 @@ class ApnsChannelTest {
                                 }
                                 """, mockServerUrl, testPrivateKey.replace("\n", "\\n"));
 
-                return MAPPER.readValue(providerJson, ChannelProviderEntity.class);
+                return MAPPER.readValue(providerJson, ChannelEntity.class);
         }
 
         @BeforeEach
@@ -81,7 +81,7 @@ class ApnsChannelTest {
                 mockServer.start();
 
                 // Create provider configuration using mock server URL
-                ChannelProviderEntity provider = createProvider(mockServer.getBaseUrl());
+                ChannelEntity provider = createProvider(mockServer.getBaseUrl());
                 channel = new ApnsChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
         }
 

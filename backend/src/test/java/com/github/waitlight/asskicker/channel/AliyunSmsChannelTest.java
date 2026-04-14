@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProviderType;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -53,7 +53,7 @@ class AliyunSmsChannelTest {
                   }
                 }
                 """, base);
-        ChannelProviderEntity provider = MAPPER.readValue(providerJson, ChannelProviderEntity.class);
+        ChannelEntity provider = MAPPER.readValue(providerJson, ChannelEntity.class);
         channel = new AliyunSmsChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
     }
 

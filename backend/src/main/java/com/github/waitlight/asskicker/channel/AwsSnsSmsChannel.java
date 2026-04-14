@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -15,7 +16,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -33,7 +33,7 @@ public class AwsSnsSmsChannel extends Channel {
     private final Spec spec;
     private final SnsAsyncClient snsClient;
 
-    public AwsSnsSmsChannel(ChannelProviderEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public AwsSnsSmsChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.spec = AwsSnsSmsSpecMapper.INSTANCE.toSpec(provider.getProperties());
         this.snsClient = buildSnsClient();

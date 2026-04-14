@@ -8,7 +8,7 @@ import com.github.waitlight.asskicker.model.TemplateEntity;
 
 /**
  * {@link TemplateEntity} 测试用固定样例，风格与
- * {@link ChannelProviderEntityFixtures} 一致；仅使用 {@code localizedTemplates} 等当前字段
+ * {@link ChannelEntityFixtures} 一致；仅使用 {@code localizedTemplates} 等当前字段
  */
 public final class TemplateEntityFixtures {
 

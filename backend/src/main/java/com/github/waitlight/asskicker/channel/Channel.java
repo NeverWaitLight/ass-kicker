@@ -3,6 +3,7 @@ package com.github.waitlight.asskicker.channel;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -10,7 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +30,7 @@ public abstract class Channel {
     protected final WebClient webClient;
     protected final ObjectMapper objectMapper;
 
-    protected Channel(ChannelProviderEntity entity, WebClient webClient, ObjectMapper objectMapper) {
+    protected Channel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
         this.id = entity.getId();
         this.code = entity.getCode();
         this.channelType = entity.getChannelType();

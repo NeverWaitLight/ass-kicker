@@ -2,7 +2,7 @@ package com.github.waitlight.asskicker.service;
 
 import com.github.waitlight.asskicker.AssKickerTestApplication;
 import com.github.waitlight.asskicker.config.MongoTestConfiguration;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,10 +34,10 @@ import static org.assertj.core.api.Assertions.assertThat;
         "de.flapdoodle.mongodb.embedded.version=7.0.14"
 })
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class ChannelProviderServiceTest {
+class ChannelServiceTest {
 
     @Autowired
-    private ChannelProviderService channelProviderService;
+    private ChannelService channelService;
 
     @Autowired
     private ReactiveMongoTemplate mongoTemplate;
@@ -59,17 +59,17 @@ class ChannelProviderServiceTest {
      * 使用 ReactiveMongoTemplate 直接删除整个集合中的所有文档。
      */
     private void clearAllData() {
-        mongoTemplate.remove(new org.springframework.data.mongodb.core.query.Query(), ChannelProviderEntity.class)
+        mongoTemplate.remove(new org.springframework.data.mongodb.core.query.Query(), ChannelEntity.class)
                 .block(Duration.ofSeconds(5));
     }
 
     @Test
     @Order(1)
     void create_smsAliyun_findByKey_returnsFullConfig() {
-        ChannelProviderEntity input = ChannelProviderEntityFixtures.smsAliyun();
+        ChannelEntity input = ChannelEntityFixtures.smsAliyun();
 
-        StepVerifier.create(channelProviderService.create(input)
-                .flatMap(saved -> channelProviderService.findByKey(saved.getCode())))
+        StepVerifier.create(channelService.create(input)
+                .flatMap(saved -> channelService.findByKey(saved.getCode())))
                 .assertNext(found -> {
                     assertThat(found.getId()).isNotBlank();
                     assertThat(found.getCreatedAt()).isNotNull();
@@ -82,20 +82,20 @@ class ChannelProviderServiceTest {
     @Test
     @Order(2)
     void findByType_email_onlyReturnsEmailChannels() {
-        ChannelProviderEntity sms = ChannelProviderEntityFixtures.smsAliyun();
-        ChannelProviderEntity email = ChannelProviderEntityFixtures.emailSmtp();
-        ChannelProviderEntity im = ChannelProviderEntityFixtures.imSlackEnabled();
-        ChannelProviderEntity push = ChannelProviderEntityFixtures.pushApnsEnabled();
+        ChannelEntity sms = ChannelEntityFixtures.smsAliyun();
+        ChannelEntity email = ChannelEntityFixtures.emailSmtp();
+        ChannelEntity im = ChannelEntityFixtures.imSlackEnabled();
+        ChannelEntity push = ChannelEntityFixtures.pushApnsEnabled();
 
         StepVerifier.create(Flux.concat(
-                channelProviderService.create(sms),
-                channelProviderService.create(email),
-                channelProviderService.create(im),
-                channelProviderService.create(push))
-                .then(channelProviderService.findByType(ChannelType.EMAIL).collectList()))
+                channelService.create(sms),
+                channelService.create(email),
+                channelService.create(im),
+                channelService.create(push))
+                .then(channelService.findByType(ChannelType.EMAIL).collectList()))
                 .assertNext(list -> {
                     assertThat(list).hasSize(1);
-                    ChannelProviderEntity e = list.get(0);
+                    ChannelEntity e = list.get(0);
                     assertThat(e.getChannelType()).isEqualTo(ChannelType.EMAIL);
                     assertThat(e.getCode()).isEqualTo(email.getCode());
                     assertChannelContentEqual(email, e);
@@ -106,16 +106,16 @@ class ChannelProviderServiceTest {
     @Test
     @Order(3)
     void findEnabledByType_im_onlyReturnsEnabledImChannels() {
-        ChannelProviderEntity on = ChannelProviderEntityFixtures.imSlackEnabled();
-        ChannelProviderEntity off = ChannelProviderEntityFixtures.imSlackDisabled();
+        ChannelEntity on = ChannelEntityFixtures.imSlackEnabled();
+        ChannelEntity off = ChannelEntityFixtures.imSlackDisabled();
 
         StepVerifier.create(Flux.concat(
-                channelProviderService.create(on),
-                channelProviderService.create(off))
-                .then(channelProviderService.findEnabledByType(ChannelType.IM).collectList()))
+                channelService.create(on),
+                channelService.create(off))
+                .then(channelService.findEnabledByType(ChannelType.IM).collectList()))
                 .assertNext(list -> {
                     assertThat(list).hasSize(1);
-                    ChannelProviderEntity e = list.get(0);
+                    ChannelEntity e = list.get(0);
                     assertThat(e.getCode()).isEqualTo(on.getCode());
                     assertThat(e.isEnabled()).isTrue();
                     assertChannelContentEqual(on, e);
@@ -126,16 +126,16 @@ class ChannelProviderServiceTest {
     @Test
     @Order(4)
     void findEnabledByType_push_excludesDisabled() {
-        ChannelProviderEntity on = ChannelProviderEntityFixtures.pushApnsEnabled();
-        ChannelProviderEntity off = ChannelProviderEntityFixtures.pushApnsDisabled();
+        ChannelEntity on = ChannelEntityFixtures.pushApnsEnabled();
+        ChannelEntity off = ChannelEntityFixtures.pushApnsDisabled();
 
         StepVerifier.create(Flux.concat(
-                channelProviderService.create(on),
-                channelProviderService.create(off))
-                .then(channelProviderService.findEnabledByType(ChannelType.PUSH).collectList()))
+                channelService.create(on),
+                channelService.create(off))
+                .then(channelService.findEnabledByType(ChannelType.PUSH).collectList()))
                 .assertNext(list -> {
                     assertThat(list).hasSize(1);
-                    ChannelProviderEntity e = list.get(0);
+                    ChannelEntity e = list.get(0);
                     assertThat(e.getCode()).isEqualTo(on.getCode());
                     assertThat(e.isEnabled()).isTrue();
                     assertChannelContentEqual(on, e);
@@ -143,7 +143,7 @@ class ChannelProviderServiceTest {
                 .verifyComplete();
     }
 
-    private static void assertChannelContentEqual(ChannelProviderEntity expected, ChannelProviderEntity actual) {
+    private static void assertChannelContentEqual(ChannelEntity expected, ChannelEntity actual) {
         assertThat(actual.getCode()).isEqualTo(expected.getCode());
         assertThat(actual.getName()).isEqualTo(expected.getName());
         assertThat(actual.getChannelType()).isEqualTo(expected.getChannelType());

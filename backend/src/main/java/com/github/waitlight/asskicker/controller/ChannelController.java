@@ -5,7 +5,7 @@ import com.github.waitlight.asskicker.converter.ChannelProviderConverter;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.channel.ChannelProviderDTO;
-import com.github.waitlight.asskicker.service.ChannelProviderService;
+import com.github.waitlight.asskicker.service.ChannelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,9 +33,9 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/v1/channel-providers")
 @RequiredArgsConstructor
-public class ChannelProviderController {
+public class ChannelController {
 
-    private final ChannelProviderService channelProviderService;
+    private final ChannelService channelService;
     private final ChannelProviderConverter channelProviderConverter;
     private final Validator validator;
 
@@ -45,7 +45,7 @@ public class ChannelProviderController {
     public Mono<Resp<ChannelProviderDTO>> create(@RequestBody ChannelProviderDTO request) {
         return validateDto(request)
                 .map(channelProviderConverter::toEntity)
-                .flatMap(channelProviderService::create)
+                .flatMap(channelService::create)
                 .map(channelProviderConverter::toDto)
                 .map(Resp::success)
                 .onErrorResume(ResponseStatusException.class, ex -> Mono.just(
@@ -58,7 +58,7 @@ public class ChannelProviderController {
     public Mono<PageResp<ChannelProviderDTO>> page(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return channelProviderService.page(page, size)
+        return channelService.page(page, size)
                 .map(pr -> PageResp.success(pr.page(), pr.size(), pr.total(), pr.data()))
                 .onErrorResume(ResponseStatusException.class, ex -> Mono.just(
                         PageResp.error(String.valueOf(ex.getStatusCode().value()),
@@ -68,7 +68,7 @@ public class ChannelProviderController {
     @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
     public Mono<Resp<ChannelProviderDTO>> getById(@PathVariable String id) {
-        return channelProviderService.findById(id)
+        return channelService.findById(id)
                 .map(channelProviderConverter::toDto)
                 .map(Resp::success)
                 .switchIfEmpty(Mono.defer(() -> Mono.just(Resp.error(String.valueOf(HttpStatus.NOT_FOUND.value()), "未找到通道商"))))
@@ -82,7 +82,7 @@ public class ChannelProviderController {
     public Mono<Resp<ChannelProviderDTO>> update(@RequestBody ChannelProviderDTO request) {
         return validateDto(request)
                 .map(channelProviderConverter::toEntity)
-                .flatMap(patch -> channelProviderService.update(request.getId(), patch))
+                .flatMap(patch -> channelService.update(request.getId(), patch))
                 .map(channelProviderConverter::toDto)
                 .map(Resp::success)
                 .switchIfEmpty(Mono.defer(() -> Mono.just(Resp.error(String.valueOf(HttpStatus.NOT_FOUND.value()), "未找到要更新的通道商"))))
@@ -95,7 +95,7 @@ public class ChannelProviderController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> delete(@PathVariable String id) {
-        return channelProviderService.delete(id)
+        return channelService.delete(id)
                 .onErrorResume(ResponseStatusException.class, ex -> {
                     // 如果删除失败，抛出异常
                     return Mono.error(new ResponseStatusException(

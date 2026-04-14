@@ -2,6 +2,7 @@ package com.github.waitlight.asskicker.channel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,9 +11,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.AssKickerTestApplication;
 import com.github.waitlight.asskicker.config.MongoTestConfiguration;
-import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.repository.ChannelProviderRepository;
+import com.github.waitlight.asskicker.repository.ChannelRepository;
 import com.github.waitlight.asskicker.util.SoftDeleteConstants;
 
 import reactor.core.publisher.Flux;
@@ -47,7 +47,7 @@ class ChannelManagerTest {
       """;
 
   @Autowired
-  private ChannelProviderRepository channelProviderRepository;
+  private ChannelRepository channelRepository;
 
   @Autowired
   private ChannelManager channelManager;
@@ -55,13 +55,13 @@ class ChannelManagerTest {
   /**
    * 设置实体的软删除标记为 NOT_DELETED，确保查询能正确匹配
    */
-  private static void setNotDeleted(ChannelProviderEntity entity) {
+  private static void setNotDeleted(ChannelEntity entity) {
     entity.setDeletedAt(SoftDeleteConstants.NOT_DELETED);
   }
 
   @BeforeEach
   void clearProviders() {
-    StepVerifier.create(channelProviderRepository.deleteAll()).verifyComplete();
+    StepVerifier.create(channelRepository.deleteAll()).verifyComplete();
     channelManager.refresh();
   }
 
@@ -79,16 +79,16 @@ class ChannelManagerTest {
           %s
         }
         """, APNS_PROPS);
-    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
     setNotDeleted(entity);
-    StepVerifier.create(channelProviderRepository.save(entity))
+    StepVerifier.create(channelRepository.save(entity))
         .assertNext(saved -> assertThat(saved.getId()).isNotBlank())
         .verifyComplete();
 
     channelManager.refresh();
     assertThat(channelManager.getChannelCount()).isEqualTo(1);
     assertThat(channelManager.getAllChannels()).hasSize(1);
-    StepVerifier.create(channelProviderRepository.findAll().collectList())
+    StepVerifier.create(channelRepository.findAll().collectList())
         .assertNext(list -> {
           String id = list.get(0).getId();
           assertThat(channelManager.getChannelById(id))
@@ -136,14 +136,14 @@ class ChannelManagerTest {
         }
         """, common, APNS_PROPS);
 
-    ChannelProviderEntity e1 = MAPPER.readValue(lowPriority, ChannelProviderEntity.class);
-    ChannelProviderEntity e2 = MAPPER.readValue(highPriority, ChannelProviderEntity.class);
-    ChannelProviderEntity e3 = MAPPER.readValue(excluded, ChannelProviderEntity.class);
+    ChannelEntity e1 = MAPPER.readValue(lowPriority, ChannelEntity.class);
+    ChannelEntity e2 = MAPPER.readValue(highPriority, ChannelEntity.class);
+    ChannelEntity e3 = MAPPER.readValue(excluded, ChannelEntity.class);
     setNotDeleted(e1);
     setNotDeleted(e2);
     setNotDeleted(e3);
 
-    StepVerifier.create(channelProviderRepository.saveAll(Flux.just(e1, e2, e3)).then())
+    StepVerifier.create(channelRepository.saveAll(Flux.just(e1, e2, e3)).then())
         .verifyComplete();
 
     channelManager.refresh();
@@ -185,11 +185,11 @@ class ChannelManagerTest {
         }
         """, FCM_PROPS);
 
-    ChannelProviderEntity e1 = MAPPER.readValue(both, ChannelProviderEntity.class);
-    ChannelProviderEntity e2 = MAPPER.readValue(fallback, ChannelProviderEntity.class);
+    ChannelEntity e1 = MAPPER.readValue(both, ChannelEntity.class);
+    ChannelEntity e2 = MAPPER.readValue(fallback, ChannelEntity.class);
     setNotDeleted(e1);
     setNotDeleted(e2);
-    StepVerifier.create(channelProviderRepository.saveAll(Flux.just(e1, e2)).then())
+    StepVerifier.create(channelRepository.saveAll(Flux.just(e1, e2)).then())
         .verifyComplete();
     channelManager.refresh();
 
@@ -228,11 +228,11 @@ class ChannelManagerTest {
         }
         """, FCM_PROPS);
 
-    ChannelProviderEntity e1 = MAPPER.readValue(priorityOnly, ChannelProviderEntity.class);
-    ChannelProviderEntity e2 = MAPPER.readValue(excludeOnly, ChannelProviderEntity.class);
+    ChannelEntity e1 = MAPPER.readValue(priorityOnly, ChannelEntity.class);
+    ChannelEntity e2 = MAPPER.readValue(excludeOnly, ChannelEntity.class);
     setNotDeleted(e1);
     setNotDeleted(e2);
-    StepVerifier.create(channelProviderRepository.saveAll(Flux.just(e1, e2)).then())
+    StepVerifier.create(channelRepository.saveAll(Flux.just(e1, e2)).then())
         .verifyComplete();
     channelManager.refresh();
 
@@ -261,9 +261,9 @@ class ChannelManagerTest {
           %s
         }
         """, APNS_PROPS);
-    ChannelProviderEntity entity = MAPPER.readValue(json, ChannelProviderEntity.class);
+    ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
     setNotDeleted(entity);
-    StepVerifier.create(channelProviderRepository.save(entity))
+    StepVerifier.create(channelRepository.save(entity))
         .assertNext(saved -> assertThat(saved.getCode()).isEqualTo("solo-exclude"))
         .verifyComplete();
     channelManager.refresh();
