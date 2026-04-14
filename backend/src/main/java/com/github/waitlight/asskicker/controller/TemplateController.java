@@ -33,7 +33,7 @@ import reactor.core.publisher.Mono;
 
 @Tag(name = "TemplateController")
 @RestController
-@RequestMapping("/v1/message-templates")
+@RequestMapping("/v1/templates")
 @RequiredArgsConstructor
 @Validated
 @PreAuthorize("hasRole('ADMIN')")

@@ -14,13 +14,13 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Document(collection = "message_template")
+@Document(collection = "template")
 public class TemplateEntity {
 
         @Id
         private String id;
 
-        @Indexed(name = "uk_message_template_code", unique = true)
+        @Indexed(name = "uk_template_code", unique = true)
         private String code;
 
         private ChannelType channelType;
