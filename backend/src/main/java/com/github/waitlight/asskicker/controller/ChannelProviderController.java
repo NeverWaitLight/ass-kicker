@@ -78,13 +78,11 @@ public class ChannelProviderController {
     }
 
     @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-    @PutMapping("/{id}")
-    public Mono<Resp<ChannelProviderDTO>> update(
-            @PathVariable String id,
-            @RequestBody ChannelProviderDTO request) {
+    @PutMapping
+    public Mono<Resp<ChannelProviderDTO>> update(@RequestBody ChannelProviderDTO request) {
         return validateDto(request)
                 .map(channelProviderConverter::toEntity)
-                .flatMap(patch -> channelProviderService.update(id, patch))
+                .flatMap(patch -> channelProviderService.update(request.getId(), patch))
                 .map(channelProviderConverter::toDto)
                 .map(Resp::success)
                 .switchIfEmpty(Mono.defer(() -> Mono.just(Resp.error(String.valueOf(HttpStatus.NOT_FOUND.value()), "未找到要更新的通道商"))))

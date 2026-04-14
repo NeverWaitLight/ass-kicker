@@ -200,3 +200,57 @@ public class ApiKeyController {
     }
 }
 ```
+
+## Update 接口规范
+
+### 参数传递规则
+
+**所有 update 语义的接口（PUT/PATCH）必须使用 RequestBody 传参，禁止使用 URL 路径参数（@PathVariable）传递业务数据。**
+
+- `id` 等标识字段必须包含在 DTO 中，通过 `@RequestBody` 传递
+- DTO 中的 `id` 字段必须添加 `@NotBlank` 校验注解
+- URL 仅用于资源定位，不传递业务参数
+
+```java
+// ✅ 正确 - id 通过 body 传递
+@PutMapping
+public Mono<Resp<TemplateDTO>> update(@RequestBody @Validated TemplateDTO request) {
+    return templateService.update(request.getId(), request);
+}
+
+// ❌ 错误 - id 通过 URL 传递
+@PutMapping("/{id}")
+public Mono<Resp<TemplateDTO>> update(
+        @PathVariable String id,
+        @RequestBody @Validated TemplateDTO request) {
+    return templateService.update(id, request);
+}
+```
+
+### DTO 设计规范
+
+update 操作的 DTO 忺须包含 `id` 字段：
+
+```java
+public record UpdateApiKeyDTO(
+        @NotBlank(message = "{apikey.id.notblank}")
+        String id,
+        @NotBlank(message = "{apikey.name.notblank}")
+        @Size(max = 100, message = "{apikey.name.size}")
+        String name
+) {
+}
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class TemplateDTO {
+    @NotBlank(message = "{template.id.notblank}")
+    private String id;
+
+    @NotBlank(message = "{template.code.notblank}")
+    private String code;
+
+    // 其他字段...
+}
+```

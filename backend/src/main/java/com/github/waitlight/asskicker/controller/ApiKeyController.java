@@ -63,12 +63,11 @@ public class ApiKeyController {
     }
 
     @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-    @PatchMapping("/{id}")
+    @PatchMapping
     public Mono<Resp<ApiKeyVO>> update(
             @AuthenticationPrincipal UserPrincipal principal,
-            @PathVariable @NotBlank String id,
             @RequestBody @Validated UpdateApiKeyDTO req) {
-        return apiKeyService.update(principal.userId(), id, req.name().trim())
+        return apiKeyService.update(principal.userId(), req.id(), req.name().trim())
                 .map(apiKeyConverter::toVO)
                 .map(Resp::success);
     }

@@ -52,12 +52,10 @@ public class MessageTemplateController {
     }
 
     @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-    @PutMapping("/{id}")
-    public Mono<Resp<MessageTemplateDTO>> update(
-            @PathVariable @NotBlank String id,
-            @RequestBody @Validated MessageTemplateDTO request) {
+    @PutMapping
+    public Mono<Resp<MessageTemplateDTO>> update(@RequestBody @Validated MessageTemplateDTO request) {
         TemplateEntity entity = messageTemplateConverter.toEntity(request);
-        return messageTemplateService.update(id, entity)
+        return messageTemplateService.update(request.getId(), entity)
                 .map(messageTemplateConverter::toDto)
                 .map(Resp::success);
     }

@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class MessageTemplateDTO {
 
+    @NotBlank(message = "{template.id.notblank}")
     private String id;
 
     @NotBlank(message = "Message template code is required")
