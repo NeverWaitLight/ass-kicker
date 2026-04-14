@@ -19,16 +19,16 @@ public class ChannelPropertiesMapper {
 
     private final ObjectMapper objectMapper;
 
-    @Named("channelProviderPropertiesToJson")
-    public JsonNode channelProviderPropertiesToJson(Map<String, String> properties) {
+    @Named("channelPropertiesToJson")
+    public JsonNode channelPropertiesToJson(Map<String, String> properties) {
         if (properties == null || properties.isEmpty()) {
             return JsonNodeFactory.instance.objectNode();
         }
         return objectMapper.valueToTree(properties);
     }
 
-    @Named("channelProviderJsonToProperties")
-    public Map<String, String> channelProviderJsonToProperties(JsonNode node) {
+    @Named("channelJsonToProperties")
+    public Map<String, String> channelJsonToProperties(JsonNode node) {
         if (node == null || node.isNull() || !node.isObject()) {
             return new HashMap<>();
         }
