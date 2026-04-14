@@ -15,13 +15,13 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Document(collection = "notification_channels")
+@Document(collection = "channels")
 public class ChannelEntity {
 
         @Id
         private String id;
 
-        @Indexed(name = "uk_notification_channels_code", unique = true)
+        @Indexed(name = "uk_channels_code", unique = true)
         private String code;
 
         private String name;

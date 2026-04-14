@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 @Tag(name = "ChannelProviderController")
 @RestController
-@RequestMapping("/v1/channel-providers")
+@RequestMapping("/v1/channels")
 @RequiredArgsConstructor
 public class ChannelController {
 
