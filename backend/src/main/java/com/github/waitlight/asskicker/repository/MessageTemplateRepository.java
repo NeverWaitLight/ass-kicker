@@ -61,6 +61,10 @@ public class MessageTemplateRepository {
         return mongoTemplate.find(query, MessageTemplateEntity.class);
     }
 
+    public Mono<Void> deleteAll() {
+        return mongoTemplate.remove(new Query(), MessageTemplateEntity.class).then();
+    }
+
     public Mono<Long> count(String keyword) {
         Query query = buildKeywordQuery(keyword);
         return mongoTemplate.count(query, MessageTemplateEntity.class);

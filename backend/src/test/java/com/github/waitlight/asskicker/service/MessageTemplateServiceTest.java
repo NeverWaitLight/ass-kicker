@@ -11,8 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
+import com.github.waitlight.asskicker.exception.ConflictException;
+import com.github.waitlight.asskicker.exception.NotFoundException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -65,9 +65,11 @@ class MessageTemplateServiceTest {
         }
 
         @Test
-        void findById_unknownId_completesEmpty() {
+        void findById_unknownId_throwsNotFoundException() {
                 StepVerifier.create(messageTemplateService.findById("507f1f77bcf86cd799439011"))
-                                .verifyComplete();
+                                .expectErrorSatisfies(ex -> assertThat(ex)
+                                                .isInstanceOf(NotFoundException.class))
+                                .verify();
         }
 
         @Test
@@ -98,9 +100,7 @@ class MessageTemplateServiceTest {
                 StepVerifier.create(messageTemplateService.create(first)
                                 .then(messageTemplateService.create(second)))
                                 .expectErrorSatisfies(ex -> assertThat(ex)
-                                                .isInstanceOf(ResponseStatusException.class)
-                                                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
-                                                .isEqualTo(HttpStatus.CONFLICT))
+                                                .isInstanceOf(ConflictException.class))
                                 .verify();
         }
 
@@ -113,9 +113,7 @@ class MessageTemplateServiceTest {
                 StepVerifier.create(messageTemplateService.create(sms)
                                 .then(messageTemplateService.create(sameCodeEmail)))
                                 .expectErrorSatisfies(ex -> assertThat(ex)
-                                                .isInstanceOf(ResponseStatusException.class)
-                                                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
-                                                .isEqualTo(HttpStatus.CONFLICT))
+                                                .isInstanceOf(ConflictException.class))
                                 .verify();
         }
 
@@ -181,9 +179,7 @@ class MessageTemplateServiceTest {
                                                         return messageTemplateService.update(w.getId(), patch);
                                                 })))
                                 .expectErrorSatisfies(ex -> assertThat(ex)
-                                                .isInstanceOf(ResponseStatusException.class)
-                                                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
-                                                .isEqualTo(HttpStatus.CONFLICT))
+                                                .isInstanceOf(ConflictException.class))
                                 .verify();
         }
 
@@ -193,23 +189,24 @@ class MessageTemplateServiceTest {
 
                 StepVerifier.create(messageTemplateService.create(email)
                                 .flatMap(saved -> messageTemplateService.delete(saved.getId())
-                                                .then(messageTemplateService.findById(saved.getId()))))
+                                                // 直接通过 repository 验证数据库中的文档已被删除
+                                                .then(messageTemplateRepository.findById(saved.getId()))))
                                 .verifyComplete();
         }
 
         @Test
-        void findAll_invalidPageOrSize_returnsEmpty() {
-                StepVerifier.create(messageTemplateService.findAll(-1, 10).collectList())
+        void list_invalidLimitOrOffset_returnsEmpty() {
+                StepVerifier.create(messageTemplateService.list(null, 10, -1).collectList())
                                 .assertNext(list -> assertThat(list).isEmpty())
                                 .verifyComplete();
 
-                StepVerifier.create(messageTemplateService.findAll(0, 0).collectList())
+                StepVerifier.create(messageTemplateService.list(null, 0, 0).collectList())
                                 .assertNext(list -> assertThat(list).isEmpty())
                                 .verifyComplete();
         }
 
         @Test
-        void findAll_pagination_returnsExpectedCounts() {
+        void list_pagination_returnsExpectedCounts() {
                 MessageTemplateEntity a = MessageTemplateEntityFixtures.smsCaptcha();
                 MessageTemplateEntity b = MessageTemplateEntityFixtures.imOpsAlert();
                 MessageTemplateEntity c = MessageTemplateEntityFixtures.pushNewMessage();
@@ -218,8 +215,8 @@ class MessageTemplateServiceTest {
                                 .then(messageTemplateService.create(b))
                                 .then(messageTemplateService.create(c))
                                 .thenMany(Flux.zip(
-                                                messageTemplateService.findAll(0, 2).collectList(),
-                                                messageTemplateService.findAll(1, 2).collectList())))
+                                                messageTemplateService.list(null, 2, 0).collectList(),
+                                                messageTemplateService.list(null, 2, 2).collectList())))
                                 .assertNext(tuple -> {
                                         assertThat(tuple.getT1()).hasSize(2);
                                         assertThat(tuple.getT2()).hasSize(1);

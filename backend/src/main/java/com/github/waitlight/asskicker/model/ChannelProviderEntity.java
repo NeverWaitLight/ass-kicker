@@ -6,6 +6,7 @@ import java.util.Map;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,7 +26,9 @@ public class ChannelProviderEntity {
 
         private String name;
 
+        @Field("channel_type")
         private ChannelType channelType;
+        @Field("provider_type")
         private ChannelProviderType providerType;
 
         private String description;
@@ -49,4 +52,7 @@ public class ChannelProviderEntity {
 
         private Long createdAt;
         private Long updatedAt;
+
+        @Field("deleted_at")
+        private Long deletedAt = 0L;
 }

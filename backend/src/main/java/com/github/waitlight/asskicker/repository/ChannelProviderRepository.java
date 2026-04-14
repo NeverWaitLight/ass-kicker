@@ -72,6 +72,16 @@ public class ChannelProviderRepository {
         return mongoTemplate.remove(query, ChannelProviderEntity.class).then();
     }
 
+    public Mono<Void> deleteAll() {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("deleted_at").is(SoftDeleteConstants.NOT_DELETED));
+        return mongoTemplate.remove(query, ChannelProviderEntity.class).then();
+    }
+
+    public Flux<ChannelProviderEntity> saveAll(Flux<ChannelProviderEntity> entities) {
+        return entities.flatMap(mongoTemplate::save);
+    }
+
     public Flux<ChannelProviderEntity> list(String keyword, int limit, int offset) {
         Query query = buildKeywordQuery(keyword);
         query.with(Sort.by(Sort.Direction.DESC, "_id"));

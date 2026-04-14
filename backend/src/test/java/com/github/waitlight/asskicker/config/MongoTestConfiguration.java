@@ -5,6 +5,8 @@ import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.converter.ChannelProviderConverterImpl;
 import com.github.waitlight.asskicker.converter.ChannelProviderPropertiesMapper;
 import com.github.waitlight.asskicker.converter.MessageTemplateConverterImpl;
+import com.github.waitlight.asskicker.repository.ChannelProviderRepository;
+import com.github.waitlight.asskicker.repository.MessageTemplateRepository;
 import com.github.waitlight.asskicker.repository.UserRepository;
 import com.github.waitlight.asskicker.service.ChannelProviderService;
 import com.github.waitlight.asskicker.service.MessageTemplateService;
@@ -27,10 +29,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
         MongoJsonNodeConfig.class,
         ChannelProviderPropertiesMapper.class,
         ChannelProviderConverterImpl.class,
+        ChannelProviderRepository.class,
         ChannelProviderService.class,
         ChannelFactory.class,
         ChannelManager.class,
         MessageTemplateConverterImpl.class,
+        MessageTemplateRepository.class,
         MessageTemplateService.class,
         UserRepository.class,
         UserService.class,

@@ -1,18 +1,23 @@
 package com.github.waitlight.asskicker.service;
 
+import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.waitlight.asskicker.config.cache.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.exception.PermissionDeniedException;
 import com.github.waitlight.asskicker.model.ApiKeyEntity;
 import com.github.waitlight.asskicker.repository.ApiKeyRepository;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -32,8 +37,22 @@ class ApiKeyServiceTest {
     @Mock
     private SnowflakeIdGenerator snowflakeIdGenerator;
 
-    @InjectMocks
+    @Mock
+    private CaffeineCacheConfig caffeineCacheConfig;
+
     private ApiKeyService apiKeyService;
+
+    @BeforeEach
+    void setUp() {
+        // 创建一个简单的 mock cache，避免 NPE
+        AsyncLoadingCache<String, Object> mockCache = Caffeine.newBuilder()
+                .buildAsync((key, executor) -> CompletableFuture.completedFuture(null));
+
+        when(caffeineCacheConfig.buildCache(any())).thenAnswer(invocation -> mockCache);
+
+        apiKeyService = new ApiKeyService(apiKeyRepository, passwordEncoder, snowflakeIdGenerator, caffeineCacheConfig);
+        apiKeyService.init();
+    }
 
     @Test
     void delete_fails_when_api_key_not_found() {

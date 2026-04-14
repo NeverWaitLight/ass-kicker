@@ -4,16 +4,28 @@ import com.github.waitlight.asskicker.AssKickerTestApplication;
 import com.github.waitlight.asskicker.config.MongoTestConfiguration;
 import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.repository.ChannelProviderRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
+import java.time.Duration;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * ChannelProvider 服务层集成测试。
+ *
+ * 使用 {@link TestMethodOrder} 和 {@link Order} 确保测试按顺序执行，
+ * 防止在共享数据库环境下测试之间的数据竞争。
+ */
 @SpringBootTest(classes = {
         AssKickerTestApplication.class,
         MongoTestConfiguration.class
@@ -21,20 +33,38 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.main.web-application-type=none",
         "de.flapdoodle.mongodb.embedded.version=7.0.14"
 })
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ChannelProviderServiceTest {
 
     @Autowired
     private ChannelProviderService channelProviderService;
 
     @Autowired
-    private ChannelProviderRepository channelProviderRepository;
+    private ReactiveMongoTemplate mongoTemplate;
 
     @BeforeEach
-    void clearProviders() {
-        StepVerifier.create(channelProviderRepository.deleteAll()).verifyComplete();
+    void setUp() {
+        // 在每个测试开始前清除所有数据（不依赖软删除条件）
+        clearAllData();
+    }
+
+    @AfterEach
+    void tearDown() {
+        // 在每个测试结束后也清除数据，确保不污染后续测试
+        clearAllData();
+    }
+
+    /**
+     * 清除集合中的所有数据，不依赖软删除条件。
+     * 使用 ReactiveMongoTemplate 直接删除整个集合中的所有文档。
+     */
+    private void clearAllData() {
+        mongoTemplate.remove(new org.springframework.data.mongodb.core.query.Query(), ChannelProviderEntity.class)
+                .block(Duration.ofSeconds(5));
     }
 
     @Test
+    @Order(1)
     void create_smsAliyun_findByKey_returnsFullConfig() {
         ChannelProviderEntity input = ChannelProviderEntityFixtures.smsAliyun();
 
@@ -50,6 +80,7 @@ class ChannelProviderServiceTest {
     }
 
     @Test
+    @Order(2)
     void findByType_email_onlyReturnsEmailChannels() {
         ChannelProviderEntity sms = ChannelProviderEntityFixtures.smsAliyun();
         ChannelProviderEntity email = ChannelProviderEntityFixtures.emailSmtp();
@@ -73,6 +104,7 @@ class ChannelProviderServiceTest {
     }
 
     @Test
+    @Order(3)
     void findEnabledByType_im_onlyReturnsEnabledImChannels() {
         ChannelProviderEntity on = ChannelProviderEntityFixtures.imSlackEnabled();
         ChannelProviderEntity off = ChannelProviderEntityFixtures.imSlackDisabled();
@@ -92,6 +124,7 @@ class ChannelProviderServiceTest {
     }
 
     @Test
+    @Order(4)
     void findEnabledByType_push_excludesDisabled() {
         ChannelProviderEntity on = ChannelProviderEntityFixtures.pushApnsEnabled();
         ChannelProviderEntity off = ChannelProviderEntityFixtures.pushApnsDisabled();

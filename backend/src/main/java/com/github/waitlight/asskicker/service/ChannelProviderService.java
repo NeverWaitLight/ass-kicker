@@ -7,6 +7,7 @@ import com.github.waitlight.asskicker.model.ChannelProviderEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.repository.ChannelProviderRepository;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
+import com.github.waitlight.asskicker.util.SoftDeleteConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -79,6 +80,7 @@ public class ChannelProviderService {
         toCreate.setId(snowflakeIdGenerator.nextIdString());
         toCreate.setCreatedAt(now);
         toCreate.setUpdatedAt(now);
+        toCreate.setDeletedAt(SoftDeleteConstants.NOT_DELETED);
         return ensureUniqueKey(toCreate.getCode(), null)
                 .then(Mono.defer(() -> channelProviderRepository.save(toCreate)));
     }
