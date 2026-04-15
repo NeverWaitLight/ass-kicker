@@ -3,19 +3,23 @@ package com.github.waitlight.asskicker.dto.channel;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.github.waitlight.asskicker.model.ChannelType;
+import com.github.waitlight.asskicker.model.ProviderType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Channel 创建 DTO，专门用于 ChannelController create 方法
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ChannelDTO {
-
-    private String id;
+@Builder
+public class CreateChannelDTO {
 
     @NotBlank(message = "{channel.key.notblank}")
     @Size(max = 100, message = "{channel.key.size}")
@@ -28,9 +32,8 @@ public class ChannelDTO {
     @NotNull(message = "{channel.type.notnull}")
     private ChannelType type;
 
-    @NotBlank(message = "{channel.provider.notblank}")
-    @Size(max = 100, message = "{channel.provider.size}")
-    private String provider;
+    @NotNull(message = "{channel.provider.notnull}")
+    private ProviderType provider;
 
     @Size(max = 1000, message = "{channel.description.size}")
     private String description;
@@ -41,12 +44,9 @@ public class ChannelDTO {
     @Size(max = 2048, message = "{channel.excludeAddressRegex.size}")
     private String excludeAddressRegex;
 
+    @Builder.Default
     private boolean enabled = true;
 
-    @NotNull
+    @Builder.Default
     private JsonNode properties = JsonNodeFactory.instance.objectNode();
-
-    private Long createdAt;
-
-    private Long updatedAt;
 }

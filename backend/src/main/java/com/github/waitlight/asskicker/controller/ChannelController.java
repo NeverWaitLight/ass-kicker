@@ -17,7 +17,9 @@ import com.github.waitlight.asskicker.converter.ChannelConverter;
 import com.github.waitlight.asskicker.dto.PageReq;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
-import com.github.waitlight.asskicker.dto.channel.ChannelDTO;
+import com.github.waitlight.asskicker.dto.channel.CreateChannelDTO;
+import com.github.waitlight.asskicker.dto.channel.ChannelVO;
+import com.github.waitlight.asskicker.dto.channel.UpdateChannelDTO;
 import com.github.waitlight.asskicker.service.ChannelService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,17 +41,17 @@ public class ChannelController {
 
         @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @PostMapping
-        public Mono<Resp<ChannelDTO>> create(@Valid @RequestBody ChannelDTO request) {
+        public Mono<Resp<ChannelVO>> create(@Valid @RequestBody CreateChannelDTO request) {
                 return Mono.just(request)
                                 .map(channelConverter::toEntity)
                                 .flatMap(channelService::create)
-                                .map(channelConverter::toDto)
+                                .map(channelConverter::toVO)
                                 .map(Resp::success);
         }
 
         @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @GetMapping
-        public Mono<PageResp<ChannelDTO>> page(@Validated PageReq pageReq) {
+        public Mono<PageResp<ChannelVO>> page(@Validated PageReq pageReq) {
                 int page = pageReq.getPage();
                 int size = pageReq.getSize();
                 String keyword = pageReq.getKeyword();
@@ -61,7 +63,7 @@ public class ChannelController {
                                                 return Mono.just(PageResp.success(page, size, total, List.of()));
                                         }
                                         return channelService.list(keyword, size, offset)
-                                                        .map(channelConverter::toDto)
+                                                        .map(channelConverter::toVO)
                                                         .collectList()
                                                         .map(channels -> PageResp.success(page, size, total, channels));
                                 });
@@ -69,19 +71,19 @@ public class ChannelController {
 
         @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @GetMapping("/{id}")
-        public Mono<Resp<ChannelDTO>> getById(@PathVariable String id) {
+        public Mono<Resp<ChannelVO>> getById(@PathVariable String id) {
                 return channelService.getById(id)
-                                .map(channelConverter::toDto)
+                                .map(channelConverter::toVO)
                                 .map(Resp::success);
         }
 
         @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @PutMapping
-        public Mono<Resp<ChannelDTO>> update(@Valid @RequestBody ChannelDTO request) {
+        public Mono<Resp<ChannelVO>> update(@Valid @RequestBody UpdateChannelDTO request) {
                 return Mono.just(request)
                                 .map(channelConverter::toEntity)
                                 .flatMap(patch -> channelService.update(request.getId(), patch))
-                                .map(channelConverter::toDto)
+                                .map(channelConverter::toVO)
                                 .map(Resp::success);
         }
 

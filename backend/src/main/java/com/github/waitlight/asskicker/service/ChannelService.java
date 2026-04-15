@@ -2,7 +2,6 @@ package com.github.waitlight.asskicker.service;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.cache.CaffeineCacheConfig;
-import com.github.waitlight.asskicker.converter.ChannelConverter;
 import com.github.waitlight.asskicker.exception.ConflictException;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
@@ -26,7 +25,6 @@ import java.util.Optional;
 public class ChannelService {
 
     private final ChannelRepository channelRepository;
-    private final ChannelConverter channelConverter;
     private final SnowflakeIdGenerator snowflakeIdGenerator;
     private final CaffeineCacheConfig caffeineCacheConfig;
 
@@ -88,15 +86,13 @@ public class ChannelService {
     }
 
     public Mono<ChannelEntity> create(ChannelEntity entity) {
-        ChannelEntity toCreate = channelConverter.copyForCreate(entity);
-        toCreate.setId(null);
         long now = Instant.now().toEpochMilli();
-        toCreate.setId(snowflakeIdGenerator.nextIdString());
-        toCreate.setCreatedAt(now);
-        toCreate.setUpdatedAt(now);
-        toCreate.setDeletedAt(SoftDeleteConstants.NOT_DELETED);
-        return ensureUniqueKey(toCreate.getCode(), null)
-                .then(Mono.defer(() -> channelRepository.save(toCreate)))
+        entity.setId(snowflakeIdGenerator.nextIdString());
+        entity.setCreatedAt(now);
+        entity.setUpdatedAt(now);
+        entity.setDeletedAt(SoftDeleteConstants.NOT_DELETED);
+        return ensureUniqueKey(entity.getCode(), null)
+                .then(Mono.defer(() -> channelRepository.save(entity)))
                 .doOnSuccess(saved -> {
                     if (saved != null) {
                         invalidateChannelCaches(saved.getId(), saved.getCode());
@@ -111,7 +107,7 @@ public class ChannelService {
                     String oldCode = existing.getCode();
                     return ensureUniqueKey(patch.getCode(), id)
                             .then(Mono.defer(() -> {
-                                channelConverter.merge(patch, existing);
+                                mergeEntity(patch, existing);
                                 existing.setUpdatedAt(Instant.now().toEpochMilli());
                                 return channelRepository.save(existing)
                                         .doOnSuccess(saved -> {
@@ -128,6 +124,39 @@ public class ChannelService {
                 .flatMap(existing -> channelRepository.deleteById(id)
                         .doOnSuccess(v -> invalidateChannelCaches(existing.getId(), existing.getCode())))
                 .then();
+    }
+
+    /**
+     * 合并 patch 到 target，忽略 null 值，保持 id、createdAt、updatedAt 不变
+     */
+    private void mergeEntity(ChannelEntity patch, ChannelEntity target) {
+        if (patch.getCode() != null) {
+            target.setCode(patch.getCode());
+        }
+        if (patch.getName() != null) {
+            target.setName(patch.getName());
+        }
+        if (patch.getChannelType() != null) {
+            target.setChannelType(patch.getChannelType());
+        }
+        if (patch.getProviderType() != null) {
+            target.setProviderType(patch.getProviderType());
+        }
+        if (patch.getDescription() != null) {
+            target.setDescription(patch.getDescription());
+        }
+        if (patch.getPriorityAddressRegex() != null) {
+            target.setPriorityAddressRegex(patch.getPriorityAddressRegex());
+        }
+        if (patch.getExcludeAddressRegex() != null) {
+            target.setExcludeAddressRegex(patch.getExcludeAddressRegex());
+        }
+        if (patch.isEnabled() != target.isEnabled()) {
+            target.setEnabled(patch.isEnabled());
+        }
+        if (patch.getProperties() != null) {
+            target.setProperties(patch.getProperties());
+        }
     }
 
     private void invalidateChannelCaches(String id, String code) {
