@@ -30,24 +30,24 @@ import reactor.core.publisher.Mono;
 /**
  * WeCom app chat message to group chat by chat_id (appchat/send).
  */
-@ChannelImpl(providerType = ProviderType.WECOM_BOT, propertyClass = WecomBotChannel.Spec.class)
+@ChannelImpl(providerType = ProviderType.WECOM_BOT, propertyClass = WecomBotChannel.Properties.class)
 public class WecomBotChannel extends Channel {
 
-    private final Spec spec;
+    private final Properties properties;
 
     public WecomBotChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.spec = WecomBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = WecomBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
             List<String> chatIds = normalizeRecipients(uniAddress, "WECOM_BOT");
-            requireNonBlank(spec.corpId(), "corpId", "WECOM_BOT");
-            requireNonBlank(spec.corpSecret(), "corpSecret", "WECOM_BOT");
-            String getTokenUrl = requireNonBlank(spec.getTokenUrl(), "getTokenUrl", "WECOM_BOT");
-            String appChatSendUrl = requireNonBlank(spec.messageSendUrl(), "messageSendUrl", "WECOM_BOT");
+            requireNonBlank(properties.corpId(), "corpId", "WECOM_BOT");
+            requireNonBlank(properties.corpSecret(), "corpSecret", "WECOM_BOT");
+            String getTokenUrl = requireNonBlank(properties.getTokenUrl(), "getTokenUrl", "WECOM_BOT");
+            String appChatSendUrl = requireNonBlank(properties.messageSendUrl(), "messageSendUrl", "WECOM_BOT");
 
             String text = buildPlainText(uniMessage);
 
@@ -61,8 +61,8 @@ public class WecomBotChannel extends Channel {
 
     private Mono<String> fetchAccessToken(String getTokenUrl) {
         LinkedMultiValueMap<String, String> q = new LinkedMultiValueMap<>();
-        q.add("corpid", spec.corpId().trim());
-        q.add("corpsecret", spec.corpSecret().trim());
+        q.add("corpid", properties.corpId().trim());
+        q.add("corpsecret", properties.corpSecret().trim());
         String uri = buildUrlWithQuery(getTokenUrl, q);
         return getJson(uri, "WECOM_BOT")
                 .flatMap(resp -> {
@@ -210,7 +210,7 @@ public class WecomBotChannel extends Channel {
         return StringUtils.defaultString(content);
     }
 
-    record Spec(
+    record Properties(
             @NotBlank(message = "corpId 不能为空") String corpId,
             @NotBlank(message = "corpSecret 不能为空") String corpSecret,
             @NotBlank(message = "getTokenUrl 不能为空") String getTokenUrl,
@@ -226,5 +226,5 @@ interface WecomBotSpecMapper {
     @Mapping(target = "corpSecret", source = "properties.corpSecret")
     @Mapping(target = "getTokenUrl", source = "properties.getTokenUrl")
     @Mapping(target = "messageSendUrl", source = "properties.messageSendUrl")
-    WecomBotChannel.Spec toSpec(Map<String, String> properties);
+    WecomBotChannel.Properties toSpec(Map<String, String> properties);
 }

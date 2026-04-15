@@ -3,7 +3,6 @@ package com.github.waitlight.asskicker.channel;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -26,14 +25,14 @@ import jakarta.mail.internet.MimeMessage;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-@ChannelImpl(providerType = ProviderType.SMTP, propertyClass = SmtpChannel.Spec.class)
+@ChannelImpl(providerType = ProviderType.SMTP, propertyClass = SmtpChannel.Properties.class)
 public class SmtpChannel extends Channel {
 
-    private final Spec spec;
+    private final Properties properties;
 
     public SmtpChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.spec = Spec.fromProperties(provider.getProperties());
+        this.properties = Properties.fromProperties(provider.getProperties());
     }
 
     @Override
@@ -48,15 +47,15 @@ public class SmtpChannel extends Channel {
             String bodyText = buildBody(uniMessage);
 
             return Mono.fromCallable(() -> {
-                Properties props = buildMailProperties();
+                java.util.Properties props = buildMailProperties();
                 Session session = Session.getInstance(props, new Authenticator() {
                     @Override
                     protected PasswordAuthentication getPasswordAuthentication() {
-                        return new PasswordAuthentication(spec.username().trim(), spec.password());
+                        return new PasswordAuthentication(properties.username().trim(), properties.password());
                     }
                 });
                 MimeMessage message = new MimeMessage(session);
-                message.setFrom(new InternetAddress(spec.from().trim()));
+                message.setFrom(new InternetAddress(properties.from().trim()));
                 message.setRecipients(Message.RecipientType.TO,
                         InternetAddress.parse(String.join(",", recipients)));
                 message.setSubject(subject, "UTF-8");
@@ -68,28 +67,28 @@ public class SmtpChannel extends Channel {
     }
 
     private void validateSpec() {
-        if (StringUtils.isBlank(spec.host()) || StringUtils.isBlank(spec.username())
-                || spec.password() == null || StringUtils.isBlank(spec.from())) {
+        if (StringUtils.isBlank(properties.host()) || StringUtils.isBlank(properties.username())
+                || properties.password() == null || StringUtils.isBlank(properties.from())) {
             throw new IllegalStateException("SMTP requires host username password from");
         }
     }
 
-    private Properties buildMailProperties() {
-        Properties props = new Properties();
-        props.put("mail.smtp.host", spec.host().trim());
-        props.put("mail.smtp.port", String.valueOf(spec.port()));
+    private java.util.Properties buildMailProperties() {
+        java.util.Properties props = new java.util.Properties();
+        props.put("mail.smtp.host", properties.host().trim());
+        props.put("mail.smtp.port", String.valueOf(properties.port()));
         props.put("mail.smtp.auth", "true");
-        if (spec.sslEnabled()) {
+        if (properties.sslEnabled()) {
             props.put("mail.smtp.ssl.enable", "true");
-            props.put("mail.smtp.ssl.trust", spec.host().trim());
-        } else if (spec.startTls()) {
+            props.put("mail.smtp.ssl.trust", properties.host().trim());
+        } else if (properties.startTls()) {
             props.put("mail.smtp.starttls.enable", "true");
         }
-        if (spec.connectionTimeout() != null) {
-            props.put("mail.smtp.connectiontimeout", String.valueOf(spec.connectionTimeout()));
+        if (properties.connectionTimeout() != null) {
+            props.put("mail.smtp.connectiontimeout", String.valueOf(properties.connectionTimeout()));
         }
-        if (spec.readTimeout() != null) {
-            props.put("mail.smtp.timeout", String.valueOf(spec.readTimeout()));
+        if (properties.readTimeout() != null) {
+            props.put("mail.smtp.timeout", String.valueOf(properties.readTimeout()));
         }
         return props;
     }
@@ -120,7 +119,7 @@ public class SmtpChannel extends Channel {
         return recipients;
     }
 
-    record Spec(
+    record Properties(
             @NotBlank(message = "host 不能为空") String host,
             int port,
             @NotBlank(message = "username 不能为空") String username,
@@ -131,7 +130,7 @@ public class SmtpChannel extends Channel {
             Integer connectionTimeout,
             Integer readTimeout) {
 
-        static Spec fromProperties(Map<String, String> p) {
+        static Properties fromProperties(Map<String, String> p) {
             if (p == null) {
                 p = Map.of();
             }
@@ -140,7 +139,7 @@ public class SmtpChannel extends Channel {
             boolean startTls = parseBool(p.get("starttls"), true);
             Integer conn = parseIntObj(p.get("connectionTimeout"));
             Integer read = parseIntObj(p.get("readTimeout"));
-            return new Spec(
+            return new Properties(
                     p.get("host"),
                     port,
                     p.get("username"),

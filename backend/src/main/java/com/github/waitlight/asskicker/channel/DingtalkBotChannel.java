@@ -28,28 +28,28 @@ import reactor.core.publisher.Mono;
 /**
  * DingTalk enterprise robot: group messages via Open API (OAuth access token + group send).
  */
-@ChannelImpl(providerType = ProviderType.DINGTALK_BOT, propertyClass = DingtalkBotChannel.Spec.class)
+@ChannelImpl(providerType = ProviderType.DINGTALK_BOT, propertyClass = DingtalkBotChannel.Properties.class)
 public class DingtalkBotChannel extends Channel {
 
     private static final String HEADER_ACCESS_TOKEN = "x-acs-dingtalk-access-token";
     private static final String MSG_KEY_SAMPLE_TEXT = "sampleText";
 
-    private final Spec spec;
+    private final Properties properties;
 
     public DingtalkBotChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.spec = DingtalkBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = DingtalkBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
             List<String> chatIds = normalizeRecipients(uniAddress, "DINGTALK_BOT");
-            requireNonBlank(spec.appKey(), "appKey", "DINGTALK_BOT");
-            requireNonBlank(spec.appSecret(), "appSecret", "DINGTALK_BOT");
-            requireNonBlank(spec.robotCode(), "robotCode", "DINGTALK_BOT");
-            String accessTokenUrl = requireNonBlank(spec.accessTokenUrl(), "accessTokenUrl", "DINGTALK_BOT");
-            String groupSendUrl = requireNonBlank(spec.groupSendUrl(), "groupSendUrl", "DINGTALK_BOT");
+            requireNonBlank(properties.appKey(), "appKey", "DINGTALK_BOT");
+            requireNonBlank(properties.appSecret(), "appSecret", "DINGTALK_BOT");
+            requireNonBlank(properties.robotCode(), "robotCode", "DINGTALK_BOT");
+            String accessTokenUrl = requireNonBlank(properties.accessTokenUrl(), "accessTokenUrl", "DINGTALK_BOT");
+            String groupSendUrl = requireNonBlank(properties.groupSendUrl(), "groupSendUrl", "DINGTALK_BOT");
 
             String text = buildPlainText(uniMessage);
             String msgParamJson;
@@ -70,8 +70,8 @@ public class DingtalkBotChannel extends Channel {
 
     private Mono<String> fetchAccessToken(String accessTokenUrl) {
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("appKey", spec.appKey().trim());
-        body.put("appSecret", spec.appSecret().trim());
+        body.put("appKey", properties.appKey().trim());
+        body.put("appSecret", properties.appSecret().trim());
         byte[] bytes;
         try {
             bytes = toJsonBytes(body);
@@ -95,7 +95,7 @@ public class DingtalkBotChannel extends Channel {
     private Mono<String> sendGroupMessage(String groupSendUrl, String accessToken, String openConversationId,
             String msgParamJson) {
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("robotCode", spec.robotCode().trim());
+        body.put("robotCode", properties.robotCode().trim());
         body.put("openConversationId", openConversationId);
         body.put("msgKey", MSG_KEY_SAMPLE_TEXT);
         body.put("msgParam", msgParamJson);
@@ -201,7 +201,7 @@ public class DingtalkBotChannel extends Channel {
         return StringUtils.defaultString(content);
     }
 
-    record Spec(
+    record Properties(
             @NotBlank(message = "appKey 不能为空") String appKey,
             @NotBlank(message = "appSecret 不能为空") String appSecret,
             @NotBlank(message = "robotCode 不能为空") String robotCode,
@@ -219,5 +219,5 @@ interface DingtalkBotSpecMapper {
     @Mapping(target = "robotCode", source = "properties.robotCode")
     @Mapping(target = "accessTokenUrl", source = "properties.accessTokenUrl")
     @Mapping(target = "groupSendUrl", source = "properties.groupSendUrl")
-    DingtalkBotChannel.Spec toSpec(Map<String, String> properties);
+    DingtalkBotChannel.Properties toSpec(Map<String, String> properties);
 }

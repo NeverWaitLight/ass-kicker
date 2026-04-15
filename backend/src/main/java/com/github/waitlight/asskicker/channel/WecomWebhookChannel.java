@@ -26,21 +26,21 @@ import jakarta.validation.constraints.NotBlank;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@ChannelImpl(providerType = ProviderType.WECOM_WEBHOOK, propertyClass = WecomWebhookChannel.Spec.class)
+@ChannelImpl(providerType = ProviderType.WECOM_WEBHOOK, propertyClass = WecomWebhookChannel.Properties.class)
 public class WecomWebhookChannel extends Channel {
 
-    private final Spec spec;
+    private final Properties properties;
 
     public WecomWebhookChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.spec = WecomSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = WecomSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
             List<String> recipients = normalizeRecipients(uniAddress, "WECOM");
-            String baseUrl = requireBaseUrl(spec.url(), "WECOM");
+            String baseUrl = requireBaseUrl(properties.url(), "WECOM");
 
             return Flux.fromIterable(recipients)
                     .concatMap(recipient -> {
@@ -148,7 +148,7 @@ public class WecomWebhookChannel extends Channel {
         return defaultValue;
     }
 
-    record Spec(
+    record Properties(
             @NotBlank(message = "url 不能为空") String url) {
     }
 }
@@ -158,5 +158,5 @@ interface WecomSpecMapper {
     WecomSpecMapper INSTANCE = Mappers.getMapper(WecomSpecMapper.class);
 
     @Mapping(target = "url", source = "properties.url")
-    WecomWebhookChannel.Spec toSpec(Map<String, String> properties);
+    WecomWebhookChannel.Properties toSpec(Map<String, String> properties);
 }

@@ -26,21 +26,21 @@ import jakarta.validation.constraints.NotBlank;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@ChannelImpl(providerType = ProviderType.DINGTALK_WEBHOOK, propertyClass = DingtalkWebhookChannel.Spec.class)
+@ChannelImpl(providerType = ProviderType.DINGTALK_WEBHOOK, propertyClass = DingtalkWebhookChannel.Properties.class)
 public class DingtalkWebhookChannel extends Channel {
 
-    private final Spec spec;
+    private final Properties properties;
 
     public DingtalkWebhookChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.spec = DingtalkSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = DingtalkSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
             List<String> recipients = normalizeRecipients(uniAddress, "DINGTALK");
-            String baseUrl = requireBaseUrl(spec.url(), "DINGTALK");
+            String baseUrl = requireBaseUrl(properties.url(), "DINGTALK");
 
             return Flux.fromIterable(recipients)
                     .concatMap(recipient -> {
@@ -150,7 +150,7 @@ public class DingtalkWebhookChannel extends Channel {
         return defaultValue;
     }
 
-    record Spec(
+    record Properties(
             @NotBlank(message = "url 不能为空") String url) {
     }
 }
@@ -160,5 +160,5 @@ interface DingtalkSpecMapper {
     DingtalkSpecMapper INSTANCE = Mappers.getMapper(DingtalkSpecMapper.class);
 
     @Mapping(target = "url", source = "properties.url")
-    DingtalkWebhookChannel.Spec toSpec(Map<String, String> properties);
+    DingtalkWebhookChannel.Properties toSpec(Map<String, String> properties);
 }

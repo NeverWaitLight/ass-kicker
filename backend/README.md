@@ -42,7 +42,7 @@ Spring Boot 3.2 WebFlux、Java 21、R2DBC（PostgreSQL）、Spring Security（JW
 - **Spec**：运行时规格接口，描述通道发送所需的具体参数结构。如 `ChannelSpec`、`HttpEmailChannelSpec`，由 Entity 的 properties 解析得到，作为 Channel 的构造参数。
 - **Channel**：抽象发送器，持有一个 `ChannelSpec` 实现，执行 `send` 逻辑。
 
-数据流：ChannelEntity → properties Map → *ChannelSpecConverter.fromProperties() → ChannelSpec 实现类 → Channel(spec) → doSend()
+数据流：ChannelEntity → properties Map → *ChannelSpecConverter.fromProperties() → ChannelSpec 实现类 → Channel(properties) → doSend()
 
 ## TODO
 

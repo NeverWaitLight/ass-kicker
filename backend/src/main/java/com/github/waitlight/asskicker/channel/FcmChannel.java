@@ -27,14 +27,14 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
-@ChannelImpl(providerType = ProviderType.FCM, propertyClass = FcmChannel.Spec.class)
+@ChannelImpl(providerType = ProviderType.FCM, propertyClass = FcmChannel.Properties.class)
 public class FcmChannel extends Channel {
 
-    private final Spec spec;
+    private final Properties properties;
 
     public FcmChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.spec = FcmSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = FcmSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 
     @Override
@@ -52,9 +52,9 @@ public class FcmChannel extends Channel {
                 return Mono.error(new IllegalArgumentException("FCM recipients required"));
             }
 
-            if (StringUtils.isBlank(spec.url())
-                    || StringUtils.isBlank(spec.projectId())
-                    || StringUtils.isBlank(spec.accessToken())) {
+            if (StringUtils.isBlank(properties.url())
+                    || StringUtils.isBlank(properties.projectId())
+                    || StringUtils.isBlank(properties.accessToken())) {
                 return Mono.error(new IllegalStateException(
                         "FCM spec requires url projectId accessToken"));
             }
@@ -65,7 +65,7 @@ public class FcmChannel extends Channel {
 
             log.info("Sending FCM notification to {} recipient(s)", recipients.size());
 
-            String endpoint = buildFcmEndpoint(spec.url().trim(), spec.projectId().trim());
+            String endpoint = buildFcmEndpoint(properties.url().trim(), properties.projectId().trim());
 
             return Flux.fromIterable(recipients)
                     .concatMap(token -> {
@@ -75,7 +75,7 @@ public class FcmChannel extends Channel {
                         } catch (Exception e) {
                             return Mono.error(e);
                         }
-                        return postFcmMessage(spec.accessToken().trim(), endpoint, bodyBytes);
+                        return postFcmMessage(properties.accessToken().trim(), endpoint, bodyBytes);
                     })
                     .collect(Collectors.joining(","))
                     .map(names -> "FCM ok " + recipients.size() + " device(s) name=" + names);
@@ -154,7 +154,7 @@ public class FcmChannel extends Channel {
                         ex));
     }
 
-    record Spec(
+    record Properties(
             @NotBlank(message = "url 不能为空") String url,
             @NotBlank(message = "projectId 不能为空") String projectId,
             @NotBlank(message = "accessToken 不能为空") String accessToken) {
@@ -168,5 +168,5 @@ interface FcmSpecMapper {
     @Mapping(target = "url", source = "properties.url")
     @Mapping(target = "projectId", source = "properties.projectId")
     @Mapping(target = "accessToken", source = "properties.accessToken")
-    FcmChannel.Spec toSpec(Map<String, String> properties);
+    FcmChannel.Properties toSpec(Map<String, String> properties);
 }

@@ -28,27 +28,27 @@ import reactor.core.publisher.Mono;
 /**
  * Feishu/Lark custom app bot: tenant access token + im/v1/messages (chat_id).
  */
-@ChannelImpl(providerType = ProviderType.FEISHU_BOT, propertyClass = FeishuBotChannel.Spec.class)
+@ChannelImpl(providerType = ProviderType.FEISHU_BOT, propertyClass = FeishuBotChannel.Properties.class)
 public class FeishuBotChannel extends Channel {
 
     private static final String DEFAULT_RECEIVE_ID_TYPE = "chat_id";
 
-    private final Spec spec;
+    private final Properties properties;
 
     public FeishuBotChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.spec = FeishuBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = FeishuBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
             List<String> chatIds = normalizeRecipients(uniAddress, "FEISHU_BOT");
-            requireNonBlank(spec.appId(), "appId", "FEISHU_BOT");
-            requireNonBlank(spec.appSecret(), "appSecret", "FEISHU_BOT");
-            String tenantTokenUrl = requireNonBlank(spec.tenantTokenUrl(), "tenantTokenUrl", "FEISHU_BOT");
-            String messageSendUrl = requireNonBlank(spec.messageSendUrl(), "messageSendUrl", "FEISHU_BOT");
-            String receiveIdType = StringUtils.defaultIfBlank(spec.receiveIdType(), DEFAULT_RECEIVE_ID_TYPE);
+            requireNonBlank(properties.appId(), "appId", "FEISHU_BOT");
+            requireNonBlank(properties.appSecret(), "appSecret", "FEISHU_BOT");
+            String tenantTokenUrl = requireNonBlank(properties.tenantTokenUrl(), "tenantTokenUrl", "FEISHU_BOT");
+            String messageSendUrl = requireNonBlank(properties.messageSendUrl(), "messageSendUrl", "FEISHU_BOT");
+            String receiveIdType = StringUtils.defaultIfBlank(properties.receiveIdType(), DEFAULT_RECEIVE_ID_TYPE);
 
             String text = buildPlainText(uniMessage);
             String contentJson;
@@ -68,8 +68,8 @@ public class FeishuBotChannel extends Channel {
 
     private Mono<String> fetchTenantToken(String tenantTokenUrl) {
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("app_id", spec.appId().trim());
-        body.put("app_secret", spec.appSecret().trim());
+        body.put("app_id", properties.appId().trim());
+        body.put("app_secret", properties.appSecret().trim());
         byte[] bytes;
         try {
             bytes = toJsonBytes(body);
@@ -197,7 +197,7 @@ public class FeishuBotChannel extends Channel {
         return StringUtils.defaultString(content);
     }
 
-    record Spec(
+    record Properties(
             @NotBlank(message = "appId 不能为空") String appId,
             @NotBlank(message = "appSecret 不能为空") String appSecret,
             @NotBlank(message = "tenantTokenUrl 不能为空") String tenantTokenUrl,
@@ -215,5 +215,5 @@ interface FeishuBotSpecMapper {
     @Mapping(target = "tenantTokenUrl", source = "properties.tenantTokenUrl")
     @Mapping(target = "messageSendUrl", source = "properties.messageSendUrl")
     @Mapping(target = "receiveIdType", source = "properties.receiveIdType")
-    FeishuBotChannel.Spec toSpec(Map<String, String> properties);
+    FeishuBotChannel.Properties toSpec(Map<String, String> properties);
 }

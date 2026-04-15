@@ -26,29 +26,29 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-@ChannelImpl(providerType = ProviderType.ALIYUN_SMS, propertyClass = AliyunSmsChannel.Spec.class)
+@ChannelImpl(providerType = ProviderType.ALIYUN_SMS, propertyClass = AliyunSmsChannel.Properties.class)
 public class AliyunSmsChannel extends Channel {
 
-    private final Spec spec;
+    private final Properties properties;
     private final Client aliyunClient;
 
     public AliyunSmsChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.spec = AliyunSmsSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = AliyunSmsSpecMapper.INSTANCE.toSpec(provider.getProperties());
         try {
-            this.aliyunClient = new Client(buildConfig(spec));
+            this.aliyunClient = new Client(buildConfig(properties));
         } catch (Exception e) {
             throw new IllegalStateException("ALIYUN_SMS SDK client init failed", e);
         }
     }
 
-    private static Config buildConfig(Spec spec) throws Exception {
+    private static Config buildConfig(Properties properties) throws Exception {
         Config config = new Config();
-        config.setAccessKeyId(spec.accessKeyId().trim());
-        config.setAccessKeySecret(spec.accessKeySecret().trim());
-        applyEndpoint(config, spec.endpoint().trim());
-        if (StringUtils.isNotBlank(spec.regionId())) {
-            config.setRegionId(spec.regionId().trim());
+        config.setAccessKeyId(properties.accessKeyId().trim());
+        config.setAccessKeySecret(properties.accessKeySecret().trim());
+        applyEndpoint(config, properties.endpoint().trim());
+        if (StringUtils.isNotBlank(properties.regionId())) {
+            config.setRegionId(properties.regionId().trim());
         }
         return config;
     }
@@ -107,11 +107,11 @@ public class AliyunSmsChannel extends Channel {
     }
 
     private void validateSpec() {
-        if (StringUtils.isBlank(spec.accessKeyId()) || StringUtils.isBlank(spec.accessKeySecret())
-                || StringUtils.isBlank(spec.signName())) {
+        if (StringUtils.isBlank(properties.accessKeyId()) || StringUtils.isBlank(properties.accessKeySecret())
+                || StringUtils.isBlank(properties.signName())) {
             throw new IllegalStateException("ALIYUN_SMS requires accessKeyId accessKeySecret signName");
         }
-        if (StringUtils.isBlank(spec.endpoint())) {
+        if (StringUtils.isBlank(properties.endpoint())) {
             throw new IllegalStateException("ALIYUN_SMS requires endpoint");
         }
     }
@@ -123,7 +123,7 @@ public class AliyunSmsChannel extends Channel {
                 return String.valueOf(o).trim();
             }
         }
-        return spec.templateCode();
+        return properties.templateCode();
     }
 
     private String buildTemplateParamJson(UniMessage uniMessage) throws Exception {
@@ -138,7 +138,7 @@ public class AliyunSmsChannel extends Channel {
         return Mono.fromCallable(() -> {
             SendSmsRequest request = new SendSmsRequest()
                     .setPhoneNumbers(phoneNumbers)
-                    .setSignName(spec.signName().trim())
+                    .setSignName(properties.signName().trim())
                     .setTemplateCode(templateCode)
                     .setTemplateParam(templateParamJson);
             SendSmsResponse response = aliyunClient.sendSms(request);
@@ -169,7 +169,7 @@ public class AliyunSmsChannel extends Channel {
         return recipients;
     }
 
-    record Spec(
+    record Properties(
             @NotBlank(message = "accessKeyId 不能为空") String accessKeyId,
             @NotBlank(message = "accessKeySecret 不能为空") String accessKeySecret,
             @NotBlank(message = "signName 不能为空") String signName,
@@ -189,5 +189,5 @@ interface AliyunSmsSpecMapper {
     @Mapping(target = "templateCode", source = "properties.templateCode")
     @Mapping(target = "regionId", source = "properties.regionId")
     @Mapping(target = "endpoint", source = "properties.endpoint")
-    AliyunSmsChannel.Spec toSpec(Map<String, String> properties);
+    AliyunSmsChannel.Properties toSpec(Map<String, String> properties);
 }

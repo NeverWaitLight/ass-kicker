@@ -30,36 +30,36 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sns.SnsAsyncClient;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
 
-@ChannelImpl(providerType = ProviderType.AWS_SMS, propertyClass = AwsSnsSmsChannel.Spec.class)
+@ChannelImpl(providerType = ProviderType.AWS_SMS, propertyClass = AwsSnsSmsChannel.Properties.class)
 public class AwsSnsSmsChannel extends Channel {
 
-    private final Spec spec;
+    private final Properties properties;
     private final SnsAsyncClient snsClient;
 
     public AwsSnsSmsChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.spec = AwsSnsSmsSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = AwsSnsSmsSpecMapper.INSTANCE.toSpec(provider.getProperties());
         this.snsClient = buildSnsClient();
     }
 
     private SnsAsyncClient buildSnsClient() {
-        String accessKeyId = spec.accessKeyId().trim();
-        String secret = spec.secretAccessKey().trim();
+        String accessKeyId = properties.accessKeyId().trim();
+        String secret = properties.secretAccessKey().trim();
         AwsCredentialsProvider credentialsProvider;
-        if (StringUtils.isNotBlank(spec.sessionToken())) {
+        if (StringUtils.isNotBlank(properties.sessionToken())) {
             credentialsProvider = StaticCredentialsProvider.create(AwsSessionCredentials.create(
                     accessKeyId,
                     secret,
-                    spec.sessionToken().trim()));
+                    properties.sessionToken().trim()));
         } else {
             credentialsProvider = StaticCredentialsProvider.create(
                     AwsBasicCredentials.create(accessKeyId, secret));
         }
         var builder = SnsAsyncClient.builder()
-                .region(Region.of(spec.region().trim()))
+                .region(Region.of(properties.region().trim()))
                 .credentialsProvider(credentialsProvider);
-        if (StringUtils.isNotBlank(spec.endpoint())) {
-            builder.endpointOverride(endpointOverrideUri(spec.endpoint().trim()));
+        if (StringUtils.isNotBlank(properties.endpoint())) {
+            builder.endpointOverride(endpointOverrideUri(properties.endpoint().trim()));
         }
         return builder.build();
     }
@@ -91,8 +91,8 @@ public class AwsSnsSmsChannel extends Channel {
     }
 
     private void validateSpec() {
-        if (StringUtils.isBlank(spec.accessKeyId()) || StringUtils.isBlank(spec.secretAccessKey())
-                || StringUtils.isBlank(spec.region())) {
+        if (StringUtils.isBlank(properties.accessKeyId()) || StringUtils.isBlank(properties.secretAccessKey())
+                || StringUtils.isBlank(properties.region())) {
             throw new IllegalStateException("AWS_SMS requires accessKeyId secretAccessKey region");
         }
     }
@@ -136,7 +136,7 @@ public class AwsSnsSmsChannel extends Channel {
         return recipients;
     }
 
-    record Spec(
+    record Properties(
             @NotBlank(message = "accessKeyId 不能为空") String accessKeyId,
             @NotBlank(message = "secretAccessKey 不能为空") String secretAccessKey,
             @NotBlank(message = "region 不能为空") String region,
@@ -154,5 +154,5 @@ interface AwsSnsSmsSpecMapper {
     @Mapping(target = "region", source = "properties.region")
     @Mapping(target = "sessionToken", source = "properties.sessionToken")
     @Mapping(target = "endpoint", source = "properties.endpoint")
-    AwsSnsSmsChannel.Spec toSpec(Map<String, String> properties);
+    AwsSnsSmsChannel.Properties toSpec(Map<String, String> properties);
 }

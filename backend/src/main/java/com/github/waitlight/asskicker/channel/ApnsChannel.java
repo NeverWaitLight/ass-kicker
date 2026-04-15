@@ -36,14 +36,14 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
-@ChannelImpl(providerType = ProviderType.APNS, propertyClass = ApnsChannel.Spec.class)
+@ChannelImpl(providerType = ProviderType.APNS, propertyClass = ApnsChannel.Properties.class)
 public class ApnsChannel extends Channel {
 
-    private final Spec spec;
+    private final Properties properties;
 
     public ApnsChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.spec = ApnsSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = ApnsSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 
     @Override
@@ -61,18 +61,18 @@ public class ApnsChannel extends Channel {
                 return Mono.error(new IllegalArgumentException("APNs recipients required"));
             }
 
-            if (StringUtils.isBlank(spec.url())
-                    || StringUtils.isBlank(spec.bundleIdTopic())
-                    || StringUtils.isBlank(spec.teamId())
-                    || StringUtils.isBlank(spec.keyId())
-                    || StringUtils.isBlank(spec.privateKeyPem())) {
+            if (StringUtils.isBlank(properties.url())
+                    || StringUtils.isBlank(properties.bundleIdTopic())
+                    || StringUtils.isBlank(properties.teamId())
+                    || StringUtils.isBlank(properties.keyId())
+                    || StringUtils.isBlank(properties.privateKeyPem())) {
                 return Mono.error(new IllegalStateException(
                         "APNs spec requires url bundleIdTopic teamId keyId privateKeyPem"));
             }
 
-            UUID parsedApnsId = spec.apnsId() == null || spec.apnsId().isBlank()
+            UUID parsedApnsId = properties.apnsId() == null || properties.apnsId().isBlank()
                     ? null
-                    : UUID.fromString(spec.apnsId().trim());
+                    : UUID.fromString(properties.apnsId().trim());
             String alertTitle = uniMessage != null ? uniMessage.getTitle() : null;
             String alertBody = uniMessage != null ? uniMessage.getContent() : null;
             Map<String, Object> extraData = uniMessage != null ? uniMessage.getExtraData() : null;
@@ -80,8 +80,8 @@ public class ApnsChannel extends Channel {
             log.info("Sending APNs notification to {} recipient(s)", recipients.size());
 
             return Mono.fromCallable(() -> {
-                PrivateKey key = loadEcPrivateKeyFromPem(spec.privateKeyPem());
-                return buildApnsJwt(key, spec.teamId().trim(), spec.keyId().trim());
+                PrivateKey key = loadEcPrivateKeyFromPem(properties.privateKeyPem());
+                return buildApnsJwt(key, properties.teamId().trim(), properties.keyId().trim());
             })
                     .flatMapMany(jwt -> {
                         byte[] bodyBytes;
@@ -90,13 +90,13 @@ public class ApnsChannel extends Channel {
                         } catch (Exception e) {
                             return Flux.error(e);
                         }
-                        String endpointBase = normalizeApnsEndpointBase(spec.url());
+                        String endpointBase = normalizeApnsEndpointBase(properties.url());
                         return Flux.fromIterable(recipients)
                                 .concatMap(token -> postApnsDevice(
                                         jwt,
                                         endpointBase,
                                         token,
-                                        spec.bundleIdTopic().trim(),
+                                        properties.bundleIdTopic().trim(),
                                         parsedApnsId,
                                         bodyBytes));
                     })
@@ -187,7 +187,7 @@ public class ApnsChannel extends Channel {
                         ex));
     }
 
-    record Spec(
+    record Properties(
             @NotBlank(message = "url 不能为空") String url,
             @NotBlank(message = "bundleIdTopic 不能为空") String bundleIdTopic,
             @NotBlank(message = "teamId 不能为空") String teamId,
@@ -207,5 +207,5 @@ interface ApnsSpecMapper {
     @Mapping(target = "keyId", source = "properties.keyId")
     @Mapping(target = "privateKeyPem", source = "properties.privateKeyPem")
     @Mapping(target = "apnsId", source = "properties.apnsId")
-    ApnsChannel.Spec toSpec(Map<String, String> properties);
+    ApnsChannel.Properties toSpec(Map<String, String> properties);
 }

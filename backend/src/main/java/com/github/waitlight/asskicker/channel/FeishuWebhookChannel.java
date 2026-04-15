@@ -26,21 +26,21 @@ import jakarta.validation.constraints.NotBlank;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@ChannelImpl(providerType = ProviderType.FEISHU_WEBHOOK, propertyClass = FeishuWebhookChannel.Spec.class)
+@ChannelImpl(providerType = ProviderType.FEISHU_WEBHOOK, propertyClass = FeishuWebhookChannel.Properties.class)
 public class FeishuWebhookChannel extends Channel {
 
-    private final Spec spec;
+    private final Properties properties;
 
     public FeishuWebhookChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.spec = FeishuSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = FeishuSpecMapper.INSTANCE.toSpec(provider.getProperties());
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
             List<String> recipients = normalizeRecipients(uniAddress, "FEISHU");
-            String baseUrl = requireBaseUrl(spec.url(), "FEISHU");
+            String baseUrl = requireBaseUrl(properties.url(), "FEISHU");
 
             return Flux.fromIterable(recipients)
                     .concatMap(recipient -> {
@@ -148,7 +148,7 @@ public class FeishuWebhookChannel extends Channel {
         return defaultValue;
     }
 
-    record Spec(@NotBlank(message = "url 不能为空") String url) {
+    record Properties(@NotBlank(message = "url 不能为空") String url) {
     }
 }
 
@@ -157,5 +157,5 @@ interface FeishuSpecMapper {
     FeishuSpecMapper INSTANCE = Mappers.getMapper(FeishuSpecMapper.class);
 
     @Mapping(target = "url", source = "properties.url")
-    FeishuWebhookChannel.Spec toSpec(Map<String, String> properties);
+    FeishuWebhookChannel.Properties toSpec(Map<String, String> properties);
 }
