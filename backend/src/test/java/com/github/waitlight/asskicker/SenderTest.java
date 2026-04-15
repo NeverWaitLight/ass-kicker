@@ -34,6 +34,8 @@ import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
 
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import okhttp3.HttpUrl;
 import com.github.waitlight.asskicker.service.ChannelService;
 import com.github.waitlight.asskicker.service.SendRecordService;
@@ -125,7 +127,8 @@ class SenderTest {
                 when(channelFactory.create(usProvider)).thenReturn(usChannel);
                 when(channelFactory.create(cnProvider)).thenReturn(cnChannel);
 
-                ChannelManager channelManager = new ChannelManager(channelService, channelFactory);
+                Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+                ChannelManager channelManager = new ChannelManager(channelService, channelFactory, validator, OBJECT_MAPPER);
                 channelManager.refresh();
 
                 Sender sender = new Sender(templateEngine, channelManager, sendRecordService,

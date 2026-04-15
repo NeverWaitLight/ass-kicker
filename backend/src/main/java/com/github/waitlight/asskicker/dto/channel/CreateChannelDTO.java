@@ -1,7 +1,8 @@
 package com.github.waitlight.asskicker.dto.channel;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.ProviderType;
 import jakarta.validation.constraints.NotBlank;
@@ -48,5 +49,5 @@ public class CreateChannelDTO {
     private boolean enabled = true;
 
     @Builder.Default
-    private JsonNode properties = JsonNodeFactory.instance.objectNode();
+    private Map<String, Object> properties = new HashMap<>();
 }

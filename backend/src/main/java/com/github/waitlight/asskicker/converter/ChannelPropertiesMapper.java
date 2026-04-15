@@ -27,6 +27,20 @@ public class ChannelPropertiesMapper {
         return objectMapper.valueToTree(properties);
     }
 
+    @Named("channelObjectPropertiesToProperties")
+    public Map<String, String> channelObjectPropertiesToProperties(Map<String, Object> properties) {
+        if (properties == null || properties.isEmpty()) {
+            return new HashMap<>();
+        }
+        Map<String, String> result = new HashMap<>();
+        for (Map.Entry<String, Object> entry : properties.entrySet()) {
+            if (entry.getValue() != null) {
+                result.put(entry.getKey(), String.valueOf(entry.getValue()));
+            }
+        }
+        return result;
+    }
+
     @Named("channelJsonToProperties")
     public Map<String, String> channelJsonToProperties(JsonNode node) {
         if (node == null || node.isNull() || !node.isObject()) {

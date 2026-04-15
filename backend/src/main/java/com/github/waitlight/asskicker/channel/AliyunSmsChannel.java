@@ -1,18 +1,5 @@
 package com.github.waitlight.asskicker.channel;
 
-import java.net.URI;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import com.github.waitlight.asskicker.model.ChannelEntity;
-import org.apache.commons.lang3.StringUtils;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
-import org.springframework.web.reactive.function.client.WebClient;
-
 import com.aliyun.dysmsapi20170525.Client;
 import com.aliyun.dysmsapi20170525.models.SendSmsRequest;
 import com.aliyun.dysmsapi20170525.models.SendSmsResponse;
@@ -21,11 +8,25 @@ import com.aliyun.teaopenapi.models.Config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
-
+import com.github.waitlight.asskicker.model.ChannelEntity;
+import com.github.waitlight.asskicker.model.ProviderType;
+import jakarta.validation.constraints.NotBlank;
+import org.apache.commons.lang3.StringUtils;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.factory.Mappers;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+@ChannelImpl(providerType = ProviderType.ALIYUN_SMS, propertyClass = AliyunSmsChannel.Spec.class)
 public class AliyunSmsChannel extends Channel {
 
     private final Spec spec;
@@ -168,8 +169,13 @@ public class AliyunSmsChannel extends Channel {
         return recipients;
     }
 
-    record Spec(String accessKeyId, String accessKeySecret, String signName, String templateCode, String regionId,
-            String endpoint) {
+    record Spec(
+            @NotBlank(message = "accessKeyId 不能为空") String accessKeyId,
+            @NotBlank(message = "accessKeySecret 不能为空") String accessKeySecret,
+            @NotBlank(message = "signName 不能为空") String signName,
+            String templateCode,
+            String regionId,
+            @NotBlank(message = "endpoint 不能为空") String endpoint) {
     }
 }
 
