@@ -3,7 +3,6 @@ package com.github.waitlight.asskicker.channel;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,7 +24,9 @@ public class ChannelFactory {
     }
 
     public Channel create(ChannelEntity provider) {
-        Assert.notNull(provider, "ChannelProviderEntity must not be null");
+        if (provider == null) {
+            throw new IllegalArgumentException("ChannelEntity must not be null");
+        }
 
         try {
             return switch (provider.getProviderType()) {

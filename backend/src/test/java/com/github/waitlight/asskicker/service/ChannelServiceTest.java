@@ -21,7 +21,7 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * ChannelProvider 服务层集成测试。
+ * Channel 服务层集成测试。
  *
  * 使用 {@link TestMethodOrder} 和 {@link Order} 确保测试按顺序执行，
  * 防止在共享数据库环境下测试之间的数据竞争。

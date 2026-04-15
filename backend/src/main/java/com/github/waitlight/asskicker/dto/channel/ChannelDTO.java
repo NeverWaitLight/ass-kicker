@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChannelDTO {
 
-    @NotBlank(message = "{channelProvider.id.notblank}")
+    @NotBlank(message = "{channel.id.notblank}")
     private String id;
 
     @NotBlank(message = "Channel provider key is required")

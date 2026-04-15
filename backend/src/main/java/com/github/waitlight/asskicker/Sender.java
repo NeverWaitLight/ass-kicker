@@ -139,7 +139,7 @@ public class Sender {
         return UniAddress.builder()
                 .channelType(original.getChannelType())
                 .providerType(original.getProviderType())
-                .channelProviderKey(original.getChannelProviderKey())
+                .channelKey(original.getChannelKey())
                 .recipients(Set.of(recipient))
                 .build();
     }

@@ -14,7 +14,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.github.waitlight.asskicker.config.channel.ChannelObjectMapperConfig;
 
 /**
- * 仅用于 ChannelProvider 嵌入式 Mongo 测试，避免 {@code @DataMongoTest} 向上解析到
+ * 仅用于 Channel 嵌入式 Mongo 测试，避免 {@code @DataMongoTest} 向上解析到
  * {@link com.github.waitlight.asskicker.AssKickerApplication} 拉起完整应用。
  * 使用完整 {@link EnableAutoConfiguration} 以保证 Flapdoodle 嵌入式 Mongo 与
  * {@code MongoReactive*} 的装配顺序与生产一致；

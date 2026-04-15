@@ -218,7 +218,7 @@ public class MessageDispatcher {
 
         // 1. 查找对应的 Handler
         ChannelHandler matchedHandler = handlers.stream()
-            .filter(h -> h.supports(address.getChannelType(), address.getChannelProvider()))
+            .filter(h -> h.supports(address.getChannelType(), address.getChannelKey()))
             .findFirst()
             .orElseThrow(() -> new RuntimeException("No handler found!"));
 
@@ -227,7 +227,7 @@ public class MessageDispatcher {
         if (StringUtils.isNotBlank(address.getSenderKey())) {
             String jsonProps = configRepository.getExtPropsByKey(address.getSenderKey());
             // 根据 provider 反序列化为具体的 Config 对象
-            extConfig = ConfigParser.parse(jsonProps, address.getChannelProvider());
+            extConfig = ConfigParser.parse(jsonProps, address.getChannelKey());
         }
 
         // 3. 委派给具体的 Handler 执行

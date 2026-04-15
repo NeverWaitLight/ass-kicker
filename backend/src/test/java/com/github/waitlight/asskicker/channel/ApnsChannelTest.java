@@ -40,7 +40,7 @@ class ApnsChannelTest {
         private ApnsChannel channel;
 
         /**
-         * Creates a ChannelProviderEntity configured for testing.
+         * Creates a ChannelEntity configured for testing.
          *
          * @param mockServerUrl The base URL of the mock server
          */

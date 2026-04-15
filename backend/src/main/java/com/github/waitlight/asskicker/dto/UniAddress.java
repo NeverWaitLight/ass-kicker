@@ -21,7 +21,7 @@ public class UniAddress {
 
     private ChannelType channelType;
     private ProviderType providerType;
-    private String channelProviderKey;
+    private String channelKey;
     private Set<String> recipients;
 
     public static UniAddress ofSms(String... phoneNumber) {
@@ -42,7 +42,7 @@ public class UniAddress {
         return UniAddress.builder()
                 .channelType(ChannelType.IM)
                 .providerType(provider)
-                .channelProviderKey(channelKey)
+                .channelKey(channelKey)
                 .recipients(Set.of(targetId))
                 .build();
     }
