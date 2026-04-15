@@ -52,7 +52,4 @@ public class ChannelEntity {
 
         private Long createdAt;
         private Long updatedAt;
-
-        @Field("deleted_at")
-        private Long deletedAt = 0L;
 }

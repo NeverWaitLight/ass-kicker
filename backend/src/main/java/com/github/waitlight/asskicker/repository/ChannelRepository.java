@@ -2,7 +2,6 @@ package com.github.waitlight.asskicker.repository;
 
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.util.SoftDeleteConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
@@ -26,28 +25,24 @@ public class ChannelRepository {
     public Mono<ChannelEntity> findById(String id) {
         Query query = new Query();
         query.addCriteria(Criteria.where("_id").is(id));
-        query.addCriteria(Criteria.where("deleted_at").is(SoftDeleteConstants.NOT_DELETED));
         return mongoTemplate.findOne(query, ChannelEntity.class);
     }
 
     public Mono<ChannelEntity> findByCode(String code) {
         Query query = new Query();
         query.addCriteria(Criteria.where("code").is(code));
-        query.addCriteria(Criteria.where("deleted_at").is(SoftDeleteConstants.NOT_DELETED));
         return mongoTemplate.findOne(query, ChannelEntity.class);
     }
 
     public Flux<ChannelEntity> findByChannelType(ChannelType channelType) {
         Query query = new Query();
         query.addCriteria(Criteria.where("channel_type").is(channelType));
-        query.addCriteria(Criteria.where("deleted_at").is(SoftDeleteConstants.NOT_DELETED));
         return mongoTemplate.find(query, ChannelEntity.class);
     }
 
     public Flux<ChannelEntity> findByEnabled(boolean enabled) {
         Query query = new Query();
         query.addCriteria(Criteria.where("enabled").is(enabled));
-        query.addCriteria(Criteria.where("deleted_at").is(SoftDeleteConstants.NOT_DELETED));
         return mongoTemplate.find(query, ChannelEntity.class);
     }
 
@@ -55,13 +50,11 @@ public class ChannelRepository {
         Query query = new Query();
         query.addCriteria(Criteria.where("channel_type").is(channelType));
         query.addCriteria(Criteria.where("enabled").is(enabled));
-        query.addCriteria(Criteria.where("deleted_at").is(SoftDeleteConstants.NOT_DELETED));
         return mongoTemplate.find(query, ChannelEntity.class);
     }
 
     public Flux<ChannelEntity> findAll() {
         Query query = new Query();
-        query.addCriteria(Criteria.where("deleted_at").is(SoftDeleteConstants.NOT_DELETED));
         query.with(Sort.by(Sort.Direction.DESC, "_id"));
         return mongoTemplate.find(query, ChannelEntity.class);
     }
@@ -74,7 +67,6 @@ public class ChannelRepository {
 
     public Mono<Void> deleteAll() {
         Query query = new Query();
-        query.addCriteria(Criteria.where("deleted_at").is(SoftDeleteConstants.NOT_DELETED));
         return mongoTemplate.remove(query, ChannelEntity.class).then();
     }
 
@@ -96,7 +88,6 @@ public class ChannelRepository {
 
     private Query buildKeywordQuery(String keyword) {
         Query query = new Query();
-        query.addCriteria(Criteria.where("deleted_at").is(SoftDeleteConstants.NOT_DELETED));
         if (StringUtils.hasText(keyword)) {
             query.addCriteria(Criteria.where("name").regex(".*" + keyword + ".*", "i"));
         }

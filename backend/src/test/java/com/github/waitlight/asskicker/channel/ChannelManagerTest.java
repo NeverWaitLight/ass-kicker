@@ -13,7 +13,6 @@ import com.github.waitlight.asskicker.AssKickerTestApplication;
 import com.github.waitlight.asskicker.config.MongoTestConfiguration;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.repository.ChannelRepository;
-import com.github.waitlight.asskicker.util.SoftDeleteConstants;
 
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
@@ -52,13 +51,6 @@ class ChannelManagerTest {
   @Autowired
   private ChannelManager channelManager;
 
-  /**
-   * 设置实体的软删除标记为 NOT_DELETED，确保查询能正确匹配
-   */
-  private static void setNotDeleted(ChannelEntity entity) {
-    entity.setDeletedAt(SoftDeleteConstants.NOT_DELETED);
-  }
-
   @BeforeEach
   void clearProviders() {
     StepVerifier.create(channelRepository.deleteAll()).verifyComplete();
@@ -80,7 +72,6 @@ class ChannelManagerTest {
         }
         """, APNS_PROPS);
     ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
-    setNotDeleted(entity);
     StepVerifier.create(channelRepository.save(entity))
         .assertNext(saved -> assertThat(saved.getId()).isNotBlank())
         .verifyComplete();
@@ -139,9 +130,6 @@ class ChannelManagerTest {
     ChannelEntity e1 = MAPPER.readValue(lowPriority, ChannelEntity.class);
     ChannelEntity e2 = MAPPER.readValue(highPriority, ChannelEntity.class);
     ChannelEntity e3 = MAPPER.readValue(excluded, ChannelEntity.class);
-    setNotDeleted(e1);
-    setNotDeleted(e2);
-    setNotDeleted(e3);
 
     StepVerifier.create(channelRepository.saveAll(Flux.just(e1, e2, e3)).then())
         .verifyComplete();
@@ -187,8 +175,6 @@ class ChannelManagerTest {
 
     ChannelEntity e1 = MAPPER.readValue(both, ChannelEntity.class);
     ChannelEntity e2 = MAPPER.readValue(fallback, ChannelEntity.class);
-    setNotDeleted(e1);
-    setNotDeleted(e2);
     StepVerifier.create(channelRepository.saveAll(Flux.just(e1, e2)).then())
         .verifyComplete();
     channelManager.refresh();
@@ -230,8 +216,6 @@ class ChannelManagerTest {
 
     ChannelEntity e1 = MAPPER.readValue(priorityOnly, ChannelEntity.class);
     ChannelEntity e2 = MAPPER.readValue(excludeOnly, ChannelEntity.class);
-    setNotDeleted(e1);
-    setNotDeleted(e2);
     StepVerifier.create(channelRepository.saveAll(Flux.just(e1, e2)).then())
         .verifyComplete();
     channelManager.refresh();
@@ -262,7 +246,6 @@ class ChannelManagerTest {
         }
         """, APNS_PROPS);
     ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
-    setNotDeleted(entity);
     StepVerifier.create(channelRepository.save(entity))
         .assertNext(saved -> assertThat(saved.getCode()).isEqualTo("solo-exclude"))
         .verifyComplete();

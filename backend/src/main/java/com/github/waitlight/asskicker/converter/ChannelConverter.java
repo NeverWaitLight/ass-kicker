@@ -28,7 +28,6 @@ public interface ChannelConverter {
     @Mapping(target = "providerType", source = "provider")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "properties", qualifiedByName = "channelJsonToProperties")
     ChannelEntity toEntity(CreateChannelDTO dto);
 
@@ -39,7 +38,6 @@ public interface ChannelConverter {
     @Mapping(target = "providerType", source = "provider")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "properties", qualifiedByName = "channelJsonToProperties")
     ChannelEntity toEntity(UpdateChannelDTO dto);
 }

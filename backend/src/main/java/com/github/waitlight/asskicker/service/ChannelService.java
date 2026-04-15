@@ -8,7 +8,6 @@ import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.repository.ChannelRepository;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
-import com.github.waitlight.asskicker.util.SoftDeleteConstants;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -85,14 +84,13 @@ public class ChannelService {
         return channelRepository.findByChannelTypeAndEnabled(type, true);
     }
 
-    public Mono<ChannelEntity> create(ChannelEntity entity) {
+    public Mono<ChannelEntity> create(ChannelEntity c) {
         long now = Instant.now().toEpochMilli();
-        entity.setId(snowflakeIdGenerator.nextIdString());
-        entity.setCreatedAt(now);
-        entity.setUpdatedAt(now);
-        entity.setDeletedAt(SoftDeleteConstants.NOT_DELETED);
-        return ensureUniqueKey(entity.getCode(), null)
-                .then(Mono.defer(() -> channelRepository.save(entity)))
+        c.setId(snowflakeIdGenerator.nextIdString());
+        c.setCreatedAt(now);
+        c.setUpdatedAt(now);
+        return ensureUniqueKey(c.getCode(), null)
+                .then(Mono.defer(() -> channelRepository.save(c)))
                 .doOnSuccess(saved -> {
                     if (saved != null) {
                         invalidateChannelCaches(saved.getId(), saved.getCode());

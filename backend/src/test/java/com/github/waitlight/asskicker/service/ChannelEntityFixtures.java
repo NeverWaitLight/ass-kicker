@@ -28,7 +28,6 @@ public final class ChannelEntityFixtures {
                   "priorityAddressRegex": "^1[3-9]\\\\d{9}$",
                   "excludeAddressRegex": "^1(70|71|162)\\\\d{8}$",
                   "enabled": true,
-                  "deletedAt": 0,
                   "properties": {
                     "accessKeyId": "ak-test",
                     "accessKeySecret": "sk-test",
@@ -53,7 +52,6 @@ public final class ChannelEntityFixtures {
                   "priorityAddressRegex": "^[a-zA-Z0-9._%+-]+@(mail\\\\.)?corp\\\\.example\\\\.com$",
                   "excludeAddressRegex": "^(no-?reply|bounce|mailer-daemon)@",
                   "enabled": true,
-                  "deletedAt": 0,
                   "properties": {
                     "host": "smtp.example.com",
                     "port": "465",
@@ -81,7 +79,6 @@ public final class ChannelEntityFixtures {
                   "priorityAddressRegex": "^(C|G|D)[A-Z0-9]{8,}$|^#[a-z0-9._-]+$",
                   "excludeAddressRegex": "^D0[A-Z0-9]+$|^#archive-",
                   "enabled": true,
-                  "deletedAt": 0,
                   "properties": {
                     "url": "https://oapi.dingtalk.com/robot/send",
                     "maxRetries": "3",
@@ -103,7 +100,6 @@ public final class ChannelEntityFixtures {
                   "priorityAddressRegex": "^(C|G|D)[A-Z0-9]{8,}$",
                   "excludeAddressRegex": "^#archive-",
                   "enabled": false,
-                  "deletedAt": 0,
                   "properties": {
                     "url": ""
                   }
@@ -122,7 +118,6 @@ public final class ChannelEntityFixtures {
                   "priorityAddressRegex": "^[0-9a-fA-F]{64}$",
                   "excludeAddressRegex": "^0{64}$|^[fF]{64}$",
                   "enabled": true,
-                  "deletedAt": 0,
                   "properties": {
                     "teamId": "APPLE_TEAM_ID",
                     "keyId": "AUTH_KEY_ID",
@@ -148,7 +143,6 @@ public final class ChannelEntityFixtures {
                   "priorityAddressRegex": "^[0-9a-fA-F]{64}$",
                   "excludeAddressRegex": "^0{64}$",
                   "enabled": false,
-                  "deletedAt": 0,
                   "properties": {
                     "teamId": "T",
                     "keyId": "K",
