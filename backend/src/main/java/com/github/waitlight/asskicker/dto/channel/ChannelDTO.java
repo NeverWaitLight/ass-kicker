@@ -15,36 +15,35 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChannelDTO {
 
-    @NotBlank(message = "{channel.id.notblank}")
     private String id;
 
-    @NotBlank(message = "Channel provider key is required")
-    @Size(max = 100, message = "Channel provider key must not exceed 100 characters")
+    @NotBlank(message = "{channel.key.notblank}")
+    @Size(max = 100, message = "{channel.key.size}")
     private String key;
 
-    @NotBlank(message = "Channel provider name is required")
-    @Size(max = 255, message = "Channel provider name must not exceed 255 characters")
+    @NotBlank(message = "{channel.name.notblank}")
+    @Size(max = 255, message = "{channel.name.size}")
     private String name;
 
-    @NotNull(message = "Channel type is required")
+    @NotNull(message = "{channel.type.notnull}")
     private ChannelType type;
 
-    @NotBlank(message = "Provider is required")
-    @Size(max = 100, message = "Provider must not exceed 100 characters")
+    @NotBlank(message = "{channel.provider.notblank}")
+    @Size(max = 100, message = "{channel.provider.size}")
     private String provider;
 
-    @Size(max = 1000, message = "Description must not exceed 1000 characters")
+    @Size(max = 1000, message = "{channel.description.size}")
     private String description;
 
-    @Size(max = 2048, message = "Priority address regex must not exceed 2048 characters")
+    @Size(max = 2048, message = "{channel.priorityAddressRegex.size}")
     private String priorityAddressRegex;
 
-    @Size(max = 2048, message = "Exclude address regex must not exceed 2048 characters")
+    @Size(max = 2048, message = "{channel.excludeAddressRegex.size}")
     private String excludeAddressRegex;
 
     private boolean enabled = true;
 
-    @NotNull(message = "Properties are required")
+    @NotNull
     private JsonNode properties = JsonNodeFactory.instance.objectNode();
 
     private Long createdAt;

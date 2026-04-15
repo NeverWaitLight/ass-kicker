@@ -1,22 +1,19 @@
 package com.github.waitlight.asskicker.service;
 
 import com.github.waitlight.asskicker.converter.ChannelConverter;
-import com.github.waitlight.asskicker.dto.channel.ChannelDTO;
-import com.github.waitlight.asskicker.dto.PageResp;
+import com.github.waitlight.asskicker.exception.ConflictException;
+import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.repository.ChannelRepository;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import com.github.waitlight.asskicker.util.SoftDeleteConstants;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -34,31 +31,21 @@ public class ChannelService {
         return channelRepository.findByEnabled(true);
     }
 
-    public Flux<ChannelEntity> findAll(int page, int size) {
-        if (page < 0 || size <= 0) {
-            return Flux.empty();
-        }
-        long offset = (long) page * (long) size;
-        return channelRepository.findAll()
-                .skip(offset)
-                .take(size);
+    public Mono<Long> count(String keyword) {
+        return channelRepository.count(keyword);
     }
 
-    public Mono<PageResp<ChannelDTO>> page(int page, int size) {
-        int normalizedPage = page <= 0 ? 1 : page;
-        int normalizedSize = size <= 0 ? 10 : size;
-        int zeroBasedPage = normalizedPage - 1;
-        Mono<Long> totalMono = channelRepository.count(null);
-        Mono<List<ChannelDTO>> itemsMono =
-                findAll(zeroBasedPage, normalizedSize)
-                        .map(channelConverter::toDto)
-                        .collectList();
-        return Mono.zip(itemsMono, totalMono)
-                .map(t -> PageResp.success(normalizedPage, normalizedSize, t.getT2(), t.getT1()));
+    public Flux<ChannelEntity> list(String keyword, int limit, int offset) {
+        return channelRepository.list(keyword, limit, offset);
     }
 
     public Mono<ChannelEntity> findById(String id) {
         return channelRepository.findById(id);
+    }
+
+    public Mono<ChannelEntity> getById(String id) {
+        return channelRepository.findById(id)
+                .switchIfEmpty(Mono.error(new NotFoundException("channel.notFound", new Object[] { id })));
     }
 
     public Mono<ChannelEntity> findByKey(String key) {
@@ -87,6 +74,7 @@ public class ChannelService {
 
     public Mono<ChannelEntity> update(String id, ChannelEntity patch) {
         return channelRepository.findById(id)
+                .switchIfEmpty(Mono.error(new NotFoundException("channel.notFound", new Object[] { id })))
                 .flatMap(existing -> ensureUniqueKey(patch.getCode(), id)
                         .then(Mono.defer(() -> {
                             channelConverter.merge(patch, existing);
@@ -105,9 +93,7 @@ public class ChannelService {
                     if (currentId != null && currentId.equals(existing.getId())) {
                         return Mono.empty();
                     }
-                    return Mono.error(new ResponseStatusException(
-                            HttpStatus.CONFLICT,
-                            "Channel provider key already exists: " + key));
+                    return Mono.error(new ConflictException("channel.key.exists", new Object[] { key }));
                 })
                 .then();
     }
