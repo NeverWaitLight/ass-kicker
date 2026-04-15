@@ -20,10 +20,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
+import com.github.waitlight.asskicker.model.ProviderType;
+import jakarta.validation.constraints.NotBlank;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+@ChannelImpl(providerType = ProviderType.DINGTALK_WEBHOOK, propertyClass = DingtalkWebhookChannel.Spec.class)
 public class DingtalkWebhookChannel extends Channel {
 
     private final Spec spec;
@@ -147,7 +150,8 @@ public class DingtalkWebhookChannel extends Channel {
         return defaultValue;
     }
 
-    record Spec(String url) {
+    record Spec(
+            @NotBlank(message = "url 不能为空") String url) {
     }
 }
 

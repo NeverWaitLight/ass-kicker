@@ -7,6 +7,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.github.waitlight.asskicker.model.ChannelEntity;
+import com.github.waitlight.asskicker.model.ProviderType;
+import jakarta.validation.constraints.NotBlank;
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -26,6 +28,7 @@ import reactor.core.publisher.Mono;
 /**
  * DingTalk enterprise robot: group messages via Open API (OAuth access token + group send).
  */
+@ChannelImpl(providerType = ProviderType.DINGTALK_BOT, propertyClass = DingtalkBotChannel.Spec.class)
 public class DingtalkBotChannel extends Channel {
 
     private static final String HEADER_ACCESS_TOKEN = "x-acs-dingtalk-access-token";
@@ -199,11 +202,11 @@ public class DingtalkBotChannel extends Channel {
     }
 
     record Spec(
-            String appKey,
-            String appSecret,
-            String robotCode,
-            String accessTokenUrl,
-            String groupSendUrl) {
+            @NotBlank(message = "appKey 不能为空") String appKey,
+            @NotBlank(message = "appSecret 不能为空") String appSecret,
+            @NotBlank(message = "robotCode 不能为空") String robotCode,
+            @NotBlank(message = "accessTokenUrl 不能为空") String accessTokenUrl,
+            @NotBlank(message = "groupSendUrl 不能为空") String groupSendUrl) {
     }
 }
 

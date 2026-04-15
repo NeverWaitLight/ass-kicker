@@ -7,6 +7,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.github.waitlight.asskicker.model.ChannelEntity;
+import com.github.waitlight.asskicker.model.ProviderType;
+import jakarta.validation.constraints.NotBlank;
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -28,6 +30,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sns.SnsAsyncClient;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
 
+@ChannelImpl(providerType = ProviderType.AWS_SMS, propertyClass = AwsSnsSmsChannel.Spec.class)
 public class AwsSnsSmsChannel extends Channel {
 
     private final Spec spec;
@@ -133,7 +136,12 @@ public class AwsSnsSmsChannel extends Channel {
         return recipients;
     }
 
-    record Spec(String accessKeyId, String secretAccessKey, String region, String sessionToken, String endpoint) {
+    record Spec(
+            @NotBlank(message = "accessKeyId 不能为空") String accessKeyId,
+            @NotBlank(message = "secretAccessKey 不能为空") String secretAccessKey,
+            @NotBlank(message = "region 不能为空") String region,
+            String sessionToken,
+            String endpoint) {
     }
 }
 

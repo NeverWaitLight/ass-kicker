@@ -14,6 +14,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.github.waitlight.asskicker.model.ChannelEntity;
+import com.github.waitlight.asskicker.model.ProviderType;
+import jakarta.validation.constraints.NotBlank;
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -34,6 +36,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
+@ChannelImpl(providerType = ProviderType.APNS, propertyClass = ApnsChannel.Spec.class)
 public class ApnsChannel extends Channel {
 
     private final Spec spec;
@@ -185,11 +188,11 @@ public class ApnsChannel extends Channel {
     }
 
     record Spec(
-            String url,
-            String bundleIdTopic,
-            String teamId,
-            String keyId,
-            String privateKeyPem,
+            @NotBlank(message = "url 不能为空") String url,
+            @NotBlank(message = "bundleIdTopic 不能为空") String bundleIdTopic,
+            @NotBlank(message = "teamId 不能为空") String teamId,
+            @NotBlank(message = "keyId 不能为空") String keyId,
+            @NotBlank(message = "privateKeyPem 不能为空") String privateKeyPem,
             String apnsId) {
     }
 }

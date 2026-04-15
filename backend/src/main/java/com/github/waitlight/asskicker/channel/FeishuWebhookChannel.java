@@ -20,10 +20,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
+import com.github.waitlight.asskicker.model.ProviderType;
 
+import jakarta.validation.constraints.NotBlank;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+@ChannelImpl(providerType = ProviderType.FEISHU_WEBHOOK, propertyClass = FeishuWebhookChannel.Spec.class)
 public class FeishuWebhookChannel extends Channel {
 
     private final Spec spec;
@@ -145,7 +148,7 @@ public class FeishuWebhookChannel extends Channel {
         return defaultValue;
     }
 
-    record Spec(String url) {
+    record Spec(@NotBlank(message = "url 不能为空") String url) {
     }
 }
 

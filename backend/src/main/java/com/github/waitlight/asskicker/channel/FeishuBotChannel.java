@@ -19,6 +19,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
+import com.github.waitlight.asskicker.model.ProviderType;
+import jakarta.validation.constraints.NotBlank;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -26,6 +28,7 @@ import reactor.core.publisher.Mono;
 /**
  * Feishu/Lark custom app bot: tenant access token + im/v1/messages (chat_id).
  */
+@ChannelImpl(providerType = ProviderType.FEISHU_BOT, propertyClass = FeishuBotChannel.Spec.class)
 public class FeishuBotChannel extends Channel {
 
     private static final String DEFAULT_RECEIVE_ID_TYPE = "chat_id";
@@ -195,10 +198,10 @@ public class FeishuBotChannel extends Channel {
     }
 
     record Spec(
-            String appId,
-            String appSecret,
-            String tenantTokenUrl,
-            String messageSendUrl,
+            @NotBlank(message = "appId 不能为空") String appId,
+            @NotBlank(message = "appSecret 不能为空") String appSecret,
+            @NotBlank(message = "tenantTokenUrl 不能为空") String tenantTokenUrl,
+            @NotBlank(message = "messageSendUrl 不能为空") String messageSendUrl,
             String receiveIdType) {
     }
 }

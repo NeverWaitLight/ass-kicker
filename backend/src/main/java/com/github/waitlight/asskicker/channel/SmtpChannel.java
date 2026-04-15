@@ -13,8 +13,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
+import com.github.waitlight.asskicker.model.ProviderType;
 
 import jakarta.mail.Authenticator;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.mail.Message;
 import jakarta.mail.PasswordAuthentication;
 import jakarta.mail.Session;
@@ -24,6 +26,7 @@ import jakarta.mail.internet.MimeMessage;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+@ChannelImpl(providerType = ProviderType.SMTP, propertyClass = SmtpChannel.Spec.class)
 public class SmtpChannel extends Channel {
 
     private final Spec spec;
@@ -117,8 +120,16 @@ public class SmtpChannel extends Channel {
         return recipients;
     }
 
-    record Spec(String host, int port, String username, String password, String from, boolean sslEnabled,
-            boolean startTls, Integer connectionTimeout, Integer readTimeout) {
+    record Spec(
+            @NotBlank(message = "host 不能为空") String host,
+            int port,
+            @NotBlank(message = "username 不能为空") String username,
+            String password,
+            @NotBlank(message = "from 不能为空") String from,
+            boolean sslEnabled,
+            boolean startTls,
+            Integer connectionTimeout,
+            Integer readTimeout) {
 
         static Spec fromProperties(Map<String, String> p) {
             if (p == null) {

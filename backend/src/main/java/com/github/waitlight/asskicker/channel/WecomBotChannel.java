@@ -21,13 +21,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
+import com.github.waitlight.asskicker.model.ProviderType;
 
+import jakarta.validation.constraints.NotBlank;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
  * WeCom app chat message to group chat by chat_id (appchat/send).
  */
+@ChannelImpl(providerType = ProviderType.WECOM_BOT, propertyClass = WecomBotChannel.Spec.class)
 public class WecomBotChannel extends Channel {
 
     private final Spec spec;
@@ -208,10 +211,10 @@ public class WecomBotChannel extends Channel {
     }
 
     record Spec(
-            String corpId,
-            String corpSecret,
-            String getTokenUrl,
-            String messageSendUrl) {
+            @NotBlank(message = "corpId 不能为空") String corpId,
+            @NotBlank(message = "corpSecret 不能为空") String corpSecret,
+            @NotBlank(message = "getTokenUrl 不能为空") String getTokenUrl,
+            @NotBlank(message = "messageSendUrl 不能为空") String messageSendUrl) {
     }
 }
 

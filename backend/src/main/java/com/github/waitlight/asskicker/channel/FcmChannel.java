@@ -19,12 +19,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
+import com.github.waitlight.asskicker.model.ProviderType;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
+@ChannelImpl(providerType = ProviderType.FCM, propertyClass = FcmChannel.Spec.class)
 public class FcmChannel extends Channel {
 
     private final Spec spec;
@@ -152,9 +155,9 @@ public class FcmChannel extends Channel {
     }
 
     record Spec(
-            String url,
-            String projectId,
-            String accessToken) {
+            @NotBlank(message = "url 不能为空") String url,
+            @NotBlank(message = "projectId 不能为空") String projectId,
+            @NotBlank(message = "accessToken 不能为空") String accessToken) {
     }
 }
 
