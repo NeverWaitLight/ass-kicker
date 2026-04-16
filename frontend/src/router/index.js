@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginPage from '../views/LoginPage.vue'
-import HomePage from '../views/HomePage.vue'
 import UserManagementPage from '../views/UserManagementPage.vue'
 import ProfileSettingsPage from '../views/ProfileSettingsPage.vue'
 import { getAccessToken, getUser } from '../utils/auth'
@@ -20,7 +19,7 @@ const routes = [
   },
   {
     path: '/',
-    component: HomePage
+    redirect: '/send-records'
   },
   {
     path: '/users',

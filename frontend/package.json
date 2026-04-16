@@ -12,6 +12,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@ant-design/icons-vue": "^7.0.1",
     "ant-design-vue": "^4.1.2",
     "vue": "^3.4.21",
     "vue-i18n": "^9.10.2",
