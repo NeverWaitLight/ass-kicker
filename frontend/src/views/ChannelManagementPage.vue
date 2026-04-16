@@ -1,7 +1,21 @@
 <template>
   <ChannelManagementLayout>
-    <template #title>通道管理</template>
+    <template #title>通道</template>
     <template #subtitle>集中管理通道配置、状态与权限</template>
+    <template #actions>
+      <a-input
+        v-model:value="channelSearch"
+        placeholder="搜索通道名称或类型"
+        allow-clear
+        style="width: 220px"
+        @pressEnter="onSearch"
+      />
+      <a-button @click="onSearch">搜索</a-button>
+      <a-button :loading="channelLoading" @click="loadChannels">刷新</a-button>
+      <a-tooltip title="新建通道">
+        <a-button type="primary" :disabled="!canCreate" @click="openCreate">新建</a-button>
+      </a-tooltip>
+    </template>
 
     <a-result v-if="denied" status="403" title="暂无权限" sub-title="请联系管理员开通通道权限。">
       <template #extra>
@@ -12,40 +26,18 @@
     </a-result>
 
     <template v-else>
-      <a-card class="data-list-card" :bordered="false">
-        <template #title>
-          <div class="data-list-card__head">
-            <span class="data-list-card__head-title">通道列表</span>
-            <span class="data-list-card__head-meta">共 {{ filteredChannels.length }} 条</span>
-          </div>
-        </template>
-        <template #extra>
-          <a-space wrap>
-            <a-input
-              v-model:value="channelSearch"
-              placeholder="搜索通道名称或类型"
-              allow-clear
-              class="data-list-toolbar__search"
-              @pressEnter="onSearch"
-            />
-            <a-button @click="onSearch">搜索</a-button>
-            <a-button :loading="channelLoading" @click="loadChannels">刷新</a-button>
-            <a-button type="primary" :disabled="!canCreate" @click="openCreate">新增</a-button>
-          </a-space>
-        </template>
-        <ChannelTable
-          :rows="pagedChannels"
-          :loading="channelLoading"
-          :pagination="tablePagination"
-          :can-test="canEdit"
-          :can-edit="canEdit"
-          :can-delete="canDelete"
-          @test="openTest"
-          @edit="openEdit"
-          @delete="openDelete"
-          @page-change="handleTableChange"
-        />
-      </a-card>
+      <ChannelTable
+        :rows="pagedChannels"
+        :loading="channelLoading"
+        :pagination="tablePagination"
+        :can-test="canEdit"
+        :can-edit="canEdit"
+        :can-delete="canDelete"
+        @test="openTest"
+        @edit="openEdit"
+        @delete="openDelete"
+        @page-change="handleTableChange"
+      />
     </template>
 
     <ChannelDeleteModal
@@ -150,9 +142,7 @@ const tablePagination = computed(() => ({
   current: channelPagination.page,
   pageSize: channelPagination.size,
   total: filteredChannels.value.length,
-  showSizeChanger: true,
-  pageSizeOptions: ['10', '20', '50'],
-  showTotal: (total) => `共 ${total} 条`
+  showSizeChanger: false
 }))
 
 watch(filteredChannels, (value) => {
@@ -181,9 +171,6 @@ const onSearch = () => {
 
 const handleTableChange = (pager) => {
   channelPagination.page = pager.current || 1
-  if (pager.pageSize) {
-    channelPagination.size = pager.pageSize
-  }
 }
 
 const openCreate = () => {

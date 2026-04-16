@@ -173,17 +173,12 @@ onMounted(() => {
 
 <style scoped>
 .hero {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px;
-  box-sizing: border-box;
+  max-width: 640px;
 }
 .hero-title {
   margin-bottom: 24px;
-  text-align: center;
 }
 .hero-card {
-  max-width: 640px;
-  margin: 0 auto;
+  margin-top: 0;
 }
 </style>

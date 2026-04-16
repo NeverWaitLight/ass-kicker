@@ -1,79 +1,53 @@
 <template>
-  <section class="data-list-page">
-    <header class="data-list-page__header">
+  <section class="page-shell">
+    <div class="page-header">
       <div>
-        <h2 class="data-list-page__title">用户管理</h2>
-        <p class="data-list-page__desc">管理系统账号、角色、状态与密码</p>
+        <h2>用户</h2>
+        <p>管理系统账号、重置密码与控制状态</p>
       </div>
-    </header>
+      <a-space>
+        <a-input v-model:value="keyword" placeholder="搜索用户名" allow-clear @pressEnter="loadUsers" />
+        <a-tooltip title="新建用户">
+          <a-button type="primary" @click="openCreate">新建</a-button>
+        </a-tooltip>
+      </a-space>
+    </div>
 
-    <a-card class="data-list-card" :bordered="false">
-      <template #title>
-        <div class="data-list-card__head">
-          <span class="data-list-card__head-title">用户列表</span>
-          <span class="data-list-card__head-meta">共 {{ pagination.total }} 人</span>
-        </div>
-      </template>
-      <template #extra>
-        <a-space wrap>
-          <a-input
-            v-model:value="keyword"
-            allow-clear
-            placeholder="搜索用户名"
-            class="data-list-toolbar__search"
-            @pressEnter="onSearch"
-          />
-          <a-button :loading="loading" @click="loadUsers">刷新</a-button>
-          <a-button type="primary" @click="openCreate">新增</a-button>
-        </a-space>
-      </template>
-
-      <a-table
-        class="data-list-table"
-        :data-source="users"
-        :columns="columns"
-        :pagination="tablePagination"
-        :loading="loading"
-        :scroll="{ x: 880 }"
-        table-layout="fixed"
-        size="middle"
-        bordered
-        row-key="id"
-        @change="handleTableChange"
-      >
-        <template #bodyCell="{ column, record, index }">
-          <template v-if="column.key === 'ordinal'">
-            <span class="cell-ordinal">{{ (pagination.page - 1) * pagination.size + index + 1 }}</span>
-          </template>
-          <template v-else-if="column.key === 'username'">
-            <span class="data-list-cell-ellipsis" :title="record.username">{{ record.username }}</span>
-          </template>
-          <template v-else-if="column.key === 'role'">
-            <a-tag :color="record.role === 'ADMIN' ? 'gold' : 'blue'">{{ roleLabel(record.role) }}</a-tag>
-          </template>
-          <template v-else-if="column.key === 'status'">
-            <a-tag :color="record.status === 'ACTIVE' ? 'green' : 'red'">{{ record.status }}</a-tag>
-          </template>
-          <template v-else-if="column.key === 'createdAt'">
-            <span class="data-list-cell-time">{{ formatTimestamp(record.createdAt) }}</span>
-          </template>
-          <template v-else-if="column.key === 'actions'">
-            <a-space :size="4" wrap>
-              <a-button type="link" size="small" class="data-list-action-link" @click="openEdit(record)">编辑</a-button>
-              <a-button type="link" size="small" class="data-list-action-link" @click="openReset(record)">重置密码</a-button>
-              <a-button type="link" size="small" danger @click="confirmDelete(record)">删除</a-button>
-            </a-space>
-          </template>
+    <a-table
+      :data-source="users"
+      :columns="columns"
+      :pagination="tablePagination"
+      :loading="loading"
+      row-key="id"
+      @change="handleTableChange"
+    >
+      <template #bodyCell="{ column, record, index }">
+        <template v-if="column.key === 'ordinal'">
+          {{ (pagination.page - 1) * pagination.size + index + 1 }}
         </template>
-      </a-table>
-    </a-card>
+        <template v-else-if="column.key === 'role'">
+          <a-tag :color="record.role === 'ADMIN' ? 'gold' : 'blue'">{{ record.role }}</a-tag>
+        </template>
+        <template v-else-if="column.key === 'status'">
+          <a-tag :color="record.status === 'ACTIVE' ? 'green' : 'red'">{{ record.status }}</a-tag>
+        </template>
+        <template v-else-if="column.key === 'createdAt'">
+          {{ formatTimestamp(record.createdAt) }}
+        </template>
+        <template v-else-if="column.key === 'actions'">
+          <a-space>
+            <a-button size="small" @click="openReset(record)">重置密码</a-button>
+            <a-button size="small" danger @click="confirmDelete(record)">删除</a-button>
+          </a-space>
+        </template>
+      </template>
+    </a-table>
 
     <a-modal
       v-model:open="createOpen"
       :title="createModalTitle"
       :confirm-loading="creating"
       :mask-closable="false"
-      destroy-on-close
       @ok="submitCreate"
       @cancel="closeCreate"
     >
@@ -86,56 +60,21 @@
         layout="horizontal"
       >
         <a-form-item label="用户名" name="username">
-          <a-input v-model:value="createForm.username" autocomplete="off" />
+          <a-input v-model:value="createForm.username" />
         </a-form-item>
         <a-form-item label="密码" name="password">
-          <a-input-password v-model:value="createForm.password" autocomplete="new-password" />
+          <a-input-password v-model:value="createForm.password" />
         </a-form-item>
         <a-form-item label="角色" name="role">
           <a-select v-model:value="createForm.role" style="width: 100%">
-            <a-select-option value="ADMIN">管理员</a-select-option>
-            <a-select-option value="MEMBER">成员</a-select-option>
+            <a-select-option value="ADMIN">ADMIN</a-select-option>
+            <a-select-option value="USER">USER</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item label="状态" name="status">
           <a-select v-model:value="createForm.status" style="width: 100%">
-            <a-select-option value="ACTIVE">启用</a-select-option>
-            <a-select-option value="DISABLED">停用</a-select-option>
-          </a-select>
-        </a-form-item>
-      </a-form>
-    </a-modal>
-
-    <a-modal
-      v-model:open="editOpen"
-      title="编辑"
-      :confirm-loading="editing"
-      :mask-closable="false"
-      destroy-on-close
-      @ok="submitEdit"
-      @cancel="closeEdit"
-    >
-      <a-form
-        ref="editFormRef"
-        :model="editForm"
-        :rules="editFormRules"
-        :label-col="{ span: 6 }"
-        :wrapper-col="{ span: 16 }"
-        layout="horizontal"
-      >
-        <a-form-item label="用户名" name="username">
-          <a-input v-model:value="editForm.username" autocomplete="off" />
-        </a-form-item>
-        <a-form-item label="角色" name="role">
-          <a-select v-model:value="editForm.role" style="width: 100%">
-            <a-select-option value="ADMIN">管理员</a-select-option>
-            <a-select-option value="MEMBER">成员</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item label="状态" name="status">
-          <a-select v-model:value="editForm.status" style="width: 100%">
-            <a-select-option value="ACTIVE">启用</a-select-option>
-            <a-select-option value="DISABLED">停用</a-select-option>
+            <a-select-option value="ACTIVE">ACTIVE</a-select-option>
+            <a-select-option value="DISABLED">DISABLED</a-select-option>
           </a-select>
         </a-form-item>
       </a-form>
@@ -146,7 +85,6 @@
       title="重置密码"
       :confirm-loading="resetting"
       :mask-closable="false"
-      destroy-on-close
       @ok="submitReset"
       @cancel="closeReset"
     >
@@ -159,7 +97,7 @@
         layout="horizontal"
       >
         <a-form-item label="新密码" name="newPassword">
-          <a-input-password v-model:value="resetForm.newPassword" autocomplete="new-password" />
+          <a-input-password v-model:value="resetForm.newPassword" />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -187,29 +125,13 @@ const creating = ref(false)
 const createForm = reactive({
   username: '',
   password: '',
-  role: 'MEMBER',
+  role: 'USER',
   status: 'ACTIVE'
 })
 
 const createFormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-  role: [{ required: true, message: '请选择角色', trigger: 'change' }],
-  status: [{ required: true, message: '请选择状态', trigger: 'change' }]
-}
-
-const editOpen = ref(false)
-const editing = ref(false)
-const editFormRef = ref(null)
-const editForm = reactive({
-  id: '',
-  username: '',
-  role: 'MEMBER',
-  status: 'ACTIVE'
-})
-
-const editFormRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   role: [{ required: true, message: '请选择角色', trigger: 'change' }],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }]
 }
@@ -226,33 +148,20 @@ const resetFormRules = {
   newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }]
 }
 
-const roleLabel = (role) => {
-  if (role === 'ADMIN') return '管理员'
-  if (role === 'MEMBER' || role === 'USER') return '成员'
-  return role || '-'
-}
-
-const normalizeRole = (role) => {
-  if (role === 'USER') return 'MEMBER'
-  return role || 'MEMBER'
-}
-
 const columns = [
-  { title: '序号', key: 'ordinal', width: 72, align: 'center' },
-  { title: '用户名', dataIndex: 'username', key: 'username', width: 200, ellipsis: true },
-  { title: '角色', dataIndex: 'role', key: 'role', width: 112, align: 'center' },
-  { title: '状态', dataIndex: 'status', key: 'status', width: 112, align: 'center' },
-  { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 188 },
-  { title: '操作', key: 'actions', width: 220, align: 'center', fixed: 'right' }
+  { title: '序号', key: 'ordinal', width: 80 },
+  { title: '用户名', dataIndex: 'username', key: 'username' },
+  { title: '角色', dataIndex: 'role', key: 'role', width: 120 },
+  { title: '状态', dataIndex: 'status', key: 'status', width: 120 },
+  { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180 },
+  { title: '操作', key: 'actions', width: 180 }
 ]
 
 const tablePagination = computed(() => ({
   current: pagination.page,
   pageSize: pagination.size,
   total: pagination.total,
-  showSizeChanger: true,
-  pageSizeOptions: ['10', '20', '50'],
-  showTotal: (total) => `共 ${total} 条`
+  showSizeChanger: false
 }))
 
 const loadUsers = async () => {
@@ -279,14 +188,8 @@ const loadUsers = async () => {
   }
 }
 
-const onSearch = () => {
-  pagination.page = 1
-  loadUsers()
-}
-
-const handleTableChange = (pag) => {
-  pagination.page = pag.current
-  pagination.size = pag.pageSize
+const handleTableChange = (pager) => {
+  pagination.page = pager.current
   loadUsers()
 }
 
@@ -294,7 +197,7 @@ const openCreate = () => {
   openCreateModal(() => {
     createForm.username = ''
     createForm.password = ''
-    createForm.role = 'MEMBER'
+    createForm.role = 'USER'
     createForm.status = 'ACTIVE'
   })
 }
@@ -329,52 +232,6 @@ const submitCreate = async () => {
     return Promise.reject(error)
   } finally {
     creating.value = false
-  }
-}
-
-const openEdit = (record) => {
-  editForm.id = record.id
-  editForm.username = record.username
-  editForm.role = normalizeRole(record.role)
-  editForm.status = record.status
-  editOpen.value = true
-}
-
-const closeEdit = () => {
-  editOpen.value = false
-  editFormRef.value?.resetFields()
-}
-
-const submitEdit = async () => {
-  try {
-    await editFormRef.value?.validate()
-  } catch {
-    return Promise.reject(new Error('validation'))
-  }
-  editing.value = true
-  try {
-    const response = await apiFetch('/v1/users', {
-      method: 'PATCH',
-      body: JSON.stringify({
-        id: editForm.id,
-        username: editForm.username,
-        role: editForm.role,
-        status: editForm.status
-      })
-    })
-    if (!response.ok) {
-      message.error(await response.text())
-      return Promise.reject(new Error('http'))
-    }
-    message.success('用户已更新')
-    editOpen.value = false
-    editFormRef.value?.resetFields()
-    await loadUsers()
-  } catch (error) {
-    message.error('更新用户失败')
-    return Promise.reject(error)
-  } finally {
-    editing.value = false
   }
 }
 
@@ -438,10 +295,22 @@ onMounted(loadUsers)
 </script>
 
 <style scoped>
-/* 序号列略窄时仍居中 */
-.cell-ordinal {
-  display: inline-block;
-  min-width: 1.5em;
-  text-align: center;
+.page-shell {
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.page-header h2 {
+  margin: 0;
+}
+
+.page-header p {
+  margin: 4px 0 0;
 }
 </style>

@@ -1,86 +1,64 @@
 <template>
-  <section class="data-list-page">
-    <header class="data-list-page__header">
+  <section class="page-shell">
+    <div class="page-header">
       <div>
-        <h2 class="data-list-page__title">发送记录</h2>
-        <p class="data-list-page__desc">分页浏览消息发送记录与投递状态</p>
+        <h2>发送记录</h2>
+        <p>分页浏览消息发送记录</p>
       </div>
-    </header>
+      <a-button :loading="loading" @click="loadRecords">刷新</a-button>
+    </div>
 
-    <a-card class="data-list-card" :bordered="false">
-      <template #title>
-        <div class="data-list-card__head">
-          <span class="data-list-card__head-title">记录列表</span>
-          <span class="data-list-card__head-meta">共 {{ pagination.total }} 条</span>
-        </div>
-      </template>
-      <template #extra>
-        <a-space wrap>
-          <a-select
-            v-model:value="channelTypeFilter"
-            placeholder="通道类型"
-            allow-clear
-            class="send-records-filter"
-            :options="channelTypeOptions"
-            @change="doSearch"
-          />
-          <a-input
-            v-model:value="recipientSearch"
-            placeholder="邮箱/手机号等"
-            allow-clear
-            class="data-list-toolbar__search"
-            @pressEnter="doSearch"
-          />
-          <a-button :loading="loading" @click="loadRecords">刷新</a-button>
-          <a-button type="primary" @click="doSearch">搜索</a-button>
-        </a-space>
-      </template>
+    <div class="search-bar">
+      <a-select
+        v-model:value="channelTypeFilter"
+        placeholder="通道类型"
+        allow-clear
+        class="filter-select"
+        :options="channelTypeOptions"
+        @change="doSearch"
+      />
+      <a-input-search
+        v-model:value="recipientSearch"
+        placeholder="输入邮箱/手机号等精准搜索"
+        enter-button="搜索"
+        allow-clear
+        class="search-input"
+        @search="doSearch"
+      />
+    </div>
 
-      <a-table
-        class="data-list-table data-list-table--fluid"
-        :data-source="records"
-        :columns="columns"
-        :pagination="tablePagination"
-        :loading="loading"
-        size="middle"
-        bordered
-        row-key="id"
-        @change="handleTableChange"
-      >
-        <template #bodyCell="{ column, record, index }">
-          <template v-if="column.key === 'ordinal'">
-            {{ (pagination.page - 1) * pagination.size + index + 1 }}
-          </template>
-          <template v-else-if="column.key === 'taskId'">
-            <span class="data-list-cell-ellipsis" :title="record.taskId">{{ record.taskId }}</span>
-          </template>
-          <template v-else-if="column.key === 'templateCode'">
-            <span class="data-list-cell-ellipsis" :title="record.templateCode">{{ record.templateCode }}</span>
-          </template>
-          <template v-else-if="column.key === 'channelName'">
-            <span class="data-list-cell-ellipsis" :title="record.channelName">{{ record.channelName }}</span>
-          </template>
-          <template v-else-if="column.key === 'channelType'">
-            <a-tag color="blue">{{ channelTypeLabel(record.channelType) }}</a-tag>
-          </template>
-          <template v-else-if="column.key === 'recipient'">
-            <span class="data-list-cell-ellipsis" :title="record.recipient">{{ record.recipient || '-' }}</span>
-          </template>
-          <template v-else-if="column.key === 'status'">
-            <a-tag :color="statusColor(record.status)">{{ statusLabel(record.status) }}</a-tag>
-          </template>
-          <template v-else-if="column.key === 'submittedAt'">
-            <span class="data-list-cell-time">{{ formatTimestamp(record.submittedAt) }}</span>
-          </template>
-          <template v-else-if="column.key === 'sentAt'">
-            <span class="data-list-cell-time">{{ formatTimestamp(record.sentAt) }}</span>
-          </template>
-          <template v-else-if="column.key === 'actions'">
-            <a-button type="link" size="small" class="data-list-action-link" @click="goDetail(record)">详情</a-button>
-          </template>
+    <a-table
+      :data-source="records"
+      :columns="columns"
+      :pagination="tablePagination"
+      :loading="loading"
+      row-key="id"
+      @change="handleTableChange"
+    >
+      <template #bodyCell="{ column, record, index }">
+        <template v-if="column.key === 'ordinal'">
+          {{ (pagination.page - 1) * pagination.size + index + 1 }}
         </template>
-      </a-table>
-    </a-card>
+        <template v-else-if="column.key === 'channelType'">
+          <a-tag color="blue">{{ channelTypeLabel(record.channelType) }}</a-tag>
+        </template>
+        <template v-else-if="column.key === 'recipient'">
+          {{ record.recipient || '-' }}
+        </template>
+        <template v-else-if="column.key === 'status'">
+          <a-tag :color="statusColor(record.status)">{{ statusLabel(record.status) }}</a-tag>
+        </template>
+        <template v-else-if="column.key === 'submittedAt'">
+          {{ formatTimestamp(record.submittedAt) }}
+        </template>
+        <template v-else-if="column.key === 'sentAt'">
+          {{ formatTimestamp(record.sentAt) }}
+        </template>
+        <template v-else-if="column.key === 'actions'">
+          <a-button size="small" @click="goDetail(record)">详情</a-button>
+        </template>
+      </template>
+    </a-table>
   </section>
 </template>
 
@@ -100,31 +78,28 @@ const channelTypeFilter = ref('')
 const pagination = reactive({ page: 1, size: 10, total: 0 })
 
 const channelTypeOptions = [
-  { value: '', label: '全部类型' },
+  { value: '', label: '全部' },
   ...CHANNEL_TYPE_VALUES.map((v) => ({ value: v, label: CHANNEL_TYPE_LABELS['zh-CN'][v] || v }))
 ]
 
-/** 不设 scroll.x，表格随容器宽度自适应；未设宽度的列参与分配剩余空间 */
 const columns = [
-  { title: '序号', key: 'ordinal', width: 52, align: 'center' },
-  { title: '任务ID', dataIndex: 'taskId', key: 'taskId', ellipsis: true },
-  { title: '模板编码', dataIndex: 'templateCode', key: 'templateCode', ellipsis: true },
-  { title: '通道', dataIndex: 'channelName', key: 'channelName', ellipsis: true },
-  { title: '通道类型', key: 'channelType', width: 96, align: 'center' },
-  { title: '接收人', key: 'recipient', ellipsis: true },
-  { title: '状态', key: 'status', width: 72, align: 'center' },
-  { title: '提交时间', key: 'submittedAt', width: 158 },
-  { title: '发送时间', key: 'sentAt', width: 158 },
-  { title: '操作', key: 'actions', width: 72, align: 'center' }
+  { title: '序号', key: 'ordinal', width: 70 },
+  { title: '任务ID', dataIndex: 'taskId', key: 'taskId', ellipsis: true, width: 140 },
+  { title: '模板编码', dataIndex: 'templateCode', key: 'templateCode', width: 120 },
+  { title: '通道', dataIndex: 'channelName', key: 'channelName', width: 120 },
+  { title: '通道类型', key: 'channelType', width: 100 },
+  { title: '接收人', key: 'recipient', width: 140 },
+  { title: '状态', key: 'status', width: 90 },
+  { title: '提交时间', key: 'submittedAt', width: 170 },
+  { title: '发送时间', key: 'sentAt', width: 170 },
+  { title: '操作', key: 'actions', width: 90 }
 ]
 
 const tablePagination = computed(() => ({
   current: pagination.page,
   pageSize: pagination.size,
   total: pagination.total,
-  showSizeChanger: true,
-  pageSizeOptions: ['10', '20', '50'],
-  showTotal: (total) => `共 ${total} 条`
+  showSizeChanger: false
 }))
 
 const channelTypeLabel = (value) => (value ? (CHANNEL_TYPE_LABELS['zh-CN'][value] || value) : '-')
@@ -163,9 +138,6 @@ const doSearch = () => {
 
 const handleTableChange = (pager) => {
   pagination.page = pager.current
-  if (pager.pageSize) {
-    pagination.size = pager.pageSize
-  }
   loadRecords()
 }
 
@@ -177,7 +149,40 @@ onMounted(loadRecords)
 </script>
 
 <style scoped>
-.send-records-filter {
-  width: 150px;
+.page-shell {
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.page-header h2 {
+  margin: 0;
+}
+
+.page-header p {
+  margin: 4px 0 0;
+}
+
+.search-bar {
+  margin-bottom: 16px;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-bar .filter-select {
+  width: 140px;
+}
+
+.search-bar .search-input {
+  max-width: 360px;
 }
 </style>
