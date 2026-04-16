@@ -5,7 +5,10 @@
     </a-button>
     <template #overlay>
       <a-menu :theme="menuTheme" @click="onMenuClick">
-        <a-menu-item key="settings">{{ t('user.settings') }}</a-menu-item>
+        <a-menu-item key="profile">{{ t('user.personalSettings') }}</a-menu-item>
+        <a-menu-item key="password">{{ t('user.changePassword') }}</a-menu-item>
+        <a-menu-item key="apikeys">{{ t('user.apiKeyManagement') }}</a-menu-item>
+        <a-menu-divider />
         <a-menu-item key="logout">{{ t('user.logout') }}</a-menu-item>
       </a-menu>
     </template>
@@ -20,13 +23,15 @@ import { currentTheme } from '../stores/theme'
 
 const { t } = useI18n()
 
-const emit = defineEmits(['settings', 'logout'])
+const emit = defineEmits(['profile', 'password', 'apikeys', 'logout'])
 
 const displayName = computed(() => currentUser.value?.username || t('user.fallbackName'))
 const menuTheme = computed(() => (currentTheme.value === 'dark' ? 'dark' : 'light'))
 
 const onMenuClick = ({ key }) => {
-  if (key === 'settings') emit('settings')
+  if (key === 'profile') emit('profile')
+  if (key === 'password') emit('password')
+  if (key === 'apikeys') emit('apikeys')
   if (key === 'logout') emit('logout')
 }
 </script>

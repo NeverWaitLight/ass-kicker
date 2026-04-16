@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginPage from '../views/LoginPage.vue'
 import UserManagementPage from '../views/UserManagementPage.vue'
-import ProfileSettingsPage from '../views/ProfileSettingsPage.vue'
 import { getAccessToken, getUser } from '../utils/auth'
 import ChannelManagementPage from '../views/ChannelManagementPage.vue'
 import ChannelConfigPage from '../views/ChannelConfigPage.vue'
@@ -25,10 +24,6 @@ const routes = [
     path: '/users',
     component: UserManagementPage,
     meta: { requiresAdmin: true }
-  },
-  {
-    path: '/settings',
-    component: ProfileSettingsPage
   },
   {
     path: '/channels',

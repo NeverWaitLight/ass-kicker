@@ -12,7 +12,12 @@
         <a-space class="header-actions" size="middle">
           <ThemeToggle />
           <LocaleSwitcher />
-          <UserMenu @settings="goSettings" @logout="logout" />
+          <UserMenu
+            @profile="openProfileModal"
+            @password="openPasswordModal"
+            @apikeys="openApiKeysModal"
+            @logout="logout"
+          />
         </a-space>
       </a-layout-header>
       <a-layout class="app-body">
@@ -56,6 +61,7 @@
         </a-layout>
       </a-layout>
     </a-layout>
+    <UserAccountModals v-if="!isPublic" ref="accountModalsRef" />
   </a-config-provider>
 </template>
 
@@ -81,17 +87,19 @@ import logoUrl from './assets/logo.png'
 import ThemeToggle from './components/ThemeToggle.vue'
 import LocaleSwitcher from './components/LocaleSwitcher.vue'
 import UserMenu from './components/UserMenu.vue'
+import UserAccountModals from './components/UserAccountModals.vue'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
 const collapsed = ref(false)
+const accountModalsRef = ref(null)
 
 const isPublic = computed(() => route.meta?.public)
 const selectedKeys = computed(() => {
   const path = route.path
-  if (path === '/' || path === '/settings') {
+  if (path === '/') {
     return []
   }
   const base = `/${path.split('/')[1] || ''}`
@@ -128,8 +136,16 @@ const logout = () => {
   router.push('/login')
 }
 
-const goSettings = () => {
-  router.push('/settings')
+const openProfileModal = () => {
+  accountModalsRef.value?.openProfile()
+}
+
+const openPasswordModal = () => {
+  accountModalsRef.value?.openPassword()
+}
+
+const openApiKeysModal = () => {
+  accountModalsRef.value?.openApiKeys()
 }
 
 watch(
