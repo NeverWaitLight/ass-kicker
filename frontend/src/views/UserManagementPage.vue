@@ -18,6 +18,7 @@
       :columns="columns"
       :pagination="tablePagination"
       :loading="loading"
+      :scroll="{ x: 'max-content' }"
       row-key="id"
       @change="handleTableChange"
     >
@@ -149,12 +150,12 @@ const resetFormRules = {
 }
 
 const columns = [
-  { title: '序号', key: 'ordinal', width: 80 },
+  { title: '序号', key: 'ordinal' },
   { title: '用户名', dataIndex: 'username', key: 'username' },
-  { title: '角色', dataIndex: 'role', key: 'role', width: 120 },
-  { title: '状态', dataIndex: 'status', key: 'status', width: 120 },
-  { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180 },
-  { title: '操作', key: 'actions', width: 180 }
+  { title: '角色', dataIndex: 'role', key: 'role' },
+  { title: '状态', dataIndex: 'status', key: 'status' },
+  { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt' },
+  { title: '操作', key: 'actions', width: 180, fixed: 'right' }
 ]
 
 const tablePagination = computed(() => ({

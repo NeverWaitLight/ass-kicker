@@ -32,6 +32,7 @@
       :columns="columns"
       :pagination="tablePagination"
       :loading="loading"
+      :scroll="{ x: 'max-content' }"
       row-key="id"
       @change="handleTableChange"
     >
@@ -83,16 +84,16 @@ const channelTypeOptions = [
 ]
 
 const columns = [
-  { title: '序号', key: 'ordinal', width: 70 },
-  { title: '任务ID', dataIndex: 'taskId', key: 'taskId', ellipsis: true, width: 140 },
-  { title: '模板编码', dataIndex: 'templateCode', key: 'templateCode', width: 120 },
-  { title: '通道', dataIndex: 'channelName', key: 'channelName', width: 120 },
-  { title: '通道类型', key: 'channelType', width: 100 },
-  { title: '接收人', key: 'recipient', width: 140 },
-  { title: '状态', key: 'status', width: 90 },
-  { title: '提交时间', key: 'submittedAt', width: 170 },
-  { title: '发送时间', key: 'sentAt', width: 170 },
-  { title: '操作', key: 'actions', width: 90 }
+  { title: '序号', key: 'ordinal' },
+  { title: '任务ID', dataIndex: 'taskId', key: 'taskId' },
+  { title: '模板编码', dataIndex: 'templateCode', key: 'templateCode' },
+  { title: '通道', dataIndex: 'channelName', key: 'channelName' },
+  { title: '通道类型', key: 'channelType' },
+  { title: '接收人', key: 'recipient' },
+  { title: '状态', key: 'status' },
+  { title: '提交时间', key: 'submittedAt' },
+  { title: '发送时间', key: 'sentAt' },
+  { title: '操作', key: 'actions', width: 90, fixed: 'right' }
 ]
 
 const tablePagination = computed(() => ({

@@ -22,6 +22,7 @@
       :data-source="filteredTemplates"
       :loading="loading"
       :pagination="pagination"
+      :scroll="{ x: 'max-content' }"
       row-key="id"
       @change="handleTableChange"
     >
@@ -221,11 +222,11 @@ const formRules = {
 }
 
 const columns = [
-  { title: '名称', dataIndex: 'name', key: 'name', ellipsis: true },
-  { title: '编码', dataIndex: 'code', key: 'code', ellipsis: true },
-  { title: '通道类型', key: 'channelType', width: 180 },
-  { title: '扩展属性', key: 'attributes', width: 100 },
-  { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180 },
+  { title: '名称', dataIndex: 'name', key: 'name' },
+  { title: '编码', dataIndex: 'code', key: 'code' },
+  { title: '通道类型', key: 'channelType' },
+  { title: '扩展属性', key: 'attributes' },
+  { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt' },
   { title: '操作', key: 'actions', width: 180, fixed: 'right' }
 ]
 

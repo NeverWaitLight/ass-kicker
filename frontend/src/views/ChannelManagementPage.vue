@@ -87,7 +87,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import ChannelManagementLayout from '../components/channels/ChannelManagementLayout.vue'
-import ChannelTable from '../components/channels/ChannelTable.vue'
+import ChannelTable from '../components/channels/ChannelsPage.vue'
 import ChannelDeleteModal from '../components/channels/ChannelDeleteModal.vue'
 import ChannelTestSendModal from '../components/channels/ChannelTestSendModal.vue'
 import ChannelConfigEditor from '../components/channels/ChannelConfigEditor.vue'
