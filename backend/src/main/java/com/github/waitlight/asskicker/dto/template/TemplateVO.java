@@ -18,6 +18,8 @@ public class TemplateVO {
 
     private String code;
 
+    private String name;
+
     private ChannelType channelType;
 
     @Builder.Default

@@ -24,6 +24,9 @@ public class UpdateTemplateDTO {
     @Size(max = 100, message = "Message template code must not exceed 100 characters")
     private String code;
 
+    @Size(max = 255, message = "{template.name.size}")
+    private String name;
+
     private ChannelType channelType;
 
     private JsonNode templates;

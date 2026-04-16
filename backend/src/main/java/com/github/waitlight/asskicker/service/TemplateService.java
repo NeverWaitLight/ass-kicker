@@ -50,6 +50,9 @@ public class TemplateService {
         if (entity == null || !StringUtils.hasText(entity.getCode())) {
             return Mono.error(new BadRequestException("template.code.empty"));
         }
+        if (!StringUtils.hasText(entity.getName())) {
+            return Mono.error(new BadRequestException("template.name.empty"));
+        }
 
         return templateRepository.findByCode(entity.getCode())
                 .flatMap(existing -> Mono.<TemplateEntity>error(new ConflictException("template.code.exists")))
@@ -132,6 +135,7 @@ public class TemplateService {
     private TemplateEntity copyFieldsForCreate(TemplateEntity source) {
         TemplateEntity copy = new TemplateEntity();
         copy.setCode(source.getCode());
+        copy.setName(source.getName());
         copy.setChannelType(source.getChannelType());
         copy.setLocalizedTemplates(source.getLocalizedTemplates());
         return copy;
@@ -143,6 +147,9 @@ public class TemplateService {
     private void mergePatch(TemplateEntity patch, TemplateEntity target) {
         if (patch.getCode() != null) {
             target.setCode(patch.getCode());
+        }
+        if (patch.getName() != null) {
+            target.setName(patch.getName().trim());
         }
         if (patch.getChannelType() != null) {
             target.setChannelType(patch.getChannelType());

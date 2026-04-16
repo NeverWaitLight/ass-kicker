@@ -226,6 +226,7 @@ class TemplateServiceTest {
 
         private static void assertTemplateContentEqual(TemplateEntity expected, TemplateEntity actual) {
                 assertThat(actual.getCode()).isEqualTo(expected.getCode());
+                assertThat(actual.getName()).isEqualTo(expected.getName());
                 assertThat(actual.getChannelType()).isEqualTo(expected.getChannelType());
                 Map<Language, LocalizedTemplate> exp = expected.getLocalizedTemplates();
                 Map<Language, LocalizedTemplate> got = actual.getLocalizedTemplates();

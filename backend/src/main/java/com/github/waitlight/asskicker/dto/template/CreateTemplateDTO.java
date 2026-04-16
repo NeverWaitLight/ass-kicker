@@ -24,6 +24,10 @@ public class CreateTemplateDTO {
     @Size(max = 100, message = "Message template code must not exceed 100 characters")
     private String code;
 
+    @NotBlank(message = "{template.name.notblank}")
+    @Size(max = 255, message = "{template.name.size}")
+    private String name;
+
     @NotNull(message = "Message template channel type is required")
     private ChannelType channelType;
 

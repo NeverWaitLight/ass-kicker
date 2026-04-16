@@ -8,22 +8,6 @@
     <a-spin :spinning="pageLoading">
       <!-- 基本信息卡片 -->
       <div class="info-card">
-        <div class="info-card-header">
-          <div>
-            <h2 class="info-title">{{ template.name || '模板详情' }}</h2>
-            <code class="info-code">{{ template.code }}</code>
-          </div>
-          <div class="info-card-actions">
-            <template v-if="!infoEditing">
-              <a-button type="primary" ghost @click="startInfoEdit">编辑信息</a-button>
-            </template>
-            <template v-else>
-              <a-button :loading="infoSaving" type="primary" @click="saveInfo">保存</a-button>
-              <a-button @click="cancelInfoEdit">取消</a-button>
-            </template>
-          </div>
-        </div>
-
         <!-- 只读展示 -->
         <a-descriptions
           v-if="!infoEditing"
@@ -31,7 +15,6 @@
           bordered
           size="small"
           class="info-descriptions"
-          style="margin-top: 16px"
         >
           <a-descriptions-item label="模板名称">{{ template.name || '-' }}</a-descriptions-item>
           <a-descriptions-item label="模板编码">
@@ -66,7 +49,6 @@
           :model="infoForm"
           :rules="infoRules"
           layout="vertical"
-          style="margin-top: 16px"
         >
           <a-row :gutter="16">
             <a-col :span="12">
@@ -116,6 +98,16 @@
             <span>更新时间：{{ formatTimestamp(template.updatedAt) }}</span>
           </div>
         </a-form>
+
+        <div class="info-card-actions">
+          <template v-if="!infoEditing">
+            <a-button type="primary" ghost @click="startInfoEdit">编辑信息</a-button>
+          </template>
+          <template v-else>
+            <a-button :loading="infoSaving" type="primary" @click="saveInfo">保存</a-button>
+            <a-button @click="cancelInfoEdit">取消</a-button>
+          </template>
+        </div>
       </div>
 
       <!-- 多语言内容区域 -->
@@ -186,13 +178,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { formatTimestamp } from '../utils/time'
-import {
-  fetchTemplate,
-  updateTemplate,
-  fetchTemplateContents,
-  saveLanguageContent,
-  deleteLanguageContent
-} from '../utils/templateApi'
+import { fetchTemplate, updateTemplate, saveLanguageContent, deleteLanguageContent } from '../utils/templateApi'
 import { CHANNEL_TYPE_VALUES, CHANNEL_TYPE_LABELS } from '../constants/channelTypes'
 
 const channelTypeOptions = CHANNEL_TYPE_VALUES.map((v) => ({
@@ -309,18 +295,25 @@ const loadTemplate = async () => {
     infoForm.channelType = t.channelType
     infoAttributeRows.value = attributesToRows(t.attributes)
 
-    const contents = await fetchTemplateContents(id)
     LANGUAGES.forEach((lang) => {
       langContents[lang.code] = ''
       originalContents[lang.code] = ''
     })
-    contents.forEach((lt) => {
-      const code = lt.language?.code || lt.language
-      if (code) {
-        langContents[code] = lt.content || ''
-        originalContents[code] = lt.content || ''
-      }
-    })
+    const raw = t.templates
+    if (raw && typeof raw === 'object') {
+      LANGUAGES.forEach((lang) => {
+        const entry = raw[lang.code]
+        if (entry == null) return
+        const text =
+          typeof entry === 'string'
+            ? entry
+            : entry.content != null
+              ? entry.content
+              : ''
+        langContents[lang.code] = text
+        originalContents[lang.code] = text
+      })
+    }
   } catch (e) {
     message.error(e?.message || '加载模板失败')
   } finally {
@@ -446,29 +439,6 @@ onMounted(loadTemplate)
   padding: 24px;
 }
 
-.info-card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.info-title {
-  margin: 0 0 4px;
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.info-code {
-  display: inline-block;
-  margin-top: 4px;
-  font-size: 12px;
-  font-family: monospace;
-  padding: 1px 8px;
-  border-radius: 4px;
-  letter-spacing: 0.5px;
-}
-
 .desc-code {
   font-family: monospace;
   font-size: 12px;
@@ -484,6 +454,9 @@ onMounted(loadTemplate)
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+  justify-content: flex-end;
+  margin-top: 16px;
+  width: 100%;
 }
 
 .info-meta {

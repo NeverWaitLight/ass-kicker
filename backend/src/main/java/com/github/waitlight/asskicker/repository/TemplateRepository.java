@@ -73,7 +73,10 @@ public class TemplateRepository {
     private Query buildKeywordQuery(String keyword) {
         Query query = new Query();
         if (StringUtils.hasText(keyword)) {
-            query.addCriteria(Criteria.where("code").regex(".*" + keyword + ".*", "i"));
+            String pattern = ".*" + keyword + ".*";
+            query.addCriteria(new Criteria().orOperator(
+                    Criteria.where("code").regex(pattern, "i"),
+                    Criteria.where("name").regex(pattern, "i")));
         }
         return query;
     }

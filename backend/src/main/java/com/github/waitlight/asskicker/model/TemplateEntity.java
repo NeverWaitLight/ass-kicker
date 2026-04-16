@@ -23,6 +23,8 @@ public class TemplateEntity {
         @Indexed(name = "uk_template_code", unique = true)
         private String code;
 
+        private String name;
+
         private ChannelType channelType;
 
         private Map<Language, LocalizedTemplate> localizedTemplates;

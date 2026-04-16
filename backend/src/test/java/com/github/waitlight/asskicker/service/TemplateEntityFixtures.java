@@ -24,6 +24,7 @@ public final class TemplateEntityFixtures {
     return read("""
         {
           "code": "captcha",
+          "name": "短信验证码",
           "channelType": "SMS",
           "localizedTemplates": {
             "zh-CN": { "content": "{$channel.signName}这是登录验证码 {$code}" },
@@ -37,6 +38,7 @@ public final class TemplateEntityFixtures {
     return read("""
         {
           "code": "email-captcha",
+          "name": "邮件验证码",
           "channelType": "EMAIL",
           "localizedTemplates": {
             "zh-CN": { "title": "验证码", "content": "这是你的验证码 {$code}" },
@@ -50,6 +52,7 @@ public final class TemplateEntityFixtures {
     return read("""
         {
           "code": "ops_alert",
+          "name": "运维告警",
           "channelType": "IM",
           "localizedTemplates": {
             "zh-CN": { "title": "告警", "content": "服务 {$service} 出现异常" },
@@ -63,6 +66,7 @@ public final class TemplateEntityFixtures {
     return read("""
         {
           "code": "new_message_push",
+          "name": "新消息推送",
           "channelType": "PUSH",
           "localizedTemplates": {
             "zh-CN": { "title": "新消息", "content": "对方昵称:消息摘要..." },
@@ -76,6 +80,7 @@ public final class TemplateEntityFixtures {
     return read("""
         {
           "code": "welcome",
+          "name": "欢迎邮件",
           "channelType": "EMAIL",
           "localizedTemplates": {
             "zh-CN": { "title": "欢迎", "content": "欢迎 {$name}" },
@@ -89,6 +94,7 @@ public final class TemplateEntityFixtures {
     return read("""
         {
           "code": "sms_captcha",
+          "name": "短信验证码",
           "channelType": "SMS",
           "localizedTemplates": {
             "zh-CN": { "title": "验证码", "content": "您好 {{name}}，您的验证码是 {{code}}" }
@@ -101,6 +107,7 @@ public final class TemplateEntityFixtures {
     return read("""
         {
           "code": "x",
+          "name": "空本地化",
           "channelType": "SMS",
           "localizedTemplates": {}
         }
@@ -111,6 +118,7 @@ public final class TemplateEntityFixtures {
     return read("""
         {
           "code": "x",
+          "name": "空本地化",
           "channelType": "SMS",
           "localizedTemplates": null
         }
@@ -121,6 +129,7 @@ public final class TemplateEntityFixtures {
     return read("""
         {
           "code": "greet",
+          "name": "问候",
           "channelType": "SMS",
           "localizedTemplates": {
             "en": { "title": "t", "content": "Hello {{name}}" }
@@ -133,6 +142,7 @@ public final class TemplateEntityFixtures {
     return read("""
         {
           "code": "empty_body",
+          "name": "空正文",
           "channelType": "SMS",
           "localizedTemplates": {
             "de": { "title": "only title", "content": null }
@@ -145,6 +155,7 @@ public final class TemplateEntityFixtures {
     return read("""
         {
           "code": "inv",
+          "name": "库存",
           "channelType": "SMS",
           "localizedTemplates": {
             "zh-CN": { "title": "t", "content": "x {{p}}" }

@@ -1,6 +1,11 @@
 import { unwrapData } from './apiPayload'
 import { apiFetch } from './v1'
 
+function normalizeTemplatesObject(templates) {
+  if (!templates || typeof templates !== 'object') return {}
+  return JSON.parse(JSON.stringify(templates))
+}
+
 export const fetchTemplates = async () => {
   const response = await apiFetch('/v1/templates')
   if (!response.ok) {
@@ -32,9 +37,9 @@ export const createTemplate = async (payload) => {
 }
 
 export const updateTemplate = async (id, payload) => {
-  const response = await apiFetch(`/v1/templates/${id}`, {
+  const response = await apiFetch('/v1/templates', {
     method: 'PUT',
-    body: JSON.stringify(payload)
+    body: JSON.stringify({ id, ...payload })
   })
   if (!response.ok) {
     throw new Error(await response.text())
@@ -54,40 +59,49 @@ export const deleteTemplate = async (id) => {
 }
 
 export const fetchTemplateContents = async (templateId) => {
-  const response = await apiFetch(`/v1/templates/${templateId}/contents`)
-  if (!response.ok) {
-    throw new Error(await response.text())
-  }
-  const json = await response.json()
-  return unwrapData(json)
+  const t = await fetchTemplate(templateId)
+  return templatesVoToLegacyContentsList(t.templates)
+}
+
+function templatesVoToLegacyContentsList(templates) {
+  if (!templates || typeof templates !== 'object') return []
+  return Object.keys(templates).map((code) => {
+    const entry = templates[code]
+    const content =
+      typeof entry === 'string'
+        ? entry
+        : entry && entry.content != null
+          ? entry.content
+          : ''
+    return { language: { code }, content }
+  })
 }
 
 export const saveLanguageContent = async (templateId, langCode, content) => {
-  const response = await apiFetch(`/v1/templates/${templateId}/languages/${langCode}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: content
-  })
-  if (!response.ok) {
-    throw new Error(await response.text())
+  const t = await fetchTemplate(templateId)
+  const next = normalizeTemplatesObject(t.templates)
+  const prev = next[langCode]
+  next[langCode] = {
+    ...(typeof prev === 'object' && prev !== null && !Array.isArray(prev) ? prev : {}),
+    content: content ?? ''
   }
-  const json = await response.json()
-  return unwrapData(json)
+  return updateTemplate(templateId, {
+    code: t.code,
+    channelType: t.channelType,
+    templates: next
+  })
 }
 
 export const deleteLanguageContent = async (templateId, langCode) => {
-  const contentsResponse = await apiFetch(`/v1/templates/${templateId}/languages/${langCode}`)
-  if (!contentsResponse.ok) {
-    return true
+  const t = await fetchTemplate(templateId)
+  const next = normalizeTemplatesObject(t.templates)
+  if (next && typeof next === 'object') {
+    delete next[langCode]
   }
-  const raw = await contentsResponse.json()
-  const lt = unwrapData(raw)
-  if (!lt || !lt.id) return true
-  const response = await apiFetch(`/v1/language-templates/${lt.id}`, {
-    method: 'DELETE'
+  await updateTemplate(templateId, {
+    code: t.code,
+    channelType: t.channelType,
+    templates: next
   })
-  if (!response.ok) {
-    throw new Error(await response.text())
-  }
   return true
 }
