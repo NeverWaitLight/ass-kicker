@@ -46,6 +46,24 @@ export const fetchImTypes = async () => {
   return unwrapData(json)
 }
 
+export const fetchProvidersByChannelType = async (channelType) => {
+  const response = await apiFetch(`/v1/channels/types/${channelType}/providers`)
+  if (!response.ok) {
+    throw new Error(await response.text())
+  }
+  const json = await response.json()
+  return unwrapData(json)
+}
+
+export const fetchProviderProperties = async (providerType) => {
+  const response = await apiFetch(`/v1/channels/providers/${providerType}/properties`)
+  if (!response.ok) {
+    throw new Error(await response.text())
+  }
+  const json = await response.json()
+  return unwrapData(json)
+}
+
 export const createChannel = async (payload) => {
   const response = await apiFetch('/v1/channels', {
     method: 'POST',

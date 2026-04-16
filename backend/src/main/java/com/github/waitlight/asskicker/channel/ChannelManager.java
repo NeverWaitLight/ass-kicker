@@ -2,12 +2,17 @@ package com.github.waitlight.asskicker.channel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.config.channel.ChannelObjectMapperConfig;
+import com.github.waitlight.asskicker.dto.channel.ChannelPropertyFieldVO;
+import com.github.waitlight.asskicker.dto.channel.ChannelProviderOptionVO;
 import com.github.waitlight.asskicker.exception.BadRequestException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.ProviderType;
 import com.github.waitlight.asskicker.service.ChannelService;
 import jakarta.annotation.PostConstruct;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +26,9 @@ import org.hibernate.validator.HibernateValidatorFactory;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.RecordComponent;
+import java.lang.reflect.Type;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -189,6 +197,84 @@ public class ChannelManager {
      */
     public Map<ProviderType, ChannelMeta> getAllChannelMetas() {
         return Map.copyOf(channelMetaCache);
+    }
+
+    public List<ChannelProviderOptionVO> getProvidersByChannelType(ChannelType channelType) {
+        return Arrays.stream(ProviderType.values())
+                .filter(providerType -> providerType.getChannelType() == channelType)
+                .map(providerType -> ChannelProviderOptionVO.builder()
+                        .value(providerType.name())
+                        .label(providerType.name())
+                        .build())
+                .toList();
+    }
+
+    public List<ChannelPropertyFieldVO> getPropertiesSchema(ProviderType providerType) {
+        Class<?> propertyClass = getPropertiesClass(providerType)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown ProviderType: " + providerType));
+        if (propertyClass == Void.class) {
+            return List.of();
+        }
+        if (propertyClass.isRecord()) {
+            return Arrays.stream(propertyClass.getRecordComponents())
+                    .map(this::toFieldVO)
+                    .toList();
+        }
+        return Arrays.stream(propertyClass.getDeclaredFields())
+                .filter(field -> !java.lang.reflect.Modifier.isStatic(field.getModifiers()))
+                .map(this::toFieldVO)
+                .toList();
+    }
+
+    private ChannelPropertyFieldVO toFieldVO(RecordComponent component) {
+        return ChannelPropertyFieldVO.builder()
+                .key(component.getName())
+                .valueType(resolveValueType(component.getGenericType()))
+                .required(isRequired(component.getDeclaredAnnotationsByType(NotBlank.class).length > 0,
+                        component.getDeclaredAnnotationsByType(NotEmpty.class).length > 0,
+                        component.getDeclaredAnnotationsByType(NotNull.class).length > 0))
+                .build();
+    }
+
+    private ChannelPropertyFieldVO toFieldVO(Field field) {
+        return ChannelPropertyFieldVO.builder()
+                .key(field.getName())
+                .valueType(resolveValueType(field.getGenericType()))
+                .required(isRequired(field.getDeclaredAnnotationsByType(NotBlank.class).length > 0,
+                        field.getDeclaredAnnotationsByType(NotEmpty.class).length > 0,
+                        field.getDeclaredAnnotationsByType(NotNull.class).length > 0))
+                .build();
+    }
+
+    private boolean isRequired(boolean notBlank, boolean notEmpty, boolean notNull) {
+        return notBlank || notEmpty || notNull;
+    }
+
+    private String resolveValueType(Type type) {
+        if (type == null) {
+            return "string";
+        }
+        String typeName = type.getTypeName();
+        if (typeName.endsWith("String")) {
+            return "string";
+        }
+        if (typeName.endsWith("boolean") || typeName.endsWith("Boolean")) {
+            return "boolean";
+        }
+        if (typeName.endsWith("int") || typeName.endsWith("Integer")
+                || typeName.endsWith("long") || typeName.endsWith("Long")
+                || typeName.endsWith("double") || typeName.endsWith("Double")
+                || typeName.endsWith("float") || typeName.endsWith("Float")
+                || typeName.endsWith("short") || typeName.endsWith("Short")) {
+            return "number";
+        }
+        if (typeName.contains("Map")) {
+            return "object";
+        }
+        if (typeName.contains("List") || typeName.endsWith("[]")) {
+            return "array";
+        }
+        return "string";
     }
 
     /**

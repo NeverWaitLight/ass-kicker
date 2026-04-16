@@ -3,6 +3,8 @@ package com.github.waitlight.asskicker.controller;
 import java.util.List;
 
 import org.springframework.validation.annotation.Validated;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,7 +20,11 @@ import com.github.waitlight.asskicker.dto.PageReq;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.channel.CreateChannelDTO;
+import com.github.waitlight.asskicker.dto.channel.ChannelPropertiesSchemaVO;
+import com.github.waitlight.asskicker.dto.channel.ChannelProviderOptionVO;
 import com.github.waitlight.asskicker.dto.channel.ChannelVO;
+import com.github.waitlight.asskicker.model.ChannelType;
+import com.github.waitlight.asskicker.model.ProviderType;
 import com.github.waitlight.asskicker.dto.channel.UpdateChannelDTO;
 import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.service.ChannelService;
@@ -29,6 +35,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
+import java.util.concurrent.TimeUnit;
 
 @Tag(name = "ChannelController")
 @RestController
@@ -73,12 +80,42 @@ public class ChannelController {
                                 });
         }
 
+        @Operation(summary = "channelTypes", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+        @GetMapping("/types")
+        public Mono<ResponseEntity<Resp<List<ChannelType>>>> channelTypes() {
+                return Mono.fromSupplier(() -> List.of(ChannelType.values()))
+                                .map(Resp::success)
+                                .map(body -> ResponseEntity.ok()
+                                                .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic())
+                                                .body(body));
+        }
+
         @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @GetMapping("/{id}")
         public Mono<Resp<ChannelVO>> getById(@PathVariable String id) {
                 return channelService.getById(id)
                                 .map(channelConverter::toVO)
                                 .map(Resp::success);
+        }
+
+        @Operation(summary = "providerProperties", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+        @GetMapping("/providers/{providerType}/properties")
+        public Mono<Resp<ChannelPropertiesSchemaVO>> providerProperties(@PathVariable ProviderType providerType) {
+                return Mono.fromSupplier(() -> ChannelPropertiesSchemaVO.builder()
+                                .properties(channelManager.getPropertiesSchema(providerType))
+                                .build())
+                                .map(Resp::success);
+        }
+
+        @Operation(summary = "providersByChannelType", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+        @GetMapping("/types/{channelType}/providers")
+        public Mono<ResponseEntity<Resp<List<ChannelProviderOptionVO>>>> providersByChannelType(
+                        @PathVariable ChannelType channelType) {
+                return Mono.fromSupplier(() -> channelManager.getProvidersByChannelType(channelType))
+                                .map(Resp::success)
+                                .map(body -> ResponseEntity.ok()
+                                                .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic())
+                                                .body(body));
         }
 
         @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))

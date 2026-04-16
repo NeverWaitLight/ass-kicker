@@ -32,8 +32,8 @@
         <template v-else-if="column.key === 'status'">
           <a-tag :color="record.status === 'ACTIVE' ? 'green' : 'red'">{{ record.status }}</a-tag>
         </template>
-        <template v-else-if="column.key === 'createdAt'">
-          {{ formatTimestamp(record.createdAt) }}
+        <template v-else-if="column.key === 'lastLoginAt'">
+          {{ record.lastLoginAt ? formatTimestamp(record.lastLoginAt) : '-' }}
         </template>
         <template v-else-if="column.key === 'actions'">
           <a-space>
@@ -154,7 +154,7 @@ const columns = [
   { title: '用户名', dataIndex: 'username', key: 'username' },
   { title: '角色', dataIndex: 'role', key: 'role' },
   { title: '状态', dataIndex: 'status', key: 'status' },
-  { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt' },
+  { title: '最后登录时间', dataIndex: 'lastLoginAt', key: 'lastLoginAt' },
   { title: '操作', key: 'actions', width: 180, fixed: 'right' }
 ]
 

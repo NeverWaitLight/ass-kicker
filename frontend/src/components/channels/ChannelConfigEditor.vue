@@ -25,36 +25,12 @@
                 :options="typeOptions"
               />
             </a-form-item>
-            <a-form-item v-if="isEmailChannel" label="邮件协议">
+            <a-form-item v-if="providerTypeOptions.length > 0" label="服务商">
               <a-select
-                v-model:value="emailProtocol"
-                placeholder="请选择邮件协议"
-                :options="emailProtocolOptions"
-                @change="handleProtocolChange"
-              />
-            </a-form-item>
-            <a-form-item v-if="isImChannel" label="IM 类型">
-              <a-select
-                v-model:value="imType"
-                placeholder="请选择 IM 类型"
-                :options="imTypeOptions"
-                @change="handleImTypeChange"
-              />
-            </a-form-item>
-            <a-form-item v-if="isPushChannel" label="推送类型">
-              <a-select
-                v-model:value="pushType"
-                placeholder="请选择推送类型"
-                :options="pushTypeOptions"
-                @change="handlePushTypeChange"
-              />
-            </a-form-item>
-            <a-form-item v-if="isSmsChannel" label="短信服务">
-              <a-select
-                v-model:value="smsType"
-                placeholder="请选择短信服务"
-                :options="smsTypeOptions"
-                @change="handleSmsTypeChange"
+                v-model:value="providerType"
+                placeholder="请选择服务商"
+                :options="providerTypeOptions"
+                @change="handleProviderTypeChange"
               />
             </a-form-item>
             <a-form-item label="通道名称" :validate-status="nameError ? 'error' : ''" :help="nameError">
@@ -76,7 +52,7 @@
 
           <a-form layout="vertical" class="config-form config-form--description">
             <a-form-item
-              label="收件人包含正则"
+              label="优先发送"
               :validate-status="includeRegexError ? 'error' : ''"
               :help="includeRegexError"
             >
@@ -86,7 +62,7 @@
               />
             </a-form-item>
             <a-form-item
-              label="收件人排除正则"
+              label="拒绝发送"
               :validate-status="excludeRegexError ? 'error' : ''"
               :help="excludeRegexError"
             >
@@ -121,10 +97,16 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import PropertyEditor from './PropertyEditor.vue'
 import ChannelTestSendModal from './ChannelTestSendModal.vue'
-import { createChannel, fetchChannel, fetchChannelTypes, fetchEmailProtocols, fetchImTypes, updateChannel } from '../../utils/channelApi'
+import {
+  createChannel,
+  fetchChannel,
+  fetchChannelTypes,
+  fetchProvidersByChannelType,
+  fetchProviderProperties,
+  updateChannel
+} from '../../utils/channelApi'
 import { buildChannelTypeOptions, CHANNEL_TYPE_VALUES } from '../../constants/channelTypes'
 import {
-  createObjectRow,
   createPropertyRow,
   propertiesToRows,
   rowsToProperties,
@@ -157,6 +139,7 @@ const loading = ref(false)
 const saving = ref(false)
 
 const propertyRows = ref([createPropertyRow()])
+const providerSchemaFields = ref([])
 const rowInvalidIds = ref(new Set())
 const objectInvalidIds = ref({})
 const objectErrors = ref({})
@@ -169,45 +152,33 @@ const testModalOpen = ref(false)
 
 const channelTypes = ref([])
 const typeOptions = computed(() => buildChannelTypeOptions(channelTypes.value, t, te))
-const emailProtocols = ref({ defaultProtocol: 'SMTP', protocols: [] })
+const providerOptions = ref([])
 const emailProtocol = ref('')
 const isEmailChannel = computed(() => form.type === 'EMAIL')
-const emailProtocolOptions = computed(() =>
-  (emailProtocols.value.protocols || []).map((protocol) => ({
-    value: protocol.protocol,
-    label: protocol.label || protocol.protocol
-  }))
-)
-
-const imTypes = ref({ defaultType: 'DINGTALK_WEBHOOK', types: [] })
 const imType = ref('')
 const isImChannel = computed(() => form.type === 'IM')
-const imTypeOptions = computed(() =>
-  (imTypes.value.types || []).map((type) => ({
-    value: type.type,
-    label: type.label || type.type
-  }))
-)
-
-const pushTypes = ref({ defaultType: 'APNS', types: [] })
 const pushType = ref('')
 const isPushChannel = computed(() => form.type === 'PUSH')
-const pushTypeOptions = computed(() =>
-  (pushTypes.value.types || []).map((type) => ({
-    value: type.type,
-    label: type.label || type.type
-  }))
-)
-
-const smsTypes = ref({ defaultType: 'ALIYUN_SMS', types: [] })
 const smsType = ref('')
 const isSmsChannel = computed(() => form.type === 'SMS')
-const smsTypeOptions = computed(() =>
-  (smsTypes.value.types || []).map((type) => ({
-    value: type.type,
-    label: type.label || type.type
-  }))
-)
+const providerType = computed({
+  get: () => {
+    if (isEmailChannel.value) return emailProtocol.value
+    if (isImChannel.value) return imType.value
+    if (isPushChannel.value) return pushType.value
+    if (isSmsChannel.value) return smsType.value
+    return ''
+  },
+  set: (value) => {
+    if (isEmailChannel.value) emailProtocol.value = value
+    else if (isImChannel.value) imType.value = value
+    else if (isPushChannel.value) pushType.value = value
+    else if (isSmsChannel.value) smsType.value = value
+  }
+})
+const providerTypeOptions = computed(() => {
+  return providerOptions.value
+})
 
 const isEdit = computed(() => !!props.channelId)
 
@@ -219,40 +190,44 @@ const denied = computed(() => {
 const testDenied = computed(() => denied.value || !form.type)
 const baseSectionHint = '每一行可选择字符串或对象类型。'
 const sectionHint = computed(() => {
-  if (isEmailChannel.value) {
-    const schema = findEmailProtocolSchema(emailProtocol.value)
-    if (!schema) return baseSectionHint
-    const requiredFields = (schema.fields || []).filter((field) => field.required)
-    if (requiredFields.length === 0) return baseSectionHint
-    const labels = requiredFields.map((field) => field.label || field.key).join('、')
-    return `${baseSectionHint} ${schema.label || schema.protocol}必填：${labels}。`
-  }
-  if (isImChannel.value) {
-    const schema = findImTypeSchema(imType.value)
-    if (!schema) return baseSectionHint
-    const requiredFields = (schema.fields || []).filter((field) => field.required)
-    if (requiredFields.length === 0) return baseSectionHint
-    const labels = requiredFields.map((field) => field.label || field.key).join('、')
-    return `${baseSectionHint} ${schema.label || schema.type}必填：${labels}。`
-  }
-  if (isPushChannel.value) {
-    const schema = findPushTypeSchema(pushType.value)
-    if (!schema) return baseSectionHint
-    const requiredFields = (schema.fields || []).filter((field) => field.required)
-    if (requiredFields.length === 0) return baseSectionHint
-    const labels = requiredFields.map((field) => field.label || field.key).join('、')
-    return `${baseSectionHint} ${schema.label || schema.type}必填：${labels}。`
-  }
-  if (isSmsChannel.value) {
-    const schema = findSmsTypeSchema(smsType.value)
-    if (!schema) return baseSectionHint
-    const requiredFields = (schema.fields || []).filter((field) => field.required)
-    if (requiredFields.length === 0) return baseSectionHint
-    const labels = requiredFields.map((field) => field.label || field.key).join('、')
-    return `${baseSectionHint} ${schema.label || schema.type}必填：${labels}。`
-  }
-  return baseSectionHint
+  const requiredFields = (providerSchemaFields.value || []).filter((field) => field.required)
+  if (requiredFields.length === 0) return baseSectionHint
+  const labels = requiredFields.map((field) => field.key).join('、')
+  const providerLabel = providerTypeOptions.value.find((item) => item.value === providerType.value)?.label || providerType.value
+  if (!providerLabel) return `${baseSectionHint} 必填：${labels}。`
+  return `${baseSectionHint} ${providerLabel}必填：${labels}。`
 })
+
+const loadProviderSchemaFields = async (selectedProviderType) => {
+  if (!selectedProviderType) {
+    providerSchemaFields.value = []
+    return []
+  }
+  try {
+    const schema = await fetchProviderProperties(selectedProviderType)
+    const fields = Array.isArray(schema?.properties) ? schema.properties : []
+    providerSchemaFields.value = fields
+    return fields
+  } catch (error) {
+    providerSchemaFields.value = []
+    return []
+  }
+}
+
+const loadProviderOptionsByChannelType = async (channelType) => {
+  if (!channelType) {
+    providerOptions.value = []
+    return []
+  }
+  try {
+    const options = await fetchProvidersByChannelType(channelType)
+    providerOptions.value = Array.isArray(options) ? options : []
+    return providerOptions.value
+  } catch (error) {
+    providerOptions.value = []
+    return []
+  }
+}
 
 const loadTypes = async () => {
   try {
@@ -261,32 +236,6 @@ const loadTypes = async () => {
   } catch (error) {
     channelTypes.value = CHANNEL_TYPE_VALUES
   }
-}
-
-const loadEmailProtocols = async () => {
-  try {
-    const data = await fetchEmailProtocols()
-    emailProtocols.value = data || emailProtocols.value
-  } catch (error) {
-    emailProtocols.value = getFallbackEmailProtocols()
-  }
-}
-
-const loadImTypes = async () => {
-  try {
-    const data = await fetchImTypes()
-    imTypes.value = data || getFallbackImTypes()
-  } catch (error) {
-    imTypes.value = getFallbackImTypes()
-  }
-}
-
-const loadPushTypes = () => {
-  pushTypes.value = getFallbackPushTypes()
-}
-
-const loadSmsTypes = () => {
-  smsTypes.value = getFallbackSmsTypes()
 }
 
 const loadChannel = async () => {
@@ -301,35 +250,29 @@ const loadChannel = async () => {
     form.description = data.description || ''
     form.includeRecipientRegex = data.priorityAddressRegex || data.includeRecipientRegex || ''
     form.excludeRecipientRegex = data.excludeAddressRegex || data.excludeRecipientRegex || ''
+    await loadProviderOptionsByChannelType(form.type)
     if (form.type === 'EMAIL') {
-      const protocol = resolveProtocolValue(data.properties?.protocol)
+      const protocol = resolveProtocolValue(data.providerType ?? data.provider ?? data.properties?.protocol)
       emailProtocol.value = protocol
-      const schema = findEmailProtocolSchema(protocol)
-      propertyRows.value = schema
-        ? buildProtocolRowsFromProperties(schema, data.properties)
-        : propertiesToRows(data.properties)
+      await loadProviderSchemaFields(protocol)
+      propertyRows.value = propertiesToRows(data.properties)
     } else if (form.type === 'IM') {
-      const type = resolveImTypeValue(data.provider ?? data.properties?.type)
+      const type = resolveImTypeValue(data.providerType ?? data.provider ?? data.properties?.type)
       imType.value = type
-      const schema = findImTypeSchema(type)
-      propertyRows.value = schema
-        ? buildImTypeRowsFromProperties(schema, data.properties)
-        : propertiesToRows(data.properties)
+      await loadProviderSchemaFields(type)
+      propertyRows.value = propertiesToRows(data.properties)
     } else if (form.type === 'PUSH') {
-      const type = resolvePushTypeValue(data.provider ?? data.properties?.type ?? data.properties?.protocol)
+      const type = resolvePushTypeValue(data.providerType ?? data.provider ?? data.properties?.type ?? data.properties?.protocol)
       pushType.value = type
-      const schema = findPushTypeSchema(type)
-      propertyRows.value = schema
-        ? buildPushTypeRowsFromProperties(schema, data.properties)
-        : propertiesToRows(data.properties)
+      await loadProviderSchemaFields(type)
+      propertyRows.value = propertiesToRows(data.properties)
     } else if (form.type === 'SMS') {
-      const type = resolveSmsTypeValue(data.provider ?? data.properties?.type ?? data.properties?.protocol)
+      const type = resolveSmsTypeValue(data.providerType ?? data.provider ?? data.properties?.type ?? data.properties?.protocol)
       smsType.value = type
-      const schema = findSmsTypeSchema(type)
-      propertyRows.value = schema
-        ? buildSmsTypeRowsFromProperties(schema, data.properties)
-        : propertiesToRows(data.properties)
+      await loadProviderSchemaFields(type)
+      propertyRows.value = propertiesToRows(data.properties)
     } else {
+      providerSchemaFields.value = []
       propertyRows.value = propertiesToRows(data.properties)
     }
   } catch (error) {
@@ -404,6 +347,7 @@ const saveChannel = async () => {
       name: form.name.trim(),
       type: form.type,
       provider: resolveProvider(),
+      providerType: resolveProvider(),
       description: form.description?.trim() || '',
       priorityAddressRegex: form.includeRecipientRegex?.trim() || '',
       excludeAddressRegex: form.excludeRecipientRegex?.trim() || '',
@@ -466,138 +410,73 @@ const goBack = () => {
 
 onMounted(async () => {
   await loadTypes()
-  await loadEmailProtocols()
-  await loadImTypes()
-  loadPushTypes()
-  loadSmsTypes()
   await loadChannel()
-  if (!isEdit.value && form.type === 'EMAIL') {
-    initializeEmailProtocol()
-  }
-  if (!isEdit.value && form.type === 'IM') {
-    initializeImType()
-  }
-  if (!isEdit.value && form.type === 'PUSH') {
-    initializePushType()
-  }
-  if (!isEdit.value && form.type === 'SMS') {
-    initializeSmsType()
+  if (!isEdit.value && form.type) {
+    await loadProviderOptionsByChannelType(form.type)
   }
 })
 
 const testProperties = computed(() => buildProperties())
 
-const handleProtocolChange = (value) => {
+const handleProtocolChange = async (value) => {
   if (!value) return
   emailProtocol.value = value
-  applyEmailProtocolSchema(value, { preferExisting: true })
+  await applyEmailProtocolSchema(value, { preferExisting: true })
 }
 
-const handleImTypeChange = (value) => {
+const handleImTypeChange = async (value) => {
   if (!value) return
   imType.value = value
-  applyImTypeSchema(value, { preferExisting: true })
+  await applyImTypeSchema(value, { preferExisting: true })
 }
 
-const handlePushTypeChange = (value) => {
+const handlePushTypeChange = async (value) => {
   if (!value) return
   pushType.value = value
-  applyPushTypeSchema(value, { preferExisting: true })
+  await applyPushTypeSchema(value, { preferExisting: true })
 }
 
-const handleSmsTypeChange = (value) => {
+const handleSmsTypeChange = async (value) => {
   if (!value) return
   smsType.value = value
-  applySmsTypeSchema(value, { preferExisting: true })
+  await applySmsTypeSchema(value, { preferExisting: true })
 }
 
-const initializeEmailProtocol = () => {
-  const protocol = resolveProtocolValue(emailProtocol.value)
-  emailProtocol.value = protocol
-  applyEmailProtocolSchema(protocol, { preferExisting: true })
-}
-
-const initializeImType = () => {
-  const type = resolveImTypeValue(imType.value)
-  imType.value = type
-  applyImTypeSchema(type, { preferExisting: true })
-}
-
-const initializePushType = () => {
-  const type = resolvePushTypeValue(pushType.value)
-  pushType.value = type
-  applyPushTypeSchema(type, { preferExisting: true })
-}
-
-const initializeSmsType = () => {
-  const type = resolveSmsTypeValue(smsType.value)
-  smsType.value = type
-  applySmsTypeSchema(type, { preferExisting: true })
-}
-
-const applyEmailProtocolSchema = (protocol, { preferExisting } = {}) => {
-  if (!protocol || !isEmailChannel.value) return
-  const schema = findEmailProtocolSchema(protocol)
-  if (!schema) return
-
-  const requiredFields = (schema.fields || []).filter((field) => field.required)
-  propertyRows.value = mergeFlatRows(propertyRows.value, requiredFields, preferExisting)
-}
-
-const applyImTypeSchema = (type, { preferExisting } = {}) => {
-  if (!type || !isImChannel.value) return
-  const schema = findImTypeSchema(type)
-  if (!schema) return
-
-  const allFields = schema.fields || []
-  propertyRows.value = mergeFlatRows(propertyRows.value, allFields, preferExisting)
-}
-
-const applyPushTypeSchema = (type, { preferExisting } = {}) => {
-  if (!type || !isPushChannel.value) return
-  const schema = findPushTypeSchema(type)
-  if (!schema) return
-
-  const allFields = schema.fields || []
-  propertyRows.value = mergeFlatRows(propertyRows.value, allFields, preferExisting)
-}
-
-const applySmsTypeSchema = (type, { preferExisting } = {}) => {
-  if (!type || !isSmsChannel.value) return
-  const schema = findSmsTypeSchema(type)
-  if (!schema) return
-
-  const allFields = schema.fields || []
-  propertyRows.value = mergeFlatRows(propertyRows.value, allFields, preferExisting)
-}
-
-const mergeObjectRows = (rows, fields, preferExisting, keepExtra = true) => {
-  const existing = new Map()
-  rows.forEach((row) => {
-    existing.set(normalizeKey(row.key), row)
-  })
-
-  const ordered = []
-  fields.forEach((field) => {
-    const key = normalizeKey(field.key)
-    const saved = existing.get(key)
-    if (saved) {
-      if (!preferExisting && field.defaultValue !== undefined && String(saved.value || '') === '') {
-        saved.value = String(field.defaultValue ?? '')
-      } else if (preferExisting && String(saved.value || '') === '' && field.defaultValue !== undefined) {
-        saved.value = String(field.defaultValue ?? '')
-      }
-      ordered.push(saved)
-      existing.delete(key)
-    } else {
-      ordered.push(createObjectRow({ key: field.key, value: String(field.defaultValue ?? '') }))
-    }
-  })
-
-  if (keepExtra) {
-    existing.forEach((row) => ordered.push(row))
+const handleProviderTypeChange = async (value) => {
+  if (!value) return
+  if (isEmailChannel.value) {
+    await handleProtocolChange(value)
+  } else if (isImChannel.value) {
+    await handleImTypeChange(value)
+  } else if (isPushChannel.value) {
+    await handlePushTypeChange(value)
+  } else if (isSmsChannel.value) {
+    await handleSmsTypeChange(value)
   }
-  return ordered
+}
+
+const applyEmailProtocolSchema = async (protocol, { preferExisting } = {}) => {
+  if (!protocol || !isEmailChannel.value) return
+  const fields = await loadProviderSchemaFields(protocol)
+  propertyRows.value = mergeFlatRows(propertyRows.value, fields, preferExisting)
+}
+
+const applyImTypeSchema = async (type, { preferExisting } = {}) => {
+  if (!type || !isImChannel.value) return
+  const fields = await loadProviderSchemaFields(type)
+  propertyRows.value = mergeFlatRows(propertyRows.value, fields, preferExisting)
+}
+
+const applyPushTypeSchema = async (type, { preferExisting } = {}) => {
+  if (!type || !isPushChannel.value) return
+  const fields = await loadProviderSchemaFields(type)
+  propertyRows.value = mergeFlatRows(propertyRows.value, fields, preferExisting)
+}
+
+const applySmsTypeSchema = async (type, { preferExisting } = {}) => {
+  if (!type || !isSmsChannel.value) return
+  const fields = await loadProviderSchemaFields(type)
+  propertyRows.value = mergeFlatRows(propertyRows.value, fields, preferExisting)
 }
 
 const mergeFlatRows = (rows, fields, preferExisting) => {
@@ -620,50 +499,16 @@ const mergeFlatRows = (rows, fields, preferExisting) => {
 
 const normalizeKey = (value) => (value == null ? '' : String(value).trim().toLowerCase())
 
-const findRow = (rows, key) => rows.find((row) => normalizeKey(row.key) === normalizeKey(key))
-
 const resolveProtocolValue = (value) => {
-  const fallback = emailProtocols.value.defaultProtocol || 'SMTP'
+  const fallback = providerTypeOptions.value[0]?.value || 'SMTP'
   if (!value) return fallback
   const normalized = String(value).trim()
   return normalized ? normalized.toUpperCase() : fallback
 }
 
-const buildProtocolRowsFromProperties = (schema, properties) => {
-  const requiredFields = (schema.fields || []).filter((field) => field.required)
-  return requiredFields.map((field) => {
-    const value = getProtocolFieldValue(properties, schema.propertyKey, field.key, field.defaultValue)
-    return createPropertyRow({ key: field.key, value })
-  })
-}
-
-const getProtocolFieldValue = (properties, schemaKey, fieldKey, defaultValue) => {
-  if (properties && typeof properties === 'object') {
-    const nested = properties?.[schemaKey]
-    if (nested && typeof nested === 'object' && nested[fieldKey] != null) {
-      return String(nested[fieldKey])
-    }
-    if (properties[fieldKey] != null) {
-      return String(properties[fieldKey])
-    }
-  }
-  return String(defaultValue ?? '')
-}
-
-const findEmailProtocolSchema = (protocol) =>
-  (emailProtocols.value.protocols || []).find((item) => item.protocol === protocol)
-
-const findImTypeSchema = (type) =>
-  (imTypes.value.types || []).find((item) => item.type === type)
-
-const findPushTypeSchema = (type) =>
-  (pushTypes.value.types || []).find((item) => item.type === type)
-
-const findSmsTypeSchema = (type) =>
-  (smsTypes.value.types || []).find((item) => item.type === type)
 
 const resolveImTypeValue = (value) => {
-  const fallback = imTypes.value.defaultType || 'DINGTALK_WEBHOOK'
+  const fallback = providerTypeOptions.value[0]?.value || 'DINGTALK_WEBHOOK'
   if (!value) return fallback
   const normalized = String(value).trim()
   const mapped = {
@@ -675,14 +520,14 @@ const resolveImTypeValue = (value) => {
 }
 
 const resolvePushTypeValue = (value) => {
-  const fallback = pushTypes.value.defaultType || 'APNS'
+  const fallback = providerTypeOptions.value[0]?.value || 'APNS'
   if (!value) return fallback
   const normalized = String(value).trim()
   return normalized ? normalized.toUpperCase() : fallback
 }
 
 const resolveSmsTypeValue = (value) => {
-  const fallback = smsTypes.value.defaultType || 'ALIYUN_SMS'
+  const fallback = providerTypeOptions.value[0]?.value || 'ALIYUN_SMS'
   if (!value) return fallback
   const normalized = String(value).trim()
   const mapped = {
@@ -692,213 +537,34 @@ const resolveSmsTypeValue = (value) => {
   return mapped[normalized.toUpperCase()] || normalized.toUpperCase() || fallback
 }
 
-const buildImTypeRowsFromProperties = (schema, properties) => {
-  const allFields = schema.fields || []
-  return allFields.map((field) => {
-    const value = getImTypeFieldValue(properties, schema.propertyKey, field.key, field.defaultValue)
-    return createPropertyRow({ key: field.key, value })
-  })
-}
-
-const getImTypeFieldValue = (properties, schemaKey, fieldKey, defaultValue) => {
-  if (properties && typeof properties === 'object') {
-    const nested = properties?.[schemaKey]
-    if (nested && typeof nested === 'object' && nested[fieldKey] != null) {
-      return String(nested[fieldKey])
-    }
-    if (properties[fieldKey] != null) {
-      return String(properties[fieldKey])
-    }
-  }
-  return String(defaultValue ?? '')
-}
-
-const buildPushTypeRowsFromProperties = (schema, properties) => {
-  const allFields = schema.fields || []
-  return allFields.map((field) => {
-    const value = getPushTypeFieldValue(properties, schema.propertyKey, field.key, field.defaultValue)
-    return createPropertyRow({ key: field.key, value })
-  })
-}
-
-const getPushTypeFieldValue = (properties, schemaKey, fieldKey, defaultValue) => {
-  if (properties && typeof properties === 'object') {
-    const nested = properties?.[schemaKey]
-    if (nested && typeof nested === 'object' && nested[fieldKey] != null) {
-      return String(nested[fieldKey])
-    }
-    if (properties[fieldKey] != null) {
-      return String(properties[fieldKey])
-    }
-  }
-  return String(defaultValue ?? '')
-}
-
-const buildSmsTypeRowsFromProperties = (schema, properties) => {
-  const allFields = schema.fields || []
-  return allFields.map((field) => {
-    const value = getSmsTypeFieldValue(properties, schema.propertyKey, field.key, field.defaultValue)
-    return createPropertyRow({ key: field.key, value })
-  })
-}
-
-const getSmsTypeFieldValue = (properties, schemaKey, fieldKey, defaultValue) => {
-  if (properties && typeof properties === 'object') {
-    const nested = properties?.[schemaKey]
-    if (nested && typeof nested === 'object' && nested[fieldKey] != null) {
-      return String(nested[fieldKey])
-    }
-    if (properties[fieldKey] != null) {
-      return String(properties[fieldKey])
-    }
-  }
-  return String(defaultValue ?? '')
-}
-
-const getFallbackImTypes = () => ({
-  defaultType: 'DINGTALK_WEBHOOK',
-  types: [
-    {
-      type: 'DINGTALK_WEBHOOK',
-      label: '钉钉',
-      propertyKey: 'dingtalkWebhook',
-      fields: [
-        { key: 'url', label: 'Webhook URL', required: true, defaultValue: '' }
-      ]
-    },
-    {
-      type: 'WECOM_WEBHOOK',
-      label: '企业微信',
-      propertyKey: 'wecomWebhook',
-      fields: [
-        { key: 'url', label: 'Webhook URL', required: true, defaultValue: '' }
-      ]
-    },
-    {
-      type: 'FEISHU_WEBHOOK',
-      label: '飞书',
-      propertyKey: 'feishuWebhook',
-      fields: [
-        { key: 'url', label: 'Webhook URL', required: true, defaultValue: '' }
-      ]
-    }
-  ]
-})
-
-const getFallbackEmailProtocols = () => ({
-  defaultProtocol: 'SMTP',
-  protocols: [
-    {
-      protocol: 'SMTP',
-      label: 'SMTP',
-      propertyKey: 'smtp',
-      fields: [
-        { key: 'host', label: 'SMTP 主机', required: true, defaultValue: '' },
-        { key: 'port', label: '端口', required: true, defaultValue: '465' },
-        { key: 'username', label: '用户名', required: true, defaultValue: '' },
-        { key: 'password', label: '密码', required: true, defaultValue: '' },
-        { key: 'sslEnabled', label: '启用 SSL', required: false, defaultValue: 'true' },
-        { key: 'starttls', label: '启用 STARTTLS', required: false, defaultValue: 'true' },
-        { key: 'from', label: '发件人', required: false, defaultValue: '' },
-        { key: 'connectionTimeout', label: '连接超时(ms)', required: false, defaultValue: '5000' },
-        { key: 'readTimeout', label: '读取超时(ms)', required: false, defaultValue: '10000' }
-      ]
-    }
-  ]
-})
-
-const getFallbackPushTypes = () => ({
-  defaultType: 'APNS',
-  types: [
-    {
-      type: 'APNS',
-      label: '苹果 APNs',
-      propertyKey: 'apns',
-      fields: [
-        { key: 'teamId', label: 'Team ID', required: true, defaultValue: '' },
-        { key: 'keyId', label: 'Key ID', required: true, defaultValue: '' },
-        { key: 'url', label: 'APNs URL', required: true, defaultValue: 'https://api.push.apple.com/3/device' },
-        { key: 'bundleIdTopic', label: 'Bundle ID Topic', required: true, defaultValue: '' },
-        { key: 'privateKeyPem', label: 'P8 私钥内容', required: true, defaultValue: '' },
-        { key: 'apnsId', label: 'APNs ID', required: false, defaultValue: '' }
-      ]
-    },
-    {
-      type: 'FCM',
-      label: '谷歌 FCM',
-      propertyKey: 'fcm',
-      fields: [
-        { key: 'url', label: 'FCM Base URL', required: true, defaultValue: 'https://fcm.googleapis.com' },
-        { key: 'projectId', label: 'Project ID', required: true, defaultValue: '' },
-        { key: 'accessToken', label: 'Access Token', required: true, defaultValue: '' }
-      ]
-    }
-  ]
-})
-
-const getFallbackSmsTypes = () => ({
-  defaultType: 'ALIYUN_SMS',
-  types: [
-    {
-      type: 'ALIYUN_SMS',
-      label: '阿里云短信',
-      propertyKey: 'aliyunSms',
-      fields: [
-        { key: 'accessKeyId', label: 'AccessKey ID', required: true, defaultValue: '' },
-        { key: 'accessKeySecret', label: 'AccessKey Secret', required: true, defaultValue: '' },
-        { key: 'signName', label: '签名名称', required: true, defaultValue: '' },
-        { key: 'templateCode', label: '模板编码', required: true, defaultValue: '' },
-        { key: 'regionId', label: 'Region ID', required: false, defaultValue: 'cn-hangzhou' },
-        { key: 'endpoint', label: 'Endpoint', required: true, defaultValue: 'dysmsapi.aliyuncs.com' }
-      ]
-    },
-    {
-      type: 'AWS_SMS',
-      label: 'AWS SNS 短信',
-      propertyKey: 'awsSms',
-      fields: [
-        { key: 'accessKeyId', label: 'AccessKey ID', required: true, defaultValue: '' },
-        { key: 'secretAccessKey', label: 'Secret Access Key', required: true, defaultValue: '' },
-        { key: 'region', label: 'Region', required: true, defaultValue: 'ap-southeast-1' },
-        { key: 'sessionToken', label: 'Session Token', required: false, defaultValue: '' },
-        { key: 'endpoint', label: 'Endpoint', required: false, defaultValue: '' }
-      ]
-    }
-  ]
-})
 
 watch(
   () => form.type,
-  (value) => {
+  async (value) => {
+    await loadProviderOptionsByChannelType(value)
     if (value === 'EMAIL') {
       if (!emailProtocol.value) {
-        emailProtocol.value = emailProtocols.value.defaultProtocol || 'SMTP'
+        emailProtocol.value = resolveProtocolValue('')
       }
-      applyEmailProtocolSchema(emailProtocol.value, { preferExisting: true })
+      await applyEmailProtocolSchema(resolveProtocolValue(emailProtocol.value), { preferExisting: true })
     } else if (value === 'IM') {
       if (!imType.value) {
-        imType.value = imTypes.value.defaultType || 'DINGTALK_WEBHOOK'
+        imType.value = resolveImTypeValue('')
       }
-      applyImTypeSchema(imType.value, { preferExisting: true })
+      await applyImTypeSchema(resolveImTypeValue(imType.value), { preferExisting: true })
     } else if (value === 'PUSH') {
       if (!pushType.value) {
-        pushType.value = pushTypes.value.defaultType || 'APNS'
+        pushType.value = resolvePushTypeValue('')
       }
-      applyPushTypeSchema(pushType.value, { preferExisting: true })
+      await applyPushTypeSchema(resolvePushTypeValue(pushType.value), { preferExisting: true })
     } else if (value === 'SMS') {
       if (!smsType.value) {
-        smsType.value = smsTypes.value.defaultType || 'ALIYUN_SMS'
+        smsType.value = resolveSmsTypeValue('')
       }
-      applySmsTypeSchema(smsType.value, { preferExisting: true })
-    }
-  }
-)
-
-watch(
-  () => emailProtocols.value,
-  () => {
-    if (isEmailChannel.value) {
-      initializeEmailProtocol()
+      await applySmsTypeSchema(resolveSmsTypeValue(smsType.value), { preferExisting: true })
+    } else {
+      providerSchemaFields.value = []
+      providerOptions.value = []
     }
   }
 )

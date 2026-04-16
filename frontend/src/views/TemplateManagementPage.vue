@@ -34,8 +34,8 @@
         <template v-else-if="column.key === 'attributes'">
           <span class="text-muted">{{ formatAttributesSummary(record.attributes) }}</span>
         </template>
-        <template v-else-if="column.key === 'createdAt'">
-          {{ formatTimestamp(record.createdAt) }}
+        <template v-else-if="column.key === 'updatedAt'">
+          {{ formatTimestamp(record.updatedAt) }}
         </template>
         <template v-else-if="column.key === 'actions'">
           <a-space>
@@ -226,7 +226,7 @@ const columns = [
   { title: '编码', dataIndex: 'code', key: 'code' },
   { title: '通道类型', key: 'channelType' },
   { title: '扩展属性', key: 'attributes' },
-  { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt' },
+  { title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt' },
   { title: '操作', key: 'actions', width: 180, fixed: 'right' }
 ]
 

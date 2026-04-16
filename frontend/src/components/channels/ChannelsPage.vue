@@ -18,9 +18,6 @@
       <template v-else-if="column.key === 'recipientRules'">
         {{ recipientRulesLabel(record) }}
       </template>
-      <template v-else-if="column.key === 'createdAt'">
-        {{ formatTimestamp(record.createdAt) }}
-      </template>
       <template v-else-if="column.key === 'updatedAt'">
         {{ formatTimestamp(record.updatedAt) }}
       </template>
@@ -64,8 +61,6 @@ const columns = [
   { title: '名称', dataIndex: 'name', key: 'name' },
   { title: '类型', dataIndex: 'type', key: 'type' },
   { title: '收件人规则', key: 'recipientRules' },
-  { title: '描述', dataIndex: 'description', key: 'description' },
-  { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt' },
   { title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt' },
   { title: '操作', key: 'actions', width: 220, fixed: 'right' }
 ]
