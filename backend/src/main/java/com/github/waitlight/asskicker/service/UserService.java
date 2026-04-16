@@ -148,6 +148,7 @@ public class UserService {
                 .switchIfEmpty(Mono.error(new NotFoundException("user.id.notFound", u.getId())))
                 .flatMap(existing -> ensureUsernameAvailable(u, existing)
                         .then(Mono.defer(() -> {
+                            u.setRole(existing.getRole());
                             u.setUpdatedAt(Instant.now().toEpochMilli());
                             return userRepository.save(u)
                                     .doOnSuccess(saved -> invalidateUserCaches(existing, saved));

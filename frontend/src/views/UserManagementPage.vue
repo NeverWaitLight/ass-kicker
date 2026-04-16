@@ -86,14 +86,6 @@
         <a-form-item label="确认密码" name="confirmPassword" :dependencies="['password']">
           <a-input-password v-model:value="createForm.confirmPassword" />
         </a-form-item>
-        <a-form-item label="角色" name="role">
-          <a-select
-            v-model:value="createForm.role"
-            style="width: 100%"
-            :options="roleOptions"
-            :disabled="roleOptions.length === 1"
-          />
-        </a-form-item>
       </a-form>
     </a-modal>
 
@@ -143,14 +135,8 @@ const creating = ref(false)
 const createForm = reactive({
   username: '',
   password: '',
-  confirmPassword: '',
-  role: 'MEMBER'
+  confirmPassword: ''
 })
-
-const roleOptions = [
-  { value: 'ADMIN', label: 'ADMIN' },
-  { value: 'MEMBER', label: 'MEMBER' }
-]
 
 const createFormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
@@ -166,8 +152,7 @@ const createFormRules = {
       },
       trigger: 'blur'
     }
-  ],
-  role: [{ required: true, message: '请选择角色', trigger: 'change' }]
+  ]
 }
 
 const resetVisible = ref(false)
@@ -237,7 +222,6 @@ const openCreate = () => {
     createForm.username = ''
     createForm.password = ''
     createForm.confirmPassword = ''
-    createForm.role = 'MEMBER'
   })
 }
 
@@ -258,8 +242,7 @@ const submitCreate = async () => {
       method: 'POST',
       body: JSON.stringify({
         username: createForm.username,
-        password: createForm.password,
-        role: createForm.role
+        password: createForm.password
       })
     })
     if (!response.ok) {

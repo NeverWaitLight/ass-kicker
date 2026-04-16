@@ -1,7 +1,5 @@
 package com.github.waitlight.asskicker.dto.user;
 
-import com.github.waitlight.asskicker.model.UserRole;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -13,8 +11,6 @@ public record CreateUserDTO(
 
         @NotBlank(message = "{user.password.notblank}")
         @Size(min = 8, message = "{user.password.size}")
-        String password,
-
-        UserRole role
+        String password
 ) {
 }
