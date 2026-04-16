@@ -7,9 +7,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -37,7 +34,7 @@ public class FeishuBotChannel extends Channel {
 
     public FeishuBotChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.properties = FeishuBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
     }
 
     @Override
@@ -204,16 +201,4 @@ public class FeishuBotChannel extends Channel {
             @NotBlank(message = "messageSendUrl 不能为空") String messageSendUrl,
             String receiveIdType) {
     }
-}
-
-@Mapper
-interface FeishuBotSpecMapper {
-    FeishuBotSpecMapper INSTANCE = Mappers.getMapper(FeishuBotSpecMapper.class);
-
-    @Mapping(target = "appId", source = "properties.appId")
-    @Mapping(target = "appSecret", source = "properties.appSecret")
-    @Mapping(target = "tenantTokenUrl", source = "properties.tenantTokenUrl")
-    @Mapping(target = "messageSendUrl", source = "properties.messageSendUrl")
-    @Mapping(target = "receiveIdType", source = "properties.receiveIdType")
-    FeishuBotChannel.Properties toSpec(Map<String, String> properties);
 }

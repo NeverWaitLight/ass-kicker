@@ -7,9 +7,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 import org.springframework.http.MediaType;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -37,7 +34,7 @@ public class WecomBotChannel extends Channel {
 
     public WecomBotChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.properties = WecomBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
     }
 
     @Override
@@ -216,15 +213,4 @@ public class WecomBotChannel extends Channel {
             @NotBlank(message = "getTokenUrl 不能为空") String getTokenUrl,
             @NotBlank(message = "messageSendUrl 不能为空") String messageSendUrl) {
     }
-}
-
-@Mapper
-interface WecomBotSpecMapper {
-    WecomBotSpecMapper INSTANCE = Mappers.getMapper(WecomBotSpecMapper.class);
-
-    @Mapping(target = "corpId", source = "properties.corpId")
-    @Mapping(target = "corpSecret", source = "properties.corpSecret")
-    @Mapping(target = "getTokenUrl", source = "properties.getTokenUrl")
-    @Mapping(target = "messageSendUrl", source = "properties.messageSendUrl")
-    WecomBotChannel.Properties toSpec(Map<String, String> properties);
 }

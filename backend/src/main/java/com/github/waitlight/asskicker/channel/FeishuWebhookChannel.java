@@ -9,9 +9,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -33,7 +30,7 @@ public class FeishuWebhookChannel extends Channel {
 
     public FeishuWebhookChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.properties = FeishuSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
     }
 
     @Override
@@ -150,12 +147,4 @@ public class FeishuWebhookChannel extends Channel {
 
     record Properties(@NotBlank(message = "url 不能为空") String url) {
     }
-}
-
-@Mapper
-interface FeishuSpecMapper {
-    FeishuSpecMapper INSTANCE = Mappers.getMapper(FeishuSpecMapper.class);
-
-    @Mapping(target = "url", source = "properties.url")
-    FeishuWebhookChannel.Properties toSpec(Map<String, String> properties);
 }

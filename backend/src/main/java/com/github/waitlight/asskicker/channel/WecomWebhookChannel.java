@@ -9,9 +9,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -33,7 +30,7 @@ public class WecomWebhookChannel extends Channel {
 
     public WecomWebhookChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.properties = WecomSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
     }
 
     @Override
@@ -151,12 +148,4 @@ public class WecomWebhookChannel extends Channel {
     record Properties(
             @NotBlank(message = "url 不能为空") String url) {
     }
-}
-
-@Mapper
-interface WecomSpecMapper {
-    WecomSpecMapper INSTANCE = Mappers.getMapper(WecomSpecMapper.class);
-
-    @Mapping(target = "url", source = "properties.url")
-    WecomWebhookChannel.Properties toSpec(Map<String, String> properties);
 }

@@ -10,9 +10,6 @@ import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
 import jakarta.validation.constraints.NotBlank;
 import org.apache.commons.lang3.StringUtils;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,7 +35,7 @@ public class AwsSnsSmsChannel extends Channel {
 
     public AwsSnsSmsChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.properties = AwsSnsSmsSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
         this.snsClient = buildSnsClient();
     }
 
@@ -143,16 +140,4 @@ public class AwsSnsSmsChannel extends Channel {
             String sessionToken,
             String endpoint) {
     }
-}
-
-@Mapper
-interface AwsSnsSmsSpecMapper {
-    AwsSnsSmsSpecMapper INSTANCE = Mappers.getMapper(AwsSnsSmsSpecMapper.class);
-
-    @Mapping(target = "accessKeyId", source = "properties.accessKeyId")
-    @Mapping(target = "secretAccessKey", source = "properties.secretAccessKey")
-    @Mapping(target = "region", source = "properties.region")
-    @Mapping(target = "sessionToken", source = "properties.sessionToken")
-    @Mapping(target = "endpoint", source = "properties.endpoint")
-    AwsSnsSmsChannel.Properties toSpec(Map<String, String> properties);
 }

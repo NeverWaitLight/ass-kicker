@@ -9,9 +9,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -33,7 +30,7 @@ public class DingtalkWebhookChannel extends Channel {
 
     public DingtalkWebhookChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.properties = DingtalkSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
     }
 
     @Override
@@ -153,12 +150,4 @@ public class DingtalkWebhookChannel extends Channel {
     record Properties(
             @NotBlank(message = "url 不能为空") String url) {
     }
-}
-
-@Mapper
-interface DingtalkSpecMapper {
-    DingtalkSpecMapper INSTANCE = Mappers.getMapper(DingtalkSpecMapper.class);
-
-    @Mapping(target = "url", source = "properties.url")
-    DingtalkWebhookChannel.Properties toSpec(Map<String, String> properties);
 }

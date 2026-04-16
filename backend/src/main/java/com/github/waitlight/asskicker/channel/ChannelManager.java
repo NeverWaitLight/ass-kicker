@@ -1,6 +1,7 @@
 package com.github.waitlight.asskicker.channel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.waitlight.asskicker.config.channel.ChannelObjectMapperConfig;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.ProviderType;
@@ -10,6 +11,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
@@ -32,6 +34,7 @@ public class ChannelManager {
     private final ChannelService channelService;
     private final ChannelFactory channelFactory;
     private final Validator validator;
+    @Qualifier(ChannelObjectMapperConfig.BEAN_NAME)
     private final ObjectMapper objectMapper;
 
     private final ConcurrentHashMap<String, Channel> cache = new ConcurrentHashMap<>();

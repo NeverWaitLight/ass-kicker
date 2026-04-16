@@ -17,9 +17,6 @@ import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
 import jakarta.validation.constraints.NotBlank;
 import org.apache.commons.lang3.StringUtils;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -43,7 +40,7 @@ public class ApnsChannel extends Channel {
 
     public ApnsChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.properties = ApnsSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
     }
 
     @Override
@@ -195,17 +192,4 @@ public class ApnsChannel extends Channel {
             @NotBlank(message = "privateKeyPem 不能为空") String privateKeyPem,
             String apnsId) {
     }
-}
-
-@Mapper
-interface ApnsSpecMapper {
-    ApnsSpecMapper INSTANCE = Mappers.getMapper(ApnsSpecMapper.class);
-
-    @Mapping(target = "url", source = "properties.url")
-    @Mapping(target = "bundleIdTopic", source = "properties.bundleIdTopic")
-    @Mapping(target = "teamId", source = "properties.teamId")
-    @Mapping(target = "keyId", source = "properties.keyId")
-    @Mapping(target = "privateKeyPem", source = "properties.privateKeyPem")
-    @Mapping(target = "apnsId", source = "properties.apnsId")
-    ApnsChannel.Properties toSpec(Map<String, String> properties);
 }

@@ -12,9 +12,6 @@ import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
 import jakarta.validation.constraints.NotBlank;
 import org.apache.commons.lang3.StringUtils;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -34,7 +31,7 @@ public class AliyunSmsChannel extends Channel {
 
     public AliyunSmsChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.properties = AliyunSmsSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
         try {
             this.aliyunClient = new Client(buildConfig(properties));
         } catch (Exception e) {
@@ -177,17 +174,4 @@ public class AliyunSmsChannel extends Channel {
             String regionId,
             @NotBlank(message = "endpoint 不能为空") String endpoint) {
     }
-}
-
-@Mapper
-interface AliyunSmsSpecMapper {
-    AliyunSmsSpecMapper INSTANCE = Mappers.getMapper(AliyunSmsSpecMapper.class);
-
-    @Mapping(target = "accessKeyId", source = "properties.accessKeyId")
-    @Mapping(target = "accessKeySecret", source = "properties.accessKeySecret")
-    @Mapping(target = "signName", source = "properties.signName")
-    @Mapping(target = "templateCode", source = "properties.templateCode")
-    @Mapping(target = "regionId", source = "properties.regionId")
-    @Mapping(target = "endpoint", source = "properties.endpoint")
-    AliyunSmsChannel.Properties toSpec(Map<String, String> properties);
 }

@@ -10,9 +10,6 @@ import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
 import jakarta.validation.constraints.NotBlank;
 import org.apache.commons.lang3.StringUtils;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -38,7 +35,7 @@ public class DingtalkBotChannel extends Channel {
 
     public DingtalkBotChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.properties = DingtalkBotSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
     }
 
     @Override
@@ -208,16 +205,4 @@ public class DingtalkBotChannel extends Channel {
             @NotBlank(message = "accessTokenUrl 不能为空") String accessTokenUrl,
             @NotBlank(message = "groupSendUrl 不能为空") String groupSendUrl) {
     }
-}
-
-@Mapper
-interface DingtalkBotSpecMapper {
-    DingtalkBotSpecMapper INSTANCE = Mappers.getMapper(DingtalkBotSpecMapper.class);
-
-    @Mapping(target = "appKey", source = "properties.appKey")
-    @Mapping(target = "appSecret", source = "properties.appSecret")
-    @Mapping(target = "robotCode", source = "properties.robotCode")
-    @Mapping(target = "accessTokenUrl", source = "properties.accessTokenUrl")
-    @Mapping(target = "groupSendUrl", source = "properties.groupSendUrl")
-    DingtalkBotChannel.Properties toSpec(Map<String, String> properties);
 }

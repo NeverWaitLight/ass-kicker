@@ -7,9 +7,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -34,7 +31,7 @@ public class FcmChannel extends Channel {
 
     public FcmChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.properties = FcmSpecMapper.INSTANCE.toSpec(provider.getProperties());
+        this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
     }
 
     @Override
@@ -159,14 +156,4 @@ public class FcmChannel extends Channel {
             @NotBlank(message = "projectId 不能为空") String projectId,
             @NotBlank(message = "accessToken 不能为空") String accessToken) {
     }
-}
-
-@Mapper
-interface FcmSpecMapper {
-    FcmSpecMapper INSTANCE = Mappers.getMapper(FcmSpecMapper.class);
-
-    @Mapping(target = "url", source = "properties.url")
-    @Mapping(target = "projectId", source = "properties.projectId")
-    @Mapping(target = "accessToken", source = "properties.accessToken")
-    FcmChannel.Properties toSpec(Map<String, String> properties);
 }
