@@ -59,7 +59,7 @@ export const createChannel = async (payload) => {
 }
 
 export const updateChannel = async (id, payload) => {
-  const response = await apiFetch(`/v1/channels/${id}`, {
+  const response = await apiFetch('/v1/channels', {
     method: 'PUT',
     body: JSON.stringify(payload)
   })

@@ -1,9 +1,5 @@
 <template>
   <div class="channel-config-editor">
-    <div v-if="embedded" class="channel-config-editor__toolbar">
-      <a-button :disabled="testDenied" @click="openTestModal">测试</a-button>
-    </div>
-
     <a-result
       v-if="denied"
       status="403"
@@ -149,6 +145,7 @@ const { t, te } = useI18n()
 
 const form = reactive({
   id: null,
+  key: '',
   name: '',
   type: '',
   description: '',
@@ -182,7 +179,7 @@ const emailProtocolOptions = computed(() =>
   }))
 )
 
-const imTypes = ref({ defaultType: 'DINGTALK', types: [] })
+const imTypes = ref({ defaultType: 'DINGTALK_WEBHOOK', types: [] })
 const imType = ref('')
 const isImChannel = computed(() => form.type === 'IM')
 const imTypeOptions = computed(() =>
@@ -202,7 +199,7 @@ const pushTypeOptions = computed(() =>
   }))
 )
 
-const smsTypes = ref({ defaultType: 'ALIYUN', types: [] })
+const smsTypes = ref({ defaultType: 'ALIYUN_SMS', types: [] })
 const smsType = ref('')
 const isSmsChannel = computed(() => form.type === 'SMS')
 const smsTypeOptions = computed(() =>
@@ -298,11 +295,12 @@ const loadChannel = async () => {
   try {
     const data = await fetchChannel(props.channelId)
     form.id = data.id
+    form.key = data.key || ''
     form.name = data.name || ''
     form.type = data.type || ''
     form.description = data.description || ''
-    form.includeRecipientRegex = data.includeRecipientRegex || ''
-    form.excludeRecipientRegex = data.excludeRecipientRegex || ''
+    form.includeRecipientRegex = data.priorityAddressRegex || data.includeRecipientRegex || ''
+    form.excludeRecipientRegex = data.excludeAddressRegex || data.excludeRecipientRegex || ''
     if (form.type === 'EMAIL') {
       const protocol = resolveProtocolValue(data.properties?.protocol)
       emailProtocol.value = protocol
@@ -311,21 +309,21 @@ const loadChannel = async () => {
         ? buildProtocolRowsFromProperties(schema, data.properties)
         : propertiesToRows(data.properties)
     } else if (form.type === 'IM') {
-      const type = resolveImTypeValue(data.properties?.type)
+      const type = resolveImTypeValue(data.provider ?? data.properties?.type)
       imType.value = type
       const schema = findImTypeSchema(type)
       propertyRows.value = schema
         ? buildImTypeRowsFromProperties(schema, data.properties)
         : propertiesToRows(data.properties)
     } else if (form.type === 'PUSH') {
-      const type = resolvePushTypeValue(data.properties?.type ?? data.properties?.protocol)
+      const type = resolvePushTypeValue(data.provider ?? data.properties?.type ?? data.properties?.protocol)
       pushType.value = type
       const schema = findPushTypeSchema(type)
       propertyRows.value = schema
         ? buildPushTypeRowsFromProperties(schema, data.properties)
         : propertiesToRows(data.properties)
     } else if (form.type === 'SMS') {
-      const type = resolveSmsTypeValue(data.properties?.type ?? data.properties?.protocol)
+      const type = resolveSmsTypeValue(data.provider ?? data.properties?.type ?? data.properties?.protocol)
       smsType.value = type
       const schema = findSmsTypeSchema(type)
       propertyRows.value = schema
@@ -375,90 +373,22 @@ const validateForm = () => {
   )
 }
 
-const buildProperties = () => {
-  if (!isEmailChannel.value && !isImChannel.value && !isPushChannel.value && !isSmsChannel.value) {
-    return rowsToProperties(propertyRows.value)
-  }
+const buildProperties = () => rowsToProperties(propertyRows.value)
+
+const resolveProvider = () => {
   if (isEmailChannel.value) {
-    const protocol = resolveProtocolValue(emailProtocol.value)
-    const schema = findEmailProtocolSchema(protocol)
-    if (!schema) {
-      return rowsToProperties(propertyRows.value)
-    }
-    const raw = rowsToProperties(propertyRows.value)
-    const requiredFields = (schema.fields || []).filter((field) => field.required)
-    const protocolPayload = {}
-    requiredFields.forEach((field) => {
-      if (raw[field.key] !== undefined) {
-        protocolPayload[field.key] = raw[field.key]
-      }
-    })
-    return {
-      protocol,
-      [schema.propertyKey]: protocolPayload
-    }
+    return resolveProtocolValue(emailProtocol.value)
   }
-  // IM channel
   if (isImChannel.value) {
-    const type = resolveImTypeValue(imType.value)
-    const schema = findImTypeSchema(type)
-    if (!schema) {
-      return rowsToProperties(propertyRows.value)
-    }
-    const raw = rowsToProperties(propertyRows.value)
-    const allFields = schema.fields || []
-    const typePayload = {}
-    allFields.forEach((field) => {
-      if (raw[field.key] !== undefined) {
-        typePayload[field.key] = raw[field.key]
-      }
-    })
-    return {
-      type,
-      [schema.propertyKey]: typePayload
-    }
+    return resolveImTypeValue(imType.value)
   }
-  // PUSH channel
   if (isPushChannel.value) {
-    const type = resolvePushTypeValue(pushType.value)
-    const schema = findPushTypeSchema(type)
-    if (!schema) {
-      return rowsToProperties(propertyRows.value)
-    }
-    const raw = rowsToProperties(propertyRows.value)
-    const allFields = schema.fields || []
-    const typePayload = {}
-    allFields.forEach((field) => {
-      if (raw[field.key] !== undefined) {
-        typePayload[field.key] = raw[field.key]
-      }
-    })
-    return {
-      type,
-      [schema.propertyKey]: typePayload
-    }
+    return resolvePushTypeValue(pushType.value)
   }
-  // SMS channel
   if (isSmsChannel.value) {
-    const type = resolveSmsTypeValue(smsType.value)
-    const schema = findSmsTypeSchema(type)
-    if (!schema) {
-      return rowsToProperties(propertyRows.value)
-    }
-    const raw = rowsToProperties(propertyRows.value)
-    const allFields = schema.fields || []
-    const typePayload = {}
-    allFields.forEach((field) => {
-      if (raw[field.key] !== undefined) {
-        typePayload[field.key] = raw[field.key]
-      }
-    })
-    return {
-      type,
-      [schema.propertyKey]: typePayload
-    }
+    return resolveSmsTypeValue(smsType.value)
   }
-  return rowsToProperties(propertyRows.value)
+  return ''
 }
 
 const saveChannel = async () => {
@@ -470,14 +400,17 @@ const saveChannel = async () => {
   saving.value = true
   try {
     const payload = {
+      key: (form.key || form.name).trim(),
       name: form.name.trim(),
       type: form.type,
+      provider: resolveProvider(),
       description: form.description?.trim() || '',
-      includeRecipientRegex: form.includeRecipientRegex?.trim() || '',
-      excludeRecipientRegex: form.excludeRecipientRegex?.trim() || '',
+      priorityAddressRegex: form.includeRecipientRegex?.trim() || '',
+      excludeAddressRegex: form.excludeRecipientRegex?.trim() || '',
       properties: buildProperties()
     }
     if (isEdit.value) {
+      payload.id = form.id
       await updateChannel(form.id, payload)
       message.success('通道已更新')
     } else {
@@ -730,10 +663,15 @@ const findSmsTypeSchema = (type) =>
   (smsTypes.value.types || []).find((item) => item.type === type)
 
 const resolveImTypeValue = (value) => {
-  const fallback = imTypes.value.defaultType || 'DINGTALK'
+  const fallback = imTypes.value.defaultType || 'DINGTALK_WEBHOOK'
   if (!value) return fallback
   const normalized = String(value).trim()
-  return normalized ? normalized.toUpperCase() : fallback
+  const mapped = {
+    DINGTALK: 'DINGTALK_WEBHOOK',
+    WECOM: 'WECOM_WEBHOOK',
+    FEISHU: 'FEISHU_WEBHOOK'
+  }
+  return mapped[normalized.toUpperCase()] || normalized.toUpperCase() || fallback
 }
 
 const resolvePushTypeValue = (value) => {
@@ -744,10 +682,14 @@ const resolvePushTypeValue = (value) => {
 }
 
 const resolveSmsTypeValue = (value) => {
-  const fallback = smsTypes.value.defaultType || 'ALIYUN'
+  const fallback = smsTypes.value.defaultType || 'ALIYUN_SMS'
   if (!value) return fallback
   const normalized = String(value).trim()
-  return normalized ? normalized.toUpperCase() : fallback
+  const mapped = {
+    ALIYUN: 'ALIYUN_SMS',
+    AWS: 'AWS_SMS'
+  }
+  return mapped[normalized.toUpperCase()] || normalized.toUpperCase() || fallback
 }
 
 const buildImTypeRowsFromProperties = (schema, properties) => {
@@ -814,22 +756,30 @@ const getSmsTypeFieldValue = (properties, schemaKey, fieldKey, defaultValue) => 
 }
 
 const getFallbackImTypes = () => ({
-  defaultType: 'DINGTALK',
+  defaultType: 'DINGTALK_WEBHOOK',
   types: [
     {
-      type: 'DINGTALK',
+      type: 'DINGTALK_WEBHOOK',
       label: '钉钉',
-      propertyKey: 'dingtalk',
+      propertyKey: 'dingtalkWebhook',
       fields: [
-        { key: 'webhookUrl', label: 'Webhook URL', required: true, defaultValue: '' }
+        { key: 'url', label: 'Webhook URL', required: true, defaultValue: '' }
       ]
     },
     {
-      type: 'WECOM',
+      type: 'WECOM_WEBHOOK',
       label: '企业微信',
-      propertyKey: 'wecom',
+      propertyKey: 'wecomWebhook',
       fields: [
-        { key: 'webhookUrl', label: 'Webhook URL', required: true, defaultValue: '' }
+        { key: 'url', label: 'Webhook URL', required: true, defaultValue: '' }
+      ]
+    },
+    {
+      type: 'FEISHU_WEBHOOK',
+      label: '飞书',
+      propertyKey: 'feishuWebhook',
+      fields: [
+        { key: 'url', label: 'Webhook URL', required: true, defaultValue: '' }
       ]
     }
   ]
@@ -847,28 +797,11 @@ const getFallbackEmailProtocols = () => ({
         { key: 'port', label: '端口', required: true, defaultValue: '465' },
         { key: 'username', label: '用户名', required: true, defaultValue: '' },
         { key: 'password', label: '密码', required: true, defaultValue: '' },
-        { key: 'protocol', label: '传输协议', required: false, defaultValue: 'smtp' },
         { key: 'sslEnabled', label: '启用 SSL', required: false, defaultValue: 'true' },
+        { key: 'starttls', label: '启用 STARTTLS', required: false, defaultValue: 'true' },
         { key: 'from', label: '发件人', required: false, defaultValue: '' },
         { key: 'connectionTimeout', label: '连接超时(ms)', required: false, defaultValue: '5000' },
-        { key: 'readTimeout', label: '读取超时(ms)', required: false, defaultValue: '10000' },
-        { key: 'maxRetries', label: '最大重试次数', required: false, defaultValue: '3' },
-        { key: 'retryDelay', label: '重试间隔(ms)', required: false, defaultValue: '1000' }
-      ]
-    },
-    {
-      protocol: 'HTTP',
-      label: 'HTTP',
-      propertyKey: 'http',
-      fields: [
-        { key: 'baseUrl', label: 'API 基础地址', required: true, defaultValue: '' },
-        { key: 'path', label: '发送路径', required: true, defaultValue: '' },
-        { key: 'apiKeyHeader', label: '鉴权头', required: true, defaultValue: 'Authorization' },
-        { key: 'apiKey', label: '鉴权令牌', required: true, defaultValue: '' },
-        { key: 'from', label: '发件人', required: false, defaultValue: '' },
-        { key: 'timeout', label: '超时(ms)', required: false, defaultValue: '5000' },
-        { key: 'maxRetries', label: '最大重试次数', required: false, defaultValue: '3' },
-        { key: 'retryDelay', label: '重试间隔(ms)', required: false, defaultValue: '1000' }
+        { key: 'readTimeout', label: '读取超时(ms)', required: false, defaultValue: '10000' }
       ]
     }
   ]
@@ -884,13 +817,10 @@ const getFallbackPushTypes = () => ({
       fields: [
         { key: 'teamId', label: 'Team ID', required: true, defaultValue: '' },
         { key: 'keyId', label: 'Key ID', required: true, defaultValue: '' },
-        { key: 'bundleId', label: 'Bundle ID', required: true, defaultValue: '' },
-        { key: 'p8KeyContent', label: 'P8 私钥内容', required: false, defaultValue: '' },
-        { key: 'p8KeyPath', label: 'P8 私钥文件路径', required: false, defaultValue: '' },
-        { key: 'production', label: '生产环境', required: false, defaultValue: 'true' },
-        { key: 'timeout', label: '超时(ms)', required: false, defaultValue: '10000' },
-        { key: 'maxRetries', label: '最大重试次数', required: false, defaultValue: '3' },
-        { key: 'retryDelay', label: '重试间隔(ms)', required: false, defaultValue: '1000' }
+        { key: 'url', label: 'APNs URL', required: true, defaultValue: 'https://api.push.apple.com/3/device' },
+        { key: 'bundleIdTopic', label: 'Bundle ID Topic', required: true, defaultValue: '' },
+        { key: 'privateKeyPem', label: 'P8 私钥内容', required: true, defaultValue: '' },
+        { key: 'apnsId', label: 'APNs ID', required: false, defaultValue: '' }
       ]
     },
     {
@@ -898,49 +828,40 @@ const getFallbackPushTypes = () => ({
       label: '谷歌 FCM',
       propertyKey: 'fcm',
       fields: [
-        { key: 'serviceAccountJson', label: '服务账号 JSON', required: true, defaultValue: '' },
-        { key: 'projectId', label: 'Project ID（可选）', required: false, defaultValue: '' },
-        { key: 'timeout', label: '超时(ms)', required: false, defaultValue: '10000' },
-        { key: 'maxRetries', label: '最大重试次数', required: false, defaultValue: '3' },
-        { key: 'retryDelay', label: '重试间隔(ms)', required: false, defaultValue: '1000' }
+        { key: 'url', label: 'FCM Base URL', required: true, defaultValue: 'https://fcm.googleapis.com' },
+        { key: 'projectId', label: 'Project ID', required: true, defaultValue: '' },
+        { key: 'accessToken', label: 'Access Token', required: true, defaultValue: '' }
       ]
     }
   ]
 })
 
 const getFallbackSmsTypes = () => ({
-  defaultType: 'ALIYUN',
+  defaultType: 'ALIYUN_SMS',
   types: [
     {
-      type: 'ALIYUN',
+      type: 'ALIYUN_SMS',
       label: '阿里云短信',
-      propertyKey: 'aliyun',
+      propertyKey: 'aliyunSms',
       fields: [
         { key: 'accessKeyId', label: 'AccessKey ID', required: true, defaultValue: '' },
         { key: 'accessKeySecret', label: 'AccessKey Secret', required: true, defaultValue: '' },
         { key: 'signName', label: '签名名称', required: true, defaultValue: '' },
         { key: 'templateCode', label: '模板编码', required: true, defaultValue: '' },
-        { key: 'templateParamKey', label: '模板变量名', required: false, defaultValue: 'content' },
         { key: 'regionId', label: 'Region ID', required: false, defaultValue: 'cn-hangzhou' },
-        { key: 'timeout', label: '超时(ms)', required: false, defaultValue: '10000' },
-        { key: 'maxRetries', label: '最大重试次数', required: false, defaultValue: '3' },
-        { key: 'retryDelay', label: '重试间隔(ms)', required: false, defaultValue: '1000' }
+        { key: 'endpoint', label: 'Endpoint', required: true, defaultValue: 'dysmsapi.aliyuncs.com' }
       ]
     },
     {
-      type: 'TENCENT',
-      label: '腾讯云短信',
-      propertyKey: 'tencent',
+      type: 'AWS_SMS',
+      label: 'AWS SNS 短信',
+      propertyKey: 'awsSms',
       fields: [
-        { key: 'secretId', label: 'SecretId', required: true, defaultValue: '' },
-        { key: 'secretKey', label: 'SecretKey', required: true, defaultValue: '' },
-        { key: 'sdkAppId', label: 'SdkAppId', required: true, defaultValue: '' },
-        { key: 'signName', label: '签名名称', required: true, defaultValue: '' },
-        { key: 'templateId', label: '模板 ID', required: true, defaultValue: '' },
-        { key: 'region', label: 'Region', required: false, defaultValue: 'ap-guangzhou' },
-        { key: 'timeout', label: '超时(ms)', required: false, defaultValue: '10000' },
-        { key: 'maxRetries', label: '最大重试次数', required: false, defaultValue: '3' },
-        { key: 'retryDelay', label: '重试间隔(ms)', required: false, defaultValue: '1000' }
+        { key: 'accessKeyId', label: 'AccessKey ID', required: true, defaultValue: '' },
+        { key: 'secretAccessKey', label: 'Secret Access Key', required: true, defaultValue: '' },
+        { key: 'region', label: 'Region', required: true, defaultValue: 'ap-southeast-1' },
+        { key: 'sessionToken', label: 'Session Token', required: false, defaultValue: '' },
+        { key: 'endpoint', label: 'Endpoint', required: false, defaultValue: '' }
       ]
     }
   ]
@@ -956,7 +877,7 @@ watch(
       applyEmailProtocolSchema(emailProtocol.value, { preferExisting: true })
     } else if (value === 'IM') {
       if (!imType.value) {
-        imType.value = imTypes.value.defaultType || 'DINGTALK'
+        imType.value = imTypes.value.defaultType || 'DINGTALK_WEBHOOK'
       }
       applyImTypeSchema(imType.value, { preferExisting: true })
     } else if (value === 'PUSH') {
@@ -966,7 +887,7 @@ watch(
       applyPushTypeSchema(pushType.value, { preferExisting: true })
     } else if (value === 'SMS') {
       if (!smsType.value) {
-        smsType.value = smsTypes.value.defaultType || 'ALIYUN'
+        smsType.value = smsTypes.value.defaultType || 'ALIYUN_SMS'
       }
       applySmsTypeSchema(smsType.value, { preferExisting: true })
     }

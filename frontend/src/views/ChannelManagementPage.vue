@@ -60,7 +60,7 @@
 
     <a-modal
       v-model:open="channelEditorOpen"
-      :title="channelEditorId ? '编辑' : '新增'"
+      :title="channelEditorId ? '编辑' : '新增通道'"
       width="min(960px, 92vw)"
       :style="{ top: '24px' }"
       :confirm-loading="channelFormRef?.saving"
@@ -77,7 +77,7 @@
         ref="channelFormRef"
         :channel-id="channelEditorId"
         embedded
-        @saved="loadChannels"
+        @saved="handleChannelSaved"
       />
     </a-modal>
   </ChannelManagementLayout>
@@ -196,6 +196,11 @@ const handleChannelEditorOk = async () => {
   if (!ok) {
     return Promise.reject(new Error('save failed'))
   }
+}
+
+const handleChannelSaved = async () => {
+  closeChannelEditor()
+  await loadChannels()
 }
 
 const openTest = async (record) => {
