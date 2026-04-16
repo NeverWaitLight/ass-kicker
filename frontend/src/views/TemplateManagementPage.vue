@@ -1,53 +1,76 @@
 <template>
-  <section class="template-layout">
-    <div class="template-header">
+  <section class="data-list-page template-page">
+    <header class="data-list-page__header">
       <div>
-        <h2>模板</h2>
-        <p>集中管理消息模板与多语言内容</p>
+        <h2 class="data-list-page__title">模板管理</h2>
+        <p class="data-list-page__desc">集中管理消息模板与多语言内容</p>
       </div>
-      <div class="template-actions">
-        <a-input
-          v-model:value="searchText"
-          placeholder="搜索模板名称或编码"
-          allow-clear
-          style="width: 220px"
-        />
-        <a-button :loading="loading" @click="loadTemplates">刷新</a-button>
-        <a-button type="primary" @click="openCreate">新建</a-button>
-      </div>
-    </div>
+    </header>
 
-    <a-table
-      :columns="columns"
-      :data-source="filteredTemplates"
-      :loading="loading"
-      :pagination="pagination"
-      row-key="id"
-      @change="handleTableChange"
-    >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'description'">
-          <span class="text-muted">{{ record.description || '-' }}</span>
-        </template>
-        <template v-else-if="column.key === 'channelType'">
-          <a-tag v-if="record.channelType" color="blue">{{ channelTypeLabel(record.channelType) }}</a-tag>
-          <span v-else class="text-muted">-</span>
-        </template>
-        <template v-else-if="column.key === 'attributes'">
-          <span class="text-muted">{{ formatAttributesSummary(record.attributes) }}</span>
-        </template>
-        <template v-else-if="column.key === 'createdAt'">
-          {{ formatTimestamp(record.createdAt) }}
-        </template>
-        <template v-else-if="column.key === 'actions'">
-          <a-space>
-            <a-button size="small" @click="goDetail(record)">详情</a-button>
-            <a-button size="small" @click="openEdit(record)">编辑</a-button>
-            <a-button size="small" danger @click="openDelete(record)">删除</a-button>
-          </a-space>
-        </template>
+    <a-card class="data-list-card" :bordered="false">
+      <template #title>
+        <div class="data-list-card__head">
+          <span class="data-list-card__head-title">模板列表</span>
+          <span class="data-list-card__head-meta">共 {{ filteredTemplates.length }} 条</span>
+        </div>
       </template>
-    </a-table>
+      <template #extra>
+        <a-space wrap>
+          <a-input
+            v-model:value="searchText"
+            placeholder="搜索模板名称或编码"
+            allow-clear
+            class="data-list-toolbar__search"
+            @pressEnter="onSearchTemplates"
+          />
+          <a-button :loading="loading" @click="loadTemplates">刷新</a-button>
+          <a-button type="primary" @click="openCreate">新增</a-button>
+        </a-space>
+      </template>
+
+      <a-table
+        class="data-list-table"
+        :columns="columns"
+        :data-source="filteredTemplates"
+        :loading="loading"
+        :pagination="tablePagination"
+        :scroll="{ x: 1080 }"
+        table-layout="fixed"
+        size="middle"
+        bordered
+        row-key="id"
+        @change="handleTableChange"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'name'">
+            <span class="data-list-cell-ellipsis" :title="record.name">{{ record.name }}</span>
+          </template>
+          <template v-else-if="column.key === 'code'">
+            <span class="data-list-cell-ellipsis" :title="record.code">{{ record.code }}</span>
+          </template>
+          <template v-else-if="column.key === 'description'">
+            <span class="text-muted data-list-cell-ellipsis" :title="record.description">{{ record.description || '-' }}</span>
+          </template>
+          <template v-else-if="column.key === 'channelType'">
+            <a-tag v-if="record.channelType" color="blue">{{ channelTypeLabel(record.channelType) }}</a-tag>
+            <span v-else class="text-muted">-</span>
+          </template>
+          <template v-else-if="column.key === 'attributes'">
+            <span class="text-muted">{{ formatAttributesSummary(record.attributes) }}</span>
+          </template>
+          <template v-else-if="column.key === 'createdAt'">
+            <span class="data-list-cell-time">{{ formatTimestamp(record.createdAt) }}</span>
+          </template>
+          <template v-else-if="column.key === 'actions'">
+            <a-space :size="4" wrap>
+              <a-button type="link" size="small" class="data-list-action-link" @click="goDetail(record)">详情</a-button>
+              <a-button type="link" size="small" class="data-list-action-link" @click="openEdit(record)">编辑</a-button>
+              <a-button type="link" size="small" danger @click="openDelete(record)">删除</a-button>
+            </a-space>
+          </template>
+        </template>
+      </a-table>
+    </a-card>
 
     <!-- 新建/编辑弹窗 -->
     <a-modal
@@ -134,7 +157,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { useFormModal } from '../composables/useFormModal'
@@ -165,7 +188,9 @@ const pagination = reactive({
   current: 1,
   pageSize: 10,
   total: 0,
-  showSizeChanger: false
+  showSizeChanger: true,
+  pageSizeOptions: ['10', '20', '50'],
+  showTotal: (total) => `共 ${total} 条`
 })
 
 const { open: formModalOpen, currentId: formEditId, modalTitle, openCreate: openFormCreate, openEdit: openFormEdit, close: closeFormModal } =
@@ -234,13 +259,13 @@ const formRules = {
 }
 
 const columns = [
-  { title: '名称', dataIndex: 'name', key: 'name', ellipsis: true },
-  { title: '编码', dataIndex: 'code', key: 'code', ellipsis: true },
-  { title: '通道类型', key: 'channelType', width: 180 },
-  { title: '扩展属性', key: 'attributes', width: 100 },
-  { title: '描述', dataIndex: 'description', key: 'description', ellipsis: true },
-  { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180 },
-  { title: '操作', key: 'actions', width: 180, fixed: 'right' }
+  { title: '名称', dataIndex: 'name', key: 'name', width: 168, ellipsis: true },
+  { title: '编码', dataIndex: 'code', key: 'code', width: 140, ellipsis: true },
+  { title: '通道类型', key: 'channelType', width: 120, align: 'center' },
+  { title: '扩展属性', key: 'attributes', width: 96, align: 'center' },
+  { title: '描述', dataIndex: 'description', key: 'description', width: 160, ellipsis: true },
+  { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 176 },
+  { title: '操作', key: 'actions', width: 200, align: 'center', fixed: 'right' }
 ]
 
 const filteredTemplates = computed(() => {
@@ -253,15 +278,30 @@ const filteredTemplates = computed(() => {
   )
 })
 
+const tablePagination = computed(() => ({
+  current: pagination.current,
+  pageSize: pagination.pageSize,
+  total: filteredTemplates.value.length,
+  showSizeChanger: pagination.showSizeChanger,
+  pageSizeOptions: pagination.pageSizeOptions,
+  showTotal: pagination.showTotal
+}))
+
+const onSearchTemplates = () => {
+  pagination.current = 1
+}
+
 const handleTableChange = (pager) => {
   pagination.current = pager.current || 1
+  if (pager.pageSize) {
+    pagination.pageSize = pager.pageSize
+  }
 }
 
 const loadTemplates = async () => {
   loading.value = true
   try {
     templates.value = await fetchTemplates()
-    pagination.total = templates.value.length
   } catch (e) {
     message.error(e?.message || '获取模板列表失败')
   } finally {
@@ -355,35 +395,25 @@ const confirmDelete = async () => {
   }
 }
 
+watch(filteredTemplates, (list) => {
+  const len = list.length
+  if (len === 0) return
+  const maxPage = Math.max(1, Math.ceil(len / pagination.pageSize))
+  if (pagination.current > maxPage) {
+    pagination.current = maxPage
+  }
+})
+
 onMounted(loadTemplates)
 </script>
 
 <style scoped>
-.template-layout {
-  padding: 24px;
+.template-page {
   border-radius: 16px;
 }
 
-.template-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.template-header h2 {
-  margin: 0;
-}
-
-.template-header p {
-  margin: 4px 0 0;
-}
-
-.template-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.text-muted {
+  opacity: 0.72;
 }
 
 .form-hint {
@@ -408,15 +438,4 @@ onMounted(loadTemplates)
   margin-top: 4px;
 }
 
-@media (max-width: 768px) {
-  .template-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .template-actions {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-}
 </style>

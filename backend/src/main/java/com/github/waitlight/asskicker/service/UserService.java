@@ -139,19 +139,43 @@ public class UserService {
         return user;
     }
 
-    public Mono<UserEntity> update(UserEntity u) {
-        if (u == null || !StringUtils.hasText(u.getId())) {
+    public Mono<UserEntity> update(UserEntity patch) {
+        if (patch == null || !StringUtils.hasText(patch.getId())) {
             return Mono.error(new BadRequestException("user.id.empty"));
         }
 
-        return userRepository.findById(u.getId())
-                .switchIfEmpty(Mono.error(new NotFoundException("user.id.notFound", u.getId())))
-                .flatMap(existing -> ensureUsernameAvailable(u, existing)
-                        .then(Mono.defer(() -> {
-                            u.setUpdatedAt(Instant.now().toEpochMilli());
-                            return userRepository.save(u)
-                                    .doOnSuccess(saved -> invalidateUserCaches(existing, saved));
-                        })));
+        return userRepository.findById(patch.getId())
+                .switchIfEmpty(Mono.error(new NotFoundException("user.id.notFound", patch.getId())))
+                .flatMap(existing -> {
+                    final String oldUsername = existing.getUsername();
+                    final UserEntity next = new UserEntity();
+                    next.setId(existing.getId());
+                    next.setUsername(
+                            patch.getUsername() != null && StringUtils.hasText(patch.getUsername())
+                                    ? patch.getUsername().trim()
+                                    : existing.getUsername());
+                    next.setStatus(patch.getStatus() != null ? patch.getStatus() : existing.getStatus());
+                    next.setRole(patch.getRole() != null ? patch.getRole() : existing.getRole());
+                    next.setPassword(existing.getPassword());
+                    next.setCreatedAt(existing.getCreatedAt());
+                    next.setLastLoginAt(existing.getLastLoginAt());
+                    next.setDeletedAt(existing.getDeletedAt());
+                    return ensureUsernameAvailable(next, existing)
+                            .then(Mono.defer(() -> {
+                                existing.setUsername(next.getUsername());
+                                existing.setStatus(next.getStatus());
+                                existing.setRole(next.getRole());
+                                existing.setUpdatedAt(Instant.now().toEpochMilli());
+                                return userRepository.save(existing)
+                                        .doOnSuccess(saved -> invalidateUserCachesAfterUsernameChange(oldUsername, saved));
+                            }));
+                });
+    }
+
+    private void invalidateUserCachesAfterUsernameChange(String oldUsername, UserEntity saved) {
+        userByIdCache.synchronous().invalidate(saved.getId());
+        userByUsernameCache.synchronous().invalidate(oldUsername);
+        userByUsernameCache.synchronous().invalidate(saved.getUsername());
     }
 
     private Mono<Void> ensureUsernameAvailable(UserEntity u, UserEntity existing) {

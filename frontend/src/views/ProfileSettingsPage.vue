@@ -1,9 +1,11 @@
 <template>
-  <section class="page-shell">
-    <div class="page-header">
-      <h2>个人设置</h2>
-      <p>更新用户名与密码</p>
-    </div>
+  <section class="data-list-page profile-page">
+    <header class="data-list-page__header">
+      <div>
+        <h2 class="data-list-page__title">个人设置</h2>
+        <p class="data-list-page__desc">更新用户名与密码</p>
+      </div>
+    </header>
 
     <a-row :gutter="[24, 24]">
       <a-col :xs="24" :md="12">
@@ -30,34 +32,50 @@
         </a-card>
       </a-col>
       <a-col :xs="24">
-        <a-card title="API Key 管理" bordered>
-          <a-form :model="apiKeyForm" layout="inline" style="margin-bottom: 16px">
-            <a-form-item label="备注名">
-              <a-input v-model:value="apiKeyForm.name" placeholder="可选，默认为'默认密钥'" style="width: 200px" />
-            </a-form-item>
-            <a-form-item>
+        <a-card class="data-list-card api-key-card" :bordered="false">
+          <template #title>
+            <div class="data-list-card__head">
+              <span class="data-list-card__head-title">API Key</span>
+              <span class="data-list-card__head-meta">共 {{ apiKeys.length }} 个</span>
+            </div>
+          </template>
+          <template #extra>
+            <a-space wrap>
+              <a-input
+                v-model:value="apiKeyForm.name"
+                placeholder="备注名（可选）"
+                allow-clear
+                class="data-list-toolbar__search"
+                @pressEnter="handleCreateApiKey"
+              />
               <a-button type="primary" :loading="creatingKey" @click="handleCreateApiKey">创建</a-button>
-            </a-form-item>
-          </a-form>
+            </a-space>
+          </template>
 
           <a-table
-            :dataSource="apiKeys"
+            class="data-list-table"
+            :data-source="apiKeys"
             :columns="apiKeyColumns"
             :loading="loadingKeys"
-            rowKey="id"
+            row-key="id"
             :pagination="false"
-            size="small"
+            table-layout="fixed"
+            size="middle"
+            bordered
           >
             <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'maskedRawKey'">
+              <template v-if="column.key === 'name'">
+                <span class="data-list-cell-ellipsis" :title="record.name">{{ record.name || '-' }}</span>
+              </template>
+              <template v-else-if="column.key === 'maskedRawKey'">
                 <a-typography-text code>{{ record.maskedRawKey }}</a-typography-text>
               </template>
               <template v-else-if="column.key === 'createdAt'">
-                {{ new Date(record.createdAt).toLocaleDateString() }}
+                <span class="data-list-cell-time">{{ formatApiKeyDate(record.createdAt) }}</span>
               </template>
               <template v-else-if="column.key === 'action'">
                 <a-popconfirm title="确认销毁此 API Key？" ok-text="确认" cancel-text="取消" @confirm="handleRevokeApiKey(record.id)">
-                  <a-button type="link" danger size="small">销毁</a-button>
+                  <a-button type="link" danger size="small" class="data-list-action-link">销毁</a-button>
                 </a-popconfirm>
               </template>
             </template>
@@ -169,11 +187,16 @@ const newKeyModalVisible = ref(false)
 const newKeyValue = ref('')
 
 const apiKeyColumns = [
-  { title: '备注名', dataIndex: 'name', key: 'name' },
-  { title: 'Key 前缀', key: 'maskedRawKey' },
-  { title: '创建时间', key: 'createdAt' },
-  { title: '操作', key: 'action' }
+  { title: '备注名', dataIndex: 'name', key: 'name', width: 200, ellipsis: true },
+  { title: 'Key 前缀', key: 'maskedRawKey', width: 280 },
+  { title: '创建时间', key: 'createdAt', width: 200 },
+  { title: '操作', key: 'action', width: 100, align: 'center' }
 ]
+
+const formatApiKeyDate = (ts) => {
+  if (ts == null) return '-'
+  return new Date(ts).toLocaleString()
+}
 
 const loadApiKeys = async () => {
   loadingKeys.value = true
@@ -223,19 +246,11 @@ onMounted(loadApiKeys)
 </script>
 
 <style scoped>
-.page-shell {
-  padding: 24px;
+.profile-page {
+  max-width: 960px;
 }
 
-.page-header {
-  margin-bottom: 16px;
-}
-
-.page-header h2 {
-  margin: 0;
-}
-
-.page-header p {
-  margin: 4px 0 0;
+.api-key-card {
+  margin-top: 0;
 }
 </style>
