@@ -51,9 +51,10 @@
 
     <!-- 新建/编辑弹窗 -->
     <a-modal
-      v-model:open="formModal.open"
-      :title="formModal.isEdit ? '编辑模板' : '新建模板'"
-      :confirm-loading="formModal.loading"
+      v-model:open="formModalOpen"
+      :title="modalTitle"
+      :confirm-loading="formModalLoading"
+      :mask-closable="false"
       @ok="submitForm"
       @cancel="closeForm"
       ok-text="保存"
@@ -63,7 +64,9 @@
         ref="formRef"
         :model="formData"
         :rules="formRules"
-        layout="vertical"
+        :label-col="{ span: 6 }"
+        :wrapper-col="{ span: 16 }"
+        layout="horizontal"
         style="margin-top: 8px"
       >
         <a-form-item label="模板名称" name="name">
@@ -73,7 +76,7 @@
           <a-input
             v-model:value="formData.code"
             placeholder="请输入模板编码，如 WELCOME_SMS"
-            :disabled="formModal.isEdit"
+            :disabled="isFormEdit"
           />
         </a-form-item>
         <a-form-item label="通道类型" name="channelType">
@@ -134,6 +137,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
+import { useFormModal } from '../composables/useFormModal'
 import { formatTimestamp } from '../utils/time'
 import {
   fetchTemplates,
@@ -164,12 +168,11 @@ const pagination = reactive({
   showSizeChanger: false
 })
 
-const formModal = reactive({
-  open: false,
-  isEdit: false,
-  loading: false,
-  editId: null
-})
+const { open: formModalOpen, currentId: formEditId, modalTitle, openCreate: openFormCreate, openEdit: openFormEdit, close: closeFormModal } =
+  useFormModal()
+
+const formModalLoading = ref(false)
+const isFormEdit = computed(() => !!formEditId.value)
 
 const deleteModal = reactive({
   open: false,
@@ -271,39 +274,37 @@ const goDetail = (record) => {
 }
 
 const openCreate = () => {
-  formData.name = ''
-  formData.code = ''
-  formData.description = ''
-  formData.channelType = undefined
-  attributeRows.value = [{ key: '', value: '' }]
-  formModal.isEdit = false
-  formModal.editId = null
-  formModal.open = true
+  openFormCreate(() => {
+    formData.name = ''
+    formData.code = ''
+    formData.description = ''
+    formData.channelType = undefined
+    attributeRows.value = [{ key: '', value: '' }]
+  })
 }
 
 const openEdit = (record) => {
-  formData.name = record.name
-  formData.code = record.code
-  formData.description = record.description || ''
-  formData.channelType = record.channelType
-  attributeRows.value = attributesToRows(record.attributes)
-  formModal.isEdit = true
-  formModal.editId = record.id
-  formModal.open = true
+  openFormEdit(record, (r) => {
+    formData.name = r.name
+    formData.code = r.code
+    formData.description = r.description || ''
+    formData.channelType = r.channelType
+    attributeRows.value = attributesToRows(r.attributes)
+  })
 }
 
 const closeForm = () => {
-  formModal.open = false
-  formRef.value?.clearValidate()
+  closeFormModal()
+  formRef.value?.resetFields()
 }
 
 const submitForm = async () => {
   try {
     await formRef.value.validate()
   } catch {
-    return
+    return Promise.reject(new Error('validation'))
   }
-  formModal.loading = true
+  formModalLoading.value = true
   try {
     const payload = {
       name: formData.name,
@@ -312,19 +313,20 @@ const submitForm = async () => {
       channelType: formData.channelType,
       attributes: rowsToAttributesPayload(attributeRows.value)
     }
-    if (formModal.isEdit) {
-      await updateTemplate(formModal.editId, payload)
+    if (isFormEdit.value) {
+      await updateTemplate(formEditId.value, payload)
       message.success('模板已更新')
     } else {
       await createTemplate(payload)
       message.success('模板已创建')
     }
-    formModal.open = false
+    closeFormModal()
     await loadTemplates()
   } catch (e) {
     message.error(e?.message || '操作失败')
+    return Promise.reject(e)
   } finally {
-    formModal.loading = false
+    formModalLoading.value = false
   }
 }
 

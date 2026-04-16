@@ -43,22 +43,36 @@
       </template>
     </a-table>
 
-    <a-modal v-model:open="createVisible" title="新建用户" @ok="submitCreate" :confirm-loading="creating">
-      <a-form :model="createForm" layout="vertical">
-        <a-form-item label="用户名">
+    <a-modal
+      v-model:open="createOpen"
+      :title="createModalTitle"
+      :confirm-loading="creating"
+      :mask-closable="false"
+      @ok="submitCreate"
+      @cancel="closeCreate"
+    >
+      <a-form
+        ref="createFormRef"
+        :model="createForm"
+        :rules="createFormRules"
+        :label-col="{ span: 6 }"
+        :wrapper-col="{ span: 16 }"
+        layout="horizontal"
+      >
+        <a-form-item label="用户名" name="username">
           <a-input v-model:value="createForm.username" />
         </a-form-item>
-        <a-form-item label="密码">
+        <a-form-item label="密码" name="password">
           <a-input-password v-model:value="createForm.password" />
         </a-form-item>
-        <a-form-item label="角色">
-          <a-select v-model:value="createForm.role">
+        <a-form-item label="角色" name="role">
+          <a-select v-model:value="createForm.role" style="width: 100%">
             <a-select-option value="ADMIN">ADMIN</a-select-option>
             <a-select-option value="USER">USER</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item label="状态">
-          <a-select v-model:value="createForm.status">
+        <a-form-item label="状态" name="status">
+          <a-select v-model:value="createForm.status" style="width: 100%">
             <a-select-option value="ACTIVE">ACTIVE</a-select-option>
             <a-select-option value="DISABLED">DISABLED</a-select-option>
           </a-select>
@@ -66,9 +80,23 @@
       </a-form>
     </a-modal>
 
-    <a-modal v-model:open="resetVisible" title="重置密码" @ok="submitReset" :confirm-loading="resetting">
-      <a-form :model="resetForm" layout="vertical">
-        <a-form-item label="新密码">
+    <a-modal
+      v-model:open="resetVisible"
+      title="重置密码"
+      :confirm-loading="resetting"
+      :mask-closable="false"
+      @ok="submitReset"
+      @cancel="closeReset"
+    >
+      <a-form
+        ref="resetFormRef"
+        :model="resetForm"
+        :rules="resetFormRules"
+        :label-col="{ span: 6 }"
+        :wrapper-col="{ span: 16 }"
+        layout="horizontal"
+      >
+        <a-form-item label="新密码" name="newPassword">
           <a-input-password v-model:value="resetForm.newPassword" />
         </a-form-item>
       </a-form>
@@ -79,6 +107,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Modal, message } from 'ant-design-vue'
+import { useFormModal } from '../composables/useFormModal'
 import { unwrapPage } from '../utils/apiPayload'
 import { apiFetch } from '../utils/v1'
 import { formatTimestamp } from '../utils/time'
@@ -88,7 +117,10 @@ const loading = ref(false)
 const keyword = ref('')
 const pagination = reactive({ page: 1, size: 10, total: 0 })
 
-const createVisible = ref(false)
+const { open: createOpen, modalTitle: createModalTitle, openCreate: openCreateModal, close: closeCreateModal } =
+  useFormModal()
+
+const createFormRef = ref(null)
 const creating = ref(false)
 const createForm = reactive({
   username: '',
@@ -97,12 +129,24 @@ const createForm = reactive({
   status: 'ACTIVE'
 })
 
+const createFormRules = {
+  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  role: [{ required: true, message: '请选择角色', trigger: 'change' }],
+  status: [{ required: true, message: '请选择状态', trigger: 'change' }]
+}
+
 const resetVisible = ref(false)
 const resetting = ref(false)
+const resetFormRef = ref(null)
 const resetForm = reactive({
   userId: null,
   newPassword: ''
 })
+
+const resetFormRules = {
+  newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }]
+}
 
 const columns = [
   { title: '序号', key: 'ordinal', width: 80 },
@@ -150,17 +194,24 @@ const handleTableChange = (pager) => {
 }
 
 const openCreate = () => {
-  createVisible.value = true
-  createForm.username = ''
-  createForm.password = ''
-  createForm.role = 'USER'
-  createForm.status = 'ACTIVE'
+  openCreateModal(() => {
+    createForm.username = ''
+    createForm.password = ''
+    createForm.role = 'USER'
+    createForm.status = 'ACTIVE'
+  })
+}
+
+const closeCreate = () => {
+  closeCreateModal()
+  createFormRef.value?.resetFields()
 }
 
 const submitCreate = async () => {
-  if (!createForm.username || !createForm.password) {
-    message.warning('请填写用户名和密码')
-    return
+  try {
+    await createFormRef.value?.validate()
+  } catch {
+    return Promise.reject(new Error('validation'))
   }
   creating.value = true
   try {
@@ -170,13 +221,15 @@ const submitCreate = async () => {
     })
     if (!response.ok) {
       message.error(await response.text())
-      return
+      return Promise.reject(new Error('http'))
     }
     message.success('用户已创建')
-    createVisible.value = false
+    closeCreateModal()
+    createFormRef.value?.resetFields()
     await loadUsers()
   } catch (error) {
     message.error('创建用户失败')
+    return Promise.reject(error)
   } finally {
     creating.value = false
   }
@@ -188,10 +241,16 @@ const openReset = (record) => {
   resetVisible.value = true
 }
 
+const closeReset = () => {
+  resetVisible.value = false
+  resetFormRef.value?.resetFields()
+}
+
 const submitReset = async () => {
-  if (!resetForm.newPassword) {
-    message.warning('请输入新密码')
-    return
+  try {
+    await resetFormRef.value?.validate()
+  } catch {
+    return Promise.reject(new Error('validation'))
   }
   resetting.value = true
   try {
@@ -201,12 +260,14 @@ const submitReset = async () => {
     })
     if (!response.ok) {
       message.error(await response.text())
-      return
+      return Promise.reject(new Error('http'))
     }
     message.success('密码已重置')
     resetVisible.value = false
+    resetFormRef.value?.resetFields()
   } catch (error) {
     message.error('重置密码失败')
+    return Promise.reject(error)
   } finally {
     resetting.value = false
   }

@@ -57,6 +57,29 @@
       :disabled="!canEdit"
       @cancel="closeTestModal"
     />
+
+    <a-modal
+      v-model:open="channelEditorOpen"
+      :title="channelEditorId ? '编辑' : '新增'"
+      width="min(960px, 92vw)"
+      :style="{ top: '24px' }"
+      :confirm-loading="channelFormRef?.saving"
+      :destroy-on-close="true"
+      ok-text="保存"
+      cancel-text="取消"
+      :mask-closable="false"
+      @ok="handleChannelEditorOk"
+      @cancel="closeChannelEditor"
+    >
+      <ChannelConfigEditor
+        v-if="channelEditorOpen"
+        :key="channelEditorKey"
+        ref="channelFormRef"
+        :channel-id="channelEditorId"
+        embedded
+        @saved="loadChannels"
+      />
+    </a-modal>
   </ChannelManagementLayout>
 </template>
 
@@ -67,6 +90,7 @@ import ChannelManagementLayout from '../components/channels/ChannelManagementLay
 import ChannelTable from '../components/channels/ChannelTable.vue'
 import ChannelDeleteModal from '../components/channels/ChannelDeleteModal.vue'
 import ChannelTestSendModal from '../components/channels/ChannelTestSendModal.vue'
+import ChannelConfigEditor from '../components/channels/ChannelConfigEditor.vue'
 import { fetchChannel, fetchChannels, deleteChannel } from '../utils/channelApi'
 import {
   channelList,
@@ -82,6 +106,11 @@ import { CHANNEL_PERMISSIONS, hasPermission } from '../utils/permissions'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+
+const channelEditorOpen = ref(false)
+const channelEditorId = ref(null)
+const channelEditorKey = ref(0)
+const channelFormRef = ref(null)
 
 const canView = computed(() => hasPermission(currentUser.value, CHANNEL_PERMISSIONS.view))
 const canCreate = computed(() => hasPermission(currentUser.value, CHANNEL_PERMISSIONS.create))
@@ -145,12 +174,28 @@ const handleTableChange = (pager) => {
 }
 
 const openCreate = () => {
-  router.push('/channels/new')
+  channelEditorId.value = null
+  channelEditorKey.value += 1
+  channelEditorOpen.value = true
 }
 
 const openEdit = (record) => {
   if (!record?.id) return
-  router.push(`/channels/${record.id}`)
+  channelEditorId.value = record.id
+  channelEditorKey.value += 1
+  channelEditorOpen.value = true
+}
+
+const closeChannelEditor = () => {
+  channelEditorOpen.value = false
+  channelEditorId.value = null
+}
+
+const handleChannelEditorOk = async () => {
+  const ok = await channelFormRef.value?.saveChannel()
+  if (!ok) {
+    return Promise.reject(new Error('save failed'))
+  }
 }
 
 const openTest = async (record) => {
