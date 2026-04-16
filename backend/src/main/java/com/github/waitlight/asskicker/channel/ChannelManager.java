@@ -2,6 +2,7 @@ package com.github.waitlight.asskicker.channel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.config.channel.ChannelObjectMapperConfig;
+import com.github.waitlight.asskicker.exception.BadRequestException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.ProviderType;
@@ -16,11 +17,13 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.stereotype.Component;
+import org.hibernate.validator.HibernateValidatorFactory;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -207,11 +210,20 @@ public class ChannelManager {
      * @param providerType 服务提供商类型
      * @param properties   属性配置 Map
      * @param <T>          属性对象类型
-     * @return 约束违规集合，如果验证通过则返回空集合
      * @throws IllegalArgumentException 如果 ProviderType 未注册或属性类无法实例化
      */
+    public <T> void validateProperties(ProviderType providerType, Map<String, Object> properties) {
+        Set<ConstraintViolation<T>> violations = doValidateProperties(providerType, properties);
+        if (!violations.isEmpty()) {
+            String errorMessage = violations.stream()
+                    .map(ConstraintViolation::getMessage)
+                    .collect(Collectors.joining(", "));
+            throw new BadRequestException("Properties validation failed: " + errorMessage);
+        }
+    }
+
     @SuppressWarnings("unchecked")
-    public <T> Set<ConstraintViolation<T>> validateProperties(ProviderType providerType,
+    private <T> Set<ConstraintViolation<T>> doValidateProperties(ProviderType providerType,
             Map<String, Object> properties) {
         ChannelMeta meta = channelMetaCache.get(providerType);
         if (meta == null) {
@@ -227,8 +239,12 @@ public class ChannelManager {
             // 使用 Jackson 将 Map 转换为属性对象
             T propertyObject = (T) objectMapper.convertValue(properties, propertyClass);
 
-            // 执行 Jakarta Validation
-            return validator.validate(propertyObject);
+            // 使用 fail-fast 模式，命中首个约束错误后立即返回
+            Validator failFastValidator = validator.unwrap(HibernateValidatorFactory.class)
+                    .usingContext()
+                    .failFast(true)
+                    .getValidator();
+            return failFastValidator.validate(propertyObject);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(
                     "Failed to convert properties to " + propertyClass.getSimpleName() + ": " + e.getMessage(), e);
@@ -243,6 +259,6 @@ public class ChannelManager {
      * @return 如果验证通过返回 true，否则返回 false
      */
     public boolean isValid(ProviderType providerType, Map<String, Object> properties) {
-        return validateProperties(providerType, properties).isEmpty();
+        return doValidateProperties(providerType, properties).isEmpty();
     }
 }

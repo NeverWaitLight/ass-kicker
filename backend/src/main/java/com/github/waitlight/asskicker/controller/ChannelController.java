@@ -1,8 +1,6 @@
 package com.github.waitlight.asskicker.controller;
 
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,7 +26,6 @@ import com.github.waitlight.asskicker.service.ChannelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
@@ -47,16 +44,7 @@ public class ChannelController {
         @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @PostMapping
         public Mono<Resp<ChannelVO>> create(@Valid @RequestBody CreateChannelDTO request) {
-                // 使用 ChannelManager 扫描的 Spec 信息验证 properties
-                Set<ConstraintViolation<Object>> violations = channelManager.validateProperties(
-                                request.getProvider(), request.getProperties());
-
-                if (!violations.isEmpty()) {
-                        String errorMessage = violations.stream()
-                                        .map(ConstraintViolation::getMessage)
-                                        .collect(Collectors.joining(", "));
-                        return Mono.just(Resp.error("400", "Properties validation failed: " + errorMessage));
-                }
+                channelManager.validateProperties(request.getProvider(), request.getProperties());
 
                 return Mono.just(request)
                                 .map(channelConverter::toEntity)
