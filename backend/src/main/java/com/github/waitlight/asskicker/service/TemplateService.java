@@ -2,7 +2,6 @@ package com.github.waitlight.asskicker.service;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.cache.CaffeineCacheConfig;
-import com.github.waitlight.asskicker.converter.TemplateConverter;
 import com.github.waitlight.asskicker.exception.BadRequestException;
 import com.github.waitlight.asskicker.exception.ConflictException;
 import com.github.waitlight.asskicker.exception.NotFoundException;
@@ -27,7 +26,6 @@ import java.util.Optional;
 public class TemplateService {
 
     private final TemplateRepository templateRepository;
-    private final TemplateConverter templateConverter;
     private final SnowflakeIdGenerator snowflakeIdGenerator;
     private final CaffeineCacheConfig caffeineCacheConfig;
 
@@ -56,7 +54,7 @@ public class TemplateService {
         return templateRepository.findByCode(entity.getCode())
                 .flatMap(existing -> Mono.<TemplateEntity>error(new ConflictException("template.code.exists")))
                 .switchIfEmpty(Mono.defer(() -> {
-                    TemplateEntity toCreate = templateConverter.copyForCreate(entity);
+                    TemplateEntity toCreate = copyFieldsForCreate(entity);
                     long now = Instant.now().toEpochMilli();
                     toCreate.setId(snowflakeIdGenerator.nextIdString());
                     toCreate.setCreatedAt(now);
@@ -121,11 +119,37 @@ public class TemplateService {
                 .switchIfEmpty(Mono.error(new NotFoundException("template.id.notFound", id)))
                 .flatMap(existing -> ensureCodeAvailable(entity, existing)
                         .then(Mono.defer(() -> {
-                            templateConverter.merge(entity, existing);
+                            mergePatch(entity, existing);
                             existing.setUpdatedAt(Instant.now().toEpochMilli());
                             return templateRepository.save(existing)
                                     .doOnSuccess(saved -> invalidateTemplateCaches(existing, saved));
                         })));
+    }
+
+    /**
+     * 创建前从入参实体拷贝业务字段（不含 id、时间戳）
+     */
+    private TemplateEntity copyFieldsForCreate(TemplateEntity source) {
+        TemplateEntity copy = new TemplateEntity();
+        copy.setCode(source.getCode());
+        copy.setChannelType(source.getChannelType());
+        copy.setLocalizedTemplates(source.getLocalizedTemplates());
+        return copy;
+    }
+
+    /**
+     * 合并 patch 到 target，忽略 null 值，保持 id、createdAt、updatedAt 由调用方处理
+     */
+    private void mergePatch(TemplateEntity patch, TemplateEntity target) {
+        if (patch.getCode() != null) {
+            target.setCode(patch.getCode());
+        }
+        if (patch.getChannelType() != null) {
+            target.setChannelType(patch.getChannelType());
+        }
+        if (patch.getLocalizedTemplates() != null) {
+            target.setLocalizedTemplates(patch.getLocalizedTemplates());
+        }
     }
 
     private void invalidateTemplateCaches(TemplateEntity existing, TemplateEntity saved) {

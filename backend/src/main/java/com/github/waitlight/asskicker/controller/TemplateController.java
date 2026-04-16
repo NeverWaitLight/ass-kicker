@@ -19,13 +19,15 @@ import com.github.waitlight.asskicker.converter.TemplateConverter;
 import com.github.waitlight.asskicker.dto.PageReq;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
-import com.github.waitlight.asskicker.dto.template.TemplateDTO;
-import com.github.waitlight.asskicker.model.TemplateEntity;
+import com.github.waitlight.asskicker.dto.template.CreateTemplateDTO;
+import com.github.waitlight.asskicker.dto.template.TemplateVO;
+import com.github.waitlight.asskicker.dto.template.UpdateTemplateDTO;
 import com.github.waitlight.asskicker.service.TemplateService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
@@ -42,19 +44,21 @@ public class TemplateController {
 
     @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
-    public Mono<Resp<TemplateDTO>> create(@RequestBody @Validated TemplateDTO request) {
-        TemplateEntity entity = templateConverter.toEntity(request);
-        return templateService.create(entity)
-                .map(templateConverter::toDto)
+    public Mono<Resp<TemplateVO>> create(@Valid @RequestBody CreateTemplateDTO request) {
+        return Mono.just(request)
+                .map(templateConverter::toEntity)
+                .flatMap(templateService::create)
+                .map(templateConverter::toVO)
                 .map(Resp::success);
     }
 
     @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PutMapping
-    public Mono<Resp<TemplateDTO>> update(@RequestBody @Validated TemplateDTO request) {
-        TemplateEntity entity = templateConverter.toEntity(request);
-        return templateService.update(request.getId(), entity)
-                .map(templateConverter::toDto)
+    public Mono<Resp<TemplateVO>> update(@Valid @RequestBody UpdateTemplateDTO request) {
+        return Mono.just(request)
+                .map(templateConverter::toEntity)
+                .flatMap(patch -> templateService.update(request.getId(), patch))
+                .map(templateConverter::toVO)
                 .map(Resp::success);
     }
 
@@ -67,15 +71,15 @@ public class TemplateController {
 
     @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
-    public Mono<Resp<TemplateDTO>> getById(@PathVariable String id) {
+    public Mono<Resp<TemplateVO>> getById(@PathVariable String id) {
         return templateService.findById(id)
-                .map(templateConverter::toDto)
+                .map(templateConverter::toVO)
                 .map(Resp::success);
     }
 
     @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
-    public Mono<PageResp<TemplateDTO>> page(@Validated PageReq pageReq) {
+    public Mono<PageResp<TemplateVO>> page(@Validated PageReq pageReq) {
         int page = pageReq.getPage();
         int size = pageReq.getSize();
         String keyword = pageReq.getKeyword();
@@ -87,7 +91,7 @@ public class TemplateController {
                         return Mono.just(PageResp.success(page, size, total, List.of()));
                     }
                     return templateService.list(keyword, size, offset)
-                            .map(templateConverter::toDto)
+                            .map(templateConverter::toVO)
                             .collectList()
                             .map(templates -> PageResp.success(page, size, total, templates));
                 });
@@ -95,9 +99,9 @@ public class TemplateController {
 
     @Operation(summary = "getByCode", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/code/{code}")
-    public Mono<Resp<TemplateDTO>> getByCode(@PathVariable String code) {
+    public Mono<Resp<TemplateVO>> getByCode(@PathVariable String code) {
         return templateService.findByCode(code)
-                .map(templateConverter::toDto)
+                .map(templateConverter::toVO)
                 .map(Resp::success);
     }
 }

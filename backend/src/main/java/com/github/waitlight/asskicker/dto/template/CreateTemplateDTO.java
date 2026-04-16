@@ -7,16 +7,18 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Template 创建 DTO，专门用于 TemplateController create 方法
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TemplateDTO {
-
-    @NotBlank(message = "{template.id.notblank}")
-    private String id;
+@Builder
+public class CreateTemplateDTO {
 
     @NotBlank(message = "Message template code is required")
     @Size(max = 100, message = "Message template code must not exceed 100 characters")
@@ -26,11 +28,9 @@ public class TemplateDTO {
     private ChannelType channelType;
 
     @NotNull(message = "Templates are required")
+    @Builder.Default
     private JsonNode templates = JsonNodeFactory.instance.objectNode();
 
+    @Builder.Default
     private JsonNode channels = JsonNodeFactory.instance.objectNode();
-
-    private Long createdAt;
-
-    private Long updatedAt;
 }
