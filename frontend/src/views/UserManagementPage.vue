@@ -67,16 +67,20 @@
           <a-input-password v-model:value="createForm.password" />
         </a-form-item>
         <a-form-item label="角色" name="role">
-          <a-select v-model:value="createForm.role" style="width: 100%">
-            <a-select-option value="ADMIN">ADMIN</a-select-option>
-            <a-select-option value="USER">USER</a-select-option>
-          </a-select>
+          <a-select
+            v-model:value="createForm.role"
+            style="width: 100%"
+            :options="roleOptions"
+            :disabled="roleOptions.length === 1"
+          />
         </a-form-item>
         <a-form-item label="状态" name="status">
-          <a-select v-model:value="createForm.status" style="width: 100%">
-            <a-select-option value="ACTIVE">ACTIVE</a-select-option>
-            <a-select-option value="DISABLED">DISABLED</a-select-option>
-          </a-select>
+          <a-select
+            v-model:value="createForm.status"
+            style="width: 100%"
+            :options="statusOptions"
+            :disabled="statusOptions.length === 1"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -129,6 +133,16 @@ const createForm = reactive({
   role: 'USER',
   status: 'ACTIVE'
 })
+
+const roleOptions = [
+  { value: 'ADMIN', label: 'ADMIN' },
+  { value: 'USER', label: 'USER' }
+]
+
+const statusOptions = [
+  { value: 'ACTIVE', label: 'ACTIVE' },
+  { value: 'DISABLED', label: 'DISABLED' }
+]
 
 const createFormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],

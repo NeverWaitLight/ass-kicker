@@ -15,6 +15,7 @@
         allow-clear
         class="filter-select"
         :options="channelTypeOptions"
+        :disabled="channelTypeOptions.length === 1"
         @change="doSearch"
       />
       <a-input-search

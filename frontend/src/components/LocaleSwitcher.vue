@@ -4,6 +4,7 @@
     size="small"
     :value="currentLocale"
     :options="options"
+    :disabled="options.length === 1"
     :dropdown-match-select-width="false"
     @update:value="setLocale"
   />

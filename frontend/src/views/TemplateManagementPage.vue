@@ -82,6 +82,7 @@
             v-model:value="formData.channelType"
             placeholder="选择通道类型"
             :options="channelTypeOptions"
+            :disabled="channelTypeOptions.length === 1"
             allow-clear
             style="width: 100%"
           />

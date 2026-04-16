@@ -23,6 +23,7 @@
                 placeholder="请选择通道类型"
                 allow-clear
                 :options="typeOptions"
+                :disabled="typeOptions.length === 1"
               />
             </a-form-item>
             <a-form-item v-if="providerTypeOptions.length > 0" label="服务商">
@@ -30,6 +31,7 @@
                 v-model:value="providerType"
                 placeholder="请选择服务商"
                 :options="providerTypeOptions"
+                :disabled="providerTypeOptions.length === 1"
                 @change="handleProviderTypeChange"
               />
             </a-form-item>

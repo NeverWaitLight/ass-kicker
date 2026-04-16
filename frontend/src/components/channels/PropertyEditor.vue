@@ -20,6 +20,7 @@
             :value="record.type"
             style="width: 140px"
             :options="typeOptions"
+            :disabled="typeOptions.length === 1"
             @update:value="(val) => changeType(record, val)"
           />
         </template>
