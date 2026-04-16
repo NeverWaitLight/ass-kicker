@@ -21,7 +21,7 @@ public class UpdateTemplateDTO {
     @NotBlank(message = "{template.id.notblank}")
     private String id;
 
-    @Size(max = 100, message = "Message template code must not exceed 100 characters")
+    @Size(max = 100, message = "{template.code.size}")
     private String code;
 
     @Size(max = 255, message = "{template.name.size}")

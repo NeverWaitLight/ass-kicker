@@ -24,7 +24,6 @@
             <a-tag v-if="template.channelType" color="blue">{{ channelTypeLabel(template.channelType) }}</a-tag>
             <span v-else class="desc-empty">未设置</span>
           </a-descriptions-item>
-          <a-descriptions-item label="描述" :span="2">{{ template.description || '-' }}</a-descriptions-item>
           <a-descriptions-item label="扩展属性" :span="2">
             <template v-if="attributeEntries.length">
               <a-table
@@ -69,15 +68,6 @@
               :options="channelTypeOptions"
               allow-clear
               style="width: 100%"
-            />
-          </a-form-item>
-          <a-form-item label="描述" name="description">
-            <a-textarea
-              v-model:value="infoForm.description"
-              placeholder="请输入描述（可选）"
-              :rows="2"
-              :maxlength="1000"
-              show-count
             />
           </a-form-item>
           <a-form-item label="扩展属性" name="attributes">
@@ -131,7 +121,7 @@
 
               <div class="lang-tab-footer">
                 <span v-if="dirtyLangs.has(lang.code)" class="unsaved-hint">有未保存的修改</span>
-                <a-space>
+                <a-space class="lang-footer-actions">
                   <a-button
                     v-if="langContents[lang.code] && originalContents[lang.code]"
                     danger
@@ -210,7 +200,6 @@ const infoFormRef = ref(null)
 const infoForm = reactive({
   name: '',
   code: '',
-  description: '',
   channelType: undefined
 })
 
@@ -291,7 +280,6 @@ const loadTemplate = async () => {
     template.value = t
     infoForm.name = t.name
     infoForm.code = t.code
-    infoForm.description = t.description || ''
     infoForm.channelType = t.channelType
     infoAttributeRows.value = attributesToRows(t.attributes)
 
@@ -329,7 +317,6 @@ const startInfoEdit = () => {
 const cancelInfoEdit = () => {
   infoForm.name = template.value.name
   infoForm.code = template.value.code
-  infoForm.description = template.value.description || ''
   infoForm.channelType = template.value.channelType
   infoAttributeRows.value = attributesToRows(template.value.attributes)
   infoEditing.value = false
@@ -347,7 +334,6 @@ const saveInfo = async () => {
     const updated = await updateTemplate(route.params.id, {
       name: infoForm.name,
       code: infoForm.code,
-      description: infoForm.description,
       channelType: infoForm.channelType,
       attributes: rowsToAttributesPayload(infoAttributeRows.value)
     })
@@ -496,8 +482,13 @@ onMounted(loadTemplate)
 .lang-tab-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   margin-top: 12px;
+}
+
+.lang-footer-actions {
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .unsaved-hint {

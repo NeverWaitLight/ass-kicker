@@ -14,7 +14,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Document(collection = "template")
+@Document(collection = "templates")
 public class TemplateEntity {
 
         @Id

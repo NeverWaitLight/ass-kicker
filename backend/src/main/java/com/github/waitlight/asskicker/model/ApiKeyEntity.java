@@ -11,7 +11,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Document(collection = "t_api_key")
+@Document(collection = "api_keys")
 public class ApiKeyEntity {
 
     @Id

@@ -26,10 +26,7 @@
       @change="handleTableChange"
     >
       <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'description'">
-          <span class="text-muted">{{ record.description || '-' }}</span>
-        </template>
-        <template v-else-if="column.key === 'channelType'">
+        <template v-if="column.key === 'channelType'">
           <a-tag v-if="record.channelType" color="blue">{{ channelTypeLabel(record.channelType) }}</a-tag>
           <span v-else class="text-muted">-</span>
         </template>
@@ -86,15 +83,6 @@
             :options="channelTypeOptions"
             allow-clear
             style="width: 100%"
-          />
-        </a-form-item>
-        <a-form-item label="描述" name="description">
-          <a-textarea
-            v-model:value="formData.description"
-            placeholder="请输入描述（可选）"
-            :rows="3"
-            :maxlength="1000"
-            show-count
           />
         </a-form-item>
         <a-form-item label="扩展属性" name="attributes">
@@ -183,7 +171,6 @@ const deleteModal = reactive({
 const formData = reactive({
   name: '',
   code: '',
-  description: '',
   channelType: undefined
 })
 
@@ -238,7 +225,6 @@ const columns = [
   { title: '编码', dataIndex: 'code', key: 'code', ellipsis: true },
   { title: '通道类型', key: 'channelType', width: 180 },
   { title: '扩展属性', key: 'attributes', width: 100 },
-  { title: '描述', dataIndex: 'description', key: 'description', ellipsis: true },
   { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 180 },
   { title: '操作', key: 'actions', width: 180, fixed: 'right' }
 ]
@@ -277,7 +263,6 @@ const openCreate = () => {
   openFormCreate(() => {
     formData.name = ''
     formData.code = ''
-    formData.description = ''
     formData.channelType = undefined
     attributeRows.value = [{ key: '', value: '' }]
   })
@@ -287,7 +272,6 @@ const openEdit = (record) => {
   openFormEdit(record, (r) => {
     formData.name = r.name
     formData.code = r.code
-    formData.description = r.description || ''
     formData.channelType = r.channelType
     attributeRows.value = attributesToRows(r.attributes)
   })
@@ -309,7 +293,6 @@ const submitForm = async () => {
     const payload = {
       name: formData.name,
       code: formData.code,
-      description: formData.description,
       channelType: formData.channelType,
       attributes: rowsToAttributesPayload(attributeRows.value)
     }

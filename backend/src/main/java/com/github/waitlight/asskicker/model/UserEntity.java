@@ -11,8 +11,8 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Getter
 @Setter
 @NoArgsConstructor
-@Document(collection = "t_user")
-@CompoundIndex(name = "uk_t_user_username_deleted_at", def = "{'username': 1, 'deleted_at': 1}", unique = true)
+@Document(collection = "users")
+@CompoundIndex(name = "uk_users_username_deleted_at", def = "{'username': 1, 'deleted_at': 1}", unique = true)
 public class UserEntity {
 
     @Id
