@@ -66,7 +66,7 @@ public class UserService {
         u.setId(snowflakeIdGenerator.nextIdString());
         u.setPassword(passwordEncoder.encode(u.getPassword()));
         u.setRole(Optional.ofNullable(u.getRole()).orElse(UserRole.MEMBER));
-        u.setStatus(Optional.ofNullable(u.getStatus()).orElse(UserStatus.ACTIVE));
+        u.setStatus(UserStatus.ACTIVE);
         u.setCreatedAt(now);
         u.setUpdatedAt(now);
         u.setDeletedAt(SoftDeleteConstants.NOT_DELETED);

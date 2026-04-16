@@ -10,6 +10,7 @@ import com.github.waitlight.asskicker.exception.PermissionDeniedException;
 import com.github.waitlight.asskicker.exception.UnauthorizedException;
 import com.github.waitlight.asskicker.model.UserEntity;
 import com.github.waitlight.asskicker.model.UserRole;
+import com.github.waitlight.asskicker.model.UserStatus;
 import com.github.waitlight.asskicker.security.JwtProperties;
 import com.github.waitlight.asskicker.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
@@ -144,6 +145,10 @@ class AuthServiceTest {
                         UserEntity input = UserEntityFixtures.disabledUser();
 
                         StepVerifier.create(userService.create(input)
+                                        .flatMap(saved -> {
+                                                saved.setStatus(UserStatus.DISABLED);
+                                                return mongoTemplate.save(saved);
+                                        })
                                         .flatMap(saved -> authService.login(
                                                         new LoginDTO(saved.getUsername(), "disabledpass123"))))
                                         .expectErrorSatisfies(ex -> assertThat(ex)
@@ -218,6 +223,10 @@ class AuthServiceTest {
                         UserEntity input = UserEntityFixtures.disabledUser();
 
                         StepVerifier.create(userService.create(input)
+                                        .flatMap(saved -> {
+                                                saved.setStatus(UserStatus.DISABLED);
+                                                return mongoTemplate.save(saved);
+                                        })
                                         .flatMap(saved -> authService.refresh(
                                                         jwtService.generateRefreshToken(saved))))
                                         .expectErrorSatisfies(ex -> assertThat(ex)

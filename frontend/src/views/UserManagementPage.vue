@@ -83,20 +83,15 @@
         <a-form-item label="密码" name="password">
           <a-input-password v-model:value="createForm.password" />
         </a-form-item>
+        <a-form-item label="确认密码" name="confirmPassword" :dependencies="['password']">
+          <a-input-password v-model:value="createForm.confirmPassword" />
+        </a-form-item>
         <a-form-item label="角色" name="role">
           <a-select
             v-model:value="createForm.role"
             style="width: 100%"
             :options="roleOptions"
             :disabled="roleOptions.length === 1"
-          />
-        </a-form-item>
-        <a-form-item label="状态" name="status">
-          <a-select
-            v-model:value="createForm.status"
-            style="width: 100%"
-            :options="statusOptions"
-            :disabled="statusOptions.length === 1"
           />
         </a-form-item>
       </a-form>
@@ -148,25 +143,31 @@ const creating = ref(false)
 const createForm = reactive({
   username: '',
   password: '',
-  role: 'USER',
-  status: 'ACTIVE'
+  confirmPassword: '',
+  role: 'MEMBER'
 })
 
 const roleOptions = [
   { value: 'ADMIN', label: 'ADMIN' },
-  { value: 'USER', label: 'USER' }
-]
-
-const statusOptions = [
-  { value: 'ACTIVE', label: 'ACTIVE' },
-  { value: 'DISABLED', label: 'DISABLED' }
+  { value: 'MEMBER', label: 'MEMBER' }
 ]
 
 const createFormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-  role: [{ required: true, message: '请选择角色', trigger: 'change' }],
-  status: [{ required: true, message: '请选择状态', trigger: 'change' }]
+  confirmPassword: [
+    { required: true, message: '请再次输入密码', trigger: 'blur' },
+    {
+      validator: (_rule, value) => {
+        if (value !== createForm.password) {
+          return Promise.reject(new Error('两次输入的密码不一致'))
+        }
+        return Promise.resolve()
+      },
+      trigger: 'blur'
+    }
+  ],
+  role: [{ required: true, message: '请选择角色', trigger: 'change' }]
 }
 
 const resetVisible = ref(false)
@@ -235,8 +236,8 @@ const openCreate = () => {
   openCreateModal(() => {
     createForm.username = ''
     createForm.password = ''
-    createForm.role = 'USER'
-    createForm.status = 'ACTIVE'
+    createForm.confirmPassword = ''
+    createForm.role = 'MEMBER'
   })
 }
 
@@ -255,7 +256,11 @@ const submitCreate = async () => {
   try {
     const response = await apiFetch('/v1/users', {
       method: 'POST',
-      body: JSON.stringify(createForm)
+      body: JSON.stringify({
+        username: createForm.username,
+        password: createForm.password,
+        role: createForm.role
+      })
     })
     if (!response.ok) {
       message.error(await response.text())

@@ -44,7 +44,7 @@ public class AuthController {
         @Operation(summary = "register")
         @PostMapping("/register")
         public Mono<Resp<UserVO>> register(@RequestBody @Validated CreateUserDTO request) {
-                request = new CreateUserDTO(request.username().trim(), request.password());
+                request = new CreateUserDTO(request.username().trim(), request.password(), null);
                 UserEntity entity = userConverter.toEntity(request);
                 return userService.count(null)
                                 .flatMap(count -> {
