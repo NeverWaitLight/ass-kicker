@@ -1,11 +1,11 @@
-package com.github.waitlight.asskicker.dto.sendrecord;
+package com.github.waitlight.asskicker.dto.record;
 
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
 
 import java.util.Map;
 
-public record SendRecordVO(
+public record RecordVO(
         String id,
         String taskId,
         String templateCode,

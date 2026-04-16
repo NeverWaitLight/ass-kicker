@@ -15,7 +15,7 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 @Document(collection = "t_send_record")
-public class SendRecordEntity {
+public class RecordEntity {
 
     @Id
     private String id;

@@ -38,7 +38,7 @@ import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import okhttp3.HttpUrl;
 import com.github.waitlight.asskicker.service.ChannelService;
-import com.github.waitlight.asskicker.service.SendRecordService;
+import com.github.waitlight.asskicker.service.RecordService;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -57,7 +57,7 @@ class SenderTest {
         private TemplateEngine templateEngine;
 
         @Mock
-        private SendRecordService sendRecordService;
+        private RecordService recordService;
 
         @Mock
         private ChannelService channelService;
@@ -131,7 +131,7 @@ class SenderTest {
                 ChannelManager channelManager = new ChannelManager(channelService, channelFactory, validator, OBJECT_MAPPER);
                 channelManager.refresh();
 
-                Sender sender = new Sender(templateEngine, channelManager, sendRecordService,
+                Sender sender = new Sender(templateEngine, channelManager, recordService,
                                 snowflakeIdGenerator);
                 UniMessage template = buildTemplate();
                 UniMessage renderedMessage = new UniMessage();
@@ -157,9 +157,9 @@ class SenderTest {
                                 .expectNext("batch-task-1")
                                 .verifyComplete();
 
-                ArgumentCaptor<SendRecordEntity> recordCaptor = ArgumentCaptor
-                                .forClass(SendRecordEntity.class);
-                verify(sendRecordService, timeout(10000).times(3)).writeRecord(recordCaptor.capture());
+                ArgumentCaptor<RecordEntity> recordCaptor = ArgumentCaptor
+                                .forClass(RecordEntity.class);
+                verify(recordService, timeout(10000).times(3)).writeRecord(recordCaptor.capture());
 
                 assertThat(List.of(
                                 extractFormParam(takeRequest(awsServer), "PhoneNumber"),
@@ -170,9 +170,9 @@ class SenderTest {
                 assertThat(aliyunServer.takeRequest(200, TimeUnit.MILLISECONDS)).isNull();
                 assertThat(recordCaptor.getAllValues())
                                 .extracting(
-                                                SendRecordEntity::getRecipient,
-                                                SendRecordEntity::getChannelId,
-                                                SendRecordEntity::getChannelName)
+                                                RecordEntity::getRecipient,
+                                                RecordEntity::getChannelId,
+                                                RecordEntity::getChannelName)
                                 .containsExactlyInAnyOrder(
                                                 tuple(usRecipient1, "a-us-sms-id", "a-us-sms"),
                                                 tuple(cnRecipient, "z-cn-sms-id", "z-cn-sms"),
@@ -263,7 +263,7 @@ class SenderTest {
                 when(channelManager.chose(any(ChannelType.class), anyString())).thenReturn(Mono.empty());
                 when(snowflakeIdGenerator.nextIdString()).thenReturn("snowflake-1", "snowflake-2");
 
-                Sender sender = new Sender(templateEngine, channelManager, sendRecordService,
+                Sender sender = new Sender(templateEngine, channelManager, recordService,
                                 snowflakeIdGenerator);
                 UniTask missingId = UniTask.builder()
                                 .message(template)
@@ -302,7 +302,7 @@ class SenderTest {
                 when(templateEngine.fill(any())).thenReturn(Mono.just(rendered));
                 when(channelManager.chose(any(ChannelType.class), anyString())).thenReturn(Mono.empty());
 
-                Sender sender = new Sender(templateEngine, channelManager, sendRecordService,
+                Sender sender = new Sender(templateEngine, channelManager, recordService,
                                 snowflakeIdGenerator);
                 UniTask task = UniTask.builder()
                                 .message(template)
@@ -325,7 +325,7 @@ class SenderTest {
         void send_writesFailedRecordWhenTemplateFillReturnsNull() {
                 when(templateEngine.fill(any())).thenReturn(Mono.empty());
 
-                Sender sender = new Sender(templateEngine, channelManager, sendRecordService,
+                Sender sender = new Sender(templateEngine, channelManager, recordService,
                                 snowflakeIdGenerator);
                 UniTask task = UniTask.builder()
                                 .message(buildTemplate())
@@ -340,10 +340,10 @@ class SenderTest {
                                 .expectNext("task-fill-null")
                                 .verifyComplete();
 
-                ArgumentCaptor<SendRecordEntity> captor = ArgumentCaptor.forClass(SendRecordEntity.class);
-                verify(sendRecordService, timeout(5000).times(1)).writeRecord(captor.capture());
+                ArgumentCaptor<RecordEntity> captor = ArgumentCaptor.forClass(RecordEntity.class);
+                verify(recordService, timeout(5000).times(1)).writeRecord(captor.capture());
 
-                SendRecordEntity record = captor.getValue();
+                RecordEntity record = captor.getValue();
                 assertThat(record.getTaskId()).isEqualTo("task-fill-null");
                 assertThat(record.getStatus()).isEqualTo(com.github.waitlight.asskicker.model.SendRecordStatus.FAILED);
                 assertThat(record.getRecipient()).isNull();
@@ -355,7 +355,7 @@ class SenderTest {
                 when(templateEngine.fill(any()))
                                 .thenReturn(Mono.error(new RuntimeException("template-engine-error")));
 
-                Sender sender = new Sender(templateEngine, channelManager, sendRecordService,
+                Sender sender = new Sender(templateEngine, channelManager, recordService,
                                 snowflakeIdGenerator);
                 UniTask task = UniTask.builder()
                                 .message(buildTemplate())
@@ -370,10 +370,10 @@ class SenderTest {
                                 .expectNext("task-fill-throws")
                                 .verifyComplete();
 
-                ArgumentCaptor<SendRecordEntity> captor = ArgumentCaptor.forClass(SendRecordEntity.class);
-                verify(sendRecordService, timeout(5000).times(1)).writeRecord(captor.capture());
+                ArgumentCaptor<RecordEntity> captor = ArgumentCaptor.forClass(RecordEntity.class);
+                verify(recordService, timeout(5000).times(1)).writeRecord(captor.capture());
 
-                SendRecordEntity record = captor.getValue();
+                RecordEntity record = captor.getValue();
                 assertThat(record.getTaskId()).isEqualTo("task-fill-throws");
                 assertThat(record.getStatus()).isEqualTo(com.github.waitlight.asskicker.model.SendRecordStatus.FAILED);
                 assertThat(record.getRecipient()).isNull();
@@ -387,7 +387,7 @@ class SenderTest {
                 when(templateEngine.fill(any())).thenReturn(Mono.just(rendered));
                 when(channelManager.chose(any(ChannelType.class), anyString())).thenReturn(Mono.empty());
 
-                Sender sender = new Sender(templateEngine, channelManager, sendRecordService,
+                Sender sender = new Sender(templateEngine, channelManager, recordService,
                                 snowflakeIdGenerator);
                 String r1 = "+14155550123";
                 String r2 = "+14155550124";
@@ -404,12 +404,12 @@ class SenderTest {
                                 .expectNext("task-no-channel")
                                 .verifyComplete();
 
-                ArgumentCaptor<SendRecordEntity> captor = ArgumentCaptor.forClass(SendRecordEntity.class);
-                verify(sendRecordService, timeout(5000).times(2)).writeRecord(captor.capture());
+                ArgumentCaptor<RecordEntity> captor = ArgumentCaptor.forClass(RecordEntity.class);
+                verify(recordService, timeout(5000).times(2)).writeRecord(captor.capture());
 
                 assertThat(captor.getAllValues())
-                                .extracting(SendRecordEntity::getRecipient,
-                                                SendRecordEntity::getStatus)
+                                .extracting(RecordEntity::getRecipient,
+                                                RecordEntity::getStatus)
                                 .containsExactlyInAnyOrder(
                                                 tuple(r1, com.github.waitlight.asskicker.model.SendRecordStatus.FAILED),
                                                 tuple(r2, com.github.waitlight.asskicker.model.SendRecordStatus.FAILED));

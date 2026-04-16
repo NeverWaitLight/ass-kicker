@@ -14,9 +14,9 @@ import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.model.SendRecordEntity;
+import com.github.waitlight.asskicker.model.RecordEntity;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
-import com.github.waitlight.asskicker.service.SendRecordService;
+import com.github.waitlight.asskicker.service.RecordService;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 
 import lombok.Getter;
@@ -32,7 +32,7 @@ public class Sender {
 
     private final TemplateEngine templateEngine;
     private final ChannelManager channelManager;
-    private final SendRecordService sendRecordService;
+    private final RecordService recordService;
     private final SnowflakeIdGenerator snowflakeIdGenerator;
 
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
@@ -128,7 +128,7 @@ public class Sender {
             String result = channel.send(sendTask).block();
             ctx.setSendResult(result);
 
-            processSendRecord(ctx);
+            processRecord(ctx);
         } catch (Exception e) {
             log.error("Failed to send to recipient={} taskId={}", recipient, baseCtx.getTask().getTaskId(), e);
             writeFailedRecord(baseCtx.getTask(), recipient, channel, e.getMessage());
@@ -144,11 +144,11 @@ public class Sender {
                 .build();
     }
 
-    private void processSendRecord(SendContext context) {
+    private void processRecord(SendContext context) {
         UniTask task = context.getTask();
         UniMessage message = task.getMessage();
 
-        SendRecordEntity sr = new SendRecordEntity();
+        RecordEntity sr = new RecordEntity();
         sr.setTaskId(task.getTaskId());
         sr.setTemplateCode(message.getTemplateCode());
         sr.setLanguageCode(message.getLanguage().getCode());
@@ -161,13 +161,13 @@ public class Sender {
         sr.setChannelName(context.getChannel().getCode());
         sr.setStatus(SendRecordStatus.SUCCESS);
         sr.setSentAt(System.currentTimeMillis());
-        sendRecordService.writeRecord(sr);
+        recordService.writeRecord(sr);
     }
 
     private void writeFailedRecord(UniTask task, String recipient, Channel channel, String errorMessage) {
         UniMessage message = task.getMessage();
 
-        SendRecordEntity sr = new SendRecordEntity();
+        RecordEntity sr = new RecordEntity();
         sr.setTaskId(task.getTaskId());
         if (message != null) {
             sr.setTemplateCode(message.getTemplateCode());
@@ -185,7 +185,7 @@ public class Sender {
         sr.setSubmittedAt(resolveSubmittedAt(task));
         sr.setStatus(SendRecordStatus.FAILED);
         sr.setErrorMessage(errorMessage);
-        sendRecordService.writeRecord(sr);
+        recordService.writeRecord(sr);
     }
 
     private long resolveSubmittedAt(UniTask task) {

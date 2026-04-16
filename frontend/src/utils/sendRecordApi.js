@@ -9,7 +9,7 @@ export const listSendRecords = async (page = 1, size = 10, recipient, channelTyp
   if (channelType != null && String(channelType).trim() !== '') {
     params.set('channelType', String(channelType).trim())
   }
-  const response = await apiFetch(`/v1/send-records?${params.toString()}`)
+  const response = await apiFetch(`/v1/records?${params.toString()}`)
   if (!response.ok) {
     throw new Error(await response.text())
   }
@@ -18,7 +18,7 @@ export const listSendRecords = async (page = 1, size = 10, recipient, channelTyp
 }
 
 export const getSendRecord = async (id) => {
-  const response = await apiFetch(`/v1/send-records/${id}`)
+  const response = await apiFetch(`/v1/records/${id}`)
   if (!response.ok) {
     throw new Error(await response.text())
   }

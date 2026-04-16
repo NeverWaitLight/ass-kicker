@@ -38,6 +38,6 @@ public interface ChannelConverter {
     @Mapping(target = "providerType", source = "provider")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "properties", qualifiedByName = "channelJsonToProperties")
+    @Mapping(target = "properties", qualifiedByName = "channelObjectPropertiesToProperties")
     ChannelEntity toEntity(UpdateChannelDTO dto);
 }
