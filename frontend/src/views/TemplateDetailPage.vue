@@ -95,8 +95,12 @@
             <a-button type="primary" ghost @click="startInfoEdit">编辑信息</a-button>
           </template>
           <template v-else>
-            <a-button :loading="infoSaving" type="primary" @click="saveInfo">保存</a-button>
-            <a-button @click="cancelInfoEdit">取消</a-button>
+            <a-button :loading="infoSaving" type="primary" title="保存" @click="saveInfo">
+              <template #icon><SaveOutlined /></template>
+            </a-button>
+            <a-button title="撤销" @click="cancelInfoEdit">
+              <template #icon><UndoOutlined /></template>
+            </a-button>
           </template>
         </div>
       </div>
@@ -128,14 +132,20 @@
                     danger
                     size="small"
                     :loading="deletingLangs.has(lang.code)"
+                    title="删除"
                     @click="confirmDeleteLang(lang)"
-                  >删除此语言内容</a-button>
+                  >
+                    <template #icon><DeleteOutlined /></template>
+                  </a-button>
                   <a-button
                     type="primary"
                     :loading="savingLangs.has(lang.code)"
                     :disabled="!dirtyLangs.has(lang.code)"
+                    title="保存"
                     @click="saveLangContent(lang)"
-                  >保存</a-button>
+                  >
+                    <template #icon><SaveOutlined /></template>
+                  </a-button>
                 </a-space>
               </div>
             </div>
@@ -149,12 +159,19 @@
       v-model:open="deleteLangModal.open"
       title="确认删除语言内容"
       ok-type="danger"
-      ok-text="删除"
-      cancel-text="取消"
       :confirm-loading="deleteLangModal.loading"
-      @ok="doDeleteLang"
       @cancel="deleteLangModal.open = false"
     >
+      <template #footer>
+        <a-space>
+          <a-button title="撤销" @click="deleteLangModal.open = false">
+            <template #icon><UndoOutlined /></template>
+          </a-button>
+          <a-button type="primary" danger :loading="deleteLangModal.loading" title="删除" @click="doDeleteLang">
+            <template #icon><DeleteOutlined /></template>
+          </a-button>
+        </a-space>
+      </template>
       <p>
         确定要删除
         <strong>{{ deleteLangModal.lang?.displayName }}</strong>
@@ -168,6 +185,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
+import { DeleteOutlined, SaveOutlined, UndoOutlined } from '@ant-design/icons-vue'
 import { formatTimestamp } from '../utils/time'
 import { fetchTemplate, updateTemplate, saveLanguageContent, deleteLanguageContent } from '../utils/templateApi'
 import { CHANNEL_TYPE_VALUES, CHANNEL_TYPE_LABELS } from '../constants/channelTypes'

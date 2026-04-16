@@ -25,7 +25,9 @@
         <a-space>
           <a-button size="small" :disabled="!canTest" @click="$emit('test', record)">测试</a-button>
           <a-button size="small" :disabled="!canEdit" @click="$emit('edit', record)">编辑</a-button>
-          <a-button size="small" danger :disabled="!canDelete" @click="$emit('delete', record)">删除</a-button>
+          <a-button size="small" danger :disabled="!canDelete" title="删除" @click="$emit('delete', record)">
+            <template #icon><DeleteOutlined /></template>
+          </a-button>
         </a-space>
       </template>
     </template>
@@ -35,6 +37,7 @@
 <script setup>
 import { formatTimestamp } from '../../utils/time'
 import { useI18n } from 'vue-i18n'
+import { DeleteOutlined } from '@ant-design/icons-vue'
 import { getChannelTypeLabel } from '../../constants/channelTypes'
 
 defineProps({

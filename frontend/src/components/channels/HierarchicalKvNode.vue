@@ -16,7 +16,9 @@
       />
       <a-space size="small">
         <a-button size="small" @click="onAddChild">添加子级</a-button>
-        <a-button size="small" danger @click="onRemove">删除</a-button>
+        <a-button size="small" danger title="删除" @click="onRemove">
+          <template #icon><DeleteOutlined /></template>
+        </a-button>
       </a-space>
     </div>
     <div v-if="node.children && node.children.length" class="hier-node__children">
@@ -35,6 +37,8 @@
 </template>
 
 <script setup>
+import { DeleteOutlined } from '@ant-design/icons-vue'
+
 defineOptions({ name: 'HierarchicalKvNode' })
 
 const props = defineProps({

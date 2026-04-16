@@ -5,7 +5,9 @@
         <h2>发送记录</h2>
         <p>分页浏览消息发送记录</p>
       </div>
-      <a-button :loading="loading" @click="loadRecords">刷新</a-button>
+      <a-button :loading="loading" title="刷新" @click="loadRecords">
+        <template #icon><ReloadOutlined /></template>
+      </a-button>
     </div>
 
     <div class="search-bar">
@@ -21,11 +23,15 @@
       <a-input-search
         v-model:value="recipientSearch"
         placeholder="输入邮箱/手机号等精准搜索"
-        enter-button="搜索"
+        enter-button
         allow-clear
         class="search-input"
         @search="doSearch"
-      />
+      >
+        <template #enterButton>
+          <SearchOutlined />
+        </template>
+      </a-input-search>
     </div>
 
     <a-table
@@ -68,6 +74,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
+import { ReloadOutlined, SearchOutlined } from '@ant-design/icons-vue'
 import { listSendRecords } from '../utils/sendRecordApi'
 import { formatTimestamp } from '../utils/time'
 import { CHANNEL_TYPE_LABELS, CHANNEL_TYPE_VALUES } from '../constants/channelTypes'

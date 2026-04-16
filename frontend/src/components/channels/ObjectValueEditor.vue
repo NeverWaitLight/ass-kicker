@@ -24,7 +24,9 @@
           />
         </template>
         <template v-else-if="column.key === 'actions'">
-          <a-button size="small" danger @click="removeRow(record.id)">删除</a-button>
+          <a-button size="small" danger title="删除" @click="removeRow(record.id)">
+            <template #icon><DeleteOutlined /></template>
+          </a-button>
         </template>
       </template>
     </a-table>
@@ -37,6 +39,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { DeleteOutlined } from '@ant-design/icons-vue'
 import { createObjectRow } from '../../utils/propertyRows'
 
 const props = defineProps({

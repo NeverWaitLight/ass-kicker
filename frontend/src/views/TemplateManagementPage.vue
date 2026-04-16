@@ -12,8 +12,12 @@
           allow-clear
           style="width: 220px"
         />
-        <a-button :loading="loading" @click="loadTemplates">刷新</a-button>
-        <a-button type="primary" @click="openCreate">新建</a-button>
+        <a-button :loading="loading" title="刷新" @click="loadTemplates">
+          <template #icon><ReloadOutlined /></template>
+        </a-button>
+        <a-button type="primary" title="新增" @click="openCreate">
+          <template #icon><PlusOutlined /></template>
+        </a-button>
       </div>
     </div>
 
@@ -41,7 +45,9 @@
           <a-space>
             <a-button size="small" @click="goDetail(record)">详情</a-button>
             <a-button size="small" @click="openEdit(record)">编辑</a-button>
-            <a-button size="small" danger @click="openDelete(record)">删除</a-button>
+            <a-button size="small" danger title="删除" @click="openDelete(record)">
+              <template #icon><DeleteOutlined /></template>
+            </a-button>
           </a-space>
         </template>
       </template>
@@ -55,9 +61,17 @@
       :mask-closable="false"
       @ok="submitForm"
       @cancel="closeForm"
-      ok-text="保存"
-      cancel-text="取消"
     >
+      <template #footer>
+        <a-space>
+          <a-button title="撤销" @click="closeForm">
+            <template #icon><UndoOutlined /></template>
+          </a-button>
+          <a-button type="primary" :loading="formModalLoading" title="保存" @click="submitForm">
+            <template #icon><SaveOutlined /></template>
+          </a-button>
+        </a-space>
+      </template>
       <a-form
         ref="formRef"
         :model="formData"
@@ -109,11 +123,19 @@
       title="确认删除"
       :confirm-loading="deleteModal.loading"
       ok-type="danger"
-      ok-text="删除"
-      cancel-text="取消"
       @ok="confirmDelete"
       @cancel="closeDelete"
     >
+      <template #footer>
+        <a-space>
+          <a-button title="撤销" @click="closeDelete">
+            <template #icon><UndoOutlined /></template>
+          </a-button>
+          <a-button type="primary" danger :loading="deleteModal.loading" title="删除" @click="confirmDelete">
+            <template #icon><DeleteOutlined /></template>
+          </a-button>
+        </a-space>
+      </template>
       <p>
         确定要删除模板
         <strong>{{ deleteModal.target?.name }}</strong>
@@ -127,6 +149,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
+import { DeleteOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, UndoOutlined } from '@ant-design/icons-vue'
 import { useFormModal } from '../composables/useFormModal'
 import { formatTimestamp } from '../utils/time'
 import {

@@ -14,7 +14,9 @@
       </div>
       
       <div class="template-actions">
-        <button @click="openCreateModal" class="btn btn-primary" title="新建模板">新建</button>
+        <button @click="openCreateModal" class="btn btn-primary" title="新增">
+          &#43;
+        </button>
       </div>
       
       <div class="template-grid">
@@ -28,7 +30,9 @@
           <div class="template-actions">
             <button @click="viewTemplate(template)" class="btn btn-info">查看</button>
             <button @click="editTemplate(template)" class="btn btn-warning">编辑</button>
-            <button @click="deleteTemplate(template.id)" class="btn btn-danger">删除</button>
+            <button @click="deleteTemplate(template.id)" class="btn btn-danger" title="删除">
+              &#128465;
+            </button>
           </div>
         </div>
       </div>
@@ -195,6 +199,7 @@ export default {
         
         const response = await apiFetch(url, {
           method: method,
+          headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(payload)

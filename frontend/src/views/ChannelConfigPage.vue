@@ -12,9 +12,10 @@
           type="primary"
           :loading="editorRef?.saving"
           :disabled="editorRef?.denied"
+          title="保存"
           @click="() => editorRef?.saveChannel()"
         >
-          保存
+          <template #icon><SaveOutlined /></template>
         </a-button>
       </a-space>
     </template>
@@ -26,6 +27,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { SaveOutlined } from '@ant-design/icons-vue'
 import ChannelManagementLayout from '../components/channels/ChannelManagementLayout.vue'
 import ChannelConfigEditor from '../components/channels/ChannelConfigEditor.vue'
 

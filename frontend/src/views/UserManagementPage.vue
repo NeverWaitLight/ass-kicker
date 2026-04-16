@@ -8,7 +8,9 @@
       <a-space>
         <a-input v-model:value="keyword" placeholder="搜索用户名" allow-clear @pressEnter="loadUsers" />
         <a-tooltip title="新建用户">
-          <a-button type="primary" @click="openCreate">新建</a-button>
+          <a-button type="primary" title="新增" @click="openCreate">
+            <template #icon><PlusOutlined /></template>
+          </a-button>
         </a-tooltip>
       </a-space>
     </div>
@@ -37,8 +39,12 @@
         </template>
         <template v-else-if="column.key === 'actions'">
           <a-space>
-            <a-button size="small" @click="openReset(record)">重置密码</a-button>
-            <a-button size="small" danger @click="confirmDelete(record)">删除</a-button>
+            <a-button size="small" title="重置密码" @click="openReset(record)">
+              <template #icon><RedoOutlined /></template>
+            </a-button>
+            <a-button size="small" danger title="删除" @click="confirmDelete(record)">
+              <template #icon><DeleteOutlined /></template>
+            </a-button>
           </a-space>
         </template>
       </template>
@@ -112,6 +118,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Modal, message } from 'ant-design-vue'
+import { DeleteOutlined, PlusOutlined, RedoOutlined } from '@ant-design/icons-vue'
 import { useFormModal } from '../composables/useFormModal'
 import { unwrapPage } from '../utils/apiPayload'
 import { apiFetch } from '../utils/v1'

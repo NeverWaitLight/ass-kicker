@@ -10,10 +10,16 @@
         style="width: 220px"
         @pressEnter="onSearch"
       />
-      <a-button @click="onSearch">搜索</a-button>
-      <a-button :loading="channelLoading" @click="loadChannels">刷新</a-button>
+      <a-button title="搜索" @click="onSearch">
+        <template #icon><SearchOutlined /></template>
+      </a-button>
+      <a-button :loading="channelLoading" title="刷新" @click="loadChannels">
+        <template #icon><ReloadOutlined /></template>
+      </a-button>
       <a-tooltip title="新建通道">
-        <a-button type="primary" :disabled="!canCreate" @click="openCreate">新建</a-button>
+        <a-button type="primary" :disabled="!canCreate" title="新增" @click="openCreate">
+          <template #icon><PlusOutlined /></template>
+        </a-button>
       </a-tooltip>
     </template>
 
@@ -65,12 +71,24 @@
       :style="{ top: '24px' }"
       :confirm-loading="channelFormRef?.saving"
       :destroy-on-close="true"
-      ok-text="保存"
-      cancel-text="取消"
       :mask-closable="false"
-      @ok="handleChannelEditorOk"
       @cancel="closeChannelEditor"
     >
+      <template #footer>
+        <a-space>
+          <a-button title="撤销" @click="closeChannelEditor">
+            <template #icon><UndoOutlined /></template>
+          </a-button>
+          <a-button
+            type="primary"
+            :loading="channelFormRef?.saving"
+            title="保存"
+            @click="handleChannelEditorOk"
+          >
+            <template #icon><SaveOutlined /></template>
+          </a-button>
+        </a-space>
+      </template>
       <ChannelConfigEditor
         v-if="channelEditorOpen"
         :key="channelEditorKey"
@@ -86,6 +104,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
+import { PlusOutlined, ReloadOutlined, SaveOutlined, SearchOutlined, UndoOutlined } from '@ant-design/icons-vue'
 import ChannelManagementLayout from '../components/channels/ChannelManagementLayout.vue'
 import ChannelTable from '../components/channels/ChannelsPage.vue'
 import ChannelDeleteModal from '../components/channels/ChannelDeleteModal.vue'

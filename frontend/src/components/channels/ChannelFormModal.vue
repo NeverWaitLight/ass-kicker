@@ -3,11 +3,18 @@
     :open="open"
     :title="mode === 'edit' ? '编辑渠道' : '新建渠道'"
     :confirm-loading="submitting"
-    ok-text="保存"
-    cancel-text="取消"
-    @ok="handleSubmit"
     @cancel="handleCancel"
   >
+    <template #footer>
+      <a-space>
+        <a-button title="撤销" @click="handleCancel">
+          <template #icon><UndoOutlined /></template>
+        </a-button>
+        <a-button type="primary" :loading="submitting" title="保存" @click="handleSubmit">
+          <template #icon><SaveOutlined /></template>
+        </a-button>
+      </a-space>
+    </template>
     <a-form layout="vertical">
       <a-form-item label="渠道名称" required>
         <a-input v-model:value="form.name" placeholder="请输入渠道名称" />
@@ -32,6 +39,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
+import { SaveOutlined, UndoOutlined } from '@ant-design/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { buildChannelTypeOptions, CHANNEL_TYPE_VALUES } from '../../constants/channelTypes'
 
