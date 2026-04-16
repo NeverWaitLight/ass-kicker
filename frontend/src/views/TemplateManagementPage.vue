@@ -44,8 +44,11 @@
       row-key="id"
       @change="handleTableChange"
     >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'channelType'">
+      <template #bodyCell="{ column, record, index }">
+        <template v-if="column.key === 'ordinal'">
+          {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+        </template>
+        <template v-else-if="column.key === 'channelType'">
           <a-tag v-if="record.channelType" color="blue">{{ channelTypeLabel(record.channelType) }}</a-tag>
           <span v-else class="text-muted">-</span>
         </template>
@@ -261,6 +264,7 @@ const formRules = {
 }
 
 const columns = [
+  { title: '序号', key: 'ordinal', width: 72 },
   { title: '名称', dataIndex: 'name', key: 'name' },
   { title: '编码', dataIndex: 'code', key: 'code' },
   { title: '通道类型', key: 'channelType' },
