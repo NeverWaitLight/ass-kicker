@@ -1,6 +1,5 @@
 package com.github.waitlight.asskicker.dto.channel;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.ProviderType;
 import jakarta.validation.constraints.NotBlank;
@@ -9,6 +8,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.Map;
 
 /**
  * Channel 更新 DTO，专门用于 ChannelController update 方法
@@ -43,5 +44,5 @@ public class UpdateChannelDTO {
 
     private Boolean enabled;
 
-    private JsonNode properties;
+    private Map<String, Object> properties;
 }

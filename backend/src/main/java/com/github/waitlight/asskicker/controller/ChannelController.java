@@ -84,6 +84,8 @@ public class ChannelController {
         @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @PutMapping
         public Mono<Resp<ChannelVO>> update(@Valid @RequestBody UpdateChannelDTO request) {
+                channelManager.validateProperties(request.getProvider(), request.getProperties());
+
                 return Mono.just(request)
                                 .map(channelConverter::toEntity)
                                 .flatMap(patch -> channelService.update(request.getId(), patch))
