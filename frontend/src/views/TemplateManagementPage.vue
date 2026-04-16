@@ -6,16 +6,30 @@
         <p>集中管理消息模板与多语言内容</p>
       </div>
       <div class="template-actions">
-        <a-input
+        <a-select
+          v-model:value="filterChannelType"
+          placeholder="通道类型"
+          allow-clear
+          style="width: 140px"
+          :options="channelTypeOptions"
+          @change="onChannelFilterChange"
+        />
+        <a-input-search
           v-model:value="searchText"
           placeholder="搜索模板名称或编码"
           allow-clear
+          enter-button
           style="width: 220px"
-        />
-        <a-button :loading="loading" title="刷新" @click="loadTemplates">
+          @search="onTemplateSearch"
+        >
+          <template #enterButton>
+            <SearchOutlined />
+          </template>
+        </a-input-search>
+        <a-button class="template-icon-btn" title="重置查询条件" @click="resetTemplateQuery">
           <template #icon><ReloadOutlined /></template>
         </a-button>
-        <a-button type="primary" title="新增" @click="openCreate">
+        <a-button type="primary" class="template-add-btn" title="新增" @click="openCreate">
           <template #icon><PlusOutlined /></template>
         </a-button>
       </div>
@@ -23,7 +37,7 @@
 
     <a-table
       :columns="columns"
-      :data-source="filteredTemplates"
+      :data-source="templates"
       :loading="loading"
       :pagination="pagination"
       :scroll="{ x: 'max-content' }"
@@ -149,11 +163,11 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { DeleteOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, UndoOutlined } from '@ant-design/icons-vue'
+import { DeleteOutlined, PlusOutlined, ReloadOutlined, SaveOutlined, SearchOutlined, UndoOutlined } from '@ant-design/icons-vue'
 import { useFormModal } from '../composables/useFormModal'
 import { formatTimestamp } from '../utils/time'
 import {
-  fetchTemplates,
+  fetchTemplatesPage,
   createTemplate,
   updateTemplate,
   deleteTemplate
@@ -172,6 +186,7 @@ const channelTypeLabel = (value) => CHANNEL_TYPE_LABELS['zh-CN'][value] || value
 const loading = ref(false)
 const templates = ref([])
 const searchText = ref('')
+const filterChannelType = ref(undefined)
 const formRef = ref(null)
 
 const pagination = reactive({
@@ -254,25 +269,39 @@ const columns = [
   { title: '操作', key: 'actions', width: 180, fixed: 'right' }
 ]
 
-const filteredTemplates = computed(() => {
-  const kw = searchText.value.trim().toLowerCase()
-  if (!kw) return templates.value
-  return templates.value.filter(
-    (t) =>
-      t.name?.toLowerCase().includes(kw) ||
-      t.code?.toLowerCase().includes(kw)
-  )
-})
-
 const handleTableChange = (pager) => {
   pagination.current = pager.current || 1
+  loadTemplates()
+}
+
+const onTemplateSearch = () => {
+  pagination.current = 1
+  loadTemplates()
+}
+
+const onChannelFilterChange = () => {
+  pagination.current = 1
+  loadTemplates()
+}
+
+const resetTemplateQuery = () => {
+  filterChannelType.value = undefined
+  searchText.value = ''
+  pagination.current = 1
+  loadTemplates()
 }
 
 const loadTemplates = async () => {
   loading.value = true
   try {
-    templates.value = await fetchTemplates()
-    pagination.total = templates.value.length
+    const page = await fetchTemplatesPage({
+      page: pagination.current,
+      size: pagination.pageSize,
+      keyword: searchText.value.trim(),
+      channelType: filterChannelType.value
+    })
+    templates.value = page.items || []
+    pagination.total = page.total || 0
   } catch (e) {
     message.error(e?.message || '获取模板列表失败')
   } finally {
@@ -392,6 +421,14 @@ onMounted(loadTemplates)
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.template-icon-btn,
+.template-add-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
 }
 
 .form-hint {

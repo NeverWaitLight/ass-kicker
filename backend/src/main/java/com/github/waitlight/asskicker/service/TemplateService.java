@@ -98,12 +98,12 @@ public class TemplateService {
         return templateRepository.findByChannelType(channelType);
     }
 
-    public Mono<Long> count(String keyword) {
-        return templateRepository.count(keyword);
+    public Mono<Long> count(String keyword, ChannelType channelType) {
+        return templateRepository.count(keyword, channelType);
     }
 
-    public Flux<TemplateEntity> list(String keyword, int limit, int offset) {
-        return templateRepository.list(keyword, limit, offset);
+    public Flux<TemplateEntity> list(String keyword, ChannelType channelType, int limit, int offset) {
+        return templateRepository.list(keyword, channelType, limit, offset);
     }
 
     public Mono<Void> delete(String id) {

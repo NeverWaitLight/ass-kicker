@@ -3,17 +3,30 @@
     <template #title>通道</template>
     <template #subtitle>集中管理通道配置、状态与权限</template>
     <template #actions>
-      <a-input
+      <a-cascader
+        v-model:value="typeProviderFilter"
+        :options="cascaderOptions"
+        placeholder="类型 / 服务商"
+        allow-clear
+        expand-trigger="hover"
+        change-on-select
+        popup-class-name="channel-filter-cascader-dropdown"
+        style="min-width: 200px"
+        @change="onTypeProviderChange"
+      />
+      <a-input-search
         v-model:value="channelSearch"
         placeholder="搜索通道名称或类型"
         allow-clear
+        enter-button
         style="width: 220px"
-        @pressEnter="onSearch"
-      />
-      <a-button title="搜索" @click="onSearch">
-        <template #icon><SearchOutlined /></template>
-      </a-button>
-      <a-button :loading="channelLoading" title="刷新" @click="loadChannels">
+        @search="onSearch"
+      >
+        <template #enterButton>
+          <SearchOutlined />
+        </template>
+      </a-input-search>
+      <a-button :loading="channelLoading" title="刷新" @click="refreshChannels">
         <template #icon><ReloadOutlined /></template>
       </a-button>
       <a-tooltip title="新建通道">
@@ -102,7 +115,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import { PlusOutlined, ReloadOutlined, SaveOutlined, SearchOutlined, UndoOutlined } from '@ant-design/icons-vue'
 import ChannelManagementLayout from '../components/channels/ChannelManagementLayout.vue'
@@ -110,7 +123,14 @@ import ChannelTable from '../components/channels/ChannelsPage.vue'
 import ChannelDeleteModal from '../components/channels/ChannelDeleteModal.vue'
 import ChannelTestSendModal from '../components/channels/ChannelTestSendModal.vue'
 import ChannelConfigEditor from '../components/channels/ChannelConfigEditor.vue'
-import { fetchChannel, fetchChannels, deleteChannel } from '../utils/channelApi'
+import {
+  fetchChannel,
+  fetchChannelTypes,
+  fetchChannels,
+  fetchProvidersByChannelType,
+  deleteChannel
+} from '../utils/channelApi'
+import { CHANNEL_TYPE_LABELS, CHANNEL_TYPE_VALUES } from '../constants/channelTypes'
 import {
   channelList,
   channelLoading,
@@ -140,16 +160,17 @@ const testModalOpen = ref(false)
 const testModalLoading = ref(false)
 const testChannel = ref(null)
 
-const filteredChannels = computed(() => {
-  const keyword = channelSearch.value.trim().toLowerCase()
-  if (!keyword) return channelList.value
-  return channelList.value.filter((channel) => {
-    return (
-      channel.name?.toLowerCase().includes(keyword) ||
-      channel.type?.toLowerCase().includes(keyword)
-    )
-  })
-})
+const typeProviderFilter = ref(undefined)
+
+const buildFallbackCascaderOptions = () =>
+  CHANNEL_TYPE_VALUES.map((ct) => ({
+    value: ct,
+    label: CHANNEL_TYPE_LABELS['zh-CN'][ct] || ct
+  }))
+
+const cascaderOptions = ref(buildFallbackCascaderOptions())
+
+const filteredChannels = computed(() => channelList.value)
 
 const pagedChannels = computed(() => {
   const start = (channelPagination.page - 1) * channelPagination.size
@@ -172,10 +193,53 @@ watch(filteredChannels, (value) => {
   }
 })
 
+const normalizeChannelTypes = (types) => {
+  if (!Array.isArray(types) || types.length === 0) return [...CHANNEL_TYPE_VALUES]
+  return types.map((t) => (typeof t === 'string' ? t : t?.name ?? String(t)))
+}
+
+const loadCascaderOptions = async () => {
+  try {
+    const raw = await fetchChannelTypes()
+    const list = normalizeChannelTypes(raw)
+    cascaderOptions.value = await Promise.all(
+      list.map(async (ct) => {
+        let children = []
+        try {
+          const providers = await fetchProvidersByChannelType(ct)
+          children = (providers || []).map((p) => ({
+            value: p.value,
+            label: p.label || p.value
+          }))
+        } catch {
+          children = []
+        }
+        return {
+          value: ct,
+          label: CHANNEL_TYPE_LABELS['zh-CN'][ct] || ct,
+          ...(children.length ? { children } : {})
+        }
+      })
+    )
+  } catch (error) {
+    message.error(error?.message || '加载筛选选项失败')
+    cascaderOptions.value = buildFallbackCascaderOptions()
+  }
+}
+
 const loadChannels = async () => {
   channelLoading.value = true
   try {
-    const data = await fetchChannels()
+    const sel = typeProviderFilter.value
+    const channelType = Array.isArray(sel) && sel.length > 0 ? sel[0] : undefined
+    const providerType = Array.isArray(sel) && sel.length > 1 ? sel[1] : undefined
+    const data = await fetchChannels({
+      page: 1,
+      size: 10000,
+      keyword: channelSearch.value.trim() || undefined,
+      channelType,
+      providerType
+    })
     setChannelList(data)
   } catch (error) {
     message.error(error?.message || '获取通道列表失败')
@@ -184,8 +248,21 @@ const loadChannels = async () => {
   }
 }
 
+const refreshChannels = async () => {
+  typeProviderFilter.value = undefined
+  channelSearch.value = ''
+  channelPagination.page = 1
+  await loadChannels()
+}
+
 const onSearch = () => {
   channelPagination.page = 1
+  loadChannels()
+}
+
+const onTypeProviderChange = () => {
+  channelPagination.page = 1
+  loadChannels()
 }
 
 const handleTableChange = (pager) => {
@@ -274,9 +351,22 @@ const goHome = () => {
   router.push('/')
 }
 
-onMounted(() => {
-  if (canView.value) {
-    loadChannels()
-  }
-})
+watch(
+  canView,
+  async (v) => {
+    if (!v) return
+    await loadCascaderOptions()
+    await loadChannels()
+  },
+  { immediate: true }
+)
 </script>
+
+<style>
+/* 级联面板默认固定列高 180px 选项少时底部留白 改为随内容增高并限制最大高度 */
+.channel-filter-cascader-dropdown .ant-cascader-menu {
+  height: auto !important;
+  max-height: 180px;
+  flex-grow: 0 !important;
+}
+</style>

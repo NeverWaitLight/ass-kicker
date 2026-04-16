@@ -196,11 +196,11 @@ class TemplateServiceTest {
 
         @Test
         void list_invalidLimitOrOffset_returnsEmpty() {
-                StepVerifier.create(templateService.list(null, 10, -1).collectList())
+                StepVerifier.create(templateService.list(null, null, 10, -1).collectList())
                                 .assertNext(list -> assertThat(list).isEmpty())
                                 .verifyComplete();
 
-                StepVerifier.create(templateService.list(null, 0, 0).collectList())
+                StepVerifier.create(templateService.list(null, null, 0, 0).collectList())
                                 .assertNext(list -> assertThat(list).isEmpty())
                                 .verifyComplete();
         }
@@ -215,8 +215,8 @@ class TemplateServiceTest {
                                 .then(templateService.create(b))
                                 .then(templateService.create(c))
                                 .thenMany(Flux.zip(
-                                                templateService.list(null, 2, 0).collectList(),
-                                                templateService.list(null, 2, 2).collectList())))
+                                                templateService.list(null, null, 2, 0).collectList(),
+                                                templateService.list(null, null, 2, 2).collectList())))
                                 .assertNext(tuple -> {
                                         assertThat(tuple.getT1()).hasSize(2);
                                         assertThat(tuple.getT2()).hasSize(1);

@@ -5,33 +5,37 @@
         <h2>发送记录</h2>
         <p>分页浏览消息发送记录</p>
       </div>
-      <a-button :loading="loading" title="刷新" @click="loadRecords">
-        <template #icon><ReloadOutlined /></template>
-      </a-button>
-    </div>
-
-    <div class="search-bar">
-      <a-select
-        v-model:value="channelTypeFilter"
-        placeholder="通道类型"
-        allow-clear
-        class="filter-select"
-        :options="channelTypeOptions"
-        :disabled="channelTypeOptions.length === 1"
-        @change="doSearch"
-      />
-      <a-input-search
-        v-model:value="recipientSearch"
-        placeholder="输入邮箱/手机号等精准搜索"
-        enter-button
-        allow-clear
-        class="search-input"
-        @search="doSearch"
-      >
-        <template #enterButton>
-          <SearchOutlined />
-        </template>
-      </a-input-search>
+      <div class="search-bar">
+        <a-select
+          v-model:value="channelTypeFilter"
+          placeholder="通道类型"
+          allow-clear
+          class="filter-select"
+          :options="channelTypeOptions"
+          :disabled="channelTypeOptions.length === 1"
+          @change="doSearch"
+        />
+        <a-input-search
+          v-model:value="recipientSearch"
+          placeholder="输入邮箱/手机号等精准搜索"
+          enter-button
+          allow-clear
+          class="search-input"
+          @search="doSearch"
+        >
+          <template #enterButton>
+            <SearchOutlined />
+          </template>
+        </a-input-search>
+        <a-button
+          class="search-reset-icon-btn"
+          :loading="loading"
+          title="重置查询条件"
+          @click="resetSendRecordsQuery"
+        >
+          <template #icon><ReloadOutlined /></template>
+        </a-button>
+      </div>
     </div>
 
     <a-table
@@ -145,6 +149,13 @@ const doSearch = () => {
   loadRecords()
 }
 
+const resetSendRecordsQuery = () => {
+  recipientSearch.value = ''
+  channelTypeFilter.value = ''
+  pagination.page = 1
+  loadRecords()
+}
+
 const handleTableChange = (pager) => {
   pagination.page = pager.current
   loadRecords()
@@ -166,6 +177,7 @@ onMounted(loadRecords)
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   margin-bottom: 16px;
 }
 
@@ -175,10 +187,6 @@ onMounted(loadRecords)
 
 .page-header p {
   margin: 4px 0 0;
-}
-
-.search-bar {
-  margin-bottom: 16px;
 }
 
 .search-bar {
@@ -193,5 +201,16 @@ onMounted(loadRecords)
 
 .search-bar .search-input {
   max-width: 360px;
+}
+
+.search-bar .search-reset-icon-btn {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

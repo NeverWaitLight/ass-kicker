@@ -6,7 +6,18 @@
         <p>管理系统账号、重置密码与控制状态</p>
       </div>
       <a-space>
-        <a-input v-model:value="keyword" placeholder="搜索用户名" allow-clear @pressEnter="loadUsers" />
+        <a-input-search
+          v-model:value="keyword"
+          placeholder="搜索用户名"
+          allow-clear
+          enter-button
+          style="width: 220px"
+          @search="onUserSearch"
+        >
+          <template #enterButton>
+            <SearchOutlined />
+          </template>
+        </a-input-search>
         <a-tooltip title="新建用户">
           <a-button type="primary" title="新增" @click="openCreate">
             <template #icon><PlusOutlined /></template>
@@ -118,7 +129,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Modal, message } from 'ant-design-vue'
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons-vue'
+import { DeleteOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons-vue'
 import { useFormModal } from '../composables/useFormModal'
 import { unwrapPage } from '../utils/apiPayload'
 import { apiFetch } from '../utils/v1'
@@ -185,6 +196,11 @@ const tablePagination = computed(() => ({
   total: pagination.total,
   showSizeChanger: false
 }))
+
+const onUserSearch = () => {
+  pagination.page = 1
+  loadUsers()
+}
 
 const loadUsers = async () => {
   loading.value = true

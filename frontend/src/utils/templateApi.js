@@ -1,4 +1,4 @@
-import { unwrapData } from './apiPayload'
+import { unwrapData, unwrapPage } from './apiPayload'
 import { apiFetch } from './v1'
 
 function normalizeTemplatesObject(templates) {
@@ -6,13 +6,25 @@ function normalizeTemplatesObject(templates) {
   return JSON.parse(JSON.stringify(templates))
 }
 
-export const fetchTemplates = async () => {
-  const response = await apiFetch('/v1/templates')
+/**
+ * @param {{ page?: number, size?: number, keyword?: string, channelType?: string }} params
+ */
+export const fetchTemplatesPage = async (params = {}) => {
+  const { page = 1, size = 10, keyword = '', channelType } = params
+  const search = new URLSearchParams({
+    page: String(page),
+    size: String(size),
+    keyword: keyword ?? ''
+  })
+  if (channelType) {
+    search.set('channelType', channelType)
+  }
+  const response = await apiFetch(`/v1/templates?${search.toString()}`)
   if (!response.ok) {
     throw new Error(await response.text())
   }
   const json = await response.json()
-  return unwrapData(json)
+  return unwrapPage(json)
 }
 
 export const fetchTemplate = async (id) => {

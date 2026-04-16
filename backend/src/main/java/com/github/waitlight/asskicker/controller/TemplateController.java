@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,6 +23,7 @@ import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.template.CreateTemplateDTO;
 import com.github.waitlight.asskicker.dto.template.TemplateVO;
 import com.github.waitlight.asskicker.dto.template.UpdateTemplateDTO;
+import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.service.TemplateService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -79,18 +81,19 @@ public class TemplateController {
 
     @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
-    public Mono<PageResp<TemplateVO>> page(@Validated PageReq pageReq) {
+    public Mono<PageResp<TemplateVO>> page(@Validated PageReq pageReq,
+            @RequestParam(required = false) ChannelType channelType) {
         int page = pageReq.getPage();
         int size = pageReq.getSize();
         String keyword = pageReq.getKeyword();
         int offset = (page - 1) * size;
 
-        return templateService.count(keyword)
+        return templateService.count(keyword, channelType)
                 .flatMap(total -> {
                     if (total == 0) {
                         return Mono.just(PageResp.success(page, size, total, List.of()));
                     }
-                    return templateService.list(keyword, size, offset)
+                    return templateService.list(keyword, channelType, size, offset)
                             .map(templateConverter::toVO)
                             .collectList()
                             .map(templates -> PageResp.success(page, size, total, templates));

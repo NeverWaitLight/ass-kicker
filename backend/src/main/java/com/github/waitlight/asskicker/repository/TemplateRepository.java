@@ -54,8 +54,8 @@ public class TemplateRepository {
         return mongoTemplate.find(query, TemplateEntity.class);
     }
 
-    public Flux<TemplateEntity> list(String keyword, int limit, int offset) {
-        Query query = buildKeywordQuery(keyword);
+    public Flux<TemplateEntity> list(String keyword, ChannelType channelType, int limit, int offset) {
+        Query query = buildListQuery(keyword, channelType);
         query.with(Sort.by(Sort.Direction.DESC, "_id"));
         query.skip(offset).limit(limit);
         return mongoTemplate.find(query, TemplateEntity.class);
@@ -65,13 +65,16 @@ public class TemplateRepository {
         return mongoTemplate.remove(new Query(), TemplateEntity.class).then();
     }
 
-    public Mono<Long> count(String keyword) {
-        Query query = buildKeywordQuery(keyword);
+    public Mono<Long> count(String keyword, ChannelType channelType) {
+        Query query = buildListQuery(keyword, channelType);
         return mongoTemplate.count(query, TemplateEntity.class);
     }
 
-    private Query buildKeywordQuery(String keyword) {
+    private Query buildListQuery(String keyword, ChannelType channelType) {
         Query query = new Query();
+        if (channelType != null) {
+            query.addCriteria(Criteria.where("channelType").is(channelType));
+        }
         if (StringUtils.hasText(keyword)) {
             String pattern = ".*" + keyword + ".*";
             query.addCriteria(new Criteria().orOperator(

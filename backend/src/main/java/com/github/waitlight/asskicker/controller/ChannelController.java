@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.github.waitlight.asskicker.config.openapi.OpenApiConfig;
@@ -62,18 +63,20 @@ public class ChannelController {
 
         @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @GetMapping
-        public Mono<PageResp<ChannelVO>> page(@Validated PageReq pageReq) {
+        public Mono<PageResp<ChannelVO>> page(@Validated PageReq pageReq,
+                        @RequestParam(required = false) ChannelType channelType,
+                        @RequestParam(required = false) ProviderType providerType) {
                 int page = pageReq.getPage();
                 int size = pageReq.getSize();
                 String keyword = pageReq.getKeyword();
                 int offset = (page - 1) * size;
 
-                return channelService.count(keyword)
+                return channelService.count(keyword, channelType, providerType)
                                 .flatMap(total -> {
                                         if (total == 0) {
                                                 return Mono.just(PageResp.success(page, size, total, List.of()));
                                         }
-                                        return channelService.list(keyword, size, offset)
+                                        return channelService.list(keyword, channelType, providerType, size, offset)
                                                         .map(channelConverter::toVO)
                                                         .collectList()
                                                         .map(channels -> PageResp.success(page, size, total, channels));

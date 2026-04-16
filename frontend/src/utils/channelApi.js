@@ -1,8 +1,17 @@
 import { unwrapData } from './apiPayload'
 import { apiFetch } from './v1'
 
-export const fetchChannels = async () => {
-  const response = await apiFetch('/v1/channels')
+export const fetchChannels = async (params = {}) => {
+  const searchParams = new URLSearchParams()
+  const page = params.page ?? 1
+  const size = params.size ?? 10
+  searchParams.set('page', String(page))
+  searchParams.set('size', String(size))
+  if (params.keyword) searchParams.set('keyword', params.keyword)
+  if (params.channelType) searchParams.set('channelType', params.channelType)
+  if (params.providerType) searchParams.set('providerType', params.providerType)
+  const qs = searchParams.toString()
+  const response = await apiFetch(`/v1/channels?${qs}`)
   if (!response.ok) {
     throw new Error(await response.text())
   }

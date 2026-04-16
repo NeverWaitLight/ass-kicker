@@ -6,6 +6,7 @@ import com.github.waitlight.asskicker.exception.ConflictException;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
+import com.github.waitlight.asskicker.model.ProviderType;
 import com.github.waitlight.asskicker.repository.ChannelRepository;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import jakarta.annotation.PostConstruct;
@@ -51,12 +52,13 @@ public class ChannelService {
         return channelRepository.findByEnabled(true);
     }
 
-    public Mono<Long> count(String keyword) {
-        return channelRepository.count(keyword);
+    public Mono<Long> count(String keyword, ChannelType channelType, ProviderType providerType) {
+        return channelRepository.count(keyword, channelType, providerType);
     }
 
-    public Flux<ChannelEntity> list(String keyword, int limit, int offset) {
-        return channelRepository.list(keyword, limit, offset);
+    public Flux<ChannelEntity> list(String keyword, ChannelType channelType, ProviderType providerType, int limit,
+            int offset) {
+        return channelRepository.list(keyword, channelType, providerType, limit, offset);
     }
 
     public Mono<ChannelEntity> findById(String id) {

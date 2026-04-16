@@ -2,6 +2,7 @@ package com.github.waitlight.asskicker.repository;
 
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
+import com.github.waitlight.asskicker.model.ProviderType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
@@ -74,22 +75,29 @@ public class ChannelRepository {
         return entities.flatMap(mongoTemplate::save);
     }
 
-    public Flux<ChannelEntity> list(String keyword, int limit, int offset) {
-        Query query = buildKeywordQuery(keyword);
+    public Flux<ChannelEntity> list(String keyword, ChannelType channelType, ProviderType providerType, int limit,
+            int offset) {
+        Query query = buildQuery(keyword, channelType, providerType);
         query.with(Sort.by(Sort.Direction.DESC, "_id"));
         query.skip(offset).limit(limit);
         return mongoTemplate.find(query, ChannelEntity.class);
     }
 
-    public Mono<Long> count(String keyword) {
-        Query query = buildKeywordQuery(keyword);
+    public Mono<Long> count(String keyword, ChannelType channelType, ProviderType providerType) {
+        Query query = buildQuery(keyword, channelType, providerType);
         return mongoTemplate.count(query, ChannelEntity.class);
     }
 
-    private Query buildKeywordQuery(String keyword) {
+    private Query buildQuery(String keyword, ChannelType channelType, ProviderType providerType) {
         Query query = new Query();
         if (StringUtils.hasText(keyword)) {
             query.addCriteria(Criteria.where("name").regex(".*" + keyword + ".*", "i"));
+        }
+        if (channelType != null) {
+            query.addCriteria(Criteria.where("channel_type").is(channelType));
+        }
+        if (providerType != null) {
+            query.addCriteria(Criteria.where("provider_type").is(providerType));
         }
         return query;
     }
