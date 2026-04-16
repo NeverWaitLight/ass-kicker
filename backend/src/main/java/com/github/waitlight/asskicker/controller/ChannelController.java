@@ -1,6 +1,8 @@
 package com.github.waitlight.asskicker.controller;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.validation.annotation.Validated;
 import org.springframework.http.CacheControl;
@@ -16,14 +18,24 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.github.waitlight.asskicker.config.openapi.OpenApiConfig;
+import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.converter.ChannelConverter;
+import com.github.waitlight.asskicker.converter.ChannelPropertiesMapper;
 import com.github.waitlight.asskicker.dto.PageReq;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
+import com.github.waitlight.asskicker.dto.UniAddress;
+import com.github.waitlight.asskicker.dto.UniMessage;
+import com.github.waitlight.asskicker.dto.UniTask;
+import com.github.waitlight.asskicker.dto.channel.ChannelTestResultVO;
 import com.github.waitlight.asskicker.dto.channel.CreateChannelDTO;
+import com.github.waitlight.asskicker.dto.channel.TestChannelDTO;
 import com.github.waitlight.asskicker.dto.channel.ChannelPropertiesSchemaVO;
 import com.github.waitlight.asskicker.dto.channel.ChannelProviderOptionVO;
 import com.github.waitlight.asskicker.dto.channel.ChannelVO;
+import com.github.waitlight.asskicker.exception.BadRequestException;
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.ProviderType;
 import com.github.waitlight.asskicker.dto.channel.UpdateChannelDTO;
@@ -48,6 +60,40 @@ public class ChannelController {
         private final ChannelService channelService;
         private final ChannelConverter channelConverter;
         private final ChannelManager channelManager;
+        private final ChannelFactory channelFactory;
+        private final ChannelPropertiesMapper channelPropertiesMapper;
+
+        @Operation(summary = "test", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+        @PostMapping("/test")
+        public Mono<Resp<ChannelTestResultVO>> test(@Valid @RequestBody TestChannelDTO request) {
+                ProviderType provider = resolveProviderForTest(request.getType(), request.getProvider());
+                Map<String, Object> props = request.getProperties() != null ? request.getProperties() : Map.of();
+                channelManager.validateProperties(provider, props);
+
+                ChannelEntity ephemeral = new ChannelEntity();
+                ephemeral.setId("0");
+                ephemeral.setCode("test");
+                ephemeral.setName("test");
+                ephemeral.setChannelType(request.getType());
+                ephemeral.setProviderType(provider);
+                ephemeral.setEnabled(true);
+                ephemeral.setProperties(channelPropertiesMapper.channelObjectPropertiesToProperties(props));
+
+                Channel channel = channelFactory.create(ephemeral);
+                if (channel == null) {
+                        return Mono.just(Resp.success(ChannelTestResultVO.fail("unsupported provider")));
+                }
+
+                UniMessage message = new UniMessage();
+                message.setContent(request.getContent());
+
+                UniAddress address = buildTestAddress(request.getType(), provider, request.getTarget().trim(),
+                                ephemeral.getCode());
+
+                return channel.send(UniTask.builder().message(message).address(address).build())
+                                .map(ignore -> Resp.success(ChannelTestResultVO.ok()))
+                                .onErrorResume(e -> Mono.just(Resp.success(ChannelTestResultVO.fail(e.getMessage()))));
+        }
 
         @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @PostMapping
@@ -137,5 +183,36 @@ public class ChannelController {
         @DeleteMapping("/{id}")
         public Mono<Void> delete(@PathVariable String id) {
                 return channelService.delete(id);
+        }
+
+        private static ProviderType resolveProviderForTest(ChannelType channelType, ProviderType explicit) {
+                if (explicit != null) {
+                        if (explicit.getChannelType() != channelType) {
+                                throw new BadRequestException("provider does not match channel type");
+                        }
+                        return explicit;
+                }
+                List<ProviderType> candidates = Arrays.stream(ProviderType.values())
+                                .filter(p -> p.getChannelType() == channelType)
+                                .toList();
+                if (candidates.size() == 1) {
+                        return candidates.get(0);
+                }
+                throw new BadRequestException("provider is required when multiple providers exist for this channel type");
+        }
+
+        private static UniAddress buildTestAddress(ChannelType channelType, ProviderType provider, String target,
+                        String channelCode) {
+                return switch (channelType) {
+                        case EMAIL -> UniAddress.ofEmail(target);
+                        case SMS -> UniAddress.ofSms(target);
+                        case PUSH -> UniAddress.ofPush(provider, target);
+                        case IM -> {
+                                if (provider.name().endsWith("_WEBHOOK")) {
+                                        yield UniAddress.ofImWebhook(provider, target);
+                                }
+                                yield UniAddress.ofImBot(provider, channelCode, target);
+                        }
+                };
         }
 }

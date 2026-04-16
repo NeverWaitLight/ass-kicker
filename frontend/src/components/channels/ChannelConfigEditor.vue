@@ -81,7 +81,7 @@
       </a-spin>
     </template>
 
-    <ChannelTestSendModal
+    <ChannelTestModal
       :open="testModalOpen"
       :channel-type="form.type"
       :channel-name="form.name"
@@ -98,7 +98,7 @@ import { message } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import PropertyEditor from './PropertyEditor.vue'
-import ChannelTestSendModal from './ChannelTestSendModal.vue'
+import ChannelTestModal from './ChannelTestModal.vue'
 import {
   createChannel,
   fetchChannel,

@@ -107,8 +107,8 @@ export const deleteChannel = async (id) => {
   return true
 }
 
-export const testSendChannel = async (payload) => {
-  const response = await apiFetch('/v1/channels/test-send', {
+export const testChannel = async (payload) => {
+  const response = await apiFetch('/v1/channels/test', {
     method: 'POST',
     body: JSON.stringify(payload)
   })

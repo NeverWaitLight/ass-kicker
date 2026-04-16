@@ -34,7 +34,7 @@
 
         <div class="test-actions">
           <a-button @click="handleCancel">取消</a-button>
-          <a-button type="primary" :loading="testing" :disabled="sendDisabled" @click="submitTestSend">
+          <a-button type="primary" :loading="testing" :disabled="blocked" @click="submitTest">
             发送
           </a-button>
         </div>
@@ -46,7 +46,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
-import { testSendChannel } from '../../utils/channelApi'
+import { testChannel } from '../../utils/channelApi'
 import { useI18n } from 'vue-i18n'
 import { getChannelTypeLabel } from '../../constants/channelTypes'
 
@@ -69,7 +69,7 @@ const typeError = ref('')
 const testing = ref(false)
 const { t, te } = useI18n()
 
-const sendDisabled = computed(() => props.disabled || props.loading || testing.value)
+const blocked = computed(() => props.disabled || props.loading || testing.value)
 const displayChannelType = computed(() => getChannelTypeLabel(props.channelType, t, te))
 
 const targetLabel = computed(() => {
@@ -122,8 +122,8 @@ const validate = () => {
   return !typeError.value && !targetError.value && !contentError.value
 }
 
-const submitTestSend = async () => {
-  if (sendDisabled.value) return
+const submitTest = async () => {
+  if (blocked.value) return
   if (!validate()) {
     message.warning('请先完善测试发送信息')
     return
@@ -136,7 +136,7 @@ const submitTestSend = async () => {
       content: content.value.trim(),
       properties: props.properties || {}
     }
-    const response = await testSendChannel(payload)
+    const response = await testChannel(payload)
     if (response?.success) {
       message.success('测试发送成功')
     } else {
