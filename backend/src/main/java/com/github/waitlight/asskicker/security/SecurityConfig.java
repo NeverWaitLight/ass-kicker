@@ -81,8 +81,8 @@ public class SecurityConfig {
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers("/v3/api-docs/**", "/v3/api-docs.yaml", "/scalar", "/scalar/**", "/webjars/**")
                         .permitAll()
-                        .pathMatchers("/v1/auth/login", "/v1/auth/register", "/v1/auth/refresh", "/v1/health",
-                                "/v1/status", "/health", "/status")
+                        .pathMatchers("/v1/auth/login", "/v1/auth/register", "/v1/auth/refresh",
+                                "/actuator/health")
                         .permitAll()
                         .pathMatchers(HttpMethod.PATCH, "/v1/users/me").authenticated()
                         .pathMatchers(HttpMethod.PUT, "/v1/users/me/password").authenticated()
