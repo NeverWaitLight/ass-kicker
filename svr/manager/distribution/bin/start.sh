@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-JAR="${ROOT}/lib/ass-kicker-worker.jar"
+JAR="${ROOT}/lib/ass-kicker-manager.jar"
 RUN="${ROOT}/run"
 LOG="${ROOT}/logs"
 mkdir -p "${RUN}" "${LOG}"
-PIDFILE="${RUN}/ass-kicker-worker.pid"
-OUT="${LOG}/ass-kicker-worker.out"
+PIDFILE="${RUN}/ass-kicker-manager.pid"
+OUT="${LOG}/ass-kicker-manager.out"
 
 if [[ -f "${PIDFILE}" ]]; then
   OLD="$(cat "${PIDFILE}")"

@@ -3,7 +3,7 @@ setlocal
 pushd "%~dp0.." >nul
 set "ROOT=%CD%"
 popd >nul
-set "PIDFILE=%ROOT%\run\ass-kicker-worker.pid"
+set "PIDFILE=%ROOT%\run\ass-kicker-manager.pid"
 
 if not exist "%PIDFILE%" (
   echo pid file not found %PIDFILE%

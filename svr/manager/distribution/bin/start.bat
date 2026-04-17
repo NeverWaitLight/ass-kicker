@@ -3,11 +3,11 @@ setlocal EnableDelayedExpansion
 pushd "%~dp0.." >nul
 set "ROOT=%CD%"
 popd >nul
-set "JAR=%ROOT%\lib\ass-kicker-worker.jar"
+set "JAR=%ROOT%\lib\ass-kicker-manager.jar"
 set "RUN=%ROOT%\run"
 set "LOG=%ROOT%\logs"
-set "PIDFILE=%RUN%\ass-kicker-worker.pid"
-set "OUT=%LOG%\ass-kicker-worker.out"
+set "PIDFILE=%RUN%\ass-kicker-manager.pid"
+set "OUT=%LOG%\ass-kicker-manager.out"
 if not exist "%RUN%" mkdir "%RUN%"
 if not exist "%LOG%" mkdir "%LOG%"
 

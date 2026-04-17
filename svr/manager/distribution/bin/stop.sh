@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PIDFILE="${ROOT}/run/ass-kicker-worker.pid"
+PIDFILE="${ROOT}/run/ass-kicker-manager.pid"
 
 if [[ ! -f "${PIDFILE}" ]]; then
   echo "pid file not found ${PIDFILE}" >&2

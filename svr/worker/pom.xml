@@ -13,6 +13,10 @@
   <name>svr-worker</name>
   <description>Worker server module</description>
 
+  <properties>
+    <distribution.baseName>worker-${project.version}</distribution.baseName>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.github.waitlight.asskicker</groupId>
@@ -71,6 +75,41 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.7.1</version>
+        <executions>
+          <execution>
+            <id>package-unix-distribution</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <descriptors>
+                <descriptor>${project.basedir}/distribution/unix.xml</descriptor>
+              </descriptors>
+              <finalName>${distribution.baseName}</finalName>
+              <appendAssemblyId>false</appendAssemblyId>
+            </configuration>
+          </execution>
+          <execution>
+            <id>package-windows-distribution</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <descriptors>
+                <descriptor>${project.basedir}/distribution/windows.xml</descriptor>
+              </descriptors>
+              <finalName>${distribution.baseName}</finalName>
+              <appendAssemblyId>false</appendAssemblyId>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

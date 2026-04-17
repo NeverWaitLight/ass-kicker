@@ -1,6 +1,6 @@
 spring:
   application:
-    name: ${SPRING_APPLICATION_NAME:ass-kicker-worker}
+    name: ${SPRING_APPLICATION_NAME:ass-kicker-manager}
   messages:
     basename: ValidationMessages
     encoding: UTF-8
@@ -10,11 +10,6 @@ spring:
     mongodb:
       uri: ${SPRING_DATA_MONGODB_URI:mongodb://admin:123456@localhost:27017/asskicker?authSource=admin}
       auto-index-creation: ${SPRING_DATA_MONGODB_AUTO_INDEX_CREATION:true}
-  kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-    consumer:
-      group-id: ${SPRING_KAFKA_CONSUMER_GROUP_ID:ass-kicker-worker}
-      auto-offset-reset: ${SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET:earliest}
 send-record:
   buffer-size: ${SEND_RECORD_BUFFER_SIZE:100}
   flush-interval-ms: ${SEND_RECORD_FLUSH_INTERVAL_MS:5000}
@@ -46,7 +41,7 @@ logging:
     queue-size: ${LOGGING_ASYNC_QUEUE_SIZE:1024}
     discarding-threshold: ${LOGGING_ASYNC_DISCARDING_THRESHOLD:0}
 server:
-  port: ${SERVER_PORT:8081}
+  port: ${SERVER_PORT:8080}
 management:
   endpoints:
     web:

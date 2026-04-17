@@ -1,6 +1,6 @@
-# ass-kicker-worker
+# ass-kicker-manager
 
-Executable distribution for the Ass Kicker worker service.
+Executable distribution for the Ass Kicker manager service.
 
 ## Layout
 
@@ -16,13 +16,13 @@ Executable distribution for the Ass Kicker worker service.
 Unix or macOS foreground:
 
 ```bash
-bin/ass-kicker-worker
+bin/ass-kicker-manager
 ```
 
 Windows foreground:
 
 ```bat
-bin\ass-kicker-worker.cmd
+bin\ass-kicker-manager.cmd
 ```
 
 Unix or macOS background:

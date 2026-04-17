@@ -1,4 +1,4 @@
-name: Release distribution
+name: Release distributions
 
 on:
   push:
@@ -44,32 +44,32 @@ jobs:
           fi
           echo "version=${V}" >> "${GITHUB_OUTPUT}"
 
-      - name: Build server bundle
+      - name: Build module distributions
         working-directory: svr
-        run: mvn -B package -DskipTests
+        run: mvn -B clean package -DskipTests
 
-      - name: Stage ass-kicker bundle
+      - name: Stage renamed archives
         run: |
           set -euo pipefail
           V="${{ steps.ver.outputs.version }}"
-          mkdir -p "staging/ass-kicker-${V}"
-          mkdir -p "staging/ass-kicker-${V}/manager"
-          mkdir -p "staging/ass-kicker-${V}/worker"
-          cp -a svr/manager/target/*.jar "staging/ass-kicker-${V}/manager/"
-          cp -a svr/worker/target/*.jar "staging/ass-kicker-${V}/worker/"
-
-      - name: Create archives
-        run: |
-          set -euo pipefail
-          V="${{ steps.ver.outputs.version }}"
-          cd staging
-          tar -czf "${GITHUB_WORKSPACE}/ass-kicker-${V}.tar.gz" "ass-kicker-${V}"
-          zip -qr "${GITHUB_WORKSPACE}/ass-kicker-${V}.zip" "ass-kicker-${V}"
+          mkdir -p dist
+          cp "svr/manager/target/$(basename "$(find svr/manager/target -maxdepth 1 -name 'manager-*.tar.gz' | head -n 1)")" "dist/manager-${V}.tar.gz"
+          cp "svr/manager/target/$(basename "$(find svr/manager/target -maxdepth 1 -name 'manager-*.zip' | head -n 1)")" "dist/manager-${V}.zip"
+          cp "svr/worker/target/$(basename "$(find svr/worker/target -maxdepth 1 -name 'worker-*.tar.gz' | head -n 1)")" "dist/worker-${V}.tar.gz"
+          cp "svr/worker/target/$(basename "$(find svr/worker/target -maxdepth 1 -name 'worker-*.zip' | head -n 1)")" "dist/worker-${V}.zip"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ass-kicker-${{ steps.ver.outputs.version }}-archives
+          name: manager-${{ steps.ver.outputs.version }}-dist
           path: |
-            ass-kicker-${{ steps.ver.outputs.version }}.tar.gz
-            ass-kicker-${{ steps.ver.outputs.version }}.zip
+            dist/manager-${{ steps.ver.outputs.version }}.tar.gz
+            dist/manager-${{ steps.ver.outputs.version }}.zip
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: worker-${{ steps.ver.outputs.version }}-dist
+          path: |
+            dist/worker-${{ steps.ver.outputs.version }}.tar.gz
+            dist/worker-${{ steps.ver.outputs.version }}.zip
           if-no-files-found: error
