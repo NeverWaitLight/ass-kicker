@@ -41,6 +41,10 @@ import com.github.waitlight.asskicker.model.ProviderType;
 import com.github.waitlight.asskicker.dto.channel.UpdateChannelDTO;
 import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.service.ChannelService;
+import com.github.waitlight.asskicker.service.RecordService;
+import com.github.waitlight.asskicker.model.RecordEntity;
+import com.github.waitlight.asskicker.model.SendRecordStatus;
+import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -49,6 +53,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 import java.util.concurrent.TimeUnit;
+import java.time.Instant;
 
 @Tag(name = "ChannelController")
 @RestController
@@ -62,6 +67,8 @@ public class ChannelController {
         private final ChannelManager channelManager;
         private final ChannelFactory channelFactory;
         private final ChannelPropertiesMapper channelPropertiesMapper;
+        private final RecordService recordService;
+        private final SnowflakeIdGenerator snowflakeIdGenerator;
 
         @Operation(summary = "test", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @PostMapping("/test")
@@ -90,9 +97,51 @@ public class ChannelController {
                 UniAddress address = buildTestAddress(request.getType(), provider, request.getTarget().trim(),
                                 ephemeral.getCode());
 
-                return channel.send(UniTask.builder().message(message).address(address).build())
-                                .map(ignore -> Resp.success(ChannelTestResultVO.ok()))
-                                .onErrorResume(e -> Mono.just(Resp.success(ChannelTestResultVO.fail(e.getMessage()))));
+                long submittedAt = Instant.now().toEpochMilli();
+                String taskId = snowflakeIdGenerator.nextIdString();
+                UniTask task = UniTask.builder().message(message).address(address).taskId(taskId).submittedAt(submittedAt)
+                                .build();
+
+                return channel.send(task)
+                                .flatMap(ignore -> {
+                                        writeChannelTestRecord(ephemeral, task, request.getTarget().trim(),
+                                                        message.getContent(), true, null);
+                                        return Mono.just(Resp.success(ChannelTestResultVO.ok()));
+                                })
+                                .onErrorResume(e -> {
+                                        writeChannelTestRecord(ephemeral, task, request.getTarget().trim(),
+                                                        message.getContent(), false, e.getMessage());
+                                        return Mono.just(Resp.success(ChannelTestResultVO.fail(e.getMessage())));
+                                });
+        }
+
+        private void writeChannelTestRecord(ChannelEntity channelEntity, UniTask task, String recipient,
+                        String renderedContent, boolean success, String errorMessage) {
+                RecordEntity sr = new RecordEntity();
+                sr.setTaskId(task.getTaskId());
+                UniMessage msg = task.getMessage();
+                if (msg != null) {
+                        sr.setTemplateCode(msg.getTemplateCode());
+                        if (msg.getLanguage() != null) {
+                                sr.setLanguageCode(msg.getLanguage().getCode());
+                        }
+                        sr.setParams(msg.getTemplateParams());
+                }
+                sr.setRecipient(recipient);
+                sr.setChannelId(channelEntity.getId());
+                sr.setChannelType(channelEntity.getChannelType());
+                sr.setChannelName(channelEntity.getCode());
+                sr.setSubmittedAt(task.getSubmittedAt() != null ? task.getSubmittedAt()
+                                : System.currentTimeMillis());
+                sr.setRenderedContent(renderedContent);
+                if (success) {
+                        sr.setStatus(SendRecordStatus.SUCCESS);
+                        sr.setSentAt(System.currentTimeMillis());
+                } else {
+                        sr.setStatus(SendRecordStatus.FAILED);
+                        sr.setErrorMessage(errorMessage);
+                }
+                recordService.writeRecord(sr);
         }
 
         @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))

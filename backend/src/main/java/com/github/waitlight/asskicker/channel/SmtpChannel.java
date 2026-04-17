@@ -68,21 +68,25 @@ public class SmtpChannel extends Channel {
 
     private void validateSpec() {
         if (StringUtils.isBlank(properties.host()) || StringUtils.isBlank(properties.username())
-                || properties.password() == null || StringUtils.isBlank(properties.from())) {
+                || StringUtils.isBlank(properties.password()) || StringUtils.isBlank(properties.from())) {
             throw new IllegalStateException("SMTP requires host username password from");
         }
     }
 
     private java.util.Properties buildMailProperties() {
         java.util.Properties props = new java.util.Properties();
-        props.put("mail.smtp.host", properties.host().trim());
+        String host = properties.host().trim();
+        props.put("mail.smtp.host", host);
         props.put("mail.smtp.port", String.valueOf(properties.port()));
         props.put("mail.smtp.auth", "true");
+        // 与多数现网 SMTP 对齐，避免协商到过旧 TLS 或 STARTTLS 未升级导致认证异常
+        props.put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3");
         if (properties.sslEnabled()) {
             props.put("mail.smtp.ssl.enable", "true");
-            props.put("mail.smtp.ssl.trust", properties.host().trim());
+            props.put("mail.smtp.ssl.trust", host);
         } else if (properties.startTls()) {
             props.put("mail.smtp.starttls.enable", "true");
+            props.put("mail.smtp.starttls.required", "true");
         }
         if (properties.connectionTimeout() != null) {
             props.put("mail.smtp.connectiontimeout", String.valueOf(properties.connectionTimeout()));
@@ -135,20 +139,37 @@ public class SmtpChannel extends Channel {
                 p = Map.of();
             }
             int port = parseInt(p.get("port"), 587);
-            boolean ssl = parseBool(p.get("sslEnabled"), false);
-            boolean startTls = parseBool(p.get("starttls"), true);
+            boolean ssl = parseBool(p.get("sslEnabled"), defaultSslForPort(port));
+            boolean startTls = parseBool(firstNonBlank(p.get("starttls"), p.get("startTls")), true);
             Integer conn = parseIntObj(p.get("connectionTimeout"));
             Integer read = parseIntObj(p.get("readTimeout"));
             return new Properties(
-                    p.get("host"),
+                    trimToNull(p.get("host")),
                     port,
-                    p.get("username"),
-                    p.get("password"),
-                    p.get("from"),
+                    trimToNull(p.get("username")),
+                    trimPassword(p.get("password")),
+                    trimToNull(p.get("from")),
                     ssl,
                     startTls,
                     conn,
                     read);
+        }
+
+        /** 去掉首尾空白，避免复制粘贴带入空格导致服务商返回 526 等认证失败 */
+        private static String trimToNull(String s) {
+            if (s == null) {
+                return null;
+            }
+            String t = s.trim();
+            return t.isEmpty() ? null : t;
+        }
+
+        private static String trimPassword(String s) {
+            if (s == null) {
+                return null;
+            }
+            String t = s.trim();
+            return t.isEmpty() ? null : t;
         }
 
         private static int parseInt(String s, int def) {
@@ -178,6 +199,20 @@ public class SmtpChannel extends Channel {
                 return defaultValue;
             }
             return Boolean.parseBoolean(s.trim()) || "1".equals(s.trim()) || "yes".equalsIgnoreCase(s.trim());
+        }
+
+        /**
+         * 465 为 SMTPS 隐式 TLS 常用端口，未显式配置 sslEnabled 时应默认开启，否则易出现 bad greeting EOF
+         */
+        private static boolean defaultSslForPort(int port) {
+            return port == 465;
+        }
+
+        private static String firstNonBlank(String a, String b) {
+            if (StringUtils.isNotBlank(a)) {
+                return a;
+            }
+            return b;
         }
     }
 }

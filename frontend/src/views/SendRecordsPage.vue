@@ -54,6 +54,9 @@
         <template v-else-if="column.key === 'channelType'">
           <a-tag color="blue">{{ channelTypeLabel(record.channelType) }}</a-tag>
         </template>
+        <template v-else-if="column.key === 'channelName'">
+          {{ record.channelName || '-' }}
+        </template>
         <template v-else-if="column.key === 'recipient'">
           {{ record.recipient || '-' }}
         </template>
@@ -67,7 +70,7 @@
           {{ formatTimestamp(record.sentAt) }}
         </template>
         <template v-else-if="column.key === 'actions'">
-          <a-button size="small" @click="goDetail(record)">详情</a-button>
+          <a-button size="small" type="link" @click="goDetail(record)">详情</a-button>
         </template>
       </template>
     </a-table>
@@ -96,16 +99,14 @@ const channelTypeOptions = [
 ]
 
 const columns = [
-  { title: '序号', key: 'ordinal' },
-  { title: '任务ID', dataIndex: 'taskId', key: 'taskId' },
-  { title: '模板编码', dataIndex: 'templateCode', key: 'templateCode' },
-  { title: '通道', dataIndex: 'channelName', key: 'channelName' },
-  { title: '通道类型', key: 'channelType' },
+  { title: '序号', key: 'ordinal', width: 72 },
   { title: '接收人', key: 'recipient' },
+  { title: '通道类型', key: 'channelType' },
+  { title: '通道', key: 'channelName' },
   { title: '状态', key: 'status' },
   { title: '提交时间', key: 'submittedAt' },
   { title: '发送时间', key: 'sentAt' },
-  { title: '操作', key: 'actions', width: 90, fixed: 'right' }
+  { title: '操作', key: 'actions', width: 96, fixed: 'right' }
 ]
 
 const tablePagination = computed(() => ({
@@ -162,7 +163,9 @@ const handleTableChange = (pager) => {
 }
 
 const goDetail = (record) => {
-  router.push(`/send-records/${record.id}`)
+  if (record?.id != null) {
+    router.push(`/send-records/${record.id}`)
+  }
 }
 
 onMounted(loadRecords)
