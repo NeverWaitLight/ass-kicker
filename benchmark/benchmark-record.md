@@ -101,7 +101,7 @@
 
 **代码改进**：
 
-- 模板内容虽然走了缓存，但每次还是会重新 Mustache compile/render（`backend/src/main/java/com/github/waitlight/asskicker/manager/TemplateManager.java:29`），这是次级 CPU 开销
+- 模板内容虽然走了缓存，但每次还是会重新 Mustache compile/render（`svr/common/src/main/java/com/github/waitlight/asskicker/TemplateEngine.java`），这是次级 CPU 开销
 - 针对该 CPU 开销进行优化
 
 | 并发 | 实际TPS | P50(ms) | P95(ms) | P99(ms) |

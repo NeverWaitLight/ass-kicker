@@ -29,7 +29,7 @@ jobs:
         with:
           node-version: '20'
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: ui/package-lock.json
 
       - name: Resolve version label
         id: ver
@@ -40,18 +40,12 @@ jobs:
           elif [[ -n "${{ github.event.inputs.version }}" ]]; then
             V="${{ github.event.inputs.version }}"
           else
-            V="$(cd backend && mvn help:evaluate -q -DforceStdout -Dexpression=project.version)"
+            V="$(cd svr && mvn help:evaluate -q -DforceStdout -Dexpression=project.version)"
           fi
           echo "version=${V}" >> "${GITHUB_OUTPUT}"
 
-      - name: Build frontend
-        working-directory: frontend
-        run: |
-          npm ci
-          npm run build
-
-      - name: Build backend
-        working-directory: backend
+      - name: Build server bundle
+        working-directory: svr
         run: mvn -B package -DskipTests
 
       - name: Stage ass-kicker bundle
@@ -59,9 +53,10 @@ jobs:
           set -euo pipefail
           V="${{ steps.ver.outputs.version }}"
           mkdir -p "staging/ass-kicker-${V}"
-          cp -a backend/target/ass-kicker-svr "staging/ass-kicker-${V}/"
-          mkdir -p "staging/ass-kicker-${V}/ass-kicker-ui"
-          cp -a frontend/dist/. "staging/ass-kicker-${V}/ass-kicker-ui/"
+          mkdir -p "staging/ass-kicker-${V}/manager"
+          mkdir -p "staging/ass-kicker-${V}/worker"
+          cp -a svr/manager/target/*.jar "staging/ass-kicker-${V}/manager/"
+          cp -a svr/worker/target/*.jar "staging/ass-kicker-${V}/worker/"
 
       - name: Create archives
         run: |

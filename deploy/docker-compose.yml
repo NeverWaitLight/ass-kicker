@@ -52,8 +52,8 @@ services:
 
   manager:
     build:
-      context: ../svr
-      dockerfile: manager/Dockerfile
+      context: ..
+      dockerfile: svr/manager/Dockerfile
     container_name: ass-kicker-manager
     restart: unless-stopped
     depends_on:
@@ -101,24 +101,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 40s
-
-  frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
-    container_name: ass-kicker-frontend
-    restart: unless-stopped
-    depends_on:
-      manager:
-        condition: service_healthy
-    ports:
-      - "${FRONTEND_PORT:-8088}:80"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
 
 volumes:
   mongo-data:

@@ -1,4 +1,4 @@
-本后端项目是基于 Spring Boot 3 + WebFlux 的响应式服务，当前实际依赖为 MongoDB 与 Kafka。
+本后端项目基于 Spring Boot 3 + WebFlux，运行时依赖 MongoDB 与 Kafka。
 
 ## 技术栈
 
@@ -30,7 +30,7 @@ mvn spring-boot:run
 http://localhost:8080/scalar
 ```
 
-健康检查（Spring Boot Actuator）：
+健康检查：
 
 ```text
 http://localhost:8080/actuator/health
@@ -38,6 +38,4 @@ http://localhost:8080/actuator/health
 
 ## Docker
 
-后端镜像文件位于 [Dockerfile](Dockerfile)。
-
-推荐直接使用仓库根目录下的 [../deploy/docker-compose.yml](../deploy/docker-compose.yml) 联合启动 MongoDB、Kafka、manager、worker、frontend。
+推荐直接使用仓库根目录下的 [../deploy/docker-compose.yml](../deploy/docker-compose.yml) 联合启动 MongoDB、Kafka、manager、worker。
