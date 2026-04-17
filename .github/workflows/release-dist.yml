@@ -15,7 +15,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -73,3 +73,16 @@ jobs:
             dist/worker-${{ steps.ver.outputs.version }}.tar.gz
             dist/worker-${{ steps.ver.outputs.version }}.zip
           if-no-files-found: error
+
+      - name: Publish GitHub release assets
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            dist/manager-${{ steps.ver.outputs.version }}.tar.gz
+            dist/manager-${{ steps.ver.outputs.version }}.zip
+            dist/worker-${{ steps.ver.outputs.version }}.tar.gz
+            dist/worker-${{ steps.ver.outputs.version }}.zip
