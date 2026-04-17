@@ -1,4 +1,7 @@
-# Ass Kicker
+<h1>
+  <img src="ui/src/assets/logo.png" alt="Ass Kicker Logo" width="56" style="vertical-align: middle;" />
+  <span style="vertical-align: middle;">Ass Kicker</span>
+</h1>
 
 Ass Kicker 是一个面向多渠道消息发送场景的开源消息平台。
 
