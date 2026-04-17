@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: ${SPRING_APPLICATION_NAME:ass-kicker-worker}
+  messages:
+    basename: ValidationMessages
+    encoding: UTF-8
+  main:
+    web-application-type: reactive
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://admin:123456@localhost:27017/asskicker?authSource=admin}
+      auto-index-creation: ${SPRING_DATA_MONGODB_AUTO_INDEX_CREATION:true}
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${SPRING_KAFKA_CONSUMER_GROUP_ID:ass-kicker-worker}
+      auto-offset-reset: ${SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET:earliest}
+send-record:
+  buffer-size: ${SEND_RECORD_BUFFER_SIZE:100}
+  flush-interval-ms: ${SEND_RECORD_FLUSH_INTERVAL_MS:5000}
+  ttl-days: ${SEND_RECORD_TTL_DAYS:7}
+ass-kicker:
+  snowflake:
+    datacenter-id: ${ASS_KICKER_SNOWFLAKE_DATACENTER_ID:0}
+    worker-id: ${ASS_KICKER_SNOWFLAKE_WORKER_ID:}
+    mongo-allocation-enabled: ${ASS_KICKER_SNOWFLAKE_MONGO_ALLOCATION_ENABLED:true}
+    counter-collection: ${ASS_KICKER_SNOWFLAKE_COUNTER_COLLECTION:snowflake_counters}
+    allocation-block-timeout: ${ASS_KICKER_SNOWFLAKE_ALLOCATION_BLOCK_TIMEOUT:PT30S}
+    heartbeat-interval: ${ASS_KICKER_SNOWFLAKE_HEARTBEAT_INTERVAL:PT1M}
+    heartbeat-timeout: ${ASS_KICKER_SNOWFLAKE_HEARTBEAT_TIMEOUT:PT3M}
+  cache:
+    maximum-size: ${ASS_KICKER_CACHE_MAXIMUM_SIZE:1000}
+    expire-after-write-minutes: ${ASS_KICKER_CACHE_EXPIRE_AFTER_WRITE_MINUTES:10}
+    random-jitter-percent: ${ASS_KICKER_CACHE_RANDOM_JITTER_PERCENT:20}
+  channel:
+    debug:
+      enabled: ${ASS_KICKER_CHANNEL_DEBUG_ENABLED:true}
+      sleep-ms: ${ASS_KICKER_CHANNEL_DEBUG_SLEEP_MS:100}
+  security:
+    jwt:
+      secret: ${ASS_KICKER_SECURITY_JWT_SECRET:change-this-secret-to-32-chars-minimum}
+      access-token-ttl: ${ASS_KICKER_SECURITY_JWT_ACCESS_TOKEN_TTL:PT24H}
+      refresh-token-ttl: ${ASS_KICKER_SECURITY_JWT_REFRESH_TOKEN_TTL:PT720H}
+logging:
+  async:
+    queue-size: ${LOGGING_ASYNC_QUEUE_SIZE:1024}
+    discarding-threshold: ${LOGGING_ASYNC_DISCARDING_THRESHOLD:0}
+server:
+  port: ${SERVER_PORT:8081}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+scalar:
+  enabled: ${SCALAR_ENABLED:true}
+  path: ${SCALAR_PATH:/scalar}

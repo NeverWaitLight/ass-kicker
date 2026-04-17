@@ -3,7 +3,8 @@
 Ass Kicker 是一个前后端分离的消息发送平台：
 
 - `frontend`：Vue 3 + Vite 管理后台
-- `backend`：Spring Boot 3 + WebFlux 后端
+- `svr/manager`：前端管理接口服务
+- `svr/worker`：发送接入与异步消费服务
 - 基础依赖：MongoDB、Kafka
 
 ## 项目结构
@@ -11,7 +12,7 @@ Ass Kicker 是一个前后端分离的消息发送平台：
 ```text
 .
 ├─frontend        # 前端项目
-├─backend         # 后端项目
+├─svr             # 后端聚合工程
 ├─deploy          # Docker Compose 与部署模板
 ├─docs            # 补充文档
 └─benchmark       # 压测脚本与记录
@@ -26,7 +27,13 @@ Ass Kicker 是一个前后端分离的消息发送平台：
 - MongoDB：`mongodb://admin:123456@localhost:27017/asskicker?authSource=admin`
 - Kafka：`localhost:9092`
 
-在 `backend` 目录运行：
+在 `svr/manager` 目录运行管理端：
+
+```bash
+mvn spring-boot:run
+```
+
+在 `svr/worker` 目录运行发送端：
 
 ```bash
 mvn spring-boot:run
@@ -46,8 +53,9 @@ npm run dev
 默认访问地址：
 
 - 前端：`http://localhost:5173`
-- 后端接口：`http://localhost:8080`
-- API 文档：`http://localhost:8080/scalar`
+- 管理端接口：`http://localhost:8080`
+- 管理端 API 文档：`http://localhost:8080/scalar`
+- 发送端接口：`http://localhost:8081`
 
 ## Docker 部署
 
@@ -55,7 +63,8 @@ npm run dev
 
 - [deploy/docker-compose.yml](deploy/docker-compose.yml)
 - [deploy/.env.example](deploy/.env.example)
-- [backend/Dockerfile](backend/Dockerfile)
+- [svr/manager/Dockerfile](svr/manager/Dockerfile)
+- [svr/worker/Dockerfile](svr/worker/Dockerfile)
 - [frontend/Dockerfile](frontend/Dockerfile)
 
 ### 启动步骤
@@ -84,7 +93,8 @@ http://localhost:8088
 ### 容器拓扑
 
 - `frontend`：Nginx 托管前端静态资源，并将 `/v1` 反代到后端
-- `backend`：Spring Boot 应用
+- `manager`：Spring Boot 管理服务
+- `worker`：Spring Boot 发送服务
 - `mongo`：业务数据存储
 - `kafka`：发送任务异步队列
 
@@ -99,7 +109,8 @@ docker compose ps
 查看日志：
 
 ```bash
-docker compose logs -f backend
+docker compose logs -f manager
+docker compose logs -f worker
 docker compose logs -f frontend
 ```
 

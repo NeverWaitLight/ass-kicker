@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+JAR="${ROOT}/lib/ass-kicker-worker.jar"
+exec java ${JAVA_OPTS:-} -jar "${JAR}" \
+  --spring.config.additional-location="optional:file:${ROOT}/conf/" \
+  "$@"

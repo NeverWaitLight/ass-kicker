@@ -1,0 +1,10 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://admin:123456@localhost:27017/asskicker_test?authSource=admin
+logging:
+  async:
+    queue-size: 512
+    discarding-threshold: 0
+  level:
+    com.github.waitlight.asskicker.logging.RequestIdFilter: DEBUG
