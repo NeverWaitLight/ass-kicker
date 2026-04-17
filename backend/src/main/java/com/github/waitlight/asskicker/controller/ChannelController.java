@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.validation.annotation.Validated;
-import org.springframework.http.CacheControl;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -52,7 +50,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
-import java.util.concurrent.TimeUnit;
 import java.time.Instant;
 
 @Tag(name = "ChannelController")
@@ -180,12 +177,9 @@ public class ChannelController {
 
         @Operation(summary = "channelTypes", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @GetMapping("/types")
-        public Mono<ResponseEntity<Resp<List<ChannelType>>>> channelTypes() {
+        public Mono<Resp<List<ChannelType>>> channelTypes() {
                 return Mono.fromSupplier(() -> List.of(ChannelType.values()))
-                                .map(Resp::success)
-                                .map(body -> ResponseEntity.ok()
-                                                .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic())
-                                                .body(body));
+                                .map(Resp::success);
         }
 
         @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
@@ -207,13 +201,10 @@ public class ChannelController {
 
         @Operation(summary = "providersByChannelType", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @GetMapping("/{channelType}/providers")
-        public Mono<ResponseEntity<Resp<List<ChannelProviderOptionVO>>>> providersByChannelType(
+        public Mono<Resp<List<ChannelProviderOptionVO>>> providersByChannelType(
                         @PathVariable ChannelType channelType) {
                 return Mono.fromSupplier(() -> channelManager.getProvidersByChannelType(channelType))
-                                .map(Resp::success)
-                                .map(body -> ResponseEntity.ok()
-                                                .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic())
-                                                .body(body));
+                                .map(Resp::success);
         }
 
         @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
