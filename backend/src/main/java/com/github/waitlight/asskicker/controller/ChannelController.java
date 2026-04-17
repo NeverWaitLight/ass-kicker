@@ -197,7 +197,7 @@ public class ChannelController {
         }
 
         @Operation(summary = "providerProperties", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-        @GetMapping("/providers/{providerType}/properties")
+        @GetMapping("/{providerType}/properties")
         public Mono<Resp<ChannelPropertiesSchemaVO>> providerProperties(@PathVariable ProviderType providerType) {
                 return Mono.fromSupplier(() -> ChannelPropertiesSchemaVO.builder()
                                 .properties(channelManager.getPropertiesSchema(providerType))
@@ -206,7 +206,7 @@ public class ChannelController {
         }
 
         @Operation(summary = "providersByChannelType", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-        @GetMapping("/types/{channelType}/providers")
+        @GetMapping("/{channelType}/providers")
         public Mono<ResponseEntity<Resp<List<ChannelProviderOptionVO>>>> providersByChannelType(
                         @PathVariable ChannelType channelType) {
                 return Mono.fromSupplier(() -> channelManager.getProvidersByChannelType(channelType))

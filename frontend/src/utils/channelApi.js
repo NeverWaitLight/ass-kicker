@@ -56,7 +56,7 @@ export const fetchImTypes = async () => {
 }
 
 export const fetchProvidersByChannelType = async (channelType) => {
-  const response = await apiFetch(`/v1/channels/types/${channelType}/providers`)
+  const response = await apiFetch(`/v1/channels/${channelType}/providers`)
   if (!response.ok) {
     throw new Error(await response.text())
   }
@@ -65,7 +65,7 @@ export const fetchProvidersByChannelType = async (channelType) => {
 }
 
 export const fetchProviderProperties = async (providerType) => {
-  const response = await apiFetch(`/v1/channels/providers/${providerType}/properties`)
+  const response = await apiFetch(`/v1/channels/${providerType}/properties`)
   if (!response.ok) {
     throw new Error(await response.text())
   }
