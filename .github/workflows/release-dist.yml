@@ -1,0 +1,80 @@
+name: Release distribution
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Artifact version segment for ass-kicker-{version} (e.g. 1.0.0). Used when not building from a v* tag.'
+        required: false
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Resolve version label
+        id: ver
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            V="${GITHUB_REF#refs/tags/v}"
+          elif [[ -n "${{ github.event.inputs.version }}" ]]; then
+            V="${{ github.event.inputs.version }}"
+          else
+            V="$(cd backend && mvn help:evaluate -q -DforceStdout -Dexpression=project.version)"
+          fi
+          echo "version=${V}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build backend
+        working-directory: backend
+        run: mvn -B package -DskipTests
+
+      - name: Stage ass-kicker bundle
+        run: |
+          set -euo pipefail
+          V="${{ steps.ver.outputs.version }}"
+          mkdir -p "staging/ass-kicker-${V}"
+          cp -a backend/target/ass-kicker-svr "staging/ass-kicker-${V}/"
+          mkdir -p "staging/ass-kicker-${V}/ass-kicker-ui"
+          cp -a frontend/dist/. "staging/ass-kicker-${V}/ass-kicker-ui/"
+
+      - name: Create archives
+        run: |
+          set -euo pipefail
+          V="${{ steps.ver.outputs.version }}"
+          cd staging
+          tar -czf "${GITHUB_WORKSPACE}/ass-kicker-${V}.tar.gz" "ass-kicker-${V}"
+          zip -qr "${GITHUB_WORKSPACE}/ass-kicker-${V}.zip" "ass-kicker-${V}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ass-kicker-${{ steps.ver.outputs.version }}-archives
+          path: |
+            ass-kicker-${{ steps.ver.outputs.version }}.tar.gz
+            ass-kicker-${{ steps.ver.outputs.version }}.zip
+          if-no-files-found: error

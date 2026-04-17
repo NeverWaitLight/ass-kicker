@@ -5,6 +5,7 @@ COPY pom.xml .
 RUN mvn -B -q -DskipTests dependency:go-offline
 
 COPY src ./src
+COPY distribution ./distribution
 RUN mvn -B -DskipTests package
 
 FROM eclipse-temurin:21-jre-alpine
