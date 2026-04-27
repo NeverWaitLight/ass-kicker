@@ -3,6 +3,7 @@ package com.github.waitlight.asskicker;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -16,6 +17,8 @@ import com.github.mustachejava.MustacheFactory;
 import com.github.waitlight.asskicker.config.cache.CaffeineCacheProperties;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.Language;
+import com.github.waitlight.asskicker.model.TemplateEntity;
+import com.github.waitlight.asskicker.service.GlobalVariableService;
 import com.github.waitlight.asskicker.service.TemplateService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -26,12 +29,15 @@ import reactor.core.publisher.Mono;
 public class TemplateEngine {
 
     private final TemplateService templateService;
+    private final GlobalVariableService globalVariableService;
     private final MustacheFactory mustacheFactory;
     private final Cache<String, Mustache> compiledTemplateCache;
 
     public TemplateEngine(TemplateService templateService,
+            GlobalVariableService globalVariableService,
             CaffeineCacheProperties cacheProperties) {
         this.templateService = templateService;
+        this.globalVariableService = globalVariableService;
         this.mustacheFactory = new DefaultMustacheFactory();
         this.compiledTemplateCache = Caffeine.newBuilder()
                 .maximumSize(cacheProperties.getMaximumSize())
@@ -45,18 +51,19 @@ public class TemplateEngine {
                         tpl.getLocalizedTemplates() != null
                                 ? tpl.getLocalizedTemplates().get(req.getLanguage())
                                 : null))
-                .map(tpl -> {
-                    String content = fill(req.getTemplateCode(), req.getLanguage(), tpl.getContent(),
-                            req.getTemplateParams());
+                .zipWith(globalVariableService.findEnabledVariablesMap())
+                .map(tuple -> {
+                    TemplateEntity.LocalizedTemplate tpl = tuple.getT1();
+                    Map<String, Object> mergedParams = mergeParams(tuple.getT2(), req.getTemplateParams());
+                    String title = fill(req.getTemplateCode(), req.getLanguage(), tpl.getTitle(), mergedParams);
+                    String content = fill(req.getTemplateCode(), req.getLanguage(), tpl.getContent(), mergedParams);
                     UniMessage uniMessage = new UniMessage();
                     uniMessage.setTemplateCode(req.getTemplateCode());
                     uniMessage.setLanguage(req.getLanguage());
-                    uniMessage.setTitle(tpl.getTitle());
+                    uniMessage.setTitle(title);
                     uniMessage.setContent(content);
                     uniMessage.setExtraData(req.getExtraData());
-                    uniMessage.setTemplateParams(req.getTemplateParams() == null
-                            ? Collections.emptyMap()
-                            : Map.copyOf(req.getTemplateParams()));
+                    uniMessage.setTemplateParams(mergedParams);
                     return uniMessage;
                 });
     }
@@ -79,6 +86,17 @@ public class TemplateEngine {
         Map<String, Object> params = templateParams != null ? templateParams : Collections.emptyMap();
         mustache.execute(writer, params);
         return writer.toString();
+    }
+
+    private Map<String, Object> mergeParams(Map<String, Object> globalParams, Map<String, Object> requestParams) {
+        Map<String, Object> merged = new LinkedHashMap<>();
+        if (globalParams != null) {
+            merged.putAll(globalParams);
+        }
+        if (requestParams != null) {
+            merged.putAll(requestParams);
+        }
+        return Collections.unmodifiableMap(merged);
     }
 
     private String cacheKey(String templateCode, Language language, String templateContent) {

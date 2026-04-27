@@ -146,7 +146,7 @@ public class Sender {
 
     private void processRecord(SendContext context) {
         UniTask task = context.getTask();
-        UniMessage message = task.getMessage();
+        UniMessage message = context.getUniMessage();
 
         RecordEntity sr = new RecordEntity();
         sr.setTaskId(task.getTaskId());

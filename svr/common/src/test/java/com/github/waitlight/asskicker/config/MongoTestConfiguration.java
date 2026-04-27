@@ -4,12 +4,15 @@ import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.converter.ChannelConverterImpl;
 import com.github.waitlight.asskicker.converter.ChannelPropertiesMapper;
+import com.github.waitlight.asskicker.converter.GlobalVariableConverterImpl;
 import com.github.waitlight.asskicker.converter.TemplateConverterImpl;
 import com.github.waitlight.asskicker.converter.TemplateLocalizedMapper;
 import com.github.waitlight.asskicker.repository.ChannelRepository;
+import com.github.waitlight.asskicker.repository.GlobalVariableRepository;
 import com.github.waitlight.asskicker.repository.TemplateRepository;
 import com.github.waitlight.asskicker.repository.UserRepository;
 import com.github.waitlight.asskicker.service.ChannelService;
+import com.github.waitlight.asskicker.service.GlobalVariableService;
 import com.github.waitlight.asskicker.service.TemplateService;
 import com.github.waitlight.asskicker.service.UserService;
 import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
@@ -38,6 +41,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
         TemplateConverterImpl.class,
         TemplateRepository.class,
         TemplateService.class,
+        GlobalVariableConverterImpl.class,
+        GlobalVariableRepository.class,
+        GlobalVariableService.class,
         UserRepository.class,
         UserService.class,
         CaffeineCacheConfig.class

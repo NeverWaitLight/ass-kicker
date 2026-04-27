@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.PATCH, "/v1/users/me").authenticated()
                         .pathMatchers(HttpMethod.PUT, "/v1/users/me/password").authenticated()
                         .pathMatchers("/v1/users/**").hasRole("ADMIN")
+                        .pathMatchers("/v1/global-variables/**").hasRole("ADMIN")
                         .pathMatchers("/v1/channel-providers/**").hasRole("ADMIN")
                         .pathMatchers("/v1/**").authenticated()
                         .anyExchange().permitAll()

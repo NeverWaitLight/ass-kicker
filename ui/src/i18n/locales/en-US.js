@@ -8,12 +8,14 @@ export default {
     users: 'User management',
     channels: 'Channel management',
     templates: 'Template management',
+    globalVariables: 'Global variables',
     sendRecords: 'Send records'
   },
   common: {
     save: 'Save',
     confirm: 'OK',
     cancel: 'Cancel',
+    reset: 'Reset',
     copy: 'Copy',
     copied: 'Copied'
   },
@@ -60,6 +62,41 @@ export default {
   },
   app: {
     deniedChannel: 'Your account does not have permission to open this page'
+  },
+  globalVariable: {
+    title: 'Global variables',
+    subtitle: 'Manage reusable variables for template rendering and sending',
+    searchPlaceholder: 'Search by name or key',
+    createTitle: 'New variable',
+    editTitle: 'Edit variable',
+    ordinal: '#',
+    key: 'Key',
+    keyPlaceholder: 'e.g. brandName',
+    name: 'Name',
+    namePlaceholder: 'e.g. Brand name',
+    value: 'Value',
+    valuePlaceholder: 'Enter a value',
+    description: 'Description',
+    descriptionPlaceholder: 'Optional',
+    status: 'Status',
+    enabled: 'Enabled',
+    disabled: 'Disabled',
+    updatedAt: 'Updated',
+    actions: 'Actions',
+    edit: 'Edit',
+    delete: 'Delete',
+    deleteConfirmTitle: 'Delete variable',
+    deleteConfirmPrefix: 'Delete variable',
+    deleteConfirmSuffix: '? This cannot be undone.',
+    keyRequired: 'Enter a variable key',
+    nameRequired: 'Enter a variable name',
+    valueRequired: 'Enter a variable value',
+    created: 'Variable created',
+    updated: 'Variable updated',
+    deleted: 'Variable deleted',
+    loadFailed: 'Could not load global variables',
+    saveFailed: 'Could not save',
+    deleteFailed: 'Could not delete'
   },
   channelType: CHANNEL_TYPE_LABELS['en-US']
 }

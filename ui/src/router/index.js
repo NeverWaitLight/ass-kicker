@@ -8,6 +8,7 @@ import TemplateManagementPage from '../views/TemplateManagementPage.vue'
 import TemplateDetailPage from '../views/TemplateDetailPage.vue'
 import SendRecordsPage from '../views/SendRecordsPage.vue'
 import SendRecordDetailPage from '../views/SendRecordDetailPage.vue'
+import GlobalVariableManagementPage from '../views/GlobalVariableManagementPage.vue'
 import { hasPermission, CHANNEL_PERMISSIONS } from '../utils/permissions'
 
 const routes = [
@@ -47,6 +48,11 @@ const routes = [
   {
     path: '/templates/:id',
     component: TemplateDetailPage
+  },
+  {
+    path: '/global-variables',
+    component: GlobalVariableManagementPage,
+    meta: { requiresAdmin: true }
   },
   {
     path: '/send-records',

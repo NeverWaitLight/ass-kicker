@@ -164,6 +164,22 @@ public final class TemplateEntityFixtures {
         """);
   }
 
+  public static TemplateEntity brandWelcomeEmail() {
+    return read("""
+        {
+          "code": "brand_welcome",
+          "name": "品牌欢迎邮件",
+          "channelType": "EMAIL",
+          "localizedTemplates": {
+            "en": {
+              "title": "Welcome to {{brandName}} from {{teamName}}",
+              "content": "Hello {{name}}, {{brandName}} is ready"
+            }
+          }
+        }
+        """);
+  }
+
   private static TemplateEntity read(String json) {
     try {
       return MAPPER.readValue(json, TemplateEntity.class);
