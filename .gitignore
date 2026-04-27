@@ -9,6 +9,7 @@
 **/target/
 **/node_modules/
 **/dist/
+**/logs/
 **/__pycache__/
 **/openspec/
 **/.cursorignore
