@@ -1,5 +1,6 @@
 <template>
   <div class="login-page">
+    <ThemeToggle class="login-theme-toggle" />
     <a-card class="login-card" bordered>
       <div class="login-header">
         <h2>后台登录</h2>
@@ -47,6 +48,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { setAuth } from '../utils/auth'
 import { syncAuth } from '../stores/auth'
+import ThemeToggle from '../components/ThemeToggle.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -164,15 +166,24 @@ const onRegister = async () => {
 
 <style scoped>
 .login-page {
+  position: relative;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 24px;
   background: radial-gradient(circle at top, #f0f5ff, #f5f5f5 60%);
+}
+
+.login-theme-toggle {
+  position: absolute;
+  top: 24px;
+  right: 24px;
 }
 
 .login-card {
   width: 360px;
+  max-width: 100%;
 }
 
 .login-header {
@@ -195,5 +206,35 @@ const onRegister = async () => {
   margin: 0 0 12px;
   color: #5b5b5b;
   font-size: 13px;
+}
+
+html[data-theme='dark'] .login-page {
+  background:
+    radial-gradient(circle at top, rgba(22, 119, 255, 0.16), transparent 34%),
+    #141414;
+}
+
+html[data-theme='dark'] .login-header h2 {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+html[data-theme='dark'] .login-header p {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+html[data-theme='dark'] .register-note {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+@media (max-width: 480px) {
+  .login-page {
+    align-items: flex-start;
+    padding-top: 88px;
+  }
+
+  .login-theme-toggle {
+    top: 20px;
+    right: 20px;
+  }
 }
 </style>
