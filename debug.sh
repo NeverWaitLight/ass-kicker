@@ -119,9 +119,6 @@ run_bg() {
 }
 
 echo "Ass Kicker local debug"
-echo "Manager: http://localhost:8080"
-echo "Worker:  http://localhost:8081"
-echo "UI:      http://localhost:5173"
 echo
 
 check_ports_available
@@ -140,6 +137,10 @@ run_bg "manager" "${LOG_DIR}/manager.log" mvn -f "${ROOT}/svr/pom.xml" -pl manag
 run_bg "worker" "${LOG_DIR}/worker.log" mvn -f "${ROOT}/svr/pom.xml" -pl worker clean spring-boot:run
 run_bg "ui" "${LOG_DIR}/ui.log" npm --prefix "${ROOT}/ui" run dev -- --host 0.0.0.0 --strictPort
 
+echo
+echo "Manager: http://localhost:8080"
+echo "Worker:  http://localhost:8081"
+echo "UI:      http://localhost:5173"
 echo
 echo "Waiting for debug ports..."
 wait_for_ports
