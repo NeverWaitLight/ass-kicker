@@ -8,7 +8,7 @@ export default {
     users: '用户管理',
     channels: '通道管理',
     templates: '模板管理',
-    globalVariables: '全局变量管理',
+    globalVariables: '全局变量',
     sendRecords: '发送记录'
   },
   common: {
