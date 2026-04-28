@@ -1,11 +1,13 @@
 package com.github.waitlight.asskicker.controller;
 
+import com.github.waitlight.asskicker.TemplateEngine;
 import com.github.waitlight.asskicker.config.openapi.OpenApiConfig;
 import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.dto.send.SendVO;
+import com.github.waitlight.asskicker.exception.BusinessException;
 import com.github.waitlight.asskicker.mq.SendTaskProducer;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 
 @Tag(name = "SendController")
@@ -33,6 +36,7 @@ import java.util.UUID;
 public class SendController {
 
     private final SendTaskProducer sendTaskProducer;
+    private final TemplateEngine templateEngine;
 
     @Operation(
         summary = "send",
@@ -56,6 +60,8 @@ public class SendController {
     public Mono<Resp<SendVO>> send(@Valid @RequestBody UniTask rawTask) {
         return Mono.just(rawTask)
                 .map(this::validateAndEnrich)
+                .flatMap(task -> validateTemplateVariables(task)
+                        .thenReturn(task))
                 .flatMap(task -> sendTaskProducer.publish(task).thenReturn(task.getTaskId()))
                 .map(SendVO::new)
                 .map(Resp::success)
@@ -86,6 +92,8 @@ public class SendController {
     public Mono<Resp<SendVO>> submit(@Valid @RequestBody UniTask rawTask) {
         return Mono.just(rawTask)
                 .map(this::validateAndEnrich)
+                .flatMap(task -> validateTemplateVariables(task)
+                        .thenReturn(task))
                 .flatMap(task -> sendTaskProducer.publish(task).thenReturn(task.getTaskId()))
                 .map(SendVO::new)
                 .map(Resp::success)
@@ -127,5 +135,24 @@ public class SendController {
                         ? Instant.now().toEpochMilli()
                         : task.getSubmittedAt())
                 .build();
+    }
+
+    private Mono<Void> validateTemplateVariables(UniTask task) {
+        return templateEngine.findMissingVariables(task.getMessage())
+                .onErrorMap(BusinessException.class,
+                        ex -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "模板不存在或语言内容不存在", ex))
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "模板不存在或语言内容不存在")))
+                .flatMap(missingVariables -> {
+                    if (missingVariables.isEmpty()) {
+                        return Mono.empty();
+                    }
+                    return Mono.error(missingVariablesError(missingVariables));
+                });
+    }
+
+    private ResponseStatusException missingVariablesError(Set<String> missingVariables) {
+        return new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "模板变量未填充: " + String.join(", ", missingVariables));
     }
 }

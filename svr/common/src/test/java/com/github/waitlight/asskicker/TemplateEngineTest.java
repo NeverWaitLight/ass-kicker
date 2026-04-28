@@ -128,6 +128,98 @@ class TemplateEngineTest {
     }
 
     @Test
+    void findMissingVariables_whenRequestParamsComplete_passes() {
+        TemplateEntity entity = TemplateEntityFixtures.brandWelcomeEmail();
+        when(templateService.findByCode("brand_welcome")).thenReturn(Mono.just(entity));
+
+        UniMessage req = new UniMessage();
+        req.setTemplateCode("brand_welcome");
+        req.setLanguage(Language.EN);
+        req.setTemplateParams(Map.of(
+                "brandName", "Ass Kicker",
+                "teamName", "Ops Team",
+                "name", "Alice"));
+
+        StepVerifier.create(engine.findMissingVariables(req))
+                .assertNext(missing -> assertThat(missing).isEmpty())
+                .verifyComplete();
+    }
+
+    @Test
+    void findMissingVariables_mergesGlobalVariables() {
+        TemplateEntity entity = TemplateEntityFixtures.brandWelcomeEmail();
+        when(templateService.findByCode("brand_welcome")).thenReturn(Mono.just(entity));
+        when(globalVariableService.findEnabledVariablesMap()).thenReturn(Mono.just(Map.of(
+                "brandName", "Ass Kicker",
+                "teamName", "Ops Team")));
+
+        UniMessage req = new UniMessage();
+        req.setTemplateCode("brand_welcome");
+        req.setLanguage(Language.EN);
+        req.setTemplateParams(Map.of("name", "Alice"));
+
+        StepVerifier.create(engine.findMissingVariables(req))
+                .assertNext(missing -> assertThat(missing).isEmpty())
+                .verifyComplete();
+    }
+
+    @Test
+    void findMissingVariables_reportsMissingFromTitleAndContent() {
+        TemplateEntity entity = TemplateEntityFixtures.brandWelcomeEmail();
+        when(templateService.findByCode("brand_welcome")).thenReturn(Mono.just(entity));
+
+        UniMessage req = new UniMessage();
+        req.setTemplateCode("brand_welcome");
+        req.setLanguage(Language.EN);
+        req.setTemplateParams(Map.of("brandName", "Ass Kicker"));
+
+        StepVerifier.create(engine.findMissingVariables(req))
+                .assertNext(missing -> assertThat(missing).containsExactly("teamName", "name"))
+                .verifyComplete();
+    }
+
+    @Test
+    void findMissingVariables_treatsNullAsMissingButAllowsEmptyString() {
+        TemplateEntity entity = TemplateEntityFixtures.brandWelcomeEmail();
+        when(templateService.findByCode("brand_welcome")).thenReturn(Mono.just(entity));
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("brandName", "");
+        params.put("teamName", null);
+        params.put("name", "");
+        UniMessage req = new UniMessage();
+        req.setTemplateCode("brand_welcome");
+        req.setLanguage(Language.EN);
+        req.setTemplateParams(params);
+
+        StepVerifier.create(engine.findMissingVariables(req))
+                .assertNext(missing -> assertThat(missing).containsExactly("teamName"))
+                .verifyComplete();
+    }
+
+    @Test
+    void findMissingVariables_allowsDottedVariablesFromNestedMap() {
+        TemplateEntity entity = new TemplateEntity();
+        entity.setCode("nested");
+        entity.setLocalizedTemplates(Map.of(
+                Language.EN,
+                new TemplateEntity.LocalizedTemplate("Hi {{user.name}}", "{{user.profile.title}}")));
+        when(templateService.findByCode("nested")).thenReturn(Mono.just(entity));
+
+        UniMessage req = new UniMessage();
+        req.setTemplateCode("nested");
+        req.setLanguage(Language.EN);
+        req.setTemplateParams(Map.of(
+                "user", Map.of(
+                        "name", "Alice",
+                        "profile", Map.of("title", ""))));
+
+        StepVerifier.create(engine.findMissingVariables(req))
+                .assertNext(missing -> assertThat(missing).isEmpty())
+                .verifyComplete();
+    }
+
+    @Test
     void fill_whenTemplateNotFound_completesEmpty() {
         when(templateService.findByCode("missing")).thenReturn(Mono.empty());
 

@@ -4,8 +4,12 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Component;
 
@@ -27,6 +31,8 @@ import reactor.core.publisher.Mono;
 @Component
 @Slf4j
 public class TemplateEngine {
+
+    private static final Pattern MUSTACHE_VARIABLE_PATTERN = Pattern.compile("\\{\\{\\s*([A-Za-z0-9_.-]+)\\s*}}");
 
     private final TemplateService templateService;
     private final GlobalVariableService globalVariableService;
@@ -68,6 +74,28 @@ public class TemplateEngine {
                 });
     }
 
+    public Mono<Set<String>> findMissingVariables(UniMessage req) {
+        return templateService.findByCode(req.getTemplateCode())
+                .flatMap(tpl -> Mono.justOrEmpty(
+                        tpl.getLocalizedTemplates() != null
+                                ? tpl.getLocalizedTemplates().get(req.getLanguage())
+                                : null))
+                .zipWith(globalVariableService.findEnabledVariablesMap())
+                .map(tuple -> {
+                    TemplateEntity.LocalizedTemplate tpl = tuple.getT1();
+                    Map<String, Object> mergedParams = mergeParams(tuple.getT2(), req.getTemplateParams());
+                    Set<String> variables = extractVariableNames(tpl.getTitle());
+                    variables.addAll(extractVariableNames(tpl.getContent()));
+                    Set<String> missing = new LinkedHashSet<>();
+                    for (String variable : variables) {
+                        if (!isVariableFilled(mergedParams, variable)) {
+                            missing.add(variable);
+                        }
+                    }
+                    return Collections.unmodifiableSet(missing);
+                });
+    }
+
     /**
      * 在持久层更新某模板某语言正文后可调用，按 templateCode 与 language 前缀清理已编译 Mustache，避免长期堆积旧版本条目
      */
@@ -97,6 +125,35 @@ public class TemplateEngine {
             merged.putAll(requestParams);
         }
         return Collections.unmodifiableMap(merged);
+    }
+
+    private Set<String> extractVariableNames(String templateContent) {
+        if (templateContent == null || templateContent.isBlank()) {
+            return new LinkedHashSet<>();
+        }
+        Set<String> names = new LinkedHashSet<>();
+        Matcher matcher = MUSTACHE_VARIABLE_PATTERN.matcher(templateContent);
+        while (matcher.find()) {
+            names.add(matcher.group(1));
+        }
+        return names;
+    }
+
+    private boolean isVariableFilled(Map<String, Object> params, String variable) {
+        if (params.containsKey(variable)) {
+            return params.get(variable) != null;
+        }
+        if (!variable.contains(".")) {
+            return false;
+        }
+        Object current = params;
+        for (String part : variable.split("\\.")) {
+            if (!(current instanceof Map<?, ?> map) || !map.containsKey(part)) {
+                return false;
+            }
+            current = map.get(part);
+        }
+        return current != null;
     }
 
     private String cacheKey(String templateCode, Language language, String templateContent) {
