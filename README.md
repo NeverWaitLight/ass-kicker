@@ -43,9 +43,10 @@ Ass Kicker 是一个面向多渠道消息发送场景的开源消息平台。
   - 提供登录鉴权和 API 文档
   - 托管打包后的前端页面
 - `svr/worker`
-  - 发送执行服务
-  - 接收发送请求，写入 Kafka
-  - 从 Kafka 消费任务，执行模板渲染、渠道发送和发送记录写入
+  - 发送链路接入与执行服务
+  - 通过 `SendController` 接收 `/v1/send`、`/v1/submit` 发送请求
+  - 通过 `SendTaskProducer` 将任务写入 Kafka
+  - 通过 `SendTaskConsumer` 从 Kafka 消费任务，执行模板渲染、渠道发送和发送记录写入
   - 支持多实例水平扩展
 - `svr/common`
   - 共享实体、枚举、仓储、模板引擎、渠道实现和公共配置
@@ -153,7 +154,9 @@ npm --prefix ui run dev
 - `POST /v1/send`
 - `POST /v1/submit`
 
-当前两者都采用“入队返回 `taskId`”语义，真正的发送由 Kafka 消费端异步执行。
+当前代码实现中，`worker` 同时承担任务接入和任务执行两类职责：`SendController` 接收发送请求并完成校验、补全 `taskId` 和 `submittedAt`，随后调用 `SendTaskProducer` 将 `UniTask` 写入 Kafka；同一个 `worker` 服务内的 `SendTaskConsumer` 再从 Kafka 消费任务并调用发送链路执行真实发送。
+
+因此，`/v1/send` 和 `/v1/submit` 都采用“入队返回 `taskId`”语义，接口返回成功只表示任务已提交到 Kafka，真正的发送由 Kafka 消费端异步完成。
 
 ### Example
 

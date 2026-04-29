@@ -14,7 +14,9 @@ Ass Kicker 当前采用前后端分离 + 双后端服务拆分架构：
   - 单实例部署
 - `svr/worker`
   - 发送任务接入与执行服务
-  - 负责写入 Kafka、消费 Kafka、调度渠道发送与记录结果
+  - 通过 `SendController` 接收发送请求
+  - 通过 `SendTaskProducer` 写入 Kafka
+  - 通过 `SendTaskConsumer` 消费 Kafka、调度渠道发送与记录结果
   - 支持多实例水平扩展
 - `svr/common`
   - 管理端和工作节点共享的领域模型、仓储、模板引擎、渠道实现和公共配置
@@ -70,12 +72,14 @@ Ass Kicker 当前采用前后端分离 + 双后端服务拆分架构：
 - 调用模板渲染与渠道调度逻辑执行发送
 - 写入发送记录
 
+当前代码实现里，任务接入和任务消费都位于 `svr/worker` 模块内：`SendController` 负责 `/v1/send`、`/v1/submit` 的 HTTP 接入和任务补全，`SendTaskProducer` 负责将 `UniTask` 投递到 Kafka，`SendTaskConsumer` 负责监听 Kafka 并触发真实发送。这意味着 `worker` 不是单纯的 MQ 消费进程，而是同时包含“接收任务并入队”和“消费任务并发送”两段链路。
+
 主要接口：
 
 - `POST /v1/send`
 - `POST /v1/submit`
 
-当前这两个接口都采用“入队并返回 `taskId`”语义，真正发送在消费端异步完成。
+当前这两个接口都采用“入队并返回 `taskId`”语义，接口成功返回不表示消息已经发送完成，真正发送在 Kafka 消费端异步完成。
 
 ## 数据流与调用链路
 
