@@ -2,6 +2,8 @@ package com.github.waitlight.asskicker.dto.channel;
 
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.ProviderType;
+import com.github.waitlight.asskicker.model.ChannelRateLimitConfig;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -43,6 +45,9 @@ public class UpdateChannelDTO {
     private String excludeAddressRegex;
 
     private Boolean enabled;
+
+    @Valid
+    private ChannelRateLimitConfig rateLimit;
 
     private Map<String, Object> properties;
 }

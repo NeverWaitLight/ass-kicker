@@ -45,6 +45,9 @@ public class ChannelEntity {
 
         private boolean enabled = true;
 
+        @Field("rate_limit")
+        private ChannelRateLimitConfig rateLimit;
+
         /**
          * 供应商配置，用于存储供应商的配置
          */

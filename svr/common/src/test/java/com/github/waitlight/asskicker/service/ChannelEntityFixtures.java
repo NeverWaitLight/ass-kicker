@@ -28,6 +28,11 @@ public final class ChannelEntityFixtures {
                   "priorityAddressRegex": "^1[3-9]\\\\d{9}$",
                   "excludeAddressRegex": "^1(70|71|162)\\\\d{8}$",
                   "enabled": true,
+                  "rateLimit": {
+                    "enabled": true,
+                    "permitsPerSecond": 5,
+                    "burstCapacity": 10
+                  },
                   "properties": {
                     "accessKeyId": "ak-test",
                     "accessKeySecret": "sk-test",

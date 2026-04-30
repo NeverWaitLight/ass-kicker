@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.ProviderType;
+import com.github.waitlight.asskicker.model.ChannelRateLimitConfig;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,6 +36,8 @@ public class ChannelVO {
     private String excludeAddressRegex;
 
     private boolean enabled;
+
+    private ChannelRateLimitConfig rateLimit;
 
     @Builder.Default
     private JsonNode properties = JsonNodeFactory.instance.objectNode();

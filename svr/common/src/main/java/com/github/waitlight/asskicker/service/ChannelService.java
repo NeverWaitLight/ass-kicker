@@ -154,6 +154,9 @@ public class ChannelService {
         if (patch.isEnabled() != target.isEnabled()) {
             target.setEnabled(patch.isEnabled());
         }
+        if (patch.getRateLimit() != null) {
+            target.setRateLimit(patch.getRateLimit());
+        }
         if (patch.getProperties() != null) {
             target.setProperties(patch.getProperties());
         }

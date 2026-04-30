@@ -152,6 +152,7 @@ class ChannelServiceTest {
         assertThat(actual.getPriorityAddressRegex()).isEqualTo(expected.getPriorityAddressRegex());
         assertThat(actual.getExcludeAddressRegex()).isEqualTo(expected.getExcludeAddressRegex());
         assertThat(actual.isEnabled()).isEqualTo(expected.isEnabled());
+        assertThat(actual.getRateLimit()).usingRecursiveComparison().isEqualTo(expected.getRateLimit());
         assertThat(actual.getProperties()).isEqualTo(expected.getProperties());
     }
 }
