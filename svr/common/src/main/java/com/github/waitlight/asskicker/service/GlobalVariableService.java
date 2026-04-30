@@ -16,7 +16,6 @@ import com.github.waitlight.asskicker.exception.ConflictException;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.model.GlobalVariableEntity;
 import com.github.waitlight.asskicker.repository.GlobalVariableRepository;
-import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +30,6 @@ public class GlobalVariableService {
     private static final String ENABLED_VARIABLES_CACHE_KEY = "enabled";
 
     private final GlobalVariableRepository globalVariableRepository;
-    private final SnowflakeIdGenerator snowflakeIdGenerator;
     private final CaffeineCacheConfig caffeineCacheConfig;
 
     private AsyncLoadingCache<String, Optional<GlobalVariableEntity>> variableByIdCache;
@@ -75,7 +73,6 @@ public class GlobalVariableService {
                 .switchIfEmpty(Mono.defer(() -> {
                     GlobalVariableEntity toCreate = copyFieldsForCreate(entity);
                     long now = Instant.now().toEpochMilli();
-                    toCreate.setId(snowflakeIdGenerator.nextIdString());
                     toCreate.setCreatedAt(now);
                     toCreate.setUpdatedAt(now);
                     return globalVariableRepository.save(toCreate)

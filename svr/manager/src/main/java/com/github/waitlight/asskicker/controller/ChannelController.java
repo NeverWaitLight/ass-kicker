@@ -42,7 +42,7 @@ import com.github.waitlight.asskicker.service.ChannelService;
 import com.github.waitlight.asskicker.service.RecordService;
 import com.github.waitlight.asskicker.model.RecordEntity;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
-import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
+import org.bson.types.ObjectId;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -65,7 +65,6 @@ public class ChannelController {
         private final ChannelFactory channelFactory;
         private final ChannelPropertiesMapper channelPropertiesMapper;
         private final RecordService recordService;
-        private final SnowflakeIdGenerator snowflakeIdGenerator;
 
         @Operation(summary = "test", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @PostMapping("/test")
@@ -95,7 +94,7 @@ public class ChannelController {
                                 ephemeral.getCode());
 
                 long submittedAt = Instant.now().toEpochMilli();
-                String taskId = snowflakeIdGenerator.nextIdString();
+                String taskId = ObjectId.get().toString();
                 UniTask task = UniTask.builder().message(message).address(address).taskId(taskId).submittedAt(submittedAt)
                                 .build();
 

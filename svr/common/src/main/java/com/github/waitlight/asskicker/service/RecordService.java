@@ -6,7 +6,6 @@ import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.record.RecordVO;
 import com.github.waitlight.asskicker.model.RecordEntity;
 import com.github.waitlight.asskicker.repository.RecordRepository;
-import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
@@ -28,7 +27,6 @@ public class RecordService implements DisposableBean {
 
     private final RecordRepository recordRepository;
     private final CaffeineCacheConfig caffeineCacheConfig;
-    private final SnowflakeIdGenerator snowflakeIdGenerator;
     private final List<RecordEntity> buffer = Collections.synchronizedList(new ArrayList<>());
     @Value("${send-record.buffer-size:100}")
     private int bufferSize;
@@ -37,11 +35,9 @@ public class RecordService implements DisposableBean {
     private AsyncLoadingCache<String, Optional<RecordVO>> recordByIdCache;
 
     public RecordService(RecordRepository recordRepository,
-                         CaffeineCacheConfig caffeineCacheConfig,
-                         SnowflakeIdGenerator snowflakeIdGenerator) {
+                         CaffeineCacheConfig caffeineCacheConfig) {
         this.recordRepository = recordRepository;
         this.caffeineCacheConfig = caffeineCacheConfig;
-        this.snowflakeIdGenerator = snowflakeIdGenerator;
     }
 
     @PostConstruct
@@ -77,7 +73,6 @@ public class RecordService implements DisposableBean {
     }
 
     public void writeRecord(RecordEntity record) {
-        record.setId(snowflakeIdGenerator.nextIdString());
         List<RecordEntity> toFlush = null;
         synchronized (buffer) {
             buffer.add(record);

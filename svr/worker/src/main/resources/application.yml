@@ -20,14 +20,6 @@ send-record:
   flush-interval-ms: ${SEND_RECORD_FLUSH_INTERVAL_MS:5000}
   ttl-days: ${SEND_RECORD_TTL_DAYS:7}
 ass-kicker:
-  snowflake:
-    datacenter-id: ${ASS_KICKER_SNOWFLAKE_DATACENTER_ID:0}
-    worker-id: ${ASS_KICKER_SNOWFLAKE_WORKER_ID:}
-    mongo-allocation-enabled: ${ASS_KICKER_SNOWFLAKE_MONGO_ALLOCATION_ENABLED:true}
-    counter-collection: ${ASS_KICKER_SNOWFLAKE_COUNTER_COLLECTION:snowflake_counters}
-    allocation-block-timeout: ${ASS_KICKER_SNOWFLAKE_ALLOCATION_BLOCK_TIMEOUT:PT30S}
-    heartbeat-interval: ${ASS_KICKER_SNOWFLAKE_HEARTBEAT_INTERVAL:PT1M}
-    heartbeat-timeout: ${ASS_KICKER_SNOWFLAKE_HEARTBEAT_TIMEOUT:PT3M}
   cache:
     maximum-size: ${ASS_KICKER_CACHE_MAXIMUM_SIZE:1000}
     expire-after-write-minutes: ${ASS_KICKER_CACHE_EXPIRE_AFTER_WRITE_MINUTES:10}

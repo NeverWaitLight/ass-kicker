@@ -17,7 +17,8 @@ import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.RecordEntity;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
 import com.github.waitlight.asskicker.service.RecordService;
-import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
+
+import org.bson.types.ObjectId;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +34,6 @@ public class Sender {
     private final TemplateEngine templateEngine;
     private final ChannelManager channelManager;
     private final RecordService recordService;
-    private final SnowflakeIdGenerator snowflakeIdGenerator;
 
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
@@ -70,7 +70,7 @@ public class Sender {
 
     private void normalize(UniTask task) {
         if (task.getTaskId() == null || task.getTaskId().isBlank()) {
-            task.setTaskId(snowflakeIdGenerator.nextIdString());
+            task.setTaskId(ObjectId.get().toString());
         }
         if (task.getSubmittedAt() == null) {
             task.setSubmittedAt(Instant.now().toEpochMilli());

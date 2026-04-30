@@ -8,7 +8,6 @@ import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.TemplateEntity;
 import com.github.waitlight.asskicker.repository.TemplateRepository;
-import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +25,6 @@ import java.util.Optional;
 public class TemplateService {
 
     private final TemplateRepository templateRepository;
-    private final SnowflakeIdGenerator snowflakeIdGenerator;
     private final CaffeineCacheConfig caffeineCacheConfig;
 
     private AsyncLoadingCache<String, Optional<TemplateEntity>> templateByIdCache;
@@ -59,7 +57,6 @@ public class TemplateService {
                 .switchIfEmpty(Mono.defer(() -> {
                     TemplateEntity toCreate = copyFieldsForCreate(entity);
                     long now = Instant.now().toEpochMilli();
-                    toCreate.setId(snowflakeIdGenerator.nextIdString());
                     toCreate.setCreatedAt(now);
                     toCreate.setUpdatedAt(now);
                     return templateRepository.save(toCreate)

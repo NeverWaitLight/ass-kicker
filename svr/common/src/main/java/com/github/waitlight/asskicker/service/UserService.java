@@ -10,7 +10,6 @@ import com.github.waitlight.asskicker.model.UserEntity;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.model.UserStatus;
 import com.github.waitlight.asskicker.repository.UserRepository;
-import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import com.github.waitlight.asskicker.util.SoftDeleteConstants;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +31,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final CaffeineCacheConfig caffeineCacheConfig;
-    private final SnowflakeIdGenerator snowflakeIdGenerator;
 
     private AsyncLoadingCache<String, Optional<UserEntity>> userByIdCache;
     private AsyncLoadingCache<String, Optional<UserEntity>> userByUsernameCache;
@@ -63,7 +61,6 @@ public class UserService {
 
     private UserEntity initNewUser(UserEntity u) {
         long now = Instant.now().toEpochMilli();
-        u.setId(snowflakeIdGenerator.nextIdString());
         u.setPassword(passwordEncoder.encode(u.getPassword()));
         u.setRole(Optional.ofNullable(u.getRole()).orElse(UserRole.MEMBER));
         u.setStatus(UserStatus.ACTIVE);

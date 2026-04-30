@@ -7,7 +7,6 @@ import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.exception.PermissionDeniedException;
 import com.github.waitlight.asskicker.model.ApiKeyEntity;
 import com.github.waitlight.asskicker.repository.ApiKeyRepository;
-import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,9 +34,6 @@ class ApiKeyServiceTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private SnowflakeIdGenerator snowflakeIdGenerator;
-
-    @Mock
     private CaffeineCacheConfig caffeineCacheConfig;
 
     private ApiKeyService apiKeyService;
@@ -50,7 +46,7 @@ class ApiKeyServiceTest {
 
         when(caffeineCacheConfig.buildCache(any())).thenAnswer(invocation -> mockCache);
 
-        apiKeyService = new ApiKeyService(apiKeyRepository, passwordEncoder, snowflakeIdGenerator, caffeineCacheConfig);
+        apiKeyService = new ApiKeyService(apiKeyRepository, passwordEncoder, caffeineCacheConfig);
         apiKeyService.init();
     }
 

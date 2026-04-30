@@ -27,7 +27,8 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.Set;
-import java.util.UUID;
+
+import org.bson.types.ObjectId;
 
 @Tag(name = "SendController")
 @RestController
@@ -129,7 +130,7 @@ public class SendController {
                 .message(message)
                 .address(address)
                 .taskId(task.getTaskId() == null || task.getTaskId().isBlank()
-                        ? UUID.randomUUID().toString()
+                        ? ObjectId.get().toString()
                         : task.getTaskId())
                 .submittedAt(task.getSubmittedAt() == null
                         ? Instant.now().toEpochMilli()

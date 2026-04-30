@@ -15,7 +15,6 @@ import com.github.waitlight.asskicker.service.ChannelService;
 import com.github.waitlight.asskicker.service.GlobalVariableService;
 import com.github.waitlight.asskicker.service.TemplateService;
 import com.github.waitlight.asskicker.service.UserService;
-import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import com.github.waitlight.asskicker.config.cache.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.config.jackson.MongoJsonNodeConfig;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
@@ -49,11 +48,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
         CaffeineCacheConfig.class
 })
 public class MongoTestConfiguration {
-
-    @Bean
-    SnowflakeIdGenerator testSnowflakeIdGenerator() {
-        return new SnowflakeIdGenerator(0, 0);
-    }
 
     @Bean
     PasswordEncoder testPasswordEncoder() {

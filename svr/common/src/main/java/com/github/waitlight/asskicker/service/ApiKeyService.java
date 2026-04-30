@@ -14,7 +14,7 @@ import com.github.waitlight.asskicker.model.ApiKeyEntity;
 import com.github.waitlight.asskicker.model.UserRole;
 import com.github.waitlight.asskicker.repository.ApiKeyRepository;
 import com.github.waitlight.asskicker.security.UserPrincipal;
-import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
+import org.bson.types.ObjectId;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,6 @@ public class ApiKeyService {
 
     private final ApiKeyRepository apiKeyRepository;
     private final PasswordEncoder passwordEncoder;
-    private final SnowflakeIdGenerator snowflakeIdGenerator;
     private final CaffeineCacheConfig caffeineCacheConfig;
 
     private AsyncLoadingCache<String, UserPrincipal> authCache;
@@ -62,13 +61,12 @@ public class ApiKeyService {
     }
 
     public Mono<CreateResult> create(String userId, String name) {
-        String raw = API_KEY_PREFIX + snowflakeIdGenerator.nextIdString();
+        String raw = API_KEY_PREFIX + ObjectId.get().toString();
         String keyPrefix = raw.substring(0, 12);
         String keyHash = passwordEncoder.encode(raw);
         long now = Instant.now().toEpochMilli();
 
         ApiKeyEntity apiKey = new ApiKeyEntity();
-        apiKey.setId(snowflakeIdGenerator.nextIdString());
         apiKey.setUserId(userId);
         apiKey.setName(name);
         apiKey.setKeyHash(keyHash);

@@ -8,7 +8,6 @@ import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.ProviderType;
 import com.github.waitlight.asskicker.repository.ChannelRepository;
-import com.github.waitlight.asskicker.util.SnowflakeIdGenerator;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +24,6 @@ import java.util.Optional;
 public class ChannelService {
 
     private final ChannelRepository channelRepository;
-    private final SnowflakeIdGenerator snowflakeIdGenerator;
     private final CaffeineCacheConfig caffeineCacheConfig;
 
     private AsyncLoadingCache<String, Optional<ChannelEntity>> channelByIdCache;
@@ -88,7 +86,6 @@ public class ChannelService {
 
     public Mono<ChannelEntity> create(ChannelEntity c) {
         long now = Instant.now().toEpochMilli();
-        c.setId(snowflakeIdGenerator.nextIdString());
         c.setCreatedAt(now);
         c.setUpdatedAt(now);
         return ensureUniqueKey(c.getCode(), null)
