@@ -66,8 +66,6 @@ services:
       ASS_KICKER_SNOWFLAKE_DATACENTER_ID: ${ASS_KICKER_SNOWFLAKE_DATACENTER_ID:-0}
       ASS_KICKER_SNOWFLAKE_WORKER_ID: ${ASS_KICKER_SNOWFLAKE_WORKER_ID:-}
       SERVER_PORT: 8080
-    ports:
-      - "${MANAGER_PORT:-8080}:8080"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/actuator/health || exit 1"]
       interval: 15s
@@ -79,6 +77,7 @@ services:
     build:
       context: ../svr
       dockerfile: worker/Dockerfile
+    container_name: ass-kicker-worker
     restart: unless-stopped
     depends_on:
       mongo:
@@ -101,6 +100,24 @@ services:
       timeout: 5s
       retries: 5
       start_period: 40s
+
+  ui:
+    build:
+      context: ../ui
+      dockerfile: Dockerfile
+    container_name: ass-kicker-ui
+    restart: unless-stopped
+    depends_on:
+      manager:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-8088}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
   mongo-data:

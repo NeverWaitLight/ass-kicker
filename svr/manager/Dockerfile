@@ -1,17 +1,13 @@
 FROM maven:3.9.9-eclipse-temurin-21-alpine AS builder
 WORKDIR /workspace
 
-RUN apk add --no-cache nodejs npm
-
 COPY svr/pom.xml ./svr/pom.xml
 COPY svr/common/pom.xml ./svr/common/pom.xml
 COPY svr/manager/pom.xml ./svr/manager/pom.xml
-COPY ui/package*.json ./ui/
 RUN mvn -B -q -f svr/pom.xml -pl manager -am -DskipTests dependency:go-offline
 
 COPY svr/common/src ./svr/common/src
 COPY svr/manager/src ./svr/manager/src
-COPY ui ./ui
 RUN mvn -B -f svr/pom.xml -pl manager -am -DskipTests package
 
 FROM eclipse-temurin:21-jre-alpine

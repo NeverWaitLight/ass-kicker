@@ -44,6 +44,18 @@ jobs:
           fi
           echo "version=${V}" >> "${GITHUB_OUTPUT}"
 
+      - name: Build UI
+        working-directory: ui
+        run: npm ci && npm run build
+
+      - name: Package UI dist
+        run: |
+          set -euo pipefail
+          V="${{ steps.ver.outputs.version }}"
+          mkdir -p dist
+          tar -czf dist/ui-${V}.tar.gz -C ui/dist .
+          cd ui/dist && zip -r ../../dist/ui-${V}.zip .
+
       - name: Build module distributions
         working-directory: svr
         run: mvn -B clean package -DskipTests
@@ -52,7 +64,6 @@ jobs:
         run: |
           set -euo pipefail
           V="${{ steps.ver.outputs.version }}"
-          mkdir -p dist
           cp "svr/manager/target/$(basename "$(find svr/manager/target -maxdepth 1 -name 'manager-*.tar.gz' | head -n 1)")" "dist/manager-${V}.tar.gz"
           cp "svr/manager/target/$(basename "$(find svr/manager/target -maxdepth 1 -name 'manager-*.zip' | head -n 1)")" "dist/manager-${V}.zip"
           cp "svr/worker/target/$(basename "$(find svr/worker/target -maxdepth 1 -name 'worker-*.tar.gz' | head -n 1)")" "dist/worker-${V}.tar.gz"
@@ -74,6 +85,14 @@ jobs:
             dist/worker-${{ steps.ver.outputs.version }}.zip
           if-no-files-found: error
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ui-${{ steps.ver.outputs.version }}-dist
+          path: |
+            dist/ui-${{ steps.ver.outputs.version }}.tar.gz
+            dist/ui-${{ steps.ver.outputs.version }}.zip
+          if-no-files-found: error
+
       - name: Publish GitHub release assets
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
@@ -86,3 +105,5 @@ jobs:
             dist/manager-${{ steps.ver.outputs.version }}.zip
             dist/worker-${{ steps.ver.outputs.version }}.tar.gz
             dist/worker-${{ steps.ver.outputs.version }}.zip
+            dist/ui-${{ steps.ver.outputs.version }}.tar.gz
+            dist/ui-${{ steps.ver.outputs.version }}.zip

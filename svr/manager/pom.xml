@@ -14,9 +14,6 @@
   <description>Manager server module</description>
 
   <properties>
-    <ui.dir>${project.parent.basedir}/../ui</ui.dir>
-    <ui.dist.dir>${ui.dir}/dist</ui.dist.dir>
-    <npm.executable>npm</npm.executable>
     <distribution.baseName>manager-${project.version}</distribution.baseName>
   </properties>
 
@@ -67,65 +64,6 @@
         <artifactId>maven-compiler-plugin</artifactId>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>3.5.0</version>
-        <executions>
-          <execution>
-            <id>ui-npm-ci</id>
-            <phase>generate-resources</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <workingDirectory>${ui.dir}</workingDirectory>
-              <executable>${npm.executable}</executable>
-              <arguments>
-                <argument>ci</argument>
-              </arguments>
-            </configuration>
-          </execution>
-          <execution>
-            <id>ui-npm-build</id>
-            <phase>generate-resources</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <workingDirectory>${ui.dir}</workingDirectory>
-              <executable>${npm.executable}</executable>
-              <arguments>
-                <argument>run</argument>
-                <argument>build</argument>
-              </arguments>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>3.3.1</version>
-        <executions>
-          <execution>
-            <id>copy-ui-dist</id>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${ui.dist.dir}</directory>
-                  <filtering>false</filtering>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
       </plugin>
@@ -167,17 +105,4 @@
     </plugins>
   </build>
 
-  <profiles>
-    <profile>
-      <id>windows-npm</id>
-      <activation>
-        <os>
-          <family>Windows</family>
-        </os>
-      </activation>
-      <properties>
-        <npm.executable>npm.cmd</npm.executable>
-      </properties>
-    </profile>
-  </profiles>
-</project>
+  </project>
