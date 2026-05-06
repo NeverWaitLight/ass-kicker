@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 PIDS=()
 LOG_DIR="${ROOT}/logs"
-PORTS=(8080 8081 5173)
+PORTS=(8080 5173)
 CLEANUP_PORTS=0
 
 port_pids() {
@@ -124,22 +124,19 @@ echo
 check_ports_available
 
 mkdir -p "${LOG_DIR}"
-: >"${LOG_DIR}/manager.log"
-: >"${LOG_DIR}/worker.log"
+: >"${LOG_DIR}/svr.log"
 : >"${LOG_DIR}/ui.log"
 
-echo "Preparing common module..."
-mvn -f "${ROOT}/svr/common/pom.xml" clean install -DskipTests
+echo "Building server..."
+mvn -f "${ROOT}/svr/pom.xml" clean compile -DskipTests -q
 echo
 
 CLEANUP_PORTS=1
-run_bg "manager" "${LOG_DIR}/manager.log" mvn -f "${ROOT}/svr/pom.xml" -pl manager -Dexec.skip=true clean spring-boot:run
-run_bg "worker" "${LOG_DIR}/worker.log" mvn -f "${ROOT}/svr/pom.xml" -pl worker clean spring-boot:run
+run_bg "svr" "${LOG_DIR}/svr.log" mvn -f "${ROOT}/svr/pom.xml" spring-boot:run
 run_bg "ui" "${LOG_DIR}/ui.log" npm --prefix "${ROOT}/ui" run dev -- --host 0.0.0.0 --strictPort
 
 echo
-echo "Manager: http://localhost:8080"
-echo "Worker:  http://localhost:8081"
+echo "Server:  http://localhost:8080"
 echo "UI:      http://localhost:5173"
 echo
 echo "Waiting for debug ports..."
@@ -148,8 +145,7 @@ wait_for_ports
 echo
 echo "All debug processes started. Press Ctrl+C to stop."
 echo "Logs:"
-echo "  ${LOG_DIR}/manager.log"
-echo "  ${LOG_DIR}/worker.log"
+echo "  ${LOG_DIR}/svr.log"
 echo "  ${LOG_DIR}/ui.log"
 
 monitor_ports
