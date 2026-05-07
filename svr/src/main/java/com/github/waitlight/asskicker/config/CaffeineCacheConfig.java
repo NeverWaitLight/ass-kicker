@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.config.cache;
+package com.github.waitlight.asskicker.config;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;

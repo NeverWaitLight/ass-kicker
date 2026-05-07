@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.config.channel.ChannelObjectMapperConfig;
+import com.github.waitlight.asskicker.config.ChannelObjectMapperConfig;
 
 import lombok.extern.slf4j.Slf4j;
 

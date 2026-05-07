@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.config.webclient;
+package com.github.waitlight.asskicker.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

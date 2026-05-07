@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.github.waitlight.asskicker.config.openapi.OpenApiConfig;
+import com.github.waitlight.asskicker.config.OpenApiConfig;
 import com.github.waitlight.asskicker.converter.GlobalVariableConverter;
 import com.github.waitlight.asskicker.dto.PageReq;
 import com.github.waitlight.asskicker.dto.PageResp;

@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.config.channel;
+package com.github.waitlight.asskicker.config;
 
 import jakarta.validation.constraints.Min;
 import lombok.Getter;

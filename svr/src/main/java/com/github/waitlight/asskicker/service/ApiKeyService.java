@@ -6,7 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
-import com.github.waitlight.asskicker.config.cache.CaffeineCacheConfig;
+import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.exception.PermissionDeniedException;
 import com.github.waitlight.asskicker.exception.UnauthorizedException;

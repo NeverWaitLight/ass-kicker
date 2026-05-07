@@ -25,6 +25,18 @@ services:
     networks:
       - rocketmq
 
+  dashboard:
+    image: apacherocketmq/rocketmq-dashboard:latest
+    container_name: rmqdashboard
+    ports:
+      - "8082:8082"
+    environment:
+      - JAVA_OPTS=-Drocketmq.namesrv.addr=namesrv:9876
+    depends_on:
+      - namesrv
+    networks:
+      - rocketmq
+
 networks:
   rocketmq:
     driver: bridge

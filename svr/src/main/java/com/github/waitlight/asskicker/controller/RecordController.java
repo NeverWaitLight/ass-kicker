@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.github.waitlight.asskicker.config.openapi.OpenApiConfig;
+import com.github.waitlight.asskicker.config.OpenApiConfig;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.record.RecordVO;

@@ -2,7 +2,7 @@ package com.github.waitlight.asskicker.service;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.waitlight.asskicker.config.cache.CaffeineCacheConfig;
+import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.exception.PermissionDeniedException;
 import com.github.waitlight.asskicker.model.ApiKeyEntity;

@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.channel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.config.channel.ChannelObjectMapperConfig;
+import com.github.waitlight.asskicker.config.ChannelObjectMapperConfig;
 import com.github.waitlight.asskicker.dto.channel.ChannelPropertyFieldVO;
 import com.github.waitlight.asskicker.dto.channel.ChannelProviderOptionVO;
 import com.github.waitlight.asskicker.exception.BadRequestException;

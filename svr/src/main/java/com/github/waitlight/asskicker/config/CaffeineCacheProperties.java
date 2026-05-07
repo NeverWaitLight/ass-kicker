@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.config.cache;
+package com.github.waitlight.asskicker.config;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.config.jackson;
+package com.github.waitlight.asskicker.config;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
