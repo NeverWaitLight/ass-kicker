@@ -136,16 +136,14 @@ run_bg "svr" "${LOG_DIR}/svr.log" mvn -f "${ROOT}/svr/pom.xml" spring-boot:run
 run_bg "ui" "${LOG_DIR}/ui.log" npm --prefix "${ROOT}/ui" run dev -- --host 0.0.0.0 --strictPort
 
 echo
-echo "Server:  http://localhost:8080"
-echo "UI:      http://localhost:5173"
-echo
 echo "Waiting for debug ports..."
 wait_for_ports
 
 echo
 echo "All debug processes started. Press Ctrl+C to stop."
-echo "Logs:"
-echo "  ${LOG_DIR}/svr.log"
-echo "  ${LOG_DIR}/ui.log"
+echo "Server:  http://localhost:8080"
+echo "         ${LOG_DIR}/svr.log"
+echo "UI:      http://localhost:5173"
+echo "         ${LOG_DIR}/ui.log"
 
 monitor_ports
