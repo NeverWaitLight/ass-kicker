@@ -16,10 +16,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.github.waitlight.asskicker.TemplateEngine;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
+import com.github.waitlight.asskicker.faced.TemplateEngine;
 import com.github.waitlight.asskicker.mq.SendTaskProducer;
 import com.github.waitlight.asskicker.model.Language;
 

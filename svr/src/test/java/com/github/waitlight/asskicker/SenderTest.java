@@ -33,6 +33,8 @@ import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
+import com.github.waitlight.asskicker.faced.Sender;
+import com.github.waitlight.asskicker.faced.TemplateEngine;
 
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;

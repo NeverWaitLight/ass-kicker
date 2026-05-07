@@ -19,6 +19,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.mustachejava.Mustache;
 import com.github.waitlight.asskicker.config.cache.CaffeineCacheProperties;
 import com.github.waitlight.asskicker.dto.UniMessage;
+import com.github.waitlight.asskicker.faced.TemplateEngine;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.TemplateEntity;
 import com.github.waitlight.asskicker.service.GlobalVariableService;

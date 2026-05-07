@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker;
+package com.github.waitlight.asskicker.faced;
 
 import java.io.StringReader;
 import java.io.StringWriter;

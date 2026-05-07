@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker;
+package com.github.waitlight.asskicker.faced;
 
 import java.time.Instant;
 import java.util.Set;
