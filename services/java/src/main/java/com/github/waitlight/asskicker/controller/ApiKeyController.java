@@ -34,7 +34,7 @@ import reactor.core.publisher.Mono;
 
 @Tag(name = "ApiKeyController")
 @RestController
-@RequestMapping("/v1/auth/apikeys")
+@RequestMapping("/v1/apikeys")
 @RequiredArgsConstructor
 @Validated
 public class ApiKeyController {
