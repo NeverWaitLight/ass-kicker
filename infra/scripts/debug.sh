@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 PIDS=()
 LOG_DIR="${ROOT}/logs"
@@ -128,12 +128,12 @@ mkdir -p "${LOG_DIR}"
 : >"${LOG_DIR}/ui.log"
 
 echo "Building server..."
-mvn -f "${ROOT}/svr/pom.xml" clean compile -DskipTests -q
+mvn -f "${ROOT}/services/java/pom.xml" clean compile -DskipTests -q
 echo
 
 CLEANUP_PORTS=1
-run_bg "svr" "${LOG_DIR}/svr.log" mvn -f "${ROOT}/svr/pom.xml" spring-boot:run
-run_bg "ui" "${LOG_DIR}/ui.log" npm --prefix "${ROOT}/ui" run dev -- --host 0.0.0.0 --strictPort
+run_bg "svr" "${LOG_DIR}/svr.log" mvn -f "${ROOT}/services/java/pom.xml" spring-boot:run
+run_bg "ui" "${LOG_DIR}/ui.log" npm --prefix "${ROOT}/web" run dev -- --host 0.0.0.0 --strictPort
 
 echo
 echo "Waiting for debug ports..."
