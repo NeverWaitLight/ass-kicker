@@ -6,7 +6,6 @@
 ass-kicker/
 ├── README.md                  # 项目总览、快速上手
 ├── LICENSE
-├── Makefile                   # 顶层编排入口 (build/test/deploy 统一命令)
 ├── .gitignore
 │
 ├── services/                  # ===== 后端服务 =====
@@ -63,21 +62,37 @@ ass-kicker/
 | **文档按类型分**                 | 架构、API、设计决策(ADR) 各有归属，避免 docs 变垃圾场                      |
 | **CI/CD 用 `.github/workflows`** | 每个服务一条 pipeline，独立触发                                            |
 
-## Makefile 命令
+## 常用命令
 
-| 命令                 | 说明                   |
-| -------------------- | ---------------------- |
-| `make build`         | 构建全部 (Java + Web)  |
-| `make build-java`    | 仅构建 Java 后端       |
-| `make build-web`     | 仅构建前端             |
-| `make test`          | 运行全部测试           |
-| `make test-java`     | 仅运行 Java 测试       |
-| `make test-web`      | 仅运行前端测试         |
-| `make run-java`      | 启动 Java 后端         |
-| `make run-web`       | 启动前端开发服务器     |
-| `make deps-mongo`    | 启动 MongoDB (Docker)  |
-| `make deps-rocketmq` | 启动 RocketMQ (Docker) |
-| `make clean`         | 清理构建产物           |
+### 后端 (Java)
+
+| 命令 | 说明 |
+|---|---|
+| `mvn -f services/java/pom.xml spring-boot:run` | 启动后端服务 |
+| `mvn -f services/java/pom.xml clean package` | 构建发行包（含前端联动） |
+| `mvn -f services/java/pom.xml clean package -DskipTests` | 构建发行包（跳过测试） |
+| `mvn -f services/java/pom.xml test` | 运行单元测试 |
+
+### 前端 (Web)
+
+| 命令 | 说明 |
+|---|---|
+| `npm --prefix web run dev` | 启动前端开发服务器 |
+| `npm --prefix web ci && npm --prefix web run build` | 构建前端 |
+| `npm --prefix web run test:unit` | 运行前端测试 |
+
+### 基础设施 (Docker)
+
+| 命令 | 说明 |
+|---|---|
+| `docker compose -f infra/docker/docker-compose-mongodb.yml up -d` | 启动 MongoDB |
+| `docker compose -f infra/docker/docker-compose-rocketmq.yml up -d` | 启动 RocketMQ |
+
+### 一键调试
+
+```bash
+bash infra/scripts/debug.sh
+```
 
 ## 补充建议
 
