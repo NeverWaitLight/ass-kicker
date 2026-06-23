@@ -30,7 +30,6 @@
     <aliyun.dysmsapi.version>4.1.1</aliyun.dysmsapi.version>
     <springdoc.version>2.8.16</springdoc.version>
     <commons-lang3.version>3.15.0</commons-lang3.version>
-    <flapdoodle.version>4.24.0</flapdoodle.version>
   </properties>
 
   <dependencyManagement>
@@ -189,12 +188,6 @@
       <groupId>com.icegreen</groupId>
       <artifactId>greenmail-junit5</artifactId>
       <version>${greenmail.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>de.flapdoodle.embed</groupId>
-      <artifactId>de.flapdoodle.embed.mongo.spring3x</artifactId>
-      <version>${flapdoodle.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
