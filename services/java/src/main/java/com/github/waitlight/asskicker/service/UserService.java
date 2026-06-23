@@ -163,6 +163,18 @@ public class UserService {
                 .flatMap(found -> Mono.<Void>error(new ConflictException("user.username.exists")));
     }
 
+    public Mono<UserEntity> kickOut(String id) {
+        return userRepository.findById(id)
+                .switchIfEmpty(Mono.error(new NotFoundException("user.id.notFound", id)))
+                .flatMap(user -> {
+                    long now = Instant.now().toEpochMilli();
+                    user.setKickedOutAt(now);
+                    user.setUpdatedAt(now);
+                    return userRepository.save(user)
+                            .doOnSuccess(saved -> invalidateUserCaches(user, saved));
+                });
+    }
+
     private void invalidateUserCaches(UserEntity existing, UserEntity saved) {
         userByIdCache.synchronous().invalidate(saved.getId());
         userByUsernameCache.synchronous().invalidate(existing.getUsername());

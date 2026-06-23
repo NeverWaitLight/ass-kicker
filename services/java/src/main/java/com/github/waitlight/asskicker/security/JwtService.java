@@ -77,6 +77,7 @@ public class JwtService {
         }
         UserRole role = UserRole.valueOf(roleValue);
         String userId = claims.getSubject();
-        return new JwtPayload(userId, role, expectedType);
+        Long issuedAt = claims.getIssuedAt() != null ? claims.getIssuedAt().getTime() : null;
+        return new JwtPayload(userId, role, expectedType, issuedAt);
     }
 }

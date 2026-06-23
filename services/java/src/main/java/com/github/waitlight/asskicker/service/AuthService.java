@@ -60,6 +60,10 @@ public class AuthService {
                             if (user.getStatus() == UserStatus.DISABLED) {
                                 return Mono.error(new PermissionDeniedException("auth.user.disabled"));
                             }
+                            if (user.getKickedOutAt() != null && payload.issuedAt() != null
+                                    && payload.issuedAt() < user.getKickedOutAt()) {
+                                return Mono.error(new UnauthorizedException("auth.token.revoked"));
+                            }
                             return Mono.just(new TokenVO(
                                     jwtService.generateAccessToken(user),
                                     jwtService.generateRefreshToken(user),

@@ -25,8 +25,9 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http,
                                                          JwtService jwtService,
-                                                         ApiKeyService apiKeyService) {
-        JwtReactiveAuthenticationManager jwtManager = new JwtReactiveAuthenticationManager(jwtService);
+                                                         ApiKeyService apiKeyService,
+                                                         com.github.waitlight.asskicker.service.UserService userService) {
+        JwtReactiveAuthenticationManager jwtManager = new JwtReactiveAuthenticationManager(jwtService, userService);
         ApiKeyReactiveAuthenticationManager apiKeyManager = new ApiKeyReactiveAuthenticationManager(apiKeyService);
         OrReactiveAuthenticationManager combinedManager = new OrReactiveAuthenticationManager(jwtManager, apiKeyManager);
 

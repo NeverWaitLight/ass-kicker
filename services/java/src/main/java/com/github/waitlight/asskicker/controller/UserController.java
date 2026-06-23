@@ -78,6 +78,14 @@ public class UserController {
         return userService.delete(id);
     }
 
+    @Operation(summary = "kickOut", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @PostMapping("/{id}/kick-out")
+    public Mono<Resp<UserVO>> kickOut(@PathVariable @NotBlank String id) {
+        return userService.kickOut(id)
+                .map(userConverter::toVO)
+                .map(Resp::success);
+    }
+
     @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
     public Mono<Resp<UserVO>> getById(@PathVariable String id) {

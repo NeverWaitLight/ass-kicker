@@ -39,6 +39,9 @@ public class UserEntity {
     @Field("last_login_at")
     private Long lastLoginAt;
 
+    @Field("kicked_out_at")
+    private Long kickedOutAt;
+
     @Field("deleted_at")
     private Long deletedAt;
 }
