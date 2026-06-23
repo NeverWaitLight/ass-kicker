@@ -2,7 +2,7 @@ spring:
   application:
     name: ${SPRING_APPLICATION_NAME:ass-kicker}
   messages:
-    basename: ValidationMessages
+    basename: i18n/ValidationMessages
     encoding: UTF-8
   main:
     web-application-type: reactive
