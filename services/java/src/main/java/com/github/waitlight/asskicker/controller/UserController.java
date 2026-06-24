@@ -34,7 +34,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
-@Tag(name = "UserController")
+@Tag(name = "用户管理")
 @RestController
 @RequestMapping("/v1/users")
 @RequiredArgsConstructor
@@ -45,7 +45,7 @@ public class UserController {
     private final UserService userService;
     private final UserConverter userConverter;
 
-    @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "创建用户", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
     public Mono<Resp<UserVO>> create(@RequestBody @Validated CreateUserDTO user) {
         user = new CreateUserDTO(user.username().trim(), user.password());
@@ -54,7 +54,7 @@ public class UserController {
                 .map(Resp::success);
     }
 
-    @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "更新用户", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PatchMapping
     public Mono<Resp<UserVO>> update(@RequestBody @Validated UpdateUserDTO user) {
         return userService.update(userConverter.toEntity(user))
@@ -62,7 +62,7 @@ public class UserController {
                 .map(Resp::success);
     }
 
-    @Operation(summary = "resetPassword", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "重置密码", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PutMapping("/password")
     public Mono<Resp<UserVO>> resetPassword(
             @RequestBody @Validated ResetPasswordDTO user) {
@@ -71,14 +71,14 @@ public class UserController {
                 .map(Resp::success);
     }
 
-    @Operation(summary = "delete", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "删除用户", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> delete(@PathVariable @NotBlank String id) {
         return userService.delete(id);
     }
 
-    @Operation(summary = "kickOut", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "踢下线", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping("/{id}/kick-out")
     public Mono<Resp<UserVO>> kickOut(@PathVariable @NotBlank String id) {
         return userService.kickOut(id)
@@ -86,7 +86,7 @@ public class UserController {
                 .map(Resp::success);
     }
 
-    @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "查询用户", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
     public Mono<Resp<UserVO>> getById(@PathVariable String id) {
         return userService.getById(id)
@@ -94,7 +94,7 @@ public class UserController {
                 .map(Resp::success);
     }
 
-    @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "分页查询", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
     public Mono<PageResp<UserVO>> page(@Validated PageReq pageReq) {
         int page = pageReq.getPage();

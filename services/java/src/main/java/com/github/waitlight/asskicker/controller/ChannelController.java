@@ -52,7 +52,7 @@ import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 import java.time.Instant;
 
-@Tag(name = "ChannelController")
+@Tag(name = "渠道管理")
 @RestController
 @RequestMapping("/v1/channels")
 @RequiredArgsConstructor
@@ -66,7 +66,7 @@ public class ChannelController {
         private final ChannelPropertiesMapper channelPropertiesMapper;
         private final RecordService recordService;
 
-        @Operation(summary = "test", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+        @Operation(summary = "测试渠道", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @PostMapping("/test")
         public Mono<Resp<ChannelTestResultVO>> test(@Valid @RequestBody TestChannelDTO request) {
                 ProviderType provider = resolveProviderForTest(request.getType(), request.getProvider());
@@ -140,7 +140,7 @@ public class ChannelController {
                 recordService.writeRecord(sr);
         }
 
-        @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+        @Operation(summary = "创建渠道", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @PostMapping
         public Mono<Resp<ChannelVO>> create(@Valid @RequestBody CreateChannelDTO request) {
                 channelManager.validateProperties(request.getProvider(), request.getProperties());
@@ -152,7 +152,7 @@ public class ChannelController {
                                 .map(Resp::success);
         }
 
-        @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+        @Operation(summary = "分页查询", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @GetMapping
         public Mono<PageResp<ChannelVO>> page(@Validated PageReq pageReq,
                         @RequestParam(required = false) ChannelType channelType,
@@ -174,14 +174,14 @@ public class ChannelController {
                                 });
         }
 
-        @Operation(summary = "channelTypes", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+        @Operation(summary = "渠道类型列表", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @GetMapping("/types")
         public Mono<Resp<List<ChannelType>>> channelTypes() {
                 return Mono.fromSupplier(() -> List.of(ChannelType.values()))
                                 .map(Resp::success);
         }
 
-        @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+        @Operation(summary = "查询渠道", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @GetMapping("/{id}")
         public Mono<Resp<ChannelVO>> getById(@PathVariable String id) {
                 return channelService.getById(id)
@@ -189,7 +189,7 @@ public class ChannelController {
                                 .map(Resp::success);
         }
 
-        @Operation(summary = "providerProperties", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+        @Operation(summary = "服务商属性配置", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @GetMapping("/{providerType}/properties")
         public Mono<Resp<ChannelPropertiesSchemaVO>> providerProperties(@PathVariable ProviderType providerType) {
                 return Mono.fromSupplier(() -> ChannelPropertiesSchemaVO.builder()
@@ -198,7 +198,7 @@ public class ChannelController {
                                 .map(Resp::success);
         }
 
-        @Operation(summary = "providersByChannelType", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+        @Operation(summary = "按渠道类型查询服务商", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @GetMapping("/{channelType}/providers")
         public Mono<Resp<List<ChannelProviderOptionVO>>> providersByChannelType(
                         @PathVariable ChannelType channelType) {
@@ -206,7 +206,7 @@ public class ChannelController {
                                 .map(Resp::success);
         }
 
-        @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+        @Operation(summary = "更新渠道", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @PutMapping
         public Mono<Resp<ChannelVO>> update(@Valid @RequestBody UpdateChannelDTO request) {
                 channelManager.validateProperties(request.getProvider(), request.getProperties());
@@ -218,7 +218,7 @@ public class ChannelController {
                                 .map(Resp::success);
         }
 
-        @Operation(summary = "delete", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+        @Operation(summary = "删除渠道", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @DeleteMapping("/{id}")
         public Mono<Void> delete(@PathVariable String id) {
                 return channelService.delete(id);

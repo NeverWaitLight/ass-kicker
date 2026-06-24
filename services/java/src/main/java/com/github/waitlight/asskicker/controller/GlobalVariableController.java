@@ -32,7 +32,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
-@Tag(name = "GlobalVariableController")
+@Tag(name = "全局变量")
 @RestController
 @RequestMapping("/v1/global-variables")
 @RequiredArgsConstructor
@@ -42,7 +42,7 @@ public class GlobalVariableController {
     private final GlobalVariableService globalVariableService;
     private final GlobalVariableConverter globalVariableConverter;
 
-    @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "创建变量", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
     public Mono<Resp<GlobalVariableVO>> create(@Valid @RequestBody CreateGlobalVariableDTO request) {
         return Mono.just(request)
@@ -52,7 +52,7 @@ public class GlobalVariableController {
                 .map(Resp::success);
     }
 
-    @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "更新变量", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PutMapping
     public Mono<Resp<GlobalVariableVO>> update(@Valid @RequestBody UpdateGlobalVariableDTO request) {
         return Mono.just(request)
@@ -62,14 +62,14 @@ public class GlobalVariableController {
                 .map(Resp::success);
     }
 
-    @Operation(summary = "delete", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "删除变量", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> delete(@PathVariable @NotBlank String id) {
         return globalVariableService.delete(id);
     }
 
-    @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "查询变量", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
     public Mono<Resp<GlobalVariableVO>> getById(@PathVariable String id) {
         return globalVariableService.findById(id)
@@ -77,7 +77,7 @@ public class GlobalVariableController {
                 .map(Resp::success);
     }
 
-    @Operation(summary = "getByKey", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "按键名查询", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/key/{key}")
     public Mono<Resp<GlobalVariableVO>> getByKey(@PathVariable String key) {
         return globalVariableService.findByKey(key)
@@ -85,7 +85,7 @@ public class GlobalVariableController {
                 .map(Resp::success);
     }
 
-    @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "分页查询", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
     public Mono<PageResp<GlobalVariableVO>> page(@Validated PageReq pageReq) {
         int page = pageReq.getPage();

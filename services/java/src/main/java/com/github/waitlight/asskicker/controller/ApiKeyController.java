@@ -32,7 +32,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
-@Tag(name = "ApiKeyController")
+@Tag(name = "API Keys")
 @RestController
 @RequestMapping("/v1/apikeys")
 @RequiredArgsConstructor
@@ -42,7 +42,7 @@ public class ApiKeyController {
     private final ApiKeyService apiKeyService;
     private final ApiKeyConverter apiKeyConverter;
 
-    @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "创建密钥", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
     public Mono<Resp<CreateApiKeyVO>> create(
             @AuthenticationPrincipal UserPrincipal principal,
@@ -53,7 +53,7 @@ public class ApiKeyController {
                 .map(Resp::success);
     }
 
-    @Operation(summary = "list", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "密钥列表", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
     public Mono<Resp<List<ApiKeyVO>>> list(@AuthenticationPrincipal UserPrincipal principal) {
         return apiKeyService.list(principal.userId())
@@ -62,7 +62,7 @@ public class ApiKeyController {
                 .map(Resp::success);
     }
 
-    @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "更新密钥", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PatchMapping
     public Mono<Resp<ApiKeyVO>> update(
             @AuthenticationPrincipal UserPrincipal principal,
@@ -72,7 +72,7 @@ public class ApiKeyController {
                 .map(Resp::success);
     }
 
-    @Operation(summary = "delete", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "删除密钥", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> delete(

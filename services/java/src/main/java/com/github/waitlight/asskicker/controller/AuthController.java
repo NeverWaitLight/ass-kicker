@@ -23,7 +23,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
-@Tag(name = "AuthController")
+@Tag(name = "登录授权")
 @RestController
 @RequestMapping("/v1/auth")
 @RequiredArgsConstructor
@@ -33,7 +33,7 @@ public class AuthController {
         private final UserService userService;
         private final UserConverter userConverter;
 
-        @Operation(summary = "login")
+        @Operation(summary = "登录")
         @PostMapping("/login")
         public Mono<Resp<TokenVO>> login(@RequestBody @Validated LoginDTO request) {
                 request = new LoginDTO(request.username().trim(), request.password());
@@ -41,7 +41,7 @@ public class AuthController {
                                 .map(Resp::success);
         }
 
-        @Operation(summary = "register")
+        @Operation(summary = "注册")
         @PostMapping("/register")
         public Mono<Resp<UserVO>> register(@RequestBody @Validated CreateUserDTO request) {
                 request = new CreateUserDTO(request.username().trim(), request.password());
@@ -57,7 +57,7 @@ public class AuthController {
                                 .map(Resp::success);
         }
 
-        @Operation(summary = "refresh")
+        @Operation(summary = "刷新令牌")
         @PostMapping("/refresh")
         public Mono<Resp<TokenVO>> refresh(@RequestBody @Validated RefreshDTO request) {
                 return authService.refresh(request.refreshToken())

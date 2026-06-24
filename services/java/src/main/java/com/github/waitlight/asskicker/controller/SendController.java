@@ -30,7 +30,7 @@ import java.util.Set;
 
 import org.bson.types.ObjectId;
 
-@Tag(name = "SendController")
+@Tag(name = "发送消息")
 @RestController
 @RequestMapping("/v1")
 @RequiredArgsConstructor
@@ -40,7 +40,7 @@ public class SendController {
     private final TemplateEngine templateEngine;
 
     @Operation(
-        summary = "send",
+        summary = "发送消息",
         security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT),
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
             required = true,
@@ -72,7 +72,7 @@ public class SendController {
     }
 
     @Operation(
-        summary = "submit",
+        summary = "提交任务",
         security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT),
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
             required = true,

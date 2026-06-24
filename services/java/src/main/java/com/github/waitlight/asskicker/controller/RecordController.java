@@ -19,7 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
-@Tag(name = "RecordController")
+@Tag(name = "发送记录")
 @RestController
 @RequestMapping("/v1/records")
 @RequiredArgsConstructor
@@ -27,7 +27,7 @@ public class RecordController {
 
     private final RecordService recordService;
 
-    @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "分页查询", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
     public Mono<PageResp<RecordVO>> page(
             @RequestParam(defaultValue = "1") @Parameter(description = "页码，从1开始", example = "1") int page,
@@ -39,7 +39,7 @@ public class RecordController {
                 .map(pr -> PageResp.success(pr.page(), pr.size(), pr.total(), pr.data()));
     }
 
-    @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "查询记录", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
     public Mono<Resp<RecordVO>> getById(
             @PathVariable @Parameter(description = "发送记录ID") String id) {

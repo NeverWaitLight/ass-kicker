@@ -34,7 +34,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
-@Tag(name = "TemplateController")
+@Tag(name = "消息模板")
 @RestController
 @RequestMapping("/v1/templates")
 @RequiredArgsConstructor
@@ -44,7 +44,7 @@ public class TemplateController {
     private final TemplateService templateService;
     private final TemplateConverter templateConverter;
 
-    @Operation(summary = "create", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "创建模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
     public Mono<Resp<TemplateVO>> create(@Valid @RequestBody CreateTemplateDTO request) {
         return Mono.just(request)
@@ -54,7 +54,7 @@ public class TemplateController {
                 .map(Resp::success);
     }
 
-    @Operation(summary = "update", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "更新模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PutMapping
     public Mono<Resp<TemplateVO>> update(@Valid @RequestBody UpdateTemplateDTO request) {
         return Mono.just(request)
@@ -64,14 +64,14 @@ public class TemplateController {
                 .map(Resp::success);
     }
 
-    @Operation(summary = "delete", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "删除模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> delete(@PathVariable @NotBlank String id) {
         return templateService.delete(id);
     }
 
-    @Operation(summary = "getById", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "查询模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
     public Mono<Resp<TemplateVO>> getById(@PathVariable String id) {
         return templateService.findById(id)
@@ -79,7 +79,7 @@ public class TemplateController {
                 .map(Resp::success);
     }
 
-    @Operation(summary = "page", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "分页查询", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
     public Mono<PageResp<TemplateVO>> page(@Validated PageReq pageReq,
             @RequestParam(required = false) ChannelType channelType) {
@@ -100,7 +100,7 @@ public class TemplateController {
                 });
     }
 
-    @Operation(summary = "getByCode", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @Operation(summary = "按编码查询", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/code/{code}")
     public Mono<Resp<TemplateVO>> getByCode(@PathVariable String code) {
         return templateService.findByCode(code)
