@@ -68,10 +68,11 @@ public class UserController {
     }
 
     @Operation(summary = "重置密码", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-    @PutMapping("/password")
+    @PutMapping("/{id}/password")
     public Mono<Resp<UserVO>> resetPassword(
+            @PathVariable @NotBlank String id,
             @RequestBody @Validated ResetPasswordDTO user) {
-        return userService.resetPassword(user.id(), user.newPassword(), user.currPassword())
+        return userService.resetPassword(id, user.newPassword(), user.currPassword())
                 .map(userConverter::toVO)
                 .map(Resp::success);
     }
