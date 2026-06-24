@@ -49,8 +49,6 @@ public class SecurityConfig {
                         .pathMatchers("/v1/auth/login", "/v1/auth/register", "/v1/auth/refresh",
                                 "/actuator/health")
                         .permitAll()
-                        .pathMatchers(HttpMethod.PATCH, "/v1/users/me").authenticated()
-                        .pathMatchers(HttpMethod.PUT, "/v1/users/me/password").authenticated()
                         .pathMatchers("/v1/users/**").hasRole("ADMIN")
                         .pathMatchers("/v1/global-variables/**").hasRole("ADMIN")
                         .pathMatchers("/v1/channel-providers/**").hasRole("ADMIN")
