@@ -113,6 +113,7 @@ public class UserService {
     private UserEntity markAsDeleted(UserEntity user) {
         long now = Instant.now().toEpochMilli();
         user.setDeletedAt(now);
+        user.setKickedOutAt(now);
         user.setUpdatedAt(now);
         return user;
     }
