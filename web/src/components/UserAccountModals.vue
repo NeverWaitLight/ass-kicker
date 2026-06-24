@@ -173,14 +173,9 @@ const submitUsername = async () => {
   }
   updatingName.value = true
   try {
-    const userId = currentUser.value?.id
-    if (!userId) {
-      message.error(t('user.userNotFound'))
-      return
-    }
-    const response = await apiFetch(`/v1/users`, {
+    const response = await apiFetch('/v1/me', {
       method: 'PATCH',
-      body: JSON.stringify({ id: userId, username: usernameForm.username })
+      body: JSON.stringify({ username: usernameForm.username })
     })
     if (!response.ok) {
       message.error(await response.text())
@@ -205,17 +200,11 @@ const submitPassword = async () => {
   }
   updatingPassword.value = true
   try {
-    const userId = currentUser.value?.id
-    if (!userId) {
-      message.error(t('user.userNotFound'))
-      return
-    }
-    const response = await apiFetch('/v1/users/password', {
+    const response = await apiFetch('/v1/me/password', {
       method: 'PUT',
       body: JSON.stringify({
-        id: userId,
-        password: passwordForm.newPassword,
-        currPassword: passwordForm.oldPassword
+        oldPassword: passwordForm.oldPassword,
+        newPassword: passwordForm.newPassword
       })
     })
     if (!response.ok) {

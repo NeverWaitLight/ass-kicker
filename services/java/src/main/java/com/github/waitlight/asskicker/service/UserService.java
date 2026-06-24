@@ -163,6 +163,29 @@ public class UserService {
                 .flatMap(found -> Mono.<Void>error(new ConflictException("user.username.exists")));
     }
 
+    public Mono<UserEntity> updateUsername(String id, String newUsername) {
+        if (!StringUtils.hasText(id) || !StringUtils.hasText(newUsername)) {
+            return Mono.error(new BadRequestException("user.id.or.username.empty"));
+        }
+
+        String trimmedUsername = newUsername.trim();
+        return userRepository.findById(id)
+                .switchIfEmpty(Mono.error(new NotFoundException("user.id.notFound", id)))
+                .flatMap(existing -> {
+                    if (trimmedUsername.equals(existing.getUsername())) {
+                        return Mono.just(existing);
+                    }
+                    return userRepository.findByUsername(trimmedUsername)
+                            .flatMap(found -> Mono.<UserEntity>error(new ConflictException("user.username.exists")))
+                            .switchIfEmpty(Mono.defer(() -> {
+                                existing.setUsername(trimmedUsername);
+                                existing.setUpdatedAt(Instant.now().toEpochMilli());
+                                return userRepository.save(existing)
+                                        .doOnSuccess(saved -> invalidateUserCaches(existing, saved));
+                            }));
+                });
+    }
+
     public Mono<UserEntity> kickOut(String id) {
         return userRepository.findById(id)
                 .switchIfEmpty(Mono.error(new NotFoundException("user.id.notFound", id)))
