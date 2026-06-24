@@ -168,6 +168,14 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- Spring Boot DevTools -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-devtools</artifactId>
+      <scope>runtime</scope>
+      <optional>true</optional>
+    </dependency>
+
     <!-- Test -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -220,6 +228,11 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <profiles>
+            <profile>dev</profile>
+          </profiles>
+        </configuration>
       </plugin>
     </plugins>
   </build>
