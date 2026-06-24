@@ -21,6 +21,7 @@ public interface UserConverter {
     @Mapping(target = "deletedAt", ignore = true)
     UserEntity toEntity(CreateUserDTO dto);
 
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "role", ignore = true)
     @Mapping(target = "createdAt", ignore = true)

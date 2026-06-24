@@ -25,6 +25,7 @@ import com.github.waitlight.asskicker.dto.user.CreateUserDTO;
 import com.github.waitlight.asskicker.dto.user.ResetPasswordDTO;
 import com.github.waitlight.asskicker.dto.user.UpdateUserDTO;
 import com.github.waitlight.asskicker.dto.user.UserVO;
+import com.github.waitlight.asskicker.model.UserEntity;
 import com.github.waitlight.asskicker.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -55,9 +56,13 @@ public class UserController {
     }
 
     @Operation(summary = "更新用户", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-    @PatchMapping
-    public Mono<Resp<UserVO>> update(@RequestBody @Validated UpdateUserDTO user) {
-        return userService.update(userConverter.toEntity(user))
+    @PatchMapping("/{id}")
+    public Mono<Resp<UserVO>> update(
+            @PathVariable @NotBlank String id,
+            @RequestBody @Validated UpdateUserDTO user) {
+        UserEntity entity = userConverter.toEntity(user);
+        entity.setId(id);
+        return userService.update(entity)
                 .map(userConverter::toVO)
                 .map(Resp::success);
     }
