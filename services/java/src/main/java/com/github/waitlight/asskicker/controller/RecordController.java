@@ -13,7 +13,6 @@ import com.github.waitlight.asskicker.dto.record.RecordVO;
 import com.github.waitlight.asskicker.service.RecordService;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -30,10 +29,10 @@ public class RecordController {
     @Operation(summary = "分页查询", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
     public Mono<PageResp<RecordVO>> page(
-            @RequestParam(defaultValue = "1") @Parameter(description = "页码，从1开始", example = "1") int page,
-            @RequestParam(defaultValue = "10") @Parameter(description = "每页大小", example = "10") int size,
-            @RequestParam(required = false) @Parameter(description = "收件人") String recipient,
-            @RequestParam(required = false) @Parameter(description = "渠道类型") String channelType) {
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String recipient,
+            @RequestParam(required = false) String channelType) {
 
         return recordService.page(page, size, recipient, channelType)
                 .map(pr -> PageResp.success(pr.page(), pr.size(), pr.total(), pr.data()));
@@ -41,8 +40,7 @@ public class RecordController {
 
     @Operation(summary = "查询记录", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
-    public Mono<Resp<RecordVO>> getById(
-            @PathVariable @Parameter(description = "发送记录ID") String id) {
+    public Mono<Resp<RecordVO>> getById(@PathVariable String id) {
 
         return recordService.getById(id)
                 .map(Resp::success);
