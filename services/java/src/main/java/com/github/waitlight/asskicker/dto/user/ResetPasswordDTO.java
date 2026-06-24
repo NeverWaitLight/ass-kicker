@@ -9,7 +9,7 @@ public record ResetPasswordDTO(
 
         @NotBlank(message = "{user.password.notblank}")
         @Size(min = 8, message = "{user.password.size}")
-        String password,
+        String newPassword,
 
         @NotBlank(message = "{user.currPassword.notblank}")
         @Size(min = 8, message = "{user.password.size}")

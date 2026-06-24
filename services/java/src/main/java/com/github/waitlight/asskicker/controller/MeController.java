@@ -57,7 +57,7 @@ public class MeController {
     public Mono<Resp<UserVO>> updateMyPassword(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody @Validated UpdateMyPasswordDTO req) {
-        return userService.resetPassword(principal.userId(), req.newPassword(), req.oldPassword())
+        return userService.resetPassword(principal.userId(), req.newPassword(), req.currPassword())
                 .map(userConverter::toVO)
                 .map(Resp::success);
     }

@@ -5,9 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 
 @Schema(description = "修改当前用户密码")
 public record UpdateMyPasswordDTO(
-        @NotBlank(message = "旧密码不能为空")
-        @Schema(description = "旧密码", example = "oldpassword123")
-        String oldPassword,
+        @NotBlank(message = "当前密码不能为空")
+        @Schema(description = "当前密码", example = "currentpassword123")
+        String currPassword,
 
         @NotBlank(message = "新密码不能为空")
         @Schema(description = "新密码", example = "newpassword123")

@@ -66,7 +66,7 @@ public class UserController {
     @PutMapping("/password")
     public Mono<Resp<UserVO>> resetPassword(
             @RequestBody @Validated ResetPasswordDTO user) {
-        return userService.resetPassword(user.id(), user.password(), user.currPassword())
+        return userService.resetPassword(user.id(), user.newPassword(), user.currPassword())
                 .map(userConverter::toVO)
                 .map(Resp::success);
     }
