@@ -5,8 +5,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.github.waitlight.asskicker.converter.UserConverter;
-import com.github.waitlight.asskicker.dto.auth.LoginDTO;
 import com.github.waitlight.asskicker.dto.auth.TokenVO;
+import com.github.waitlight.asskicker.dto.user.SignInDTO;
 import com.github.waitlight.asskicker.exception.BadRequestException;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.exception.PermissionDeniedException;
@@ -26,18 +26,18 @@ public class AuthService {
     private final JwtService jwtService;
     private final UserConverter userConverter;
 
-    public Mono<TokenVO> login(LoginDTO request) {
+    public Mono<TokenVO> signIn(SignInDTO request) {
         if (request == null || StringUtils.isBlank(request.username()) || StringUtils.isBlank(request.password())) {
             return Mono.error(new BadRequestException("auth.credentials.empty"));
         }
         return userService.findByUsername(request.username())
-                .switchIfEmpty(Mono.error(new UnauthorizedException("auth.login.failed")))
+                .switchIfEmpty(Mono.error(new UnauthorizedException("auth.signin.failed")))
                 .flatMap(user -> {
                     if (user.getStatus() == UserStatus.DISABLED) {
                         return Mono.error(new PermissionDeniedException("auth.user.disabled"));
                     }
                     if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-                        return Mono.error(new UnauthorizedException("auth.login.failed"));
+                        return Mono.error(new UnauthorizedException("auth.signin.failed"));
                     }
                     return userService.recordLogin(user);
                 })

@@ -21,8 +21,8 @@ import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.PageReq;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
-import com.github.waitlight.asskicker.dto.user.CreateUserDTO;
 import com.github.waitlight.asskicker.dto.user.ResetPasswordDTO;
+import com.github.waitlight.asskicker.dto.user.SignUpDTO;
 import com.github.waitlight.asskicker.dto.user.UpdateUserDTO;
 import com.github.waitlight.asskicker.dto.user.UserVO;
 import com.github.waitlight.asskicker.model.UserEntity;
@@ -48,8 +48,8 @@ public class UserController {
 
     @Operation(summary = "创建用户", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
-    public Mono<Resp<UserVO>> create(@RequestBody @Validated CreateUserDTO user) {
-        user = new CreateUserDTO(user.username().trim(), user.password());
+    public Mono<Resp<UserVO>> create(@RequestBody @Validated SignUpDTO user) {
+        user = new SignUpDTO(user.username().trim(), user.password());
         return userService.create(userConverter.toEntity(user))
                 .map(userConverter::toVO)
                 .map(Resp::success);

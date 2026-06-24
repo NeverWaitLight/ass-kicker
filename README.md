@@ -150,7 +150,7 @@ bash infra/scripts/debug.sh
 注册用户：
 
 ```bash
-curl -X POST http://localhost:8080/v1/auth/register \
+curl -X POST http://localhost:8080/v1/auth/signup \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"pass"}'
 ```
@@ -158,7 +158,7 @@ curl -X POST http://localhost:8080/v1/auth/register \
 登录获取 token：
 
 ```bash
-curl -X POST http://localhost:8080/v1/auth/login \
+curl -X POST http://localhost:8080/v1/auth/signin \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"pass"}'
 ```

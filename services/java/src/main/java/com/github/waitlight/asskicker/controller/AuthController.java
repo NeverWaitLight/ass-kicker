@@ -8,10 +8,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.Resp;
-import com.github.waitlight.asskicker.dto.auth.LoginDTO;
 import com.github.waitlight.asskicker.dto.auth.RefreshDTO;
 import com.github.waitlight.asskicker.dto.auth.TokenVO;
-import com.github.waitlight.asskicker.dto.user.CreateUserDTO;
+import com.github.waitlight.asskicker.dto.user.SignInDTO;
+import com.github.waitlight.asskicker.dto.user.SignUpDTO;
 import com.github.waitlight.asskicker.dto.user.UserVO;
 import com.github.waitlight.asskicker.model.UserEntity;
 import com.github.waitlight.asskicker.model.UserRole;
@@ -34,18 +34,18 @@ public class AuthController {
         private final UserConverter userConverter;
 
         @Operation(summary = "登录")
-        @PostMapping("/login")
-        public Mono<Resp<TokenVO>> login(@RequestBody @Validated LoginDTO request) {
-                request = new LoginDTO(request.username().trim(), request.password());
-                return authService.login(request)
+        @PostMapping("/signin")
+        public Mono<Resp<TokenVO>> signIn(@RequestBody @Validated SignInDTO dto) {
+                dto = new SignInDTO(dto.username().trim(), dto.password());
+                return authService.signIn(dto)
                                 .map(Resp::success);
         }
 
         @Operation(summary = "注册")
-        @PostMapping("/register")
-        public Mono<Resp<UserVO>> register(@RequestBody @Validated CreateUserDTO request) {
-                request = new CreateUserDTO(request.username().trim(), request.password());
-                UserEntity entity = userConverter.toEntity(request);
+        @PostMapping("/signup")
+        public Mono<Resp<UserVO>> signUp(@RequestBody @Validated SignUpDTO dto) {
+                dto = new SignUpDTO(dto.username().trim(), dto.password());
+                UserEntity entity = userConverter.toEntity(dto);
                 return userService.count(null)
                                 .flatMap(count -> {
                                         if (count == 0) {

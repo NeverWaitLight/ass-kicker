@@ -46,7 +46,7 @@ public class SecurityConfig {
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers("/v3/api-docs/**", "/v3/api-docs.yaml", "/scalar", "/scalar/**", "/webjars/**")
                         .permitAll()
-                        .pathMatchers("/v1/auth/login", "/v1/auth/register", "/v1/auth/refresh",
+                        .pathMatchers("/v1/auth/signin", "/v1/auth/signup", "/v1/auth/refresh",
                                 "/actuator/health")
                         .permitAll()
                         .pathMatchers("/v1/me/**").authenticated()

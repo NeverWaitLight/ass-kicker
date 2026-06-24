@@ -97,7 +97,7 @@ const registerRules = {
 const onSubmit = async () => {
   loading.value = true
   try {
-    const response = await fetch('/v1/auth/login', {
+    const response = await fetch('/v1/auth/signin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form)
@@ -129,7 +129,7 @@ const onSubmit = async () => {
 const onRegister = async () => {
   registering.value = true
   try {
-    const response = await fetch('/v1/auth/register', {
+    const response = await fetch('/v1/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
