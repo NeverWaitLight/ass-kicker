@@ -4,7 +4,7 @@ import com.github.waitlight.asskicker.model.UserStatus;
 import jakarta.validation.constraints.Pattern;
 
 public record UserDTO(
-        @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "{user.username.pattern}")
+        @Pattern(regexp = "^[a-zA-Z0-9]+$")
         String username,
 
         UserStatus status

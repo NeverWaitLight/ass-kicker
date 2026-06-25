@@ -14,18 +14,18 @@ import lombok.NoArgsConstructor;
 public class CreateGlobalVariableDTO {
 
     @NotBlank
-    @Size(max = 100, message = "{globalVariable.key.size}")
+    @Size(max = 100)
     private String key;
 
     @NotBlank
-    @Size(max = 255, message = "{globalVariable.name.size}")
+    @Size(max = 255)
     private String name;
 
     @NotBlank
-    @Size(max = 2000, message = "{globalVariable.value.size}")
+    @Size(max = 2000)
     private String value;
 
-    @Size(max = 1000, message = "{globalVariable.description.size}")
+    @Size(max = 1000)
     private String description;
 
     @Builder.Default

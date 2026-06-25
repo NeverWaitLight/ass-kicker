@@ -17,10 +17,10 @@ public class ChannelRateLimitConfig {
     @Builder.Default
     private boolean enabled = false;
 
-    @Min(value = 1, message = "{channel.rateLimit.permitsPerSecond.min}")
+    @Min(1)
     private Integer permitsPerSecond;
 
-    @Min(value = 1, message = "{channel.rateLimit.burstCapacity.min}")
+    @Min(1)
     private Integer burstCapacity;
 
     @AssertTrue(message = "{channel.rateLimit.permitsPerSecond.required}")

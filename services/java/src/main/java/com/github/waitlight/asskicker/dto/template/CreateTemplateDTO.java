@@ -21,11 +21,11 @@ import lombok.NoArgsConstructor;
 public class CreateTemplateDTO {
 
     @NotBlank
-    @Size(max = 100, message = "{template.code.size}")
+    @Size(max = 100)
     private String code;
 
     @NotBlank
-    @Size(max = 255, message = "{template.name.size}")
+    @Size(max = 255)
     private String name;
 
     @NotNull

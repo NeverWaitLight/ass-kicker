@@ -21,10 +21,10 @@ public class UpdateTemplateDTO {
     @NotBlank
     private String id;
 
-    @Size(max = 100, message = "{template.code.size}")
+    @Size(max = 100)
     private String code;
 
-    @Size(max = 255, message = "{template.name.size}")
+    @Size(max = 255)
     private String name;
 
     private ChannelType channelType;

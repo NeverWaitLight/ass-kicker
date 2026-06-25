@@ -8,12 +8,12 @@ import jakarta.validation.constraints.Size;
 
 public record PasswordDTO(
         @NotBlank
-        @Size(min = 8, message = "{user.password.size}")
+        @Size(min = 8)
         @JsonDeserialize(using = StringDeserializer.class)
         String newPassword,
 
         @NotBlank
-        @Size(min = 8, message = "{user.password.size}")
+        @Size(min = 8)
         @JsonDeserialize(using = StringDeserializer.class)
         String currPassword
 ) {

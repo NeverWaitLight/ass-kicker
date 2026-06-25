@@ -7,7 +7,7 @@ public record UpdateApiKeyDTO(
         @NotBlank
         String id,
         @NotBlank
-        @Size(max = 100, message = "{apikey.name.size}")
+        @Size(max = 100)
         String name
 ) {
 }

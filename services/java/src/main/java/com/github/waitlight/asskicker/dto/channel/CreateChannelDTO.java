@@ -25,11 +25,11 @@ import lombok.NoArgsConstructor;
 public class CreateChannelDTO {
 
     @NotBlank
-    @Size(max = 100, message = "{channel.key.size}")
+    @Size(max = 100)
     private String key;
 
     @NotBlank
-    @Size(max = 255, message = "{channel.name.size}")
+    @Size(max = 255)
     private String name;
 
     @NotNull
@@ -38,13 +38,13 @@ public class CreateChannelDTO {
     @NotNull
     private ProviderType provider;
 
-    @Size(max = 1000, message = "{channel.description.size}")
+    @Size(max = 1000)
     private String description;
 
-    @Size(max = 2048, message = "{channel.priorityAddressRegex.size}")
+    @Size(max = 2048)
     private String priorityAddressRegex;
 
-    @Size(max = 2048, message = "{channel.excludeAddressRegex.size}")
+    @Size(max = 2048)
     private String excludeAddressRegex;
 
     @Builder.Default

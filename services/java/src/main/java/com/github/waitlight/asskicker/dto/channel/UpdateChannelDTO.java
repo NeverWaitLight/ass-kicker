@@ -25,23 +25,23 @@ public class UpdateChannelDTO {
     @NotBlank
     private String id;
 
-    @Size(max = 100, message = "{channel.key.size}")
+    @Size(max = 100)
     private String key;
 
-    @Size(max = 255, message = "{channel.name.size}")
+    @Size(max = 255)
     private String name;
 
     private ChannelType type;
 
     private ProviderType provider;
 
-    @Size(max = 1000, message = "{channel.description.size}")
+    @Size(max = 1000)
     private String description;
 
-    @Size(max = 2048, message = "{channel.priorityAddressRegex.size}")
+    @Size(max = 2048)
     private String priorityAddressRegex;
 
-    @Size(max = 2048, message = "{channel.excludeAddressRegex.size}")
+    @Size(max = 2048)
     private String excludeAddressRegex;
 
     private Boolean enabled;
