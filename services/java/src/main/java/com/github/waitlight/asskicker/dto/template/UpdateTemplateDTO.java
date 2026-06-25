@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class UpdateTemplateDTO {
 
-    @NotBlank(message = "{template.id.notblank}")
+    @NotBlank
     private String id;
 
     @Size(max = 100, message = "{template.code.size}")

@@ -24,18 +24,18 @@ import lombok.NoArgsConstructor;
 @Builder
 public class CreateChannelDTO {
 
-    @NotBlank(message = "{channel.key.notblank}")
+    @NotBlank
     @Size(max = 100, message = "{channel.key.size}")
     private String key;
 
-    @NotBlank(message = "{channel.name.notblank}")
+    @NotBlank
     @Size(max = 255, message = "{channel.name.size}")
     private String name;
 
-    @NotNull(message = "{channel.type.notnull}")
+    @NotNull
     private ChannelType type;
 
-    @NotNull(message = "{channel.provider.notnull}")
+    @NotNull
     private ProviderType provider;
 
     @Size(max = 1000, message = "{channel.description.size}")

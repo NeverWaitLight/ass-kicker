@@ -167,11 +167,11 @@ public class AliyunSmsChannel extends Channel {
     }
 
     record Properties(
-            @NotBlank(message = "{channel.aliyunSms.accessKeyId.notblank}") String accessKeyId,
-            @NotBlank(message = "{channel.aliyunSms.accessKeySecret.notblank}") String accessKeySecret,
-            @NotBlank(message = "{channel.aliyunSms.signName.notblank}") String signName,
+            @NotBlank String accessKeyId,
+            @NotBlank String accessKeySecret,
+            @NotBlank String signName,
             String templateCode,
             String regionId,
-            @NotBlank(message = "{channel.aliyunSms.endpoint.notblank}") String endpoint) {
+            @NotBlank String endpoint) {
     }
 }

@@ -124,11 +124,11 @@ public class SmtpChannel extends Channel {
     }
 
     record Properties(
-            @NotBlank(message = "{channel.smtp.host.notblank}") String host,
+            @NotBlank String host,
             int port,
-            @NotBlank(message = "{channel.smtp.username.notblank}") String username,
+            @NotBlank String username,
             String password,
-            @NotBlank(message = "{channel.smtp.from.notblank}") String from,
+            @NotBlank String from,
             boolean sslEnabled,
             boolean startTls,
             Integer connectionTimeout,

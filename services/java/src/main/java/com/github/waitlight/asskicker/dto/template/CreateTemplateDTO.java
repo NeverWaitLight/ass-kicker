@@ -20,18 +20,18 @@ import lombok.NoArgsConstructor;
 @Builder
 public class CreateTemplateDTO {
 
-    @NotBlank(message = "{template.code.notblank}")
+    @NotBlank
     @Size(max = 100, message = "{template.code.size}")
     private String code;
 
-    @NotBlank(message = "{template.name.notblank}")
+    @NotBlank
     @Size(max = 255, message = "{template.name.size}")
     private String name;
 
-    @NotNull(message = "{template.channelType.notnull}")
+    @NotNull
     private ChannelType channelType;
 
-    @NotNull(message = "{template.templates.notnull}")
+    @NotNull
     @Builder.Default
     private JsonNode templates = JsonNodeFactory.instance.objectNode();
 

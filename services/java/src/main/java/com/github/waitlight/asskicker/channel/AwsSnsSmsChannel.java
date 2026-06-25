@@ -140,9 +140,9 @@ public class AwsSnsSmsChannel extends Channel {
     }
 
     record Properties(
-            @NotBlank(message = "{channel.awsSnsSms.accessKeyId.notblank}") String accessKeyId,
-            @NotBlank(message = "{channel.awsSnsSms.secretAccessKey.notblank}") String secretAccessKey,
-            @NotBlank(message = "{channel.awsSnsSms.region.notblank}") String region,
+            @NotBlank String accessKeyId,
+            @NotBlank String secretAccessKey,
+            @NotBlank String region,
             String sessionToken,
             String endpoint) {
     }

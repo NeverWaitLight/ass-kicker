@@ -22,7 +22,7 @@ import java.util.Map;
 @Builder
 public class UpdateChannelDTO {
 
-    @NotBlank(message = "{channel.id.notblank}")
+    @NotBlank
     private String id;
 
     @Size(max = 100, message = "{channel.key.size}")

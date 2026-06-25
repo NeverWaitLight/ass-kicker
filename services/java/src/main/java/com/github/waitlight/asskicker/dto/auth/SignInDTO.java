@@ -8,11 +8,11 @@ import jakarta.validation.constraints.NotBlank;
 
 @Schema(description = "用户登录")
 public record SignInDTO(
-        @NotBlank(message = "{user.username.notblank}")
+        @NotBlank
         @Schema(description = "用户名", requiredMode = Schema.RequiredMode.REQUIRED)
         String username,
 
-        @NotBlank(message = "{user.password.notblank}")
+        @NotBlank
         @Schema(description = "密码", requiredMode = Schema.RequiredMode.REQUIRED)
         @JsonDeserialize(using = StringDeserializer.class)
         String password

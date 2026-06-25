@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class UpdateGlobalVariableDTO {
 
-    @NotBlank(message = "{globalVariable.id.notblank}")
+    @NotBlank
     private String id;
 
     @Size(max = 100, message = "{globalVariable.key.size}")

@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record CreateApiKeyDTO(
-        @NotBlank(message = "{apikey.name.notblank}")
+        @NotBlank
         @Size(max = 100, message = "{apikey.name.size}")
         String name
 ) {

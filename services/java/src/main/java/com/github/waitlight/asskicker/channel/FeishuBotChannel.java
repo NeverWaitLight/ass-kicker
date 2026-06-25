@@ -195,10 +195,10 @@ public class FeishuBotChannel extends Channel {
     }
 
     record Properties(
-            @NotBlank(message = "{channel.feishuBot.appId.notblank}") String appId,
-            @NotBlank(message = "{channel.feishuBot.appSecret.notblank}") String appSecret,
-            @NotBlank(message = "{channel.feishuBot.tenantTokenUrl.notblank}") String tenantTokenUrl,
-            @NotBlank(message = "{channel.feishuBot.messageSendUrl.notblank}") String messageSendUrl,
+            @NotBlank String appId,
+            @NotBlank String appSecret,
+            @NotBlank String tenantTokenUrl,
+            @NotBlank String messageSendUrl,
             String receiveIdType) {
     }
 }

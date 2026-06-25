@@ -152,8 +152,8 @@ public class FcmChannel extends Channel {
     }
 
     record Properties(
-            @NotBlank(message = "{channel.fcm.url.notblank}") String url,
-            @NotBlank(message = "{channel.fcm.projectId.notblank}") String projectId,
-            @NotBlank(message = "{channel.fcm.accessToken.notblank}") String accessToken) {
+            @NotBlank String url,
+            @NotBlank String projectId,
+            @NotBlank String accessToken) {
     }
 }
