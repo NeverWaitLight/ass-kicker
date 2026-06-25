@@ -4,6 +4,7 @@ spring:
   messages:
     basename: i18n/ValidationMessages
     encoding: UTF-8
+    fallback-to-system-locale: false
   main:
     web-application-type: reactive
   data:

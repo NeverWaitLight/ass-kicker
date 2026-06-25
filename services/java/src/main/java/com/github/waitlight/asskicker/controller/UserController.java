@@ -93,7 +93,7 @@ public class UserController {
 
     @Operation(summary = "查询用户", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping("/{id}")
-    public Mono<Resp<UserVO>> getById(@PathVariable String id) {
+    public Mono<Resp<UserVO>> getById(@PathVariable @NotBlank String id) {
         return userService.getById(id)
                 .map(userConverter::toVO)
                 .map(Resp::success);
