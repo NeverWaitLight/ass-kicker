@@ -185,11 +185,11 @@ public class ApnsChannel extends Channel {
     }
 
     record Properties(
-            @NotBlank(message = "url 不能为空") String url,
-            @NotBlank(message = "bundleIdTopic 不能为空") String bundleIdTopic,
-            @NotBlank(message = "teamId 不能为空") String teamId,
-            @NotBlank(message = "keyId 不能为空") String keyId,
-            @NotBlank(message = "privateKeyPem 不能为空") String privateKeyPem,
+            @NotBlank(message = "{channel.apns.url.notblank}") String url,
+            @NotBlank(message = "{channel.apns.bundleIdTopic.notblank}") String bundleIdTopic,
+            @NotBlank(message = "{channel.apns.teamId.notblank}") String teamId,
+            @NotBlank(message = "{channel.apns.keyId.notblank}") String keyId,
+            @NotBlank(message = "{channel.apns.privateKeyPem.notblank}") String privateKeyPem,
             String apnsId) {
     }
 }

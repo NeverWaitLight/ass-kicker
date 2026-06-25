@@ -199,10 +199,10 @@ public class DingtalkBotChannel extends Channel {
     }
 
     record Properties(
-            @NotBlank(message = "appKey 不能为空") String appKey,
-            @NotBlank(message = "appSecret 不能为空") String appSecret,
-            @NotBlank(message = "robotCode 不能为空") String robotCode,
-            @NotBlank(message = "accessTokenUrl 不能为空") String accessTokenUrl,
-            @NotBlank(message = "groupSendUrl 不能为空") String groupSendUrl) {
+            @NotBlank(message = "{channel.dingtalkBot.appKey.notblank}") String appKey,
+            @NotBlank(message = "{channel.dingtalkBot.appSecret.notblank}") String appSecret,
+            @NotBlank(message = "{channel.dingtalkBot.robotCode.notblank}") String robotCode,
+            @NotBlank(message = "{channel.dingtalkBot.accessTokenUrl.notblank}") String accessTokenUrl,
+            @NotBlank(message = "{channel.dingtalkBot.groupSendUrl.notblank}") String groupSendUrl) {
     }
 }

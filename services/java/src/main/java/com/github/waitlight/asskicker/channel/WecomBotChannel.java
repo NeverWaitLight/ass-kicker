@@ -208,9 +208,9 @@ public class WecomBotChannel extends Channel {
     }
 
     record Properties(
-            @NotBlank(message = "corpId 不能为空") String corpId,
-            @NotBlank(message = "corpSecret 不能为空") String corpSecret,
-            @NotBlank(message = "getTokenUrl 不能为空") String getTokenUrl,
-            @NotBlank(message = "messageSendUrl 不能为空") String messageSendUrl) {
+            @NotBlank(message = "{channel.wecomBot.corpId.notblank}") String corpId,
+            @NotBlank(message = "{channel.wecomBot.corpSecret.notblank}") String corpSecret,
+            @NotBlank(message = "{channel.wecomBot.getTokenUrl.notblank}") String getTokenUrl,
+            @NotBlank(message = "{channel.wecomBot.messageSendUrl.notblank}") String messageSendUrl) {
     }
 }

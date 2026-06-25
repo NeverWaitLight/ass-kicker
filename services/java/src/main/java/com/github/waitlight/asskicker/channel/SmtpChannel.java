@@ -124,11 +124,11 @@ public class SmtpChannel extends Channel {
     }
 
     record Properties(
-            @NotBlank(message = "host 不能为空") String host,
+            @NotBlank(message = "{channel.smtp.host.notblank}") String host,
             int port,
-            @NotBlank(message = "username 不能为空") String username,
+            @NotBlank(message = "{channel.smtp.username.notblank}") String username,
             String password,
-            @NotBlank(message = "from 不能为空") String from,
+            @NotBlank(message = "{channel.smtp.from.notblank}") String from,
             boolean sslEnabled,
             boolean startTls,
             Integer connectionTimeout,

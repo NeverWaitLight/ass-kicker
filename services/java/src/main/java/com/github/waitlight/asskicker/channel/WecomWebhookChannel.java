@@ -146,6 +146,6 @@ public class WecomWebhookChannel extends Channel {
     }
 
     record Properties(
-            @NotBlank(message = "url 不能为空") String url) {
+            @NotBlank(message = "{channel.wecomWebhook.url.notblank}") String url) {
     }
 }

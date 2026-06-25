@@ -9,12 +9,12 @@ import java.util.List;
 import java.util.Map;
 
 public record SendDTO(
-        @NotBlank(message = "模板编码不能为空")
+        @NotBlank(message = "{send.templateCode.notblank}")
         String templateCode,
-        @NotNull(message = "语言不能为空")
+        @NotNull(message = "{send.language.notnull}")
         Language language,
         Map<String, Object> params,
-        @NotEmpty(message = "收件人列表不能为空")
+        @NotEmpty(message = "{send.recipients.notempty}")
         List<String> recipients,
         String taskId,
         Long submittedAt

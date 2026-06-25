@@ -145,6 +145,6 @@ public class FeishuWebhookChannel extends Channel {
         return defaultValue;
     }
 
-    record Properties(@NotBlank(message = "url 不能为空") String url) {
+    record Properties(@NotBlank(message = "{channel.feishuWebhook.url.notblank}") String url) {
     }
 }

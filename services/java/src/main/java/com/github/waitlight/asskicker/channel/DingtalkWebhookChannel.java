@@ -148,6 +148,6 @@ public class DingtalkWebhookChannel extends Channel {
     }
 
     record Properties(
-            @NotBlank(message = "url 不能为空") String url) {
+            @NotBlank(message = "{channel.dingtalkWebhook.url.notblank}") String url) {
     }
 }
