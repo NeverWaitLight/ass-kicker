@@ -21,7 +21,7 @@ import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.PageReq;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
-import com.github.waitlight.asskicker.dto.user.ResetPasswordDTO;
+import com.github.waitlight.asskicker.dto.user.UpdatePasswordDTO;
 import com.github.waitlight.asskicker.dto.auth.SignUpDTO;
 import com.github.waitlight.asskicker.dto.user.UpdateUserDTO;
 import com.github.waitlight.asskicker.dto.user.UserVO;
@@ -70,7 +70,7 @@ public class UserController {
     @PutMapping("/{id}/password")
     public Mono<Resp<UserVO>> resetPassword(
             @PathVariable @NotBlank String id,
-            @RequestBody @Validated ResetPasswordDTO user) {
+            @RequestBody @Validated UpdatePasswordDTO user) {
         return userService.resetPassword(id, user.newPassword(), user.currPassword())
                 .map(userConverter::toVO)
                 .map(Resp::success);

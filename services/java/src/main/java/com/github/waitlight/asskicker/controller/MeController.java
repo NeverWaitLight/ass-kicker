@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.controller;
 
+import com.github.waitlight.asskicker.dto.user.UpdatePasswordDTO;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +14,6 @@ import com.github.waitlight.asskicker.config.OpenApiConfig;
 import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.user.UpdateMeDTO;
-import com.github.waitlight.asskicker.dto.user.UpdateMyPasswordDTO;
 import com.github.waitlight.asskicker.dto.user.UserVO;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.service.UserService;
@@ -56,7 +56,7 @@ public class MeController {
     @PutMapping("/password")
     public Mono<Resp<UserVO>> updateMyPassword(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestBody @Validated UpdateMyPasswordDTO req) {
+            @RequestBody @Validated UpdatePasswordDTO req) {
         return userService.resetPassword(principal.userId(), req.newPassword(), req.currPassword())
                 .map(userConverter::toVO)
                 .map(Resp::success);
