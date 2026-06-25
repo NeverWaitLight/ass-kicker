@@ -1,27 +1,20 @@
 package com.github.waitlight.asskicker.controller;
 
-import com.github.waitlight.asskicker.dto.user.UpdatePasswordDTO;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.github.waitlight.asskicker.config.OpenApiConfig;
 import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.Resp;
-import com.github.waitlight.asskicker.dto.user.UpdateMeDTO;
+import com.github.waitlight.asskicker.dto.user.PasswordDTO;
+import com.github.waitlight.asskicker.dto.user.UserDTO;
 import com.github.waitlight.asskicker.dto.user.UserVO;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.service.UserService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 @Tag(name = "个人信息")
@@ -46,8 +39,8 @@ public class MeController {
     @PatchMapping
     public Mono<Resp<UserVO>> updateMe(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestBody @Validated UpdateMeDTO req) {
-        return userService.updateUsername(principal.userId(), req.username())
+            @RequestBody @Validated UserDTO dto) {
+        return userService.updateUsername(principal.userId(), dto.username())
                 .map(userConverter::toVO)
                 .map(Resp::success);
     }
@@ -56,7 +49,7 @@ public class MeController {
     @PutMapping("/password")
     public Mono<Resp<UserVO>> updateMyPassword(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestBody @Validated UpdatePasswordDTO req) {
+            @RequestBody @Validated PasswordDTO req) {
         return userService.resetPassword(principal.userId(), req.newPassword(), req.currPassword())
                 .map(userConverter::toVO)
                 .map(Resp::success);

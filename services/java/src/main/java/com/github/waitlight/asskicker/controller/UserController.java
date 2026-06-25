@@ -2,6 +2,7 @@ package com.github.waitlight.asskicker.controller;
 
 import java.util.List;
 
+import com.github.waitlight.asskicker.dto.user.UserDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -21,9 +22,8 @@ import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.PageReq;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
-import com.github.waitlight.asskicker.dto.user.UpdatePasswordDTO;
+import com.github.waitlight.asskicker.dto.user.PasswordDTO;
 import com.github.waitlight.asskicker.dto.auth.SignUpDTO;
-import com.github.waitlight.asskicker.dto.user.UpdateUserDTO;
 import com.github.waitlight.asskicker.dto.user.UserVO;
 import com.github.waitlight.asskicker.model.UserEntity;
 import com.github.waitlight.asskicker.service.UserService;
@@ -58,7 +58,7 @@ public class UserController {
     @PatchMapping("/{id}")
     public Mono<Resp<UserVO>> update(
             @PathVariable @NotBlank String id,
-            @RequestBody @Validated UpdateUserDTO user) {
+            @RequestBody @Validated UserDTO user) {
         UserEntity entity = userConverter.toEntity(user);
         entity.setId(id);
         return userService.update(entity)
@@ -70,7 +70,7 @@ public class UserController {
     @PutMapping("/{id}/password")
     public Mono<Resp<UserVO>> resetPassword(
             @PathVariable @NotBlank String id,
-            @RequestBody @Validated UpdatePasswordDTO user) {
+            @RequestBody @Validated PasswordDTO user) {
         return userService.resetPassword(id, user.newPassword(), user.currPassword())
                 .map(userConverter::toVO)
                 .map(Resp::success);

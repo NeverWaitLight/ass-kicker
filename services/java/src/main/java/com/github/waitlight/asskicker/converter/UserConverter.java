@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.converter;
 
 import com.github.waitlight.asskicker.dto.auth.SignUpDTO;
-import com.github.waitlight.asskicker.dto.user.UpdateUserDTO;
+import com.github.waitlight.asskicker.dto.user.UserDTO;
 import com.github.waitlight.asskicker.dto.user.UserVO;
 import com.github.waitlight.asskicker.model.UserEntity;
 import org.mapstruct.Mapper;
@@ -28,6 +28,6 @@ public interface UserConverter {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "lastLoginAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
-    UserEntity toEntity(UpdateUserDTO dto);
+    UserEntity toEntity(UserDTO dto);
 
 }
