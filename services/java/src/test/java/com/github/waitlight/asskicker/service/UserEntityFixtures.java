@@ -13,7 +13,7 @@ public final class UserEntityFixtures {
         UserEntity user = new UserEntity();
         user.setUsername("testuser");
         user.setPassword("password123");
-        user.setRole(UserRole.MEMBER);
+        user.setRole(UserRole.DEVELOPER);
         user.setStatus(UserStatus.ACTIVE);
         return user;
     }
@@ -31,7 +31,7 @@ public final class UserEntityFixtures {
         UserEntity user = new UserEntity();
         user.setUsername("disableduser");
         user.setPassword("disabledpass123");
-        user.setRole(UserRole.MEMBER);
+        user.setRole(UserRole.DEVELOPER);
         user.setStatus(UserStatus.DISABLED);
         return user;
     }
@@ -40,7 +40,7 @@ public final class UserEntityFixtures {
         UserEntity user = new UserEntity();
         user.setUsername(username);
         user.setPassword("password123");
-        user.setRole(UserRole.MEMBER);
+        user.setRole(UserRole.DEVELOPER);
         user.setStatus(UserStatus.ACTIVE);
         return user;
     }
@@ -49,7 +49,7 @@ public final class UserEntityFixtures {
         UserEntity user = new UserEntity();
         user.setUsername("testuser");
         user.setPassword(password);
-        user.setRole(UserRole.MEMBER);
+        user.setRole(UserRole.DEVELOPER);
         user.setStatus(UserStatus.ACTIVE);
         return user;
     }

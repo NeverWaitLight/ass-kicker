@@ -45,7 +45,7 @@ public class ApiKeyService {
                                     if (!matches) {
                                         return Mono.error(new UnauthorizedException("apikey.invalid"));
                                     }
-                                    return Mono.just(new UserPrincipal(apiKey.getUserId(), UserRole.MEMBER));
+                                    return Mono.just(new UserPrincipal(apiKey.getUserId(), UserRole.DEVELOPER));
                                 }))
                         .toFuture());
     }

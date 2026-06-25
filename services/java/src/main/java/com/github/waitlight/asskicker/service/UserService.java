@@ -62,7 +62,7 @@ public class UserService {
     private UserEntity initNewUser(UserEntity u) {
         long now = Instant.now().toEpochMilli();
         u.setPassword(passwordEncoder.encode(u.getPassword()));
-        u.setRole(Optional.ofNullable(u.getRole()).orElse(UserRole.MEMBER));
+        u.setRole(Optional.ofNullable(u.getRole()).orElse(UserRole.DEVELOPER));
         u.setStatus(UserStatus.ACTIVE);
         u.setCreatedAt(now);
         u.setUpdatedAt(now);
