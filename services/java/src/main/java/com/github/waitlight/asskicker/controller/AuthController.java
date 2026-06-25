@@ -46,13 +46,8 @@ public class AuthController {
         public Mono<Resp<UserVO>> signUp(@RequestBody @Validated SignUpDTO dto) {
                 dto = new SignUpDTO(dto.username().trim(), dto.password());
                 UserEntity entity = userConverter.toEntity(dto);
-                return userService.count(null)
-                                .flatMap(count -> {
-                                        if (count == 0) {
-                                                entity.setRole(UserRole.ADMIN);
-                                        }
-                                        return userService.create(entity);
-                                })
+                entity.setRole(UserRole.DEVELOPER);
+                return userService.create(entity)
                                 .map(userConverter::toVO)
                                 .map(Resp::success);
         }
