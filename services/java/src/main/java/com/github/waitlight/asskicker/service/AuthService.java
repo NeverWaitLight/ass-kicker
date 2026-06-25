@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.github.waitlight.asskicker.converter.UserConverter;
 import com.github.waitlight.asskicker.dto.auth.TokenVO;
-import com.github.waitlight.asskicker.dto.user.SignInDTO;
+import com.github.waitlight.asskicker.dto.auth.SignInDTO;
 import com.github.waitlight.asskicker.exception.BadRequestException;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.exception.PermissionDeniedException;

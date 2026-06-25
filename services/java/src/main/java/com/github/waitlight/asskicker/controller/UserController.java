@@ -22,7 +22,7 @@ import com.github.waitlight.asskicker.dto.PageReq;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.user.ResetPasswordDTO;
-import com.github.waitlight.asskicker.dto.user.SignUpDTO;
+import com.github.waitlight.asskicker.dto.auth.SignUpDTO;
 import com.github.waitlight.asskicker.dto.user.UpdateUserDTO;
 import com.github.waitlight.asskicker.dto.user.UserVO;
 import com.github.waitlight.asskicker.model.UserEntity;

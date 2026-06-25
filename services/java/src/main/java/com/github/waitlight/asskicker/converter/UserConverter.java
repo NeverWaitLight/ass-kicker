@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.converter;
 
-import com.github.waitlight.asskicker.dto.user.SignUpDTO;
+import com.github.waitlight.asskicker.dto.auth.SignUpDTO;
 import com.github.waitlight.asskicker.dto.user.UpdateUserDTO;
 import com.github.waitlight.asskicker.dto.user.UserVO;
 import com.github.waitlight.asskicker.model.UserEntity;

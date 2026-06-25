@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.dto.user;
+package com.github.waitlight.asskicker.dto.auth;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
