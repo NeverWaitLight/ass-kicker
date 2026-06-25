@@ -18,6 +18,7 @@ public interface UserConverter {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "lastLoginAt", ignore = true)
+    @Mapping(target = "kickedOutAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     UserEntity toEntity(SignUpDTO dto);
 
@@ -27,6 +28,7 @@ public interface UserConverter {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "lastLoginAt", ignore = true)
+    @Mapping(target = "kickedOutAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     UserEntity toEntity(UserDTO dto);
 
