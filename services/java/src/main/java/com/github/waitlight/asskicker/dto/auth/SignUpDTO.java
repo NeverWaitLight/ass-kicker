@@ -1,5 +1,8 @@
 package com.github.waitlight.asskicker.dto.auth;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.deser.std.StringDeserializer;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -16,6 +19,7 @@ public record SignUpDTO(
         @NotBlank(message = "{user.password.notblank}")
         @Size(min = 8, max = 256, message = "{user.password.size}")
         @Schema(description = "密码，长度 8 到 256 位",  minLength = 8, maxLength = 256, requiredMode = Schema.RequiredMode.REQUIRED)
+        @JsonDeserialize(using = StringDeserializer.class)
         String password
 ) {
 }

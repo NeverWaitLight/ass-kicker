@@ -1,5 +1,8 @@
 package com.github.waitlight.asskicker.dto.auth;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.deser.std.StringDeserializer;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
@@ -11,6 +14,7 @@ public record SignInDTO(
 
         @NotBlank(message = "{user.password.notblank}")
         @Schema(description = "密码", requiredMode = Schema.RequiredMode.REQUIRED)
+        @JsonDeserialize(using = StringDeserializer.class)
         String password
 ) {
 }

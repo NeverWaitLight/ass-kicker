@@ -47,7 +47,7 @@ public class MeController {
     public Mono<Resp<UserVO>> updateMe(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody @Validated UpdateMeDTO req) {
-        return userService.updateUsername(principal.userId(), req.username().trim())
+        return userService.updateUsername(principal.userId(), req.username())
                 .map(userConverter::toVO)
                 .map(Resp::success);
     }

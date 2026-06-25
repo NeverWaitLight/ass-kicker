@@ -49,7 +49,6 @@ public class UserController {
     @Operation(summary = "创建用户", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
     public Mono<Resp<UserVO>> create(@RequestBody @Validated SignUpDTO user) {
-        user = new SignUpDTO(user.username().trim(), user.password());
         return userService.create(userConverter.toEntity(user))
                 .map(userConverter::toVO)
                 .map(Resp::success);

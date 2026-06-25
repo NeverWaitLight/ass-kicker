@@ -36,7 +36,6 @@ public class AuthController {
         @Operation(summary = "登录")
         @PostMapping("/signin")
         public Mono<Resp<TokenVO>> signIn(@RequestBody @Validated SignInDTO dto) {
-                dto = new SignInDTO(dto.username().trim(), dto.password());
                 return authService.signIn(dto)
                                 .map(Resp::success);
         }
@@ -44,7 +43,6 @@ public class AuthController {
         @Operation(summary = "注册")
         @PostMapping("/signup")
         public Mono<Resp<UserVO>> signUp(@RequestBody @Validated SignUpDTO dto) {
-                dto = new SignUpDTO(dto.username().trim(), dto.password());
                 UserEntity entity = userConverter.toEntity(dto);
                 entity.setRole(UserRole.DEVELOPER);
                 return userService.create(entity)

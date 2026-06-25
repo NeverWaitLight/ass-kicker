@@ -90,7 +90,7 @@ public class ChannelController {
                 UniMessage message = new UniMessage();
                 message.setContent(request.getContent());
 
-                UniAddress address = buildTestAddress(request.getType(), provider, request.getTarget().trim(),
+                UniAddress address = buildTestAddress(request.getType(), provider, request.getTarget(),
                                 ephemeral.getCode());
 
                 long submittedAt = Instant.now().toEpochMilli();
@@ -100,12 +100,12 @@ public class ChannelController {
 
                 return channel.send(task)
                                 .flatMap(ignore -> {
-                                        writeChannelTestRecord(ephemeral, task, request.getTarget().trim(),
+                                        writeChannelTestRecord(ephemeral, task, request.getTarget(),
                                                         message.getContent(), true, null);
                                         return Mono.just(Resp.success(ChannelTestResultVO.ok()));
                                 })
                                 .onErrorResume(e -> {
-                                        writeChannelTestRecord(ephemeral, task, request.getTarget().trim(),
+                                        writeChannelTestRecord(ephemeral, task, request.getTarget(),
                                                         message.getContent(), false, e.getMessage());
                                         return Mono.just(Resp.success(ChannelTestResultVO.fail(e.getMessage())));
                                 });
