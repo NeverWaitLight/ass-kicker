@@ -2,13 +2,11 @@ package com.github.waitlight.asskicker.controller;
 
 import java.util.List;
 
-import com.github.waitlight.asskicker.dto.user.UserDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -24,8 +22,8 @@ import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.user.ResetPasswordDTO;
 import com.github.waitlight.asskicker.dto.auth.SignUpDTO;
+import com.github.waitlight.asskicker.dto.user.UpdateStatusDTO;
 import com.github.waitlight.asskicker.dto.user.UserVO;
-import com.github.waitlight.asskicker.model.UserEntity;
 import com.github.waitlight.asskicker.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -54,14 +52,12 @@ public class UserController {
                 .map(Resp::success);
     }
 
-    @Operation(summary = "更新用户", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-    @PatchMapping("/{id}")
-    public Mono<Resp<UserVO>> update(
+    @Operation(summary = "变更状态", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @PutMapping("/{id}/status")
+    public Mono<Resp<UserVO>> updateStatus(
             @PathVariable @NotBlank String id,
-            @RequestBody @Validated UserDTO user) {
-        UserEntity entity = userConverter.toEntity(user);
-        entity.setId(id);
-        return userService.update(entity)
+            @RequestBody @Validated UpdateStatusDTO req) {
+        return userService.updateStatus(id, req.status())
                 .map(userConverter::toVO)
                 .map(Resp::success);
     }

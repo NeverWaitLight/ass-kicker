@@ -1,7 +1,6 @@
 package com.github.waitlight.asskicker.converter;
 
 import com.github.waitlight.asskicker.dto.auth.SignUpDTO;
-import com.github.waitlight.asskicker.dto.user.UserDTO;
 import com.github.waitlight.asskicker.dto.user.UserVO;
 import com.github.waitlight.asskicker.model.UserEntity;
 import org.mapstruct.Mapper;
@@ -21,15 +20,5 @@ public interface UserConverter {
     @Mapping(target = "kickedOutAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     UserEntity toEntity(SignUpDTO dto);
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "password", ignore = true)
-    @Mapping(target = "role", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "lastLoginAt", ignore = true)
-    @Mapping(target = "kickedOutAt", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    UserEntity toEntity(UserDTO dto);
 
 }

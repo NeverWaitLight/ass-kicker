@@ -148,31 +148,22 @@ public class UserService {
         return user;
     }
 
-    public Mono<UserEntity> update(UserEntity u) {
-        if (u == null || !StringUtils.hasText(u.getId())) {
-            return Mono.error(new BadRequestException("user.id.empty"));
+    public Mono<UserEntity> updateStatus(String id, UserStatus status) {
+        if (status == null) {
+            return Mono.error(new BadRequestException("user.status.empty"));
         }
 
-        return userRepository.findById(u.getId())
-                .switchIfEmpty(Mono.error(new NotFoundException("user.id.notFound", u.getId())))
-                .flatMap(existing -> ensureUsernameAvailable(u, existing)
-                        .then(Mono.defer(() -> {
-                            u.setRole(existing.getRole());
-                            u.setUpdatedAt(Instant.now().toEpochMilli());
-                            return userRepository.save(u)
-                                    .doOnSuccess(saved -> invalidateUserCaches(existing, saved));
-                        })));
-    }
-
-    private Mono<Void> ensureUsernameAvailable(UserEntity u, UserEntity existing) {
-        String newUsername = u.getUsername();
-        if (!StringUtils.hasText(newUsername) || newUsername.trim().equals(existing.getUsername())) {
-            return Mono.empty();
-        }
-        u.setUsername(newUsername.trim());
-        return userRepository.findByUsername(u.getUsername())
-                .filter(found -> !found.getId().equals(u.getId()))
-                .flatMap(found -> Mono.<Void>error(new ConflictException("user.username.exists")));
+        return userRepository.findById(id)
+                .switchIfEmpty(Mono.error(new NotFoundException("user.id.notFound", id)))
+                .flatMap(existing -> {
+                    if (existing.getStatus() == status) {
+                        return Mono.just(existing);
+                    }
+                    existing.setStatus(status);
+                    existing.setUpdatedAt(Instant.now().toEpochMilli());
+                    return userRepository.save(existing)
+                            .doOnSuccess(saved -> invalidateUserCaches(existing, saved));
+                });
     }
 
     public Mono<UserEntity> updateUsername(String id, String newUsername) {
