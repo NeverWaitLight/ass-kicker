@@ -131,6 +131,17 @@ public class UserService {
                         .doOnSuccess(saved -> invalidateUserCaches(user, saved)));
     }
 
+    public Mono<UserEntity> resetPassword(String id, String newPassword) {
+        if (!StringUtils.hasText(newPassword)) {
+            return Mono.error(new BadRequestException("user.password.empty"));
+        }
+
+        return userRepository.findById(id)
+                .switchIfEmpty(Mono.error(new NotFoundException("user.id.notFound", id)))
+                .flatMap(user -> userRepository.save(applyNewPassword(user, newPassword))
+                        .doOnSuccess(saved -> invalidateUserCaches(user, saved)));
+    }
+
     private UserEntity applyNewPassword(UserEntity user, String newPassword) {
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setUpdatedAt(Instant.now().toEpochMilli());
