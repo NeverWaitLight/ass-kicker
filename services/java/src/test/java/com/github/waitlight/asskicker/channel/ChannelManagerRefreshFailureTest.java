@@ -19,8 +19,6 @@ import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.service.ChannelService;
 
-import jakarta.validation.Validation;
-import jakarta.validation.Validator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -39,8 +37,7 @@ class ChannelManagerRefreshFailureTest {
 
     @BeforeEach
     void setUp() {
-        Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
-        channelManager = new ChannelManager(channelService, channelFactory, validator, MAPPER);
+        channelManager = new ChannelManager(channelService, channelFactory);
     }
 
     @Test

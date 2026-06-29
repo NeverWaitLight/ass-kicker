@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.github.waitlight.asskicker.config.OpenApiConfig;
 import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.ChannelConfigurer;
 import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.converter.ChannelConverter;
 import com.github.waitlight.asskicker.converter.ChannelPropertiesMapper;
@@ -62,6 +63,7 @@ public class ChannelController {
         private final ChannelService channelService;
         private final ChannelConverter channelConverter;
         private final ChannelManager channelManager;
+        private final ChannelConfigurer channelConfigurer;
         private final ChannelFactory channelFactory;
         private final ChannelPropertiesMapper channelPropertiesMapper;
         private final RecordService recordService;
@@ -71,7 +73,7 @@ public class ChannelController {
         public Mono<Resp<ChannelTestResultVO>> test(@Valid @RequestBody TestChannelDTO request) {
                 ProviderType provider = resolveProviderForTest(request.getType(), request.getProvider());
                 Map<String, Object> props = request.getProperties() != null ? request.getProperties() : Map.of();
-                channelManager.validateProperties(provider, props);
+                channelConfigurer.validateProperties(provider, props);
 
                 ChannelEntity ephemeral = new ChannelEntity();
                 ephemeral.setId("0");
@@ -143,7 +145,7 @@ public class ChannelController {
         @Operation(summary = "创建渠道", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @PostMapping
         public Mono<Resp<ChannelVO>> create(@Valid @RequestBody CreateChannelDTO request) {
-                channelManager.validateProperties(request.getProvider(), request.getProperties());
+                channelConfigurer.validateProperties(request.getProvider(), request.getProperties());
 
                 return Mono.just(request)
                                 .map(channelConverter::toEntity)
@@ -209,7 +211,7 @@ public class ChannelController {
         @Operation(summary = "更新渠道", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @PutMapping
         public Mono<Resp<ChannelVO>> update(@Valid @RequestBody UpdateChannelDTO request) {
-                channelManager.validateProperties(request.getProvider(), request.getProperties());
+                channelConfigurer.validateProperties(request.getProvider(), request.getProperties());
 
                 return Mono.just(request)
                                 .map(channelConverter::toEntity)
