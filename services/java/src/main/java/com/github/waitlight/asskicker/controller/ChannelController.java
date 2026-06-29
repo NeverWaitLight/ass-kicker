@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.github.waitlight.asskicker.config.OpenApiConfig;
-import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.AbstractChannelImpl;
 import com.github.waitlight.asskicker.channel.ChannelConfigurer;
 import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.converter.ChannelConverter;
@@ -84,8 +84,8 @@ public class ChannelController {
                 ephemeral.setEnabled(true);
                 ephemeral.setProperties(channelPropertiesMapper.channelObjectPropertiesToProperties(props));
 
-                Channel channel = channelFactory.create(ephemeral);
-                if (channel == null) {
+                AbstractChannelImpl abstractChannelImpl = channelFactory.create(ephemeral);
+                if (abstractChannelImpl == null) {
                         return Mono.just(Resp.success(ChannelTestResultVO.fail("unsupported provider")));
                 }
 
@@ -100,7 +100,7 @@ public class ChannelController {
                 UniTask task = UniTask.builder().message(message).address(address).taskId(taskId).submittedAt(submittedAt)
                                 .build();
 
-                return channel.send(task)
+                return abstractChannelImpl.send(task)
                                 .flatMap(ignore -> {
                                         writeChannelTestRecord(ephemeral, task, request.getTarget(),
                                                         message.getContent(), true, null);

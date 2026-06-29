@@ -27,8 +27,8 @@ public final class TemplateEntityFixtures {
           "name": "短信验证码",
           "channelType": "SMS",
           "localizedTemplates": {
-            "zh-CN": { "content": "{$channel.signName}这是登录验证码 {$code}" },
-            "en": { "content": "{$channel.signName}This is your captcha {$code}" }
+            "zh-CN": { "content": "{$abstractChannelImpl.signName}这是登录验证码 {$code}" },
+            "en": { "content": "{$abstractChannelImpl.signName}This is your captcha {$code}" }
           }
         }
         """);

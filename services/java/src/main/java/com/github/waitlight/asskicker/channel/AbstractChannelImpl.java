@@ -18,7 +18,7 @@ import reactor.core.publisher.Mono;
 
 @Getter
 @Slf4j
-public abstract class Channel {
+public abstract class AbstractChannelImpl {
 
     private final String id;
     private final String code;
@@ -30,7 +30,7 @@ public abstract class Channel {
     protected final WebClient webClient;
     protected final ObjectMapper objectMapper;
 
-    protected Channel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
+    protected AbstractChannelImpl(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
         this.id = entity.getId();
         this.code = entity.getCode();
         this.channelType = entity.getChannelType();

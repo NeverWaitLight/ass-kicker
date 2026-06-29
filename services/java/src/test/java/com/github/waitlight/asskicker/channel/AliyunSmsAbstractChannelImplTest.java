@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import com.github.waitlight.asskicker.channel.impl.AliyunSmsChannel;
+import com.github.waitlight.asskicker.channel.impl.AliyunSmsAbstractChannelImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,12 +23,12 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import reactor.test.StepVerifier;
 
-class AliyunSmsChannelTest {
+class AliyunSmsAbstractChannelImplTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private MockWebServer mockWebServer;
-    private AliyunSmsChannel channel;
+    private AliyunSmsAbstractChannelImpl channel;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -55,7 +55,7 @@ class AliyunSmsChannelTest {
                 }
                 """, base);
         ChannelEntity provider = MAPPER.readValue(providerJson, ChannelEntity.class);
-        channel = new AliyunSmsChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
+        channel = new AliyunSmsAbstractChannelImpl(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
     }
 
     @AfterEach

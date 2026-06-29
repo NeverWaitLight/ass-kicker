@@ -31,13 +31,13 @@ import java.util.concurrent.locks.ReentrantLock;
 public class ChannelManager {
 
     private static final String CHANNEL_PACKAGE = "com.github.waitlight.asskicker.channel";
-    private static final Comparator<Channel> BY_CODE = Comparator
-            .comparing(Channel::getCode);
+    private static final Comparator<AbstractChannelImpl> BY_CODE = Comparator
+            .comparing(AbstractChannelImpl::getCode);
 
     private final ChannelService channelService;
     private final ChannelFactory channelFactory;
 
-    private final ConcurrentHashMap<String, Channel> cache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AbstractChannelImpl> cache = new ConcurrentHashMap<>();
     private final ReentrantLock refreshLock = new ReentrantLock();
 
     /**
@@ -48,7 +48,7 @@ public class ChannelManager {
     /**
      * Channel 元信息记录，存储 @ChannelImpl 注解中的信息
      */
-    public record ChannelMeta(ProviderType providerType, Class<?> propertyClass, Class<? extends Channel> channelClass) {
+    public record ChannelMeta(ProviderType providerType, Class<?> propertyClass, Class<? extends AbstractChannelImpl> channelClass) {
     }
 
     /**
@@ -64,7 +64,7 @@ public class ChannelManager {
         for (BeanDefinition bd : candidates) {
             try {
                 @SuppressWarnings("unchecked")
-                Class<? extends Channel> channelClass = (Class<? extends Channel>)
+                Class<? extends AbstractChannelImpl> channelClass = (Class<? extends AbstractChannelImpl>)
                         Class.forName(bd.getBeanClassName());
 
                 ChannelImpl annotation = channelClass.getAnnotation(ChannelImpl.class);
@@ -100,34 +100,34 @@ public class ChannelManager {
         }
         int loaded = 0;
         for (ChannelEntity entity : enabled) {
-            Channel channel = channelFactory.create(entity);
-            if (channel == null) {
+            AbstractChannelImpl abstractChannelImpl = channelFactory.create(entity);
+            if (abstractChannelImpl == null) {
                 log.warn("Skip channel {}, channel creation returned null", entity.getCode());
                 continue;
             }
-            cache.put(entity.getId(), channel);
+            cache.put(entity.getId(), abstractChannelImpl);
             loaded++;
         }
         log.info("Loaded {} channel channel(s)", loaded);
     }
 
-    public Mono<Channel> chose(ChannelType channelType, String recipient) {
-        List<Channel> matching = cache.values().stream()
+    public Mono<AbstractChannelImpl> chose(ChannelType channelType, String recipient) {
+        List<AbstractChannelImpl> matching = cache.values().stream()
                 .filter(c -> c.getChannelType() == channelType)
-                .filter(Channel::isEnabled)
+                .filter(AbstractChannelImpl::isEnabled)
                 .filter(c -> !c.matchesExclude(recipient))
                 .toList();
         if (matching.isEmpty()) {
             return Mono.empty();
         }
-        List<Channel> priorityMatches = matching.stream()
+        List<AbstractChannelImpl> priorityMatches = matching.stream()
                 .filter(c -> c.matchesPriority(recipient))
                 .sorted(BY_CODE)
                 .toList();
-        List<Channel> candidates = priorityMatches.isEmpty()
+        List<AbstractChannelImpl> candidates = priorityMatches.isEmpty()
                 ? matching.stream().sorted(BY_CODE).toList()
                 : priorityMatches;
-        Channel chosen = candidates.get(0);
+        AbstractChannelImpl chosen = candidates.get(0);
         log.debug("Selected channel {} for recipient {}", chosen.getCode(), recipient);
         return Mono.just(chosen);
     }
@@ -135,16 +135,16 @@ public class ChannelManager {
     public void refresh() {
         refreshLock.lock();
         try {
-            ConcurrentHashMap<String, Channel> next = new ConcurrentHashMap<>();
+            ConcurrentHashMap<String, AbstractChannelImpl> next = new ConcurrentHashMap<>();
             List<ChannelEntity> enabledProvider = channelService.findEnabled().collectList().block();
             if (enabledProvider == null) {
                 enabledProvider = List.of();
             }
 
             for (ChannelEntity provider : enabledProvider) {
-                Channel channel = channelFactory.create(provider);
-                if (channel != null) {
-                    next.put(provider.getId(), channel);
+                AbstractChannelImpl abstractChannelImpl = channelFactory.create(provider);
+                if (abstractChannelImpl != null) {
+                    next.put(provider.getId(), abstractChannelImpl);
                 }
             }
             cache.clear();
@@ -157,11 +157,11 @@ public class ChannelManager {
         }
     }
 
-    public Channel getChannelById(String id) {
+    public AbstractChannelImpl getChannelById(String id) {
         return cache.get(id);
     }
 
-    public List<Channel> getAllChannels() {
+    public List<AbstractChannelImpl> getAllChannels() {
         return cache.values().stream().toList();
     }
 

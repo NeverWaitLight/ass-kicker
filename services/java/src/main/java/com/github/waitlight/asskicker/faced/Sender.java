@@ -6,10 +6,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.github.waitlight.asskicker.channel.AbstractChannelImpl;
 import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Component;
 
-import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
@@ -106,17 +106,17 @@ public class Sender {
     }
 
     private void doSendForRecipient(SendContext baseCtx, String recipient) {
-        Channel channel = null;
+        AbstractChannelImpl abstractChannelImpl = null;
         try {
             UniAddress singleAddr = buildSingleRecipientAddress(baseCtx.getTask().getAddress(), recipient);
-            channel = channelManager.chose(singleAddr.getChannelType(), recipient).block();
-            if (channel == null) {
+            abstractChannelImpl = channelManager.chose(singleAddr.getChannelType(), recipient).block();
+            if (abstractChannelImpl == null) {
                 log.warn("No channel available for recipient={} taskId={}", recipient, baseCtx.getTask().getTaskId());
                 writeFailedRecord(baseCtx.getTask(), recipient, null, "No channel available");
                 return;
             }
 
-            SendContext ctx = baseCtx.fork(recipient, channel, singleAddr);
+            SendContext ctx = baseCtx.fork(recipient, abstractChannelImpl, singleAddr);
 
             UniTask sendTask = UniTask.builder()
                     .message(ctx.getUniMessage())
@@ -125,13 +125,13 @@ public class Sender {
                     .submittedAt(ctx.getTask().getSubmittedAt())
                     .build();
 
-            String result = channel.send(sendTask).block();
+            String result = abstractChannelImpl.send(sendTask).block();
             ctx.setSendResult(result);
 
             processRecord(ctx);
         } catch (Exception e) {
             log.error("Failed to send to recipient={} taskId={}", recipient, baseCtx.getTask().getTaskId(), e);
-            writeFailedRecord(baseCtx.getTask(), recipient, channel, e.getMessage());
+            writeFailedRecord(baseCtx.getTask(), recipient, abstractChannelImpl, e.getMessage());
         }
     }
 
@@ -153,18 +153,18 @@ public class Sender {
         sr.setTemplateCode(message.getTemplateCode());
         sr.setLanguageCode(message.getLanguage().getCode());
         sr.setParams(message.getTemplateParams());
-        sr.setChannelId(context.getChannel().getId());
+        sr.setChannelId(context.getAbstractChannelImpl().getId());
         sr.setRecipient(context.getRecipient());
         sr.setSubmittedAt(resolveSubmittedAt(task));
         sr.setRenderedContent(context.getUniMessage().getContent());
-        sr.setChannelType(context.getChannel().getChannelType());
-        sr.setChannelName(context.getChannel().getCode());
+        sr.setChannelType(context.getAbstractChannelImpl().getChannelType());
+        sr.setChannelName(context.getAbstractChannelImpl().getCode());
         sr.setStatus(SendRecordStatus.SUCCESS);
         sr.setSentAt(System.currentTimeMillis());
         recordService.writeRecord(sr);
     }
 
-    private void writeFailedRecord(UniTask task, String recipient, Channel channel, String errorMessage) {
+    private void writeFailedRecord(UniTask task, String recipient, AbstractChannelImpl abstractChannelImpl, String errorMessage) {
         UniMessage message = task.getMessage();
 
         RecordEntity sr = new RecordEntity();
@@ -177,10 +177,10 @@ public class Sender {
             sr.setParams(message.getTemplateParams());
         }
         sr.setRecipient(recipient);
-        if (channel != null) {
-            sr.setChannelId(channel.getId());
-            sr.setChannelType(channel.getChannelType());
-            sr.setChannelName(channel.getCode());
+        if (abstractChannelImpl != null) {
+            sr.setChannelId(abstractChannelImpl.getId());
+            sr.setChannelType(abstractChannelImpl.getChannelType());
+            sr.setChannelName(abstractChannelImpl.getCode());
         }
         sr.setSubmittedAt(resolveSubmittedAt(task));
         sr.setStatus(SendRecordStatus.FAILED);
@@ -199,16 +199,16 @@ public class Sender {
 
         private final UniTask task;
         private UniMessage uniMessage;
-        private Channel channel;
+        private AbstractChannelImpl abstractChannelImpl;
         private String sendResult;
         private String recipient;
         private UniAddress singleAddress;
 
-        private SendContext fork(String recipient, Channel channel, UniAddress singleAddress) {
+        private SendContext fork(String recipient, AbstractChannelImpl abstractChannelImpl, UniAddress singleAddress) {
             SendContext forked = new SendContext(this.task);
             forked.uniMessage = this.uniMessage;
             forked.recipient = recipient;
-            forked.channel = channel;
+            forked.abstractChannelImpl = abstractChannelImpl;
             forked.singleAddress = singleAddress;
             return forked;
         }

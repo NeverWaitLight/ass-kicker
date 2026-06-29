@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.AbstractChannelImpl;
 import com.github.waitlight.asskicker.channel.ChannelImpl;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
@@ -27,15 +27,15 @@ import reactor.core.publisher.Mono;
 /**
  * DingTalk enterprise robot: group messages via Open API (OAuth access token + group send).
  */
-@ChannelImpl(providerType = ProviderType.DINGTALK_BOT, propertyClass = DingtalkBotChannel.Properties.class)
-public class DingtalkBotChannel extends Channel {
+@ChannelImpl(providerType = ProviderType.DINGTALK_BOT, propertyClass = DingtalkBotAbstractChannelImpl.Properties.class)
+public class DingtalkBotAbstractChannelImpl extends AbstractChannelImpl {
 
     private static final String HEADER_ACCESS_TOKEN = "x-acs-dingtalk-access-token";
     private static final String MSG_KEY_SAMPLE_TEXT = "sampleText";
 
     private final Properties properties;
 
-    public DingtalkBotChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public DingtalkBotAbstractChannelImpl(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
     }

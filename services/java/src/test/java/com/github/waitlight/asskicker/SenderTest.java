@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import com.github.waitlight.asskicker.channel.impl.AliyunSmsAbstractChannelImpl;
 import com.github.waitlight.asskicker.model.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -26,8 +27,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.impl.AliyunSmsChannel;
+import com.github.waitlight.asskicker.channel.AbstractChannelImpl;
 import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.dto.UniAddress;
@@ -91,11 +91,11 @@ class SenderTest {
                 ChannelEntity usProvider = buildAwsProvider("http://unused");
                 ChannelEntity cnProvider = buildAliyunProvider(aliyunServer.url("/").toString());
 
-                AliyunSmsChannel cnChannel = new AliyunSmsChannel(cnProvider, WebClient.create(),
+                AliyunSmsAbstractChannelImpl cnChannel = new AliyunSmsAbstractChannelImpl(cnProvider, WebClient.create(),
                                 OBJECT_MAPPER);
 
                 when(channelService.findEnabled()).thenReturn(Flux.just(usProvider, cnProvider));
-                when(channelFactory.create(usProvider)).thenAnswer(inv -> new Channel(usProvider,
+                when(channelFactory.create(usProvider)).thenAnswer(inv -> new AbstractChannelImpl(usProvider,
                                 WebClient.create(), OBJECT_MAPPER) {
                         @Override
                         protected Mono<String> doSend(UniMessage msg, UniAddress addr) {

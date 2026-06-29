@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.concurrent.TimeUnit;
 
-import com.github.waitlight.asskicker.channel.impl.DingtalkWebhookChannel;
+import com.github.waitlight.asskicker.channel.impl.DingtalkWebhookAbstractChannelImpl;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,12 +23,12 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import reactor.test.StepVerifier;
 
-class DingtalkWebhookChannelTest {
+class DingtalkWebhookAbstractChannelImplTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private MockWebServer mockWebServer;
-    private DingtalkWebhookChannel channel;
+    private DingtalkWebhookAbstractChannelImpl channel;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -47,7 +47,7 @@ class DingtalkWebhookChannelTest {
                 }
                 """, mockWebServer.url("/").toString().replaceAll("/$", ""));
         ChannelEntity provider = MAPPER.readValue(providerJson, ChannelEntity.class);
-        channel = new DingtalkWebhookChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
+        channel = new DingtalkWebhookAbstractChannelImpl(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
     }
 
     @AfterEach

@@ -82,7 +82,7 @@ mvn spring-boot:run
 
 ```
 src/main/java/com/github/waitlight/asskicker/
-├── channel/          # 各类消息推送渠道实现
+├── abstractChannelImpl/          # 各类消息推送渠道实现
 ├── config/           # 配置类
 ├── controller/       # REST API 控制器
 ├── converter/        # DTO 与实体转换器

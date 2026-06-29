@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.AbstractChannelImpl;
 import com.github.waitlight.asskicker.channel.ChannelImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
@@ -25,12 +25,12 @@ import jakarta.validation.constraints.NotBlank;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@ChannelImpl(providerType = ProviderType.DINGTALK_WEBHOOK, propertyClass = DingtalkWebhookChannel.Properties.class)
-public class DingtalkWebhookChannel extends Channel {
+@ChannelImpl(providerType = ProviderType.DINGTALK_WEBHOOK, propertyClass = DingtalkWebhookAbstractChannelImpl.Properties.class)
+public class DingtalkWebhookAbstractChannelImpl extends AbstractChannelImpl {
 
     private final Properties properties;
 
-    public DingtalkWebhookChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public DingtalkWebhookAbstractChannelImpl(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
     }

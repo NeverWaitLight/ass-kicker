@@ -24,19 +24,19 @@ public class ChannelFactory {
         this.channelObjectMapper = channelObjectMapper;
     }
 
-    public Channel create(ChannelEntity provider) {
+    public AbstractChannelImpl create(ChannelEntity provider) {
         if (provider == null) {
             throw new IllegalArgumentException("ChannelEntity must not be null");
         }
 
         try {
             return switch (provider.getProviderType()) {
-                case APNS -> new ApnsChannel(provider, webClient, channelObjectMapper);
-                case FCM -> new FcmChannel(provider, webClient, channelObjectMapper);
-                case DINGTALK_WEBHOOK -> new DingtalkWebhookChannel(provider, webClient, channelObjectMapper);
-                case DINGTALK_BOT -> new DingtalkBotChannel(provider, webClient, channelObjectMapper);
-                case ALIYUN_SMS -> new AliyunSmsChannel(provider, webClient, channelObjectMapper);
-                case SMTP -> new SmtpChannel(provider, webClient, channelObjectMapper);
+                case APNS -> new ApnsAbstractChannelImpl(provider, webClient, channelObjectMapper);
+                case FCM -> new FcmAbstractChannelImpl(provider, webClient, channelObjectMapper);
+                case DINGTALK_WEBHOOK -> new DingtalkWebhookAbstractChannelImpl(provider, webClient, channelObjectMapper);
+                case DINGTALK_BOT -> new DingtalkBotAbstractChannelImpl(provider, webClient, channelObjectMapper);
+                case ALIYUN_SMS -> new AliyunSmsAbstractChannelImpl(provider, webClient, channelObjectMapper);
+                case SMTP -> new SmtpAbstractChannelImpl(provider, webClient, channelObjectMapper);
                 default -> {
                     log.warn("Unsupported channel provider type: {}", provider.getProviderType());
                     yield null;
