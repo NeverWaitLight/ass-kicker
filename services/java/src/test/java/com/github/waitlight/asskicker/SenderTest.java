@@ -26,8 +26,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.impl.AliyunSmsChannel;
-import com.github.waitlight.asskicker.channel.impl.AwsSnsSmsChannel;
 import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.dto.UniAddress;
@@ -69,15 +69,10 @@ class SenderTest {
         @Mock
         private ChannelManager channelManager;
 
-        private MockWebServer awsServer;
         private MockWebServer aliyunServer;
 
         @AfterEach
         void tearDown() throws Exception {
-                if (awsServer != null) {
-                        awsServer.shutdown();
-                        awsServer = null;
-                }
                 if (aliyunServer != null) {
                         aliyunServer.shutdown();
                         aliyunServer = null;
@@ -86,43 +81,27 @@ class SenderTest {
 
         @Test
         void send_batchSmsTaskRoutesRecipientsToDifferentChannelInstancesByCountryCode() throws Exception {
-                awsServer = new MockWebServer();
                 aliyunServer = new MockWebServer();
-                awsServer.start();
                 aliyunServer.start();
 
-                awsServer.enqueue(new MockResponse().setResponseCode(200)
-                                .setHeader("Content-Type", "text/xml")
-                                .setBody("""
-                                                <PublishResponse xmlns="http://sns.amazonaws.com/doc/2010-03-31/">
-                                                        <PublishResult>
-                                                                <MessageId>aws-msg-1</MessageId>
-                                                        </PublishResult>
-                                                </PublishResponse>
-                                                """));
-                awsServer.enqueue(new MockResponse().setResponseCode(200)
-                                .setHeader("Content-Type", "text/xml")
-                                .setBody("""
-                                                <PublishResponse xmlns="http://sns.amazonaws.com/doc/2010-03-31/">
-                                                        <PublishResult>
-                                                                <MessageId>aws-msg-2</MessageId>
-                                                        </PublishResult>
-                                                </PublishResponse>
-                                                """));
                 aliyunServer.enqueue(new MockResponse().setResponseCode(200)
                                 .setHeader("Content-Type", "application/json;charset=UTF-8")
                                 .setBody("{\"Code\":\"OK\",\"Message\":\"OK\",\"RequestId\":\"aliyun-msg-1\"}"));
 
-                ChannelEntity usProvider = buildAwsProvider(awsServer.url("/").toString());
+                ChannelEntity usProvider = buildAwsProvider("http://unused");
                 ChannelEntity cnProvider = buildAliyunProvider(aliyunServer.url("/").toString());
 
-                AwsSnsSmsChannel usChannel = new AwsSnsSmsChannel(usProvider, WebClient.create(),
-                                OBJECT_MAPPER);
                 AliyunSmsChannel cnChannel = new AliyunSmsChannel(cnProvider, WebClient.create(),
                                 OBJECT_MAPPER);
 
                 when(channelService.findEnabled()).thenReturn(Flux.just(usProvider, cnProvider));
-                when(channelFactory.create(usProvider)).thenReturn(usChannel);
+                when(channelFactory.create(usProvider)).thenAnswer(inv -> new Channel(usProvider,
+                                WebClient.create(), OBJECT_MAPPER) {
+                        @Override
+                        protected Mono<String> doSend(UniMessage msg, UniAddress addr) {
+                                return Mono.just("ok");
+                        }
+                });
                 when(channelFactory.create(cnProvider)).thenReturn(cnChannel);
 
                 ChannelManager channelManager = new ChannelManager(channelService, channelFactory);
@@ -157,12 +136,7 @@ class SenderTest {
                                 .forClass(RecordEntity.class);
                 verify(recordService, timeout(10000).times(3)).writeRecord(recordCaptor.capture());
 
-                assertThat(List.of(
-                                extractFormParam(takeRequest(awsServer), "PhoneNumber"),
-                                extractFormParam(takeRequest(awsServer), "PhoneNumber")))
-                                .containsExactlyInAnyOrder(usRecipient1, usRecipient2);
                 assertAliyunPayloadHasRecipient(recordedRequestPayload(takeRequest(aliyunServer)), cnRecipient);
-                assertThat(awsServer.takeRequest(200, TimeUnit.MILLISECONDS)).isNull();
                 assertThat(aliyunServer.takeRequest(200, TimeUnit.MILLISECONDS)).isNull();
                 assertThat(recordCaptor.getAllValues())
                                 .extracting(

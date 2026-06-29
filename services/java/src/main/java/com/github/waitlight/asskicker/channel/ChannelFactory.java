@@ -34,13 +34,8 @@ public class ChannelFactory {
                 case APNS -> new ApnsChannel(provider, webClient, channelObjectMapper);
                 case FCM -> new FcmChannel(provider, webClient, channelObjectMapper);
                 case DINGTALK_WEBHOOK -> new DingtalkWebhookChannel(provider, webClient, channelObjectMapper);
-                case WECOM_WEBHOOK -> new WecomWebhookChannel(provider, webClient, channelObjectMapper);
-                case FEISHU_WEBHOOK -> new FeishuWebhookChannel(provider, webClient, channelObjectMapper);
                 case DINGTALK_BOT -> new DingtalkBotChannel(provider, webClient, channelObjectMapper);
-                case WECOM_BOT -> new WecomBotChannel(provider, webClient, channelObjectMapper);
-                case FEISHU_BOT -> new FeishuBotChannel(provider, webClient, channelObjectMapper);
                 case ALIYUN_SMS -> new AliyunSmsChannel(provider, webClient, channelObjectMapper);
-                case AWS_SMS -> new AwsSnsSmsChannel(provider, webClient, channelObjectMapper);
                 case SMTP -> new SmtpChannel(provider, webClient, channelObjectMapper);
                 default -> {
                     log.warn("Unsupported channel provider type: {}", provider.getProviderType());
