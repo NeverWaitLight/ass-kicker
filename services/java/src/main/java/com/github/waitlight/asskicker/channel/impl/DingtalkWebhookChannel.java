@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.channel;
+package com.github.waitlight.asskicker.channel.impl;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.ChannelImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -18,17 +20,17 @@ import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
-
 import jakarta.validation.constraints.NotBlank;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@ChannelImpl(providerType = ProviderType.FEISHU_WEBHOOK, propertyClass = FeishuWebhookChannel.Properties.class)
-public class FeishuWebhookChannel extends Channel {
+@ChannelImpl(providerType = ProviderType.DINGTALK_WEBHOOK, propertyClass = DingtalkWebhookChannel.Properties.class)
+public class DingtalkWebhookChannel extends Channel {
 
     private final Properties properties;
 
-    public FeishuWebhookChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public DingtalkWebhookChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
     }
@@ -36,46 +38,48 @@ public class FeishuWebhookChannel extends Channel {
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
-            List<String> recipients = normalizeRecipients(uniAddress, "FEISHU");
-            String baseUrl = requireBaseUrl(properties.url(), "FEISHU");
+            List<String> recipients = normalizeRecipients(uniAddress, "DINGTALK");
+            String baseUrl = requireBaseUrl(properties.url(), "DINGTALK");
 
             return Flux.fromIterable(recipients)
                     .concatMap(recipient -> {
-                        String endpoint = buildPathUrl(baseUrl, recipient);
+                        String endpoint = buildQueryUrl(baseUrl, "access_token", recipient);
                         byte[] body;
                         try {
                             body = toJsonBytes(buildPayload(uniMessage));
                         } catch (Exception e) {
                             return Mono.error(e);
                         }
-                        return postJson(endpoint, body, "FEISHU")
+                        return postJson(endpoint, body, "DINGTALK")
                                 .flatMap(this::resolveResponse);
                     })
                     .collect(Collectors.joining(","))
-                    .map(ignore -> "FEISHU ok " + recipients.size() + " recipient(s)");
+                    .map(ignore -> "DINGTALK ok " + recipients.size() + " recipient(s)");
         });
     }
 
     private Map<String, Object> buildPayload(UniMessage uniMessage) {
         String title = uniMessage != null ? uniMessage.getTitle() : null;
         String content = uniMessage != null ? uniMessage.getContent() : null;
-        String text = StringUtils.isNotBlank(title) ? title + "\n" + StringUtils.defaultString(content)
+
+        String text = StringUtils.isNotBlank(title) ? "### " + title + "\n" + StringUtils.defaultString(content)
                 : StringUtils.defaultString(content);
 
-        Map<String, Object> contentMap = new LinkedHashMap<>();
-        contentMap.put("text", text);
+        Map<String, Object> markdown = new LinkedHashMap<>();
+        markdown.put("title", StringUtils.defaultIfBlank(title, "Notification"));
+        markdown.put("text", text);
 
         Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("msg_type", "text");
-        payload.put("content", contentMap);
+        payload.put("msgtype", "markdown");
+        payload.put("markdown", markdown);
         return payload;
     }
 
     private Mono<String> resolveResponse(Map<String, Object> response) {
-        int code = intValue(response.get("code"), -1);
-        if (code != 0) {
+        int errcode = intValue(response.get("errcode"), -1);
+        if (errcode != 0) {
             return Mono.error(new IllegalStateException(
-                    "FEISHU platform failure code=" + code + " msg=" + String.valueOf(response.get("msg"))));
+                    "DINGTALK platform failure errcode=" + errcode + " errmsg=" + String.valueOf(response.get("errmsg"))));
         }
         return Mono.just("ok");
     }
@@ -101,10 +105,10 @@ public class FeishuWebhookChannel extends Channel {
         return url.trim();
     }
 
-    private String buildPathUrl(String baseUrl, String recipient) {
-        String normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+    private String buildQueryUrl(String baseUrl, String queryKey, String recipient) {
+        String delimiter = baseUrl.contains("?") ? "&" : "?";
         String encodedRecipient = URLEncoder.encode(recipient, StandardCharsets.UTF_8);
-        return normalizedBaseUrl + "/" + encodedRecipient;
+        return baseUrl + delimiter + queryKey + "=" + encodedRecipient;
     }
 
     private byte[] toJsonBytes(Map<String, Object> payload) throws Exception {
@@ -145,6 +149,7 @@ public class FeishuWebhookChannel extends Channel {
         return defaultValue;
     }
 
-    record Properties(@NotBlank String url) {
+    record Properties(
+            @NotBlank String url) {
     }
 }

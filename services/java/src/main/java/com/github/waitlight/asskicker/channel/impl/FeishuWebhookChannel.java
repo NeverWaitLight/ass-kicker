@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.channel;
+package com.github.waitlight.asskicker.channel.impl;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.ChannelImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -18,17 +20,17 @@ import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
-import jakarta.validation.constraints.NotBlank;
 
+import jakarta.validation.constraints.NotBlank;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@ChannelImpl(providerType = ProviderType.WECOM_WEBHOOK, propertyClass = WecomWebhookChannel.Properties.class)
-public class WecomWebhookChannel extends Channel {
+@ChannelImpl(providerType = ProviderType.FEISHU_WEBHOOK, propertyClass = FeishuWebhookChannel.Properties.class)
+public class FeishuWebhookChannel extends Channel {
 
     private final Properties properties;
 
-    public WecomWebhookChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public FeishuWebhookChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
     }
@@ -36,23 +38,23 @@ public class WecomWebhookChannel extends Channel {
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
-            List<String> recipients = normalizeRecipients(uniAddress, "WECOM");
-            String baseUrl = requireBaseUrl(properties.url(), "WECOM");
+            List<String> recipients = normalizeRecipients(uniAddress, "FEISHU");
+            String baseUrl = requireBaseUrl(properties.url(), "FEISHU");
 
             return Flux.fromIterable(recipients)
                     .concatMap(recipient -> {
-                        String endpoint = buildQueryUrl(baseUrl, "key", recipient);
+                        String endpoint = buildPathUrl(baseUrl, recipient);
                         byte[] body;
                         try {
                             body = toJsonBytes(buildPayload(uniMessage));
                         } catch (Exception e) {
                             return Mono.error(e);
                         }
-                        return postJson(endpoint, body, "WECOM")
+                        return postJson(endpoint, body, "FEISHU")
                                 .flatMap(this::resolveResponse);
                     })
                     .collect(Collectors.joining(","))
-                    .map(ignore -> "WECOM ok " + recipients.size() + " recipient(s)");
+                    .map(ignore -> "FEISHU ok " + recipients.size() + " recipient(s)");
         });
     }
 
@@ -62,20 +64,20 @@ public class WecomWebhookChannel extends Channel {
         String text = StringUtils.isNotBlank(title) ? title + "\n" + StringUtils.defaultString(content)
                 : StringUtils.defaultString(content);
 
-        Map<String, Object> markdown = new LinkedHashMap<>();
-        markdown.put("content", text);
+        Map<String, Object> contentMap = new LinkedHashMap<>();
+        contentMap.put("text", text);
 
         Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("msgtype", "markdown");
-        payload.put("markdown", markdown);
+        payload.put("msg_type", "text");
+        payload.put("content", contentMap);
         return payload;
     }
 
     private Mono<String> resolveResponse(Map<String, Object> response) {
-        int errcode = intValue(response.get("errcode"), -1);
-        if (errcode != 0) {
+        int code = intValue(response.get("code"), -1);
+        if (code != 0) {
             return Mono.error(new IllegalStateException(
-                    "WECOM platform failure errcode=" + errcode + " errmsg=" + String.valueOf(response.get("errmsg"))));
+                    "FEISHU platform failure code=" + code + " msg=" + String.valueOf(response.get("msg"))));
         }
         return Mono.just("ok");
     }
@@ -101,10 +103,10 @@ public class WecomWebhookChannel extends Channel {
         return url.trim();
     }
 
-    private String buildQueryUrl(String baseUrl, String queryKey, String recipient) {
-        String delimiter = baseUrl.contains("?") ? "&" : "?";
+    private String buildPathUrl(String baseUrl, String recipient) {
+        String normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
         String encodedRecipient = URLEncoder.encode(recipient, StandardCharsets.UTF_8);
-        return baseUrl + delimiter + queryKey + "=" + encodedRecipient;
+        return normalizedBaseUrl + "/" + encodedRecipient;
     }
 
     private byte[] toJsonBytes(Map<String, Object> payload) throws Exception {
@@ -145,7 +147,6 @@ public class WecomWebhookChannel extends Channel {
         return defaultValue;
     }
 
-    record Properties(
-            @NotBlank String url) {
+    record Properties(@NotBlank String url) {
     }
 }

@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.channel;
 
+import com.github.waitlight.asskicker.channel.impl.*;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;

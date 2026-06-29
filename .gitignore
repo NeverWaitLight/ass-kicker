@@ -1,5 +1,7 @@
 **/.claude/
 **/.codex/
+**/.cline/
+**/.clinerules/
 **/AGENT.md
 **/.cursor/
 **/.qwen/

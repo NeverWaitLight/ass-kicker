@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.concurrent.TimeUnit;
 
+import com.github.waitlight.asskicker.channel.impl.WecomBotChannel;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

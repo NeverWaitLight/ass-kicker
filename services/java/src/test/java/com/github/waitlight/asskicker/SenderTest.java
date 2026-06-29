@@ -26,8 +26,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.AliyunSmsChannel;
-import com.github.waitlight.asskicker.channel.AwsSnsSmsChannel;
+import com.github.waitlight.asskicker.channel.impl.AliyunSmsChannel;
+import com.github.waitlight.asskicker.channel.impl.AwsSnsSmsChannel;
 import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.dto.UniAddress;

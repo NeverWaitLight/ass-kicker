@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.channel;
+package com.github.waitlight.asskicker.channel.impl;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.ChannelImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -23,12 +25,12 @@ import jakarta.validation.constraints.NotBlank;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@ChannelImpl(providerType = ProviderType.DINGTALK_WEBHOOK, propertyClass = DingtalkWebhookChannel.Properties.class)
-public class DingtalkWebhookChannel extends Channel {
+@ChannelImpl(providerType = ProviderType.WECOM_WEBHOOK, propertyClass = WecomWebhookChannel.Properties.class)
+public class WecomWebhookChannel extends Channel {
 
     private final Properties properties;
 
-    public DingtalkWebhookChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public WecomWebhookChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
     }
@@ -36,36 +38,34 @@ public class DingtalkWebhookChannel extends Channel {
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
-            List<String> recipients = normalizeRecipients(uniAddress, "DINGTALK");
-            String baseUrl = requireBaseUrl(properties.url(), "DINGTALK");
+            List<String> recipients = normalizeRecipients(uniAddress, "WECOM");
+            String baseUrl = requireBaseUrl(properties.url(), "WECOM");
 
             return Flux.fromIterable(recipients)
                     .concatMap(recipient -> {
-                        String endpoint = buildQueryUrl(baseUrl, "access_token", recipient);
+                        String endpoint = buildQueryUrl(baseUrl, "key", recipient);
                         byte[] body;
                         try {
                             body = toJsonBytes(buildPayload(uniMessage));
                         } catch (Exception e) {
                             return Mono.error(e);
                         }
-                        return postJson(endpoint, body, "DINGTALK")
+                        return postJson(endpoint, body, "WECOM")
                                 .flatMap(this::resolveResponse);
                     })
                     .collect(Collectors.joining(","))
-                    .map(ignore -> "DINGTALK ok " + recipients.size() + " recipient(s)");
+                    .map(ignore -> "WECOM ok " + recipients.size() + " recipient(s)");
         });
     }
 
     private Map<String, Object> buildPayload(UniMessage uniMessage) {
         String title = uniMessage != null ? uniMessage.getTitle() : null;
         String content = uniMessage != null ? uniMessage.getContent() : null;
-
-        String text = StringUtils.isNotBlank(title) ? "### " + title + "\n" + StringUtils.defaultString(content)
+        String text = StringUtils.isNotBlank(title) ? title + "\n" + StringUtils.defaultString(content)
                 : StringUtils.defaultString(content);
 
         Map<String, Object> markdown = new LinkedHashMap<>();
-        markdown.put("title", StringUtils.defaultIfBlank(title, "Notification"));
-        markdown.put("text", text);
+        markdown.put("content", text);
 
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("msgtype", "markdown");
@@ -77,7 +77,7 @@ public class DingtalkWebhookChannel extends Channel {
         int errcode = intValue(response.get("errcode"), -1);
         if (errcode != 0) {
             return Mono.error(new IllegalStateException(
-                    "DINGTALK platform failure errcode=" + errcode + " errmsg=" + String.valueOf(response.get("errmsg"))));
+                    "WECOM platform failure errcode=" + errcode + " errmsg=" + String.valueOf(response.get("errmsg"))));
         }
         return Mono.just("ok");
     }

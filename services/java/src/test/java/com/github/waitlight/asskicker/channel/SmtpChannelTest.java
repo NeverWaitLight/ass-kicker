@@ -2,6 +2,7 @@ package com.github.waitlight.asskicker.channel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.github.waitlight.asskicker.channel.impl.SmtpChannel;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

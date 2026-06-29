@@ -2,6 +2,7 @@ package com.github.waitlight.asskicker.channel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.github.waitlight.asskicker.channel.impl.*;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
