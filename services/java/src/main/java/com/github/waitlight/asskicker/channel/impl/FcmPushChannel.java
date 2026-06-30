@@ -26,12 +26,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
-@ChannelImpl(providerType = ProviderType.FCM, propertyClass = FcmChannel.Properties.class)
-public class FcmChannel extends Channel {
+@ChannelImpl(providerType = ProviderType.FCM, propertyClass = FcmPushChannel.Properties.class)
+public class FcmPushChannel extends Channel {
 
     private final Properties properties;
 
-    public FcmChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public FcmPushChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
     }

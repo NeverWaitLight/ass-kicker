@@ -2,7 +2,7 @@ package com.github.waitlight.asskicker.channel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.github.waitlight.asskicker.channel.impl.SmtpChannel;
+import com.github.waitlight.asskicker.channel.impl.SmtpEmailChannel;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,14 +22,14 @@ import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import reactor.test.StepVerifier;
 
-class SmtpChannelTest {
+class SmtpEmailChannelTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @RegisterExtension
     static final GreenMailExtension greenMail = new GreenMailExtension(ServerSetupTest.SMTP.dynamicPort());
 
-    private SmtpChannel channel;
+    private SmtpEmailChannel channel;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -54,7 +54,7 @@ class SmtpChannelTest {
                 }
                 """, port);
         ChannelEntity provider = MAPPER.readValue(providerJson, ChannelEntity.class);
-        channel = new SmtpChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
+        channel = new SmtpEmailChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
     }
 
     @AfterEach

@@ -38,7 +38,7 @@ class ChannelFactoryTest {
         }
         """;
     ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
-    assertThat(factory.create(entity)).isInstanceOf(ApnsChannel.class);
+    assertThat(factory.create(entity)).isInstanceOf(ApnsPushChannel.class);
   }
 
   @Test
@@ -58,7 +58,7 @@ class ChannelFactoryTest {
         }
         """;
     ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
-    assertThat(factory.create(entity)).isInstanceOf(FcmChannel.class);
+    assertThat(factory.create(entity)).isInstanceOf(FcmPushChannel.class);
   }
 
   @Test
@@ -138,6 +138,6 @@ class ChannelFactoryTest {
         }
         """;
     ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
-    assertThat(factory.create(entity)).isInstanceOf(SmtpChannel.class);
+    assertThat(factory.create(entity)).isInstanceOf(SmtpEmailChannel.class);
   }
 }

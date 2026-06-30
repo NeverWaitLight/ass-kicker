@@ -35,12 +35,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
-@ChannelImpl(providerType = ProviderType.APNS, propertyClass = ApnsChannel.Properties.class)
-public class ApnsChannel extends Channel {
+@ChannelImpl(providerType = ProviderType.APNS, propertyClass = ApnsPushChannel.Properties.class)
+public class ApnsPushChannel extends Channel {
 
     private final Properties properties;
 
-    public ApnsChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public ApnsPushChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
     }

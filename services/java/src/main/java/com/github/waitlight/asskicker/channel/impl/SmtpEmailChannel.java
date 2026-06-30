@@ -27,12 +27,12 @@ import jakarta.mail.internet.MimeMessage;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-@ChannelImpl(providerType = ProviderType.SMTP, propertyClass = SmtpChannel.Properties.class)
-public class SmtpChannel extends Channel {
+@ChannelImpl(providerType = ProviderType.SMTP, propertyClass = SmtpEmailChannel.Properties.class)
+public class SmtpEmailChannel extends Channel {
 
     private final Properties properties;
 
-    public SmtpChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public SmtpEmailChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.properties = Properties.fromProperties(provider.getProperties());
     }

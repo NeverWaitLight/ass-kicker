@@ -31,11 +31,11 @@ public class ChannelFactory {
 
         try {
             return switch (provider.getProviderType()) {
-                case APNS -> new ApnsChannel(provider, webClient, channelObjectMapper);
-                case FCM -> new FcmChannel(provider, webClient, channelObjectMapper);
+                case APNS -> new ApnsPushChannel(provider, webClient, channelObjectMapper);
+                case FCM -> new FcmPushChannel(provider, webClient, channelObjectMapper);
                 case DINGTALK_BOT -> new DingtalkBotChannel(provider, webClient, channelObjectMapper);
                 case ALIYUN_SMS -> new AliyunSmsChannel(provider, webClient, channelObjectMapper);
-                case SMTP -> new SmtpChannel(provider, webClient, channelObjectMapper);
+                case SMTP -> new SmtpEmailChannel(provider, webClient, channelObjectMapper);
                 default -> {
                     log.warn("Unsupported channel provider type: {}", provider.getProviderType());
                     yield null;
