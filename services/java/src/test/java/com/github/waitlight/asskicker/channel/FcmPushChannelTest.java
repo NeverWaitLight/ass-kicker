@@ -7,6 +7,8 @@ import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.test.StepVerifier;
 
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -22,12 +25,11 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test suite for FcmChannelHandler using MockWebServer.
+ * Test suite for FcmPushChannel using MockWebServer.
  *
- * <p>Tests cover:
- * - Successful push notifications (single and multiple devices)
- * - Error scenarios (400, 401, 404, 500)
- * - Request validation (headers, payload structure)
+ * <p>The channel now uses GoogleCredentials for auto token refresh. Tests inject a
+ * pre-baked AccessToken via a package-private constructor so MockWebServer can still
+ * intercept the actual FCM REST call without needing a real service account JSON.
  */
 class FcmPushChannelTest {
 
@@ -41,29 +43,27 @@ class FcmPushChannelTest {
     private FcmMockServer mockServer;
     private FcmPushChannel channel;
 
-    /**
-     * Creates a ChannelEntity configured for testing.
-     *
-     * @param mockServerUrl The base URL of the mock server
-     */
-    private static ChannelEntity createProvider(String mockServerUrl) throws Exception {
+    private static ChannelEntity createProvider() throws Exception {
         String providerJson = String.format("""
                 {
                   "name": "FCM Mock Test",
                   "code": "fcm-mock-test",
                   "channelType": "PUSH",
                   "providerType": "FCM",
-                  "description": "FcmChannelHandler test with MockWebServer",
+                  "description": "FcmPushChannel test with MockWebServer",
                   "enabled": true,
                   "properties": {
-                    "url": "%s",
                     "projectId": "%s",
-                    "accessToken": "%s"
+                    "serviceAccountJson": "test-injected"
                   }
                 }
-                """, mockServerUrl, PROJECT_ID, ACCESS_TOKEN);
-
+                """, PROJECT_ID);
         return MAPPER.readValue(providerJson, ChannelEntity.class);
+    }
+
+    private static GoogleCredentials fakeCredentials() {
+        AccessToken token = new AccessToken(ACCESS_TOKEN, new Date(System.currentTimeMillis() + 3_600_000L));
+        return GoogleCredentials.create(token);
     }
 
     @BeforeEach
@@ -71,8 +71,10 @@ class FcmPushChannelTest {
         mockServer = new FcmMockServer(PROJECT_ID);
         mockServer.start();
 
-        ChannelEntity provider = createProvider(mockServer.getBaseUrl());
-        channel = new FcmPushChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
+        String endpoint = mockServer.getBaseUrl() + "/v1/projects/" + PROJECT_ID + "/messages:send";
+        ChannelEntity provider = createProvider();
+        channel = FcmPushChannel.forTesting(provider, WebClient.create(),
+                ChannelTestObjectMappers.channelObjectMapper(), fakeCredentials(), endpoint);
     }
 
     @AfterEach

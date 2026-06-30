@@ -44,6 +44,38 @@ class ChannelFactoryTest {
   @Test
   @DisplayName("创建FCM渠道")
   void create_fcm_returnsFcmChannel() throws Exception {
+    String testPrivateKey = "-----BEGIN PRIVATE KEY-----\\n"
+            + "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDC8AJnama5pcR6\\n"
+            + "ZAESNbsnw/buaGlc2sHDasdgjRlzx6Brtiw+mVfIVA/6BrtGIYmDRi6MCrCBlwJa\\n"
+            + "bQgGdD6IIkh4aqWaaO1f4qKC6QYUVNKsbDQDVa9YTQ7xwtifImCrtXWRWqlGt1FH\\n"
+            + "OlDwJjGyjv2EnSkRSNd42dCjqAQApNnXdziLTnw0skkz59Bps8Wf5cZc8vCnO7nT\\n"
+            + "ZSupUCi/3wkiadX0LetpyiAEhPCsj99TsZrGQaTVoBxiupqqRS8aoao8xSWSCXXf\\n"
+            + "P9YqPjWkQjF4qYuMsqjQ6uH24M+biAycT7zshlVF/K37b1DBwl/JLwL2mB7TP8Ob\\n"
+            + "x46Gel4FAgMBAAECggEADQNGOHlnARaP6UGlZqif5TV/gDEHyN3bgxGCMgTz7Cwp\\n"
+            + "HneV4tnhUmtLeREboutYiXhVDB58jjIH7gRgPZoN6zrVTqCD4dew8i59Uwgo0pD0\\n"
+            + "/UiTJ55/1YD+Bzp5XmobkkAgky2TpjeqMnsx7aNcZu3aU5DFgzSzGYtPZ6quwGIi\\n"
+            + "4tZEMXCwireuaJacUDftJgmbsfMZQTaHzmVbuNEtcUwPKVvrTDVDpmPUsdFlJURb\\n"
+            + "2ax1aPd0SAq0n9/w1fl+LWLeI+lizdCx1moPxAtLTA/shGax36aLIgSdWo9Tgxiw\\n"
+            + "FLzwiAmgupm0wx5YYy9gqZ4kwuAufnSfMvu7WAGzMwKBgQDv1EeGk9HJDiZC9ixM\\n"
+            + "dq8QNtSHFRmMccRUA6B6YiCzbFrBBGl4Fmks2Xkb4AeNMpzkj63zacZHPhPuBaY5\\n"
+            + "R+DyWmbACnVYGC7kk2MssVm1GhsI2G8WbpN7Mks0Lef6Ve1s5iTk+ttcKCRhoRNe\\n"
+            + "A4IXCZmXLIfrkhtQh9jcdjT7bwKBgQDQFNlwqPR+cT/vj1omUrfG5jMdWPK1FvZt\\n"
+            + "GeisWjgJCH0bKWrMjXXzUS2jU/h/7OeSXE4P9sJF6ZumJGcNSpNajXljsJG/dZKI\\n"
+            + "2BVLooOKLwygZmHSsdKDxZdMijZW6PXtsu2hFgvK54kfqpa6St7LeXuD26QeOrBk\\n"
+            + "eMonAS5TywKBgQC5VS1U5WSH36RXuM8w48KTYBvKq9aLfts+JXNdP/mPThuv703l\\n"
+            + "3EO4wfJiRTTwu30c7594bHQqV+Gk3b6/ozlFb/DZVPurcTzDrNZGEmOFnT/pDQCD\\n"
+            + "sD3ORWZyU0tiXAbXUd6PCQB9bhP3UjeaPlHIpcWIWoRK2iS7jc9bRwnYhwKBgFzG\\n"
+            + "/xCZdLIwAqbozvRJa4G2wFG0iDswKt4IcFLwww1cCJQkyma8KDw+FNA/L4yyb6o1\\n"
+            + "l+TMTGDpwSm6D2zAtKTqcZZ+cu3gGV8EobIgmu/w/HtESxeri8aPQl+xPHtR0d2T\\n"
+            + "Kxro/ocQ53YEFMKpgV9OIkFvnGSSHHYf2Vq8zxAzAoGAX4LEygHiIg2p8Bkn4z1E\\n"
+            + "dGhDB1IDR5lMLPlnw1DIi5r1dEW28vRrtGlR1oYGr0+13t1F9wJtW2IPz9HIurhw\\n"
+            + "faY6i1BxkidmA/QNY+cqE7TzM3EDtpnDKX301VvjaUcbY2FtoxKTI/HO+R1md/Mu\\n"
+            + "sucBLezQ8+gwpC+rDMtGCCA=\\n"
+            + "-----END PRIVATE KEY-----\\n";
+    String serviceAccountJson = "{\\\"type\\\":\\\"service_account\\\",\\\"project_id\\\":\\\"demo\\\","
+            + "\\\"private_key_id\\\":\\\"id\\\",\\\"private_key\\\":\\\"" + testPrivateKey + "\\\","
+            + "\\\"client_email\\\":\\\"x@y.iam.gserviceaccount.com\\\",\\\"client_id\\\":\\\"1\\\","
+            + "\\\"token_uri\\\":\\\"https://oauth2.googleapis.com/token\\\"}";
     String json = """
         {
           "code": "fcm-factory",
@@ -51,12 +83,11 @@ class ChannelFactoryTest {
           "providerType": "FCM",
           "enabled": true,
           "properties": {
-            "url": "https://fcm.googleapis.com/v1/projects/demo/messages:send",
             "projectId": "demo",
-            "accessToken": "test-access-token"
+            "serviceAccountJson": "%s"
           }
         }
-        """;
+        """.formatted(serviceAccountJson);
     ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
     assertThat(factory.create(entity)).isInstanceOf(FcmPushChannel.class);
   }

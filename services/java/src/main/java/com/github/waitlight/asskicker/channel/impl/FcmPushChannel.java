@@ -1,5 +1,8 @@
 package com.github.waitlight.asskicker.channel.impl;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,44 +22,55 @@ import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
+import com.google.auth.oauth2.GoogleCredentials;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 @ChannelImpl(providerType = ProviderType.FCM, propertyClass = FcmPushChannel.Properties.class)
 public class FcmPushChannel extends Channel {
 
+    private static final String FIREBASE_MESSAGING_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
+    private static final String FCM_ENDPOINT_TEMPLATE = "https://fcm.googleapis.com/v1/projects/%s/messages:send";
+
     private final Properties properties;
+    private final GoogleCredentials credentials;
+    private final String endpoint;
 
     public FcmPushChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
+        validateSpec(this.properties);
+        this.credentials = loadCredentials(this.properties.serviceAccountJson());
+        this.endpoint = String.format(FCM_ENDPOINT_TEMPLATE, this.properties.projectId().trim());
+    }
+
+    // Package-private constructor for tests: lets MockWebServer intercept and inject fake credentials
+    FcmPushChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper,
+            GoogleCredentials credentials, String endpoint) {
+        super(provider, webClient, objectMapper);
+        this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
+        this.credentials = credentials;
+        this.endpoint = endpoint;
+    }
+
+    /**
+     * Visible for testing — bypasses serviceAccountJson parsing and lets callers point the channel
+     * at a custom endpoint (e.g. MockWebServer) with pre-baked GoogleCredentials.
+     */
+    public static FcmPushChannel forTesting(ChannelEntity provider, WebClient webClient,
+            ObjectMapper objectMapper, GoogleCredentials credentials, String endpoint) {
+        return new FcmPushChannel(provider, webClient, objectMapper, credentials, endpoint);
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
-            List<String> recipients = uniAddress == null || uniAddress.getRecipients() == null
-                    ? List.of()
-                    : uniAddress.getRecipients().stream()
-                            .filter(Objects::nonNull)
-                            .map(String::trim)
-                            .filter(StringUtils::isNotBlank)
-                            .collect(Collectors.toList());
-
-            if (recipients.isEmpty()) {
-                return Mono.error(new IllegalArgumentException("FCM recipients required"));
-            }
-
-            if (StringUtils.isBlank(properties.url())
-                    || StringUtils.isBlank(properties.projectId())
-                    || StringUtils.isBlank(properties.accessToken())) {
-                return Mono.error(new IllegalStateException(
-                        "FCM spec requires url projectId accessToken"));
-            }
+            List<String> recipients = normalizeRecipients(uniAddress);
 
             String alertTitle = uniMessage != null ? uniMessage.getTitle() : null;
             String alertBody = uniMessage != null ? uniMessage.getContent() : null;
@@ -64,26 +78,57 @@ public class FcmPushChannel extends Channel {
 
             log.info("Sending FCM notification to {} recipient(s)", recipients.size());
 
-            String endpoint = buildFcmEndpoint(properties.url().trim(), properties.projectId().trim());
-
-            return Flux.fromIterable(recipients)
-                    .concatMap(token -> {
-                        byte[] bodyBytes;
-                        try {
-                            bodyBytes = buildFcmPayloadBytes(objectMapper, token, alertTitle, alertBody, extraData);
-                        } catch (Exception e) {
-                            return Mono.error(e);
-                        }
-                        return postFcmMessage(properties.accessToken().trim(), endpoint, bodyBytes);
-                    })
+            return Mono.fromCallable(this::resolveAccessToken)
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .flatMapMany(token -> Flux.fromIterable(recipients)
+                            .concatMap(deviceToken -> {
+                                byte[] bodyBytes;
+                                try {
+                                    bodyBytes = buildFcmPayloadBytes(objectMapper, deviceToken, alertTitle, alertBody,
+                                            extraData);
+                                } catch (Exception e) {
+                                    return Mono.error(e);
+                                }
+                                return postFcmMessage(token, endpoint, bodyBytes);
+                            }))
                     .collect(Collectors.joining(","))
                     .map(names -> "FCM ok " + recipients.size() + " device(s) name=" + names);
         });
     }
 
-    private static String buildFcmEndpoint(String url, String projectId) {
-        String base = url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
-        return base + "/v1/projects/" + projectId + "/messages:send";
+    private List<String> normalizeRecipients(UniAddress uniAddress) {
+        List<String> recipients = uniAddress == null || uniAddress.getRecipients() == null
+                ? List.of()
+                : uniAddress.getRecipients().stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(StringUtils::isNotBlank)
+                        .collect(Collectors.toList());
+        if (recipients.isEmpty()) {
+            throw new IllegalArgumentException("FCM recipients required");
+        }
+        return recipients;
+    }
+
+    private static void validateSpec(Properties p) {
+        if (StringUtils.isBlank(p.projectId()) || StringUtils.isBlank(p.serviceAccountJson())) {
+            throw new IllegalStateException("FCM spec requires projectId serviceAccountJson");
+        }
+    }
+
+    private static GoogleCredentials loadCredentials(String serviceAccountJson) {
+        try {
+            return GoogleCredentials.fromStream(
+                    new ByteArrayInputStream(serviceAccountJson.getBytes(StandardCharsets.UTF_8)))
+                    .createScoped(FIREBASE_MESSAGING_SCOPE);
+        } catch (IOException e) {
+            throw new IllegalStateException("FCM credentials init failed", e);
+        }
+    }
+
+    private String resolveAccessToken() throws IOException {
+        credentials.refreshIfExpired();
+        return credentials.getAccessToken().getTokenValue();
     }
 
     private static byte[] buildFcmPayloadBytes(ObjectMapper objectMapper, String token, String title, String body,
@@ -154,8 +199,7 @@ public class FcmPushChannel extends Channel {
     }
 
     record Properties(
-            @NotBlank String url,
             @NotBlank String projectId,
-            @NotBlank String accessToken) {
+            @NotBlank String serviceAccountJson) {
     }
 }
