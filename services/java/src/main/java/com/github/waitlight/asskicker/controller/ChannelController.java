@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.github.waitlight.asskicker.config.OpenApiConfig;
 import com.github.waitlight.asskicker.channel.AbstractChannelImpl;
-import com.github.waitlight.asskicker.channel.ChannelConfigurer;
 import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.converter.ChannelConverter;
 import com.github.waitlight.asskicker.converter.ChannelPropertiesMapper;
@@ -65,7 +64,6 @@ public class ChannelController {
         private final ChannelService channelService;
         private final ChannelConverter channelConverter;
         private final ChannelManager channelManager;
-        private final ChannelConfigurer channelConfigurer;
         private final ChannelFactory channelFactory;
         private final ChannelPropertiesMapper channelPropertiesMapper;
         private final RecordService recordService;
@@ -75,7 +73,6 @@ public class ChannelController {
         public Mono<Resp<ChannelTestResultVO>> test(@Valid @RequestBody TestChannelDTO request) {
                 ProviderType provider = resolveProviderForTest(request.getType(), request.getProvider());
                 Map<String, Object> props = request.getProperties() != null ? request.getProperties() : Map.of();
-                channelConfigurer.validateProperties(provider, props);
 
                 ChannelEntity ephemeral = new ChannelEntity();
                 ephemeral.setId("0");
@@ -148,8 +145,6 @@ public class ChannelController {
         @PostMapping
         public Mono<Resp<ChannelVO>> create(@Valid @RequestBody CreateChannelDTO request,
                         @AuthenticationPrincipal UserPrincipal principal) {
-                channelConfigurer.validateProperties(request.getProvider(), request.getProperties());
-
                 return Mono.just(request)
                                 .map(channelConverter::toEntity)
                                 .flatMap(entity -> channelService.create(entity, principal.userId()))
@@ -215,8 +210,6 @@ public class ChannelController {
         @PutMapping
         public Mono<Resp<ChannelVO>> update(@Valid @RequestBody UpdateChannelDTO request,
                         @AuthenticationPrincipal UserPrincipal principal) {
-                channelConfigurer.validateProperties(request.getProvider(), request.getProperties());
-
                 return Mono.just(request)
                                 .map(channelConverter::toEntity)
                                 .flatMap(patch -> channelService.update(request.getId(), patch, principal.userId()))
