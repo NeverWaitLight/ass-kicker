@@ -7,6 +7,7 @@ import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.ProviderType;
 import com.github.waitlight.asskicker.service.ChannelService;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -140,13 +141,31 @@ public class ChannelManager {
                     next.put(provider.getId(), channel);
                 }
             }
+            List<Channel> previous = new ArrayList<>(cache.values());
             cache.clear();
             cache.putAll(next);
             log.info("Refreshed channel cache, {} channel(s)", next.size());
+            disposeAll(previous);
         } catch (Exception e) {
             log.error("Channel cache refresh failed, keeping previous cache", e);
         } finally {
             refreshLock.unlock();
+        }
+    }
+
+    @PreDestroy
+    void shutdown() {
+        disposeAll(new ArrayList<>(cache.values()));
+        cache.clear();
+    }
+
+    private void disposeAll(List<Channel> channels) {
+        for (Channel c : channels) {
+            try {
+                c.dispose();
+            } catch (Exception e) {
+                log.warn("Channel {} dispose failed", c.getCode(), e);
+            }
         }
     }
 

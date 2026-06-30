@@ -42,4 +42,8 @@ public abstract class Channel {
     }
 
     protected abstract Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress);
+
+    public void dispose() {
+        // no-op by default; subclasses holding long-lived resources should override
+    }
 }
