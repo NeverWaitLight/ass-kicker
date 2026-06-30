@@ -41,47 +41,43 @@ public class AliyunSmsChannel extends Channel {
         }
     }
 
-    private static Config buildConfig(Properties properties) throws Exception {
-        Config config = new Config();
-        config.setAccessKeyId(properties.accessKeyId().trim());
-        config.setAccessKeySecret(properties.accessKeySecret().trim());
-        applyEndpoint(config, properties.endpoint().trim());
+    private static Config buildConfig(Properties properties) {
+        Config config = new Config()
+                .setAccessKeyId(properties.accessKeyId().trim())
+                .setAccessKeySecret(properties.accessKeySecret().trim());
         if (StringUtils.isNotBlank(properties.regionId())) {
             config.setRegionId(properties.regionId().trim());
+        }
+        if (StringUtils.isNotBlank(properties.endpoint())) {
+            applyEndpoint(config, properties.endpoint().trim());
         }
         return config;
     }
 
     /**
-     * Tea 客户端使用 host 或 host:port；支持完整 URL（含 http/https）或裸域名。
+     * Endpoint 接受裸 host[:port] 或带 scheme 的 URL；带 scheme 时 protocol 也会被同步覆盖。
      */
     static void applyEndpoint(Config config, String endpointRaw) {
-        String s = endpointRaw.trim();
-        URI uri = URI.create(s.contains("://") ? s : "https://" + s);
-        String scheme = uri.getScheme();
-        if (scheme != null) {
-            config.setProtocol(scheme.toLowerCase());
+        if (!endpointRaw.contains("://")) {
+            config.setEndpoint(endpointRaw);
+            return;
+        }
+        URI uri = URI.create(endpointRaw);
+        if (uri.getScheme() != null) {
+            config.setProtocol(uri.getScheme().toLowerCase());
         }
         String host = uri.getHost();
         if (StringUtils.isBlank(host)) {
             throw new IllegalStateException("ALIYUN_SMS endpoint has no host: " + endpointRaw);
         }
         int port = uri.getPort();
-        if (port > 0) {
-            boolean defaultHttps = "https".equalsIgnoreCase(scheme) && port == 443;
-            boolean defaultHttp = "http".equalsIgnoreCase(scheme) && port == 80;
-            if (!defaultHttps && !defaultHttp) {
-                config.setEndpoint(host + ":" + port);
-                return;
-            }
-        }
-        config.setEndpoint(host);
+        config.setEndpoint(port > 0 ? host + ":" + port : host);
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
-            List<String> recipients = normalizeRecipients(uniAddress, "ALIYUN_SMS");
+            List<String> recipients = normalizeRecipients(uniAddress);
             validateSpec();
 
             String templateCode = resolveTemplateCode(uniMessage);
@@ -97,9 +93,8 @@ public class AliyunSmsChannel extends Channel {
                 return Mono.error(e);
             }
 
-            String tpl = templateCode;
             return Flux.fromIterable(recipients)
-                    .concatMap(phone -> sendOne(phone, tpl, templateParamJson))
+                    .concatMap(phone -> sendOne(phone, templateCode, templateParamJson))
                     .collect(Collectors.joining(","))
                     .map(ignore -> "ALIYUN_SMS ok " + recipients.size() + " recipient(s)");
         });
@@ -110,8 +105,8 @@ public class AliyunSmsChannel extends Channel {
                 || StringUtils.isBlank(properties.signName())) {
             throw new IllegalStateException("ALIYUN_SMS requires accessKeyId accessKeySecret signName");
         }
-        if (StringUtils.isBlank(properties.endpoint())) {
-            throw new IllegalStateException("ALIYUN_SMS requires endpoint");
+        if (StringUtils.isBlank(properties.regionId()) && StringUtils.isBlank(properties.endpoint())) {
+            throw new IllegalStateException("ALIYUN_SMS requires regionId or endpoint");
         }
     }
 
@@ -154,7 +149,7 @@ public class AliyunSmsChannel extends Channel {
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
-    private List<String> normalizeRecipients(UniAddress uniAddress, String providerName) {
+    private List<String> normalizeRecipients(UniAddress uniAddress) {
         List<String> recipients = uniAddress == null || uniAddress.getRecipients() == null
                 ? List.of()
                 : uniAddress.getRecipients().stream()
@@ -163,7 +158,7 @@ public class AliyunSmsChannel extends Channel {
                         .filter(StringUtils::isNotBlank)
                         .collect(Collectors.toList());
         if (recipients.isEmpty()) {
-            throw new IllegalArgumentException(providerName + " recipients required");
+            throw new IllegalArgumentException("ALIYUN_SMS recipients required");
         }
         return recipients;
     }
@@ -174,6 +169,6 @@ public class AliyunSmsChannel extends Channel {
             @NotBlank String signName,
             String templateCode,
             String regionId,
-            @NotBlank String endpoint) {
+            String endpoint) {
     }
 }
