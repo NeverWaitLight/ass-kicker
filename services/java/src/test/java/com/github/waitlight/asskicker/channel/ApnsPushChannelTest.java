@@ -7,315 +7,353 @@ import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
-import okhttp3.mockwebserver.RecordedRequest;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
+import com.eatthepath.pushy.apns.ApnsClient;
+import com.eatthepath.pushy.apns.DeliveryPriority;
+import com.eatthepath.pushy.apns.PushNotificationResponse;
+import com.eatthepath.pushy.apns.PushType;
+import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
+import com.eatthepath.pushy.apns.util.concurrent.PushNotificationFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.test.StepVerifier;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
- * Test suite for ApnsChannelHandler using MockWebServer.
+ * Test suite for ApnsPushChannel using a mocked Pushy ApnsClient.
  *
- * <p>
- * Tests cover:
- * - Successful push notifications (single and multiple devices)
- * - Error scenarios (400, 401, 410, 500)
- * - Request validation (headers, payload structure)
+ * <p>Pushy owns JWT signing, HTTP/2 framing, and APNs header construction internally;
+ * tests therefore mock {@link ApnsClient} and assert against the
+ * {@link SimpleApnsPushNotification} the channel hands off to Pushy.
  */
+@ExtendWith(MockitoExtension.class)
 class ApnsPushChannelTest {
 
-        private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper JSON = new ObjectMapper();
 
-        private static final String DEVICE_TOKEN_1 = "aabbccddeeff0011223344556677889900aabbccddeeff00112233445566778899";
-        private static final String DEVICE_TOKEN_2 = "1122334455667788990011223344556677889900aabbccddeeff001122334455";
+    private static final String DEVICE_TOKEN_1 = "aabbccddeeff0011223344556677889900aabbccddeeff00112233445566778899";
+    private static final String DEVICE_TOKEN_2 = "1122334455667788990011223344556677889900aabbccddeeff001122334455";
+    private static final String TOPIC = "com.example.app";
 
-        private ApnsMockServer mockServer;
-        private ApnsPushChannel channel;
+    @Mock
+    private ApnsClient apnsClient;
 
-        /**
-         * Creates a ChannelEntity configured for testing.
-         *
-         * @param mockServerUrl The base URL of the mock server
-         */
-        private static ChannelEntity createProvider(String mockServerUrl) throws Exception {
-                // Use a valid EC private key for JWT signing (test key, not for production)
-                String testPrivateKey = """
-                                -----BEGIN PRIVATE KEY-----
-                                MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgEBNZQdW2XALI6odi
-                                sffzbONZ5+i8V1xxzKs88K2KPhShRANCAARfjzU68VEgfLL0eZ38qjls03GvRFwJ
-                                NQLOBe4rsFB6lqOYiNME6oCVt4o5Ju46ca2RWappiw8v21uMLZPTLjx5
-                                -----END PRIVATE KEY-----
-                                """;
+    private ApnsPushChannel channel;
 
-                String providerJson = String.format("""
-                                {
-                                  "name": "APNs Mock Test",
-                                  "code": "apns-mock-test",
-                                  "channelType": "PUSH",
-                                  "providerType": "APNS",
-                                  "description": "ApnsChannelHandler test with MockWebServer",
-                                  "enabled": true,
-                                  "properties": {
-                                    "url": "%s",
-                                    "bundleIdTopic": "com.example.app",
-                                    "teamId": "TEST_TEAM_ID",
-                                    "keyId": "TEST_KEY_ID",
-                                    "privateKeyPem": "%s"
-                                  }
-                                }
-                                """, mockServerUrl, testPrivateKey.replace("\n", "\\n"));
-
-                return MAPPER.readValue(providerJson, ChannelEntity.class);
-        }
-
-        @BeforeEach
-        void setUp() throws Exception {
-                mockServer = new ApnsMockServer();
-                mockServer.start();
-
-                // Create provider configuration using mock server URL
-                ChannelEntity provider = createProvider(mockServer.getBaseUrl());
-                channel = new ApnsPushChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
-        }
-
-        // ==================== Success Scenarios ====================
-
-        @AfterEach
-        void tearDown() throws Exception {
-                if (mockServer != null) {
-                        mockServer.shutdown();
+    private static ChannelEntity createProvider() throws Exception {
+        String testPrivateKey = """
+                -----BEGIN PRIVATE KEY-----
+                MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgEBNZQdW2XALI6odi
+                sffzbONZ5+i8V1xxzKs88K2KPhShRANCAARfjzU68VEgfLL0eZ38qjls03GvRFwJ
+                NQLOBe4rsFB6lqOYiNME6oCVt4o5Ju46ca2RWappiw8v21uMLZPTLjx5
+                -----END PRIVATE KEY-----
+                """;
+        String providerJson = String.format("""
+                {
+                  "name": "APNs Mock Test",
+                  "code": "apns-mock-test",
+                  "channelType": "PUSH",
+                  "providerType": "APNS",
+                  "description": "ApnsPushChannel test with mocked ApnsClient",
+                  "enabled": true,
+                  "properties": {
+                    "bundleIdTopic": "%s",
+                    "teamId": "TEST_TEAM_ID",
+                    "keyId": "TEST_KEY_ID",
+                    "privateKeyPem": "%s"
+                  }
                 }
-        }
+                """, TOPIC, testPrivateKey.replace("\n", "\\n"));
+        return MAPPER.readValue(providerJson, ChannelEntity.class);
+    }
 
-        @Test
-        void send_singleDevice_returnsSuccessWithApnsId() throws Exception {
-                String apnsId = UUID.randomUUID().toString();
-                mockServer.enqueueSuccess(apnsId);
+    private static PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>>
+            completed(SimpleApnsPushNotification dummyNotification,
+                      PushNotificationResponse<SimpleApnsPushNotification> response) {
+        PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> f =
+                new PushNotificationFuture<>(dummyNotification);
+        f.complete(response);
+        return f;
+    }
 
-                UniMessage message = new UniMessage();
-                message.setTitle("Test Title");
-                message.setContent("Test Content");
-                UniAddress address = UniAddress.ofPush(ProviderType.APNS, DEVICE_TOKEN_1);
+    @SuppressWarnings("unchecked")
+    private PushNotificationResponse<SimpleApnsPushNotification> okResponse(UUID apnsId) {
+        PushNotificationResponse<SimpleApnsPushNotification> resp = org.mockito.Mockito.mock(PushNotificationResponse.class);
+        when(resp.isAccepted()).thenReturn(true);
+        when(resp.getApnsId()).thenReturn(apnsId);
+        return resp;
+    }
 
-                StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
-                                .expectNext("APNs ok 1 device(s) apns-id=" + apnsId)
-                                .verifyComplete();
+    @SuppressWarnings("unchecked")
+    private PushNotificationResponse<SimpleApnsPushNotification> rejectedResponse(int statusCode, String reason) {
+        PushNotificationResponse<SimpleApnsPushNotification> resp = org.mockito.Mockito.mock(PushNotificationResponse.class);
+        when(resp.isAccepted()).thenReturn(false);
+        when(resp.getStatusCode()).thenReturn(statusCode);
+        when(resp.getRejectionReason()).thenReturn(Optional.of(reason));
+        return resp;
+    }
 
-                // Verify request
-                RecordedRequest request = mockServer.takeRequest(5, TimeUnit.SECONDS);
-                assertThat(request).isNotNull();
-                assertThat(request.getPath()).isEqualTo("/3/device/" + DEVICE_TOKEN_1);
-                mockServer.verifyRequestHeaders(request);
-                mockServer.verifyRequestBody(request, "Test Title", "Test Content");
-        }
+    @BeforeEach
+    void setUp() throws Exception {
+        ChannelEntity provider = createProvider();
+        channel = ApnsPushChannel.forTesting(provider, WebClient.create(),
+                ChannelTestObjectMappers.channelObjectMapper(), apnsClient);
+    }
 
-        @Test
-        void send_multipleDevices_returnsSuccessWithMultipleApnsIds() throws Exception {
-                String apnsId1 = UUID.randomUUID().toString();
-                String apnsId2 = UUID.randomUUID().toString();
-                mockServer.enqueueSuccess(apnsId1);
-                mockServer.enqueueSuccess(apnsId2);
+    // ==================== Success Scenarios ====================
 
-                UniMessage message = new UniMessage();
-                message.setTitle("Multi Device Test");
-                message.setContent("Testing multiple devices");
-                UniAddress address = UniAddress.ofPush(
-                                ProviderType.APNS,
-                                DEVICE_TOKEN_1, DEVICE_TOKEN_2);
+    @Test
+    void send_singleDevice_returnsSuccessWithApnsId() {
+        UUID apnsId = UUID.randomUUID();
+        SimpleApnsPushNotification dummy = new SimpleApnsPushNotification(DEVICE_TOKEN_1, TOPIC, "{}");
+        PushNotificationResponse<SimpleApnsPushNotification> resp = okResponse(apnsId);
+        when(apnsClient.sendNotification(any(SimpleApnsPushNotification.class)))
+                .thenReturn(completed(dummy, resp));
 
-                StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
-                                .expectNext("APNs ok 2 device(s) apns-id=" + apnsId1 + "," + apnsId2)
-                                .verifyComplete();
+        UniMessage message = new UniMessage();
+        message.setTitle("Test Title");
+        message.setContent("Test Content");
+        UniAddress address = UniAddress.ofPush(ProviderType.APNS, DEVICE_TOKEN_1);
 
-                // Verify both requests (order may vary)
-                assertThat(mockServer.getRequestCount()).isEqualTo(2);
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
+                .expectNext("APNs ok 1 device(s) apns-id=" + apnsId)
+                .verifyComplete();
 
-                RecordedRequest request1 = mockServer.takeRequest(5, TimeUnit.SECONDS);
-                RecordedRequest request2 = mockServer.takeRequest(5, TimeUnit.SECONDS);
+        ArgumentCaptor<SimpleApnsPushNotification> captor = ArgumentCaptor.forClass(SimpleApnsPushNotification.class);
+        verify(apnsClient, times(1)).sendNotification(captor.capture());
+        SimpleApnsPushNotification sent = captor.getValue();
+        assertThat(sent.getToken()).isEqualTo(DEVICE_TOKEN_1);
+        assertThat(sent.getTopic()).isEqualTo(TOPIC);
+        assertThat(sent.getPriority()).isEqualTo(DeliveryPriority.IMMEDIATE);
+        assertThat(sent.getPushType()).isEqualTo(PushType.ALERT);
+        assertThat(sent.getPayload()).contains("\"title\":\"Test Title\"");
+        assertThat(sent.getPayload()).contains("\"body\":\"Test Content\"");
+    }
 
-                // Verify both device tokens were sent (regardless of order)
-                Assertions.assertNotNull(request2.getPath());
-                Assertions.assertNotNull(request1.getPath());
-                assertThat(List.of(request1.getPath(), request2.getPath()))
-                                .containsExactlyInAnyOrder(
-                                                "/3/device/" + DEVICE_TOKEN_1,
-                                                "/3/device/" + DEVICE_TOKEN_2);
+    @Test
+    void send_multipleDevices_returnsSuccessWithMultipleApnsIds() {
+        UUID apnsId1 = UUID.randomUUID();
+        UUID apnsId2 = UUID.randomUUID();
+        SimpleApnsPushNotification dummy = new SimpleApnsPushNotification(DEVICE_TOKEN_1, TOPIC, "{}");
+        PushNotificationResponse<SimpleApnsPushNotification> resp1 = okResponse(apnsId1);
+        PushNotificationResponse<SimpleApnsPushNotification> resp2 = okResponse(apnsId2);
+        when(apnsClient.sendNotification(any(SimpleApnsPushNotification.class)))
+                .thenReturn(completed(dummy, resp1))
+                .thenReturn(completed(dummy, resp2));
 
-                mockServer.verifyRequestHeaders(request1);
-                mockServer.verifyRequestHeaders(request2);
-        }
+        UniMessage message = new UniMessage();
+        message.setTitle("Multi Device Test");
+        message.setContent("Testing multiple devices");
+        UniAddress address = UniAddress.ofPush(ProviderType.APNS, DEVICE_TOKEN_1, DEVICE_TOKEN_2);
 
-        @Test
-        void send_withoutTitle_sendsPayloadWithBodyOnly() throws Exception {
-                String apnsId = UUID.randomUUID().toString();
-                mockServer.enqueueSuccess(apnsId);
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
+                .expectNext("APNs ok 2 device(s) apns-id=" + apnsId1 + "," + apnsId2)
+                .verifyComplete();
 
-                UniMessage message = new UniMessage();
-                message.setContent("Content without title");
-                UniAddress address = UniAddress.ofPush(ProviderType.APNS, DEVICE_TOKEN_1);
+        ArgumentCaptor<SimpleApnsPushNotification> captor = ArgumentCaptor.forClass(SimpleApnsPushNotification.class);
+        verify(apnsClient, times(2)).sendNotification(captor.capture());
+        List<SimpleApnsPushNotification> sent = captor.getAllValues();
+        assertThat(sent).extracting(SimpleApnsPushNotification::getToken)
+                .containsExactly(DEVICE_TOKEN_1, DEVICE_TOKEN_2);
+    }
 
-                StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
-                                .expectNext("APNs ok 1 device(s) apns-id=" + apnsId)
-                                .verifyComplete();
+    @Test
+    void send_withoutTitle_sendsPayloadWithBodyOnly() throws Exception {
+        UUID apnsId = UUID.randomUUID();
+        SimpleApnsPushNotification dummy = new SimpleApnsPushNotification(DEVICE_TOKEN_1, TOPIC, "{}");
+        PushNotificationResponse<SimpleApnsPushNotification> resp = okResponse(apnsId);
+        when(apnsClient.sendNotification(any(SimpleApnsPushNotification.class)))
+                .thenReturn(completed(dummy, resp));
 
-                RecordedRequest request = mockServer.takeRequest(5, TimeUnit.SECONDS);
-                mockServer.verifyRequestBody(request, null, "Content without title");
-        }
+        UniMessage message = new UniMessage();
+        message.setContent("Content without title");
+        UniAddress address = UniAddress.ofPush(ProviderType.APNS, DEVICE_TOKEN_1);
 
-        // ==================== Error Scenarios ====================
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
+                .expectNext("APNs ok 1 device(s) apns-id=" + apnsId)
+                .verifyComplete();
 
-        @Test
-        void send_autoGeneratesApnsId_whenNotConfigured() throws Exception {
-                mockServer.enqueueSuccess(null); // null will auto-generate apns-id
+        ArgumentCaptor<SimpleApnsPushNotification> captor = ArgumentCaptor.forClass(SimpleApnsPushNotification.class);
+        verify(apnsClient).sendNotification(captor.capture());
+        Map<String, Object> payload = JSON.readValue(captor.getValue().getPayload(), Map.class);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> aps = (Map<String, Object>) payload.get("aps");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> alert = (Map<String, Object>) aps.get("alert");
+        assertThat(alert.containsKey("title")).isFalse();
+        assertThat(alert.get("body")).isEqualTo("Content without title");
+    }
 
-                UniMessage message = new UniMessage();
-                message.setContent("Test");
-                UniAddress address = UniAddress.ofPush(ProviderType.APNS, DEVICE_TOKEN_1);
+    @Test
+    void send_responseWithoutApnsId_returnsOk() {
+        SimpleApnsPushNotification dummy = new SimpleApnsPushNotification(DEVICE_TOKEN_1, TOPIC, "{}");
+        PushNotificationResponse<SimpleApnsPushNotification> resp = okResponse(null);
+        when(apnsClient.sendNotification(any(SimpleApnsPushNotification.class)))
+                .thenReturn(completed(dummy, resp));
 
-                StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
-                                .assertNext(result -> {
-                                        assertThat(result).startsWith("APNs ok 1 device(s) apns-id=");
-                                        // Verify UUID format
-                                        String apnsId = result.substring("APNs ok 1 device(s) apns-id=".length());
-                                        assertThat(apnsId).matches(
-                                                        "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
-                                })
-                                .verifyComplete();
-        }
+        UniMessage message = new UniMessage();
+        message.setContent("Test");
+        UniAddress address = UniAddress.ofPush(ProviderType.APNS, DEVICE_TOKEN_1);
 
-        @Test
-        void send_badDeviceToken_throwsIllegalStateExceptionWith410() throws Exception {
-                mockServer.enqueueGoneDeviceToken();
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
+                .expectNext("APNs ok 1 device(s) apns-id=ok")
+                .verifyComplete();
+    }
 
-                UniMessage message = new UniMessage();
-                message.setContent("Test");
-                UniAddress address = UniAddress.ofPush(ProviderType.APNS, "invalid-token");
+    // ==================== Error Scenarios ====================
 
-                StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
-                                .expectErrorMatches(e -> e instanceof IllegalStateException
-                                                && e.getMessage().contains("APNs 410")
-                                                && e.getMessage().contains("BadDeviceToken"))
-                                .verify();
-        }
+    @Test
+    void send_badDeviceToken_throwsIllegalStateExceptionWith410() {
+        SimpleApnsPushNotification dummy = new SimpleApnsPushNotification("invalid-token", TOPIC, "{}");
+        PushNotificationResponse<SimpleApnsPushNotification> resp = rejectedResponse(410, "BadDeviceToken");
+        when(apnsClient.sendNotification(any(SimpleApnsPushNotification.class)))
+                .thenReturn(completed(dummy, resp));
 
-        @Test
-        void send_authenticationFailure_throwsIllegalStateExceptionWith401() throws Exception {
-                mockServer.enqueueUnauthorized();
+        UniMessage message = new UniMessage();
+        message.setContent("Test");
+        UniAddress address = UniAddress.ofPush(ProviderType.APNS, "invalid-token");
 
-                UniMessage message = new UniMessage();
-                message.setContent("Test");
-                UniAddress address = UniAddress.ofPush(ProviderType.APNS, DEVICE_TOKEN_1);
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
+                .expectErrorMatches(e -> e instanceof IllegalStateException
+                        && e.getMessage().contains("APNs 410")
+                        && e.getMessage().contains("BadDeviceToken"))
+                .verify();
+    }
 
-                StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
-                                .expectErrorMatches(e -> e instanceof IllegalStateException
-                                                && e.getMessage().contains("APNs 401")
-                                                && e.getMessage().contains("InvalidProviderToken"))
-                                .verify();
-        }
+    @Test
+    void send_authenticationFailure_throwsIllegalStateExceptionWith401() {
+        SimpleApnsPushNotification dummy = new SimpleApnsPushNotification(DEVICE_TOKEN_1, TOPIC, "{}");
+        PushNotificationResponse<SimpleApnsPushNotification> resp = rejectedResponse(401, "InvalidProviderToken");
+        when(apnsClient.sendNotification(any(SimpleApnsPushNotification.class)))
+                .thenReturn(completed(dummy, resp));
 
-        @Test
-        void send_badRequest_throwsIllegalStateExceptionWith400() throws Exception {
-                mockServer.enqueueBadRequest("BadMessageId");
+        UniMessage message = new UniMessage();
+        message.setContent("Test");
+        UniAddress address = UniAddress.ofPush(ProviderType.APNS, DEVICE_TOKEN_1);
 
-                UniMessage message = new UniMessage();
-                message.setContent("Test");
-                UniAddress address = UniAddress.ofPush(ProviderType.APNS, DEVICE_TOKEN_1);
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
+                .expectErrorMatches(e -> e instanceof IllegalStateException
+                        && e.getMessage().contains("APNs 401")
+                        && e.getMessage().contains("InvalidProviderToken"))
+                .verify();
+    }
 
-                StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
-                                .expectErrorMatches(e -> e instanceof IllegalStateException
-                                                && e.getMessage().contains("APNs 400")
-                                                && e.getMessage().contains("BadMessageId"))
-                                .verify();
-        }
+    @Test
+    void send_badRequest_throwsIllegalStateExceptionWith400() {
+        SimpleApnsPushNotification dummy = new SimpleApnsPushNotification(DEVICE_TOKEN_1, TOPIC, "{}");
+        PushNotificationResponse<SimpleApnsPushNotification> resp = rejectedResponse(400, "BadMessageId");
+        when(apnsClient.sendNotification(any(SimpleApnsPushNotification.class)))
+                .thenReturn(completed(dummy, resp));
 
-        // ==================== Validation Scenarios ====================
+        UniMessage message = new UniMessage();
+        message.setContent("Test");
+        UniAddress address = UniAddress.ofPush(ProviderType.APNS, DEVICE_TOKEN_1);
 
-        @Test
-        void send_serverError_throwsIllegalStateExceptionWith500() throws Exception {
-                mockServer.enqueueServerError();
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
+                .expectErrorMatches(e -> e instanceof IllegalStateException
+                        && e.getMessage().contains("APNs 400")
+                        && e.getMessage().contains("BadMessageId"))
+                .verify();
+    }
 
-                UniMessage message = new UniMessage();
-                message.setContent("Test");
-                UniAddress address = UniAddress.ofPush(ProviderType.APNS, DEVICE_TOKEN_1);
+    @Test
+    void send_serverError_throwsIllegalStateExceptionWith500() {
+        SimpleApnsPushNotification dummy = new SimpleApnsPushNotification(DEVICE_TOKEN_1, TOPIC, "{}");
+        PushNotificationResponse<SimpleApnsPushNotification> resp = rejectedResponse(500, "InternalServerError");
+        when(apnsClient.sendNotification(any(SimpleApnsPushNotification.class)))
+                .thenReturn(completed(dummy, resp));
 
-                StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
-                                .expectErrorMatches(e -> e instanceof IllegalStateException
-                                                && e.getMessage().contains("APNs 500")
-                                                && e.getMessage().contains("InternalServerError"))
-                                .verify();
-        }
+        UniMessage message = new UniMessage();
+        message.setContent("Test");
+        UniAddress address = UniAddress.ofPush(ProviderType.APNS, DEVICE_TOKEN_1);
 
-        @Test
-        void send_emptyRecipients_throwsIllegalArgumentException() {
-                UniMessage message = new UniMessage();
-                message.setContent("Test");
-                UniAddress address = UniAddress.ofPush(ProviderType.APNS); // No device tokens
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
+                .expectErrorMatches(e -> e instanceof IllegalStateException
+                        && e.getMessage().contains("APNs 500")
+                        && e.getMessage().contains("InternalServerError"))
+                .verify();
+    }
 
-                StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
-                                .expectErrorMatches(e -> e instanceof IllegalArgumentException
-                                                && e.getMessage().contains("APNs recipients required"))
-                                .verify();
-        }
+    // ==================== Validation Scenarios ====================
 
-        @Test
-        void send_nullAddress_throwsIllegalArgumentException() {
-                UniMessage message = new UniMessage();
-                message.setContent("Test");
+    @Test
+    void send_emptyRecipients_throwsIllegalArgumentException() {
+        UniMessage message = new UniMessage();
+        message.setContent("Test");
+        UniAddress address = UniAddress.ofPush(ProviderType.APNS);
 
-                StepVerifier.create(channel.send(UniTask.builder().message(message).address(null).build()))
-                                .expectErrorMatches(e -> e instanceof IllegalArgumentException
-                                                && e.getMessage().contains("APNs recipients required"))
-                                .verify();
-        }
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
+                .expectErrorMatches(e -> e instanceof IllegalArgumentException
+                        && e.getMessage().contains("APNs recipients required"))
+                .verify();
+    }
 
-        @Test
-        void send_verifiesJwtAuthorizationHeader() throws Exception {
-                mockServer.enqueueSuccess(null);
+    @Test
+    void send_nullAddress_throwsIllegalArgumentException() {
+        UniMessage message = new UniMessage();
+        message.setContent("Test");
 
-                UniMessage message = new UniMessage();
-                message.setContent("Test");
-                UniAddress address = UniAddress.ofPush(ProviderType.APNS, DEVICE_TOKEN_1);
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(null).build()))
+                .expectErrorMatches(e -> e instanceof IllegalArgumentException
+                        && e.getMessage().contains("APNs recipients required"))
+                .verify();
+    }
 
-                StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
-                                .expectNextCount(1)
-                                .verifyComplete();
+    @Test
+    void send_passesBundleIdTopicToPushy() {
+        UUID apnsId = UUID.randomUUID();
+        SimpleApnsPushNotification dummy = new SimpleApnsPushNotification(DEVICE_TOKEN_1, TOPIC, "{}");
+        PushNotificationResponse<SimpleApnsPushNotification> resp = okResponse(apnsId);
+        when(apnsClient.sendNotification(any(SimpleApnsPushNotification.class)))
+                .thenReturn(completed(dummy, resp));
 
-                RecordedRequest request = mockServer.takeRequest(5, TimeUnit.SECONDS);
-                String authHeader = request.getHeader("Authorization");
-                assertThat(authHeader).isNotNull();
-                assertThat(authHeader).startsWith("bearer ");
+        UniMessage message = new UniMessage();
+        message.setContent("Test");
+        UniAddress address = UniAddress.ofPush(ProviderType.APNS, DEVICE_TOKEN_1);
 
-                // Verify JWT format (3 parts separated by dots)
-                String jwt = authHeader.substring("bearer ".length());
-                assertThat(jwt.split("\\.")).hasSize(3);
-        }
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
+                .expectNextCount(1)
+                .verifyComplete();
 
-        // ==================== Helper Methods ====================
+        ArgumentCaptor<SimpleApnsPushNotification> captor = ArgumentCaptor.forClass(SimpleApnsPushNotification.class);
+        verify(apnsClient).sendNotification(captor.capture());
+        assertThat(captor.getValue().getTopic()).isEqualTo(TOPIC);
+    }
 
-        @Test
-        void send_verifiesApnsHeaders() throws Exception {
-                mockServer.enqueueSuccess(null);
+    @Test
+    void send_passesAlertPushTypeAndImmediatePriority() {
+        UUID apnsId = UUID.randomUUID();
+        SimpleApnsPushNotification dummy = new SimpleApnsPushNotification(DEVICE_TOKEN_1, TOPIC, "{}");
+        PushNotificationResponse<SimpleApnsPushNotification> resp = okResponse(apnsId);
+        when(apnsClient.sendNotification(any(SimpleApnsPushNotification.class)))
+                .thenReturn(completed(dummy, resp));
 
-                UniMessage message = new UniMessage();
-                message.setContent("Test");
-                UniAddress address = UniAddress.ofPush(ProviderType.APNS, DEVICE_TOKEN_1);
+        UniMessage message = new UniMessage();
+        message.setContent("Test");
+        UniAddress address = UniAddress.ofPush(ProviderType.APNS, DEVICE_TOKEN_1);
 
-                StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
-                                .expectNextCount(1)
-                                .verifyComplete();
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
+                .expectNextCount(1)
+                .verifyComplete();
 
-                RecordedRequest request = mockServer.takeRequest(5, TimeUnit.SECONDS);
-                assertThat(request.getHeader("apns-topic")).isEqualTo("com.example.app");
-                assertThat(request.getHeader("apns-push-type")).isEqualTo("alert");
-                assertThat(request.getHeader("apns-priority")).isEqualTo("10");
-                assertThat(request.getHeader("Content-Type")).contains("application/json");
-        }
+        ArgumentCaptor<SimpleApnsPushNotification> captor = ArgumentCaptor.forClass(SimpleApnsPushNotification.class);
+        verify(apnsClient).sendNotification(captor.capture());
+        assertThat(captor.getValue().getPushType()).isEqualTo(PushType.ALERT);
+        assertThat(captor.getValue().getPriority()).isEqualTo(DeliveryPriority.IMMEDIATE);
+    }
 }

@@ -1,16 +1,13 @@
 package com.github.waitlight.asskicker.channel.impl;
 
-import java.security.KeyFactory;
-import java.security.PrivateKey;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Base64;
-import java.util.Date;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.github.waitlight.asskicker.channel.Channel;
@@ -19,17 +16,18 @@ import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
 import jakarta.validation.constraints.NotBlank;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import com.eatthepath.pushy.apns.ApnsClient;
+import com.eatthepath.pushy.apns.ApnsClientBuilder;
+import com.eatthepath.pushy.apns.PushNotificationResponse;
+import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
+import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
+
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -38,96 +36,101 @@ import reactor.core.publisher.Mono;
 @ChannelImpl(providerType = ProviderType.APNS, propertyClass = ApnsPushChannel.Properties.class)
 public class ApnsPushChannel extends Channel {
 
+    private static final String SANDBOX_KEYWORD = "sandbox";
+
     private final Properties properties;
+    private final ApnsClient apnsClient;
 
     public ApnsPushChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
+        validateSpec(this.properties);
+        this.apnsClient = buildApnsClient(this.properties);
+    }
+
+    ApnsPushChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper, ApnsClient apnsClient) {
+        super(provider, webClient, objectMapper);
+        this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
+        this.apnsClient = apnsClient;
+    }
+
+    /**
+     * Visible for testing — bypasses Pushy ApnsClient construction so tests can inject a Mockito mock.
+     */
+    public static ApnsPushChannel forTesting(ChannelEntity provider, WebClient webClient,
+            ObjectMapper objectMapper, ApnsClient apnsClient) {
+        return new ApnsPushChannel(provider, webClient, objectMapper, apnsClient);
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
-            List<String> recipients = uniAddress == null || uniAddress.getRecipients() == null
-                    ? List.of()
-                    : uniAddress.getRecipients().stream()
-                            .filter(Objects::nonNull)
-                            .map(String::trim)
-                            .filter(StringUtils::isNotBlank)
-                            .collect(Collectors.toList());
+            List<String> recipients = normalizeRecipients(uniAddress);
 
-            if (recipients.isEmpty()) {
-                return Mono.error(new IllegalArgumentException("APNs recipients required"));
-            }
-
-            if (StringUtils.isBlank(properties.url())
-                    || StringUtils.isBlank(properties.bundleIdTopic())
-                    || StringUtils.isBlank(properties.teamId())
-                    || StringUtils.isBlank(properties.keyId())
-                    || StringUtils.isBlank(properties.privateKeyPem())) {
-                return Mono.error(new IllegalStateException(
-                        "APNs spec requires url bundleIdTopic teamId keyId privateKeyPem"));
-            }
-
-            UUID parsedApnsId = properties.apnsId() == null || properties.apnsId().isBlank()
+            UUID parsedApnsId = StringUtils.isBlank(properties.apnsId())
                     ? null
                     : UUID.fromString(properties.apnsId().trim());
-            String alertTitle = uniMessage != null ? uniMessage.getTitle() : null;
-            String alertBody = uniMessage != null ? uniMessage.getContent() : null;
-            Map<String, Object> extraData = uniMessage != null ? uniMessage.getExtraData() : null;
+            String topic = properties.bundleIdTopic().trim();
+            String payload;
+            try {
+                payload = buildApnsPayload(uniMessage);
+            } catch (Exception e) {
+                return Mono.error(e);
+            }
 
             log.info("Sending APNs notification to {} recipient(s)", recipients.size());
 
-            return Mono.fromCallable(() -> {
-                PrivateKey key = loadEcPrivateKeyFromPem(properties.privateKeyPem());
-                return buildApnsJwt(key, properties.teamId().trim(), properties.keyId().trim());
-            })
-                    .flatMapMany(jwt -> {
-                        byte[] bodyBytes;
-                        try {
-                            bodyBytes = buildApnsPayloadBytes(objectMapper, alertTitle, alertBody, extraData);
-                        } catch (Exception e) {
-                            return Flux.error(e);
-                        }
-                        String endpointBase = normalizeApnsEndpointBase(properties.url());
-                        return Flux.fromIterable(recipients)
-                                .concatMap(token -> postApnsDevice(
-                                        jwt,
-                                        endpointBase,
-                                        token,
-                                        properties.bundleIdTopic().trim(),
-                                        parsedApnsId,
-                                        bodyBytes));
+            return Flux.fromIterable(recipients)
+                    .concatMap(token -> {
+                        SimpleApnsPushNotification notification = new SimpleApnsPushNotification(
+                                token, topic, payload, null,
+                                com.eatthepath.pushy.apns.DeliveryPriority.IMMEDIATE,
+                                com.eatthepath.pushy.apns.PushType.ALERT, null, parsedApnsId);
+                        return Mono.fromFuture(apnsClient.sendNotification(notification))
+                                .map(this::extractApnsId);
                     })
                     .collect(Collectors.joining(","))
                     .map(ids -> "APNs ok " + recipients.size() + " device(s) apns-id=" + ids);
         });
     }
 
-    private static PrivateKey loadEcPrivateKeyFromPem(String pem) throws Exception {
-        String content = pem
-                .replace("-----BEGIN PRIVATE KEY-----", "")
-                .replace("-----END PRIVATE KEY-----", "")
-                .replaceAll("\\s+", "");
-        byte[] decoded = Base64.getDecoder().decode(content);
-        KeyFactory kf = KeyFactory.getInstance("EC");
-        return kf.generatePrivate(new PKCS8EncodedKeySpec(decoded));
+    @Override
+    public void dispose() {
+        try {
+            apnsClient.close().get(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.warn("APNs apnsClient close failed", e);
+        }
     }
 
-    private static String buildApnsJwt(PrivateKey key, String teamId, String keyId) {
-        long nowSeconds = System.currentTimeMillis() / 1000;
-        return Jwts.builder()
-                .setHeaderParam("kid", keyId)
-                .setIssuer(teamId)
-                .setIssuedAt(new Date(nowSeconds * 1000))
-                .setExpiration(new Date((nowSeconds + 3600) * 1000))
-                .signWith(key, SignatureAlgorithm.ES256)
-                .compact();
+    private String extractApnsId(PushNotificationResponse<SimpleApnsPushNotification> response) {
+        if (!response.isAccepted()) {
+            throw new IllegalStateException("APNs " + response.getStatusCode()
+                    + ": " + response.getRejectionReason().orElse(""));
+        }
+        UUID apnsId = response.getApnsId();
+        return apnsId != null ? apnsId.toString() : "ok";
     }
 
-    private static byte[] buildApnsPayloadBytes(ObjectMapper objectMapper, String title, String body,
-            Map<String, Object> extraData)
-            throws Exception {
+    private List<String> normalizeRecipients(UniAddress uniAddress) {
+        List<String> recipients = uniAddress == null || uniAddress.getRecipients() == null
+                ? List.of()
+                : uniAddress.getRecipients().stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(StringUtils::isNotBlank)
+                        .collect(Collectors.toList());
+        if (recipients.isEmpty()) {
+            throw new IllegalArgumentException("APNs recipients required");
+        }
+        return recipients;
+    }
+
+    private String buildApnsPayload(UniMessage uniMessage) throws Exception {
+        String title = uniMessage != null ? uniMessage.getTitle() : null;
+        String body = uniMessage != null ? uniMessage.getContent() : null;
+        Map<String, Object> extraData = uniMessage != null ? uniMessage.getExtraData() : null;
+
         Map<String, Object> alert = new LinkedHashMap<>();
         if (StringUtils.isNotBlank(title)) {
             alert.put("title", title);
@@ -146,48 +149,58 @@ public class ApnsPushChannel extends Channel {
                 }
             }
         }
-        return objectMapper.writeValueAsBytes(payload);
+        return objectMapper.writeValueAsString(payload);
     }
 
-    private static String normalizeApnsEndpointBase(String url) {
-        String u = url.trim();
-        return u.endsWith("/") ? u.substring(0, u.length() - 1) : u;
+    private static void validateSpec(Properties p) {
+        if (StringUtils.isBlank(p.bundleIdTopic())
+                || StringUtils.isBlank(p.teamId())
+                || StringUtils.isBlank(p.keyId())
+                || StringUtils.isBlank(p.privateKeyPem())) {
+            throw new IllegalStateException(
+                    "APNs spec requires bundleIdTopic teamId keyId privateKeyPem");
+        }
     }
 
-    private Mono<String> postApnsDevice(
-            String jwt,
-            String endpointBase,
-            String deviceToken,
-            String bundleIdTopic,
-            UUID apnsId,
-            byte[] bodyBytes) {
-        String uri = endpointBase + "/" + deviceToken.trim();
-        return webClient.post()
-                .uri(uri)
-                .header(HttpHeaders.AUTHORIZATION, "bearer " + jwt)
-                .header("apns-topic", bundleIdTopic)
-                .header("apns-push-type", "alert")
-                .header("apns-priority", "10")
-                .headers(h -> {
-                    if (apnsId != null) {
-                        h.set("apns-id", apnsId.toString());
+    private static ApnsClient buildApnsClient(Properties p) {
+        try {
+            ApnsSigningKey signingKey = ApnsSigningKey.loadFromInputStream(
+                    new ByteArrayInputStream(p.privateKeyPem().getBytes(StandardCharsets.UTF_8)),
+                    p.teamId().trim(),
+                    p.keyId().trim());
+
+            ApnsClientBuilder builder = new ApnsClientBuilder()
+                    .setSigningKey(signingKey);
+
+            String url = StringUtils.trimToNull(p.url());
+            if (url == null) {
+                builder.setApnsServer(ApnsClientBuilder.PRODUCTION_APNS_HOST);
+            } else if (SANDBOX_KEYWORD.equalsIgnoreCase(url)) {
+                builder.setApnsServer(ApnsClientBuilder.DEVELOPMENT_APNS_HOST);
+            } else {
+                int colon = url.lastIndexOf(':');
+                if (colon > 0 && colon == url.indexOf(':') && !url.contains("://")) {
+                    builder.setApnsServer(url.substring(0, colon), Integer.parseInt(url.substring(colon + 1)));
+                } else {
+                    String host = url.replaceFirst("^https?://", "").replaceAll("/.*$", "");
+                    int hostColon = host.indexOf(':');
+                    if (hostColon > 0) {
+                        builder.setApnsServer(host.substring(0, hostColon),
+                                Integer.parseInt(host.substring(hostColon + 1)));
+                    } else {
+                        builder.setApnsServer(host);
                     }
-                })
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(bodyBytes)
-                .retrieve()
-                .toBodilessEntity()
-                .map(entity -> Optional.ofNullable(entity.getHeaders().getFirst("apns-id")).orElse("ok"))
-                .onErrorMap(WebClientResponseException.class, ex -> new IllegalStateException(
-                        "APNs " + ex.getStatusCode().value()
-                                + (ex.getResponseBodyAsString() != null && !ex.getResponseBodyAsString().isBlank()
-                                        ? ": " + ex.getResponseBodyAsString()
-                                        : ""),
-                        ex));
+                }
+            }
+
+            return builder.build();
+        } catch (Exception e) {
+            throw new IllegalStateException("APNs ApnsClient init failed: " + e.getMessage(), e);
+        }
     }
 
     record Properties(
-            @NotBlank String url,
+            String url,
             @NotBlank String bundleIdTopic,
             @NotBlank String teamId,
             @NotBlank String keyId,
