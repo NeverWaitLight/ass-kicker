@@ -8,6 +8,9 @@ import java.util.stream.Collectors;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelImpl;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,14 +19,7 @@ import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
 
-import jakarta.mail.Authenticator;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.mail.Message;
-import jakarta.mail.PasswordAuthentication;
-import jakarta.mail.Session;
-import jakarta.mail.Transport;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeMessage;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -31,40 +27,29 @@ import reactor.core.scheduler.Schedulers;
 public class SmtpEmailChannel extends Channel {
 
     private final Properties properties;
+    private final JavaMailSender mailSender;
 
     public SmtpEmailChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.properties = Properties.fromProperties(provider.getProperties());
+        this.mailSender = buildMailSender(this.properties);
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
-            List<String> recipients = normalizeRecipients(uniAddress, "SMTP");
+            List<String> recipients = normalizeRecipients(uniAddress);
             validateSpec();
 
-            String subject = uniMessage != null && StringUtils.isNotBlank(uniMessage.getTitle())
-                    ? uniMessage.getTitle()
-                    : "";
-            String bodyText = buildBody(uniMessage);
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(properties.from().trim());
+            message.setTo(recipients.toArray(String[]::new));
+            message.setSubject(StringUtils.defaultString(uniMessage != null ? uniMessage.getTitle() : null));
+            message.setText(buildBody(uniMessage));
 
-            return Mono.fromCallable(() -> {
-                java.util.Properties props = buildMailProperties();
-                Session session = Session.getInstance(props, new Authenticator() {
-                    @Override
-                    protected PasswordAuthentication getPasswordAuthentication() {
-                        return new PasswordAuthentication(properties.username().trim(), properties.password());
-                    }
-                });
-                MimeMessage message = new MimeMessage(session);
-                message.setFrom(new InternetAddress(properties.from().trim()));
-                message.setRecipients(Message.RecipientType.TO,
-                        InternetAddress.parse(String.join(",", recipients)));
-                message.setSubject(subject, "UTF-8");
-                message.setText(bodyText, "UTF-8");
-                Transport.send(message);
-                return "SMTP ok " + recipients.size() + " recipient(s)";
-            }).subscribeOn(Schedulers.boundedElastic());
+            return Mono.fromRunnable(() -> mailSender.send(message))
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .thenReturn("SMTP ok " + recipients.size() + " recipient(s)");
         });
     }
 
@@ -75,28 +60,34 @@ public class SmtpEmailChannel extends Channel {
         }
     }
 
-    private java.util.Properties buildMailProperties() {
-        java.util.Properties props = new java.util.Properties();
-        String host = properties.host().trim();
-        props.put("mail.smtp.host", host);
-        props.put("mail.smtp.port", String.valueOf(properties.port()));
-        props.put("mail.smtp.auth", "true");
-        // 与多数现网 SMTP 对齐，避免协商到过旧 TLS 或 STARTTLS 未升级导致认证异常
-        props.put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3");
+    private static JavaMailSender buildMailSender(Properties properties) {
+        JavaMailSenderImpl sender = new JavaMailSenderImpl();
+        sender.setHost(properties.host() == null ? null : properties.host().trim());
+        sender.setPort(properties.port());
+        sender.setUsername(properties.username() == null ? null : properties.username().trim());
+        sender.setPassword(properties.password());
+        sender.setDefaultEncoding("UTF-8");
+
+        java.util.Properties javaMailProperties = sender.getJavaMailProperties();
+        javaMailProperties.put("mail.smtp.auth", "true");
+        // align with most providers, avoid old TLS negotiation or unfinished STARTTLS upgrades
+        javaMailProperties.put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3");
         if (properties.sslEnabled()) {
-            props.put("mail.smtp.ssl.enable", "true");
-            props.put("mail.smtp.ssl.trust", host);
+            javaMailProperties.put("mail.smtp.ssl.enable", "true");
+            if (StringUtils.isNotBlank(properties.host())) {
+                javaMailProperties.put("mail.smtp.ssl.trust", properties.host().trim());
+            }
         } else if (properties.startTls()) {
-            props.put("mail.smtp.starttls.enable", "true");
-            props.put("mail.smtp.starttls.required", "true");
+            javaMailProperties.put("mail.smtp.starttls.enable", "true");
+            javaMailProperties.put("mail.smtp.starttls.required", "true");
         }
         if (properties.connectionTimeout() != null) {
-            props.put("mail.smtp.connectiontimeout", String.valueOf(properties.connectionTimeout()));
+            javaMailProperties.put("mail.smtp.connectiontimeout", String.valueOf(properties.connectionTimeout()));
         }
         if (properties.readTimeout() != null) {
-            props.put("mail.smtp.timeout", String.valueOf(properties.readTimeout()));
+            javaMailProperties.put("mail.smtp.timeout", String.valueOf(properties.readTimeout()));
         }
-        return props;
+        return sender;
     }
 
     private static String buildBody(UniMessage uniMessage) {
@@ -111,7 +102,7 @@ public class SmtpEmailChannel extends Channel {
         return content;
     }
 
-    private List<String> normalizeRecipients(UniAddress uniAddress, String providerName) {
+    private List<String> normalizeRecipients(UniAddress uniAddress) {
         List<String> recipients = uniAddress == null || uniAddress.getRecipients() == null
                 ? List.of()
                 : uniAddress.getRecipients().stream()
@@ -120,7 +111,7 @@ public class SmtpEmailChannel extends Channel {
                         .filter(StringUtils::isNotBlank)
                         .collect(Collectors.toList());
         if (recipients.isEmpty()) {
-            throw new IllegalArgumentException(providerName + " recipients required");
+            throw new IllegalArgumentException("SMTP recipients required");
         }
         return recipients;
     }
@@ -157,7 +148,6 @@ public class SmtpEmailChannel extends Channel {
                     read);
         }
 
-        /** 去掉首尾空白，避免复制粘贴带入空格导致服务商返回 526 等认证失败 */
         private static String trimToNull(String s) {
             if (s == null) {
                 return null;
@@ -204,7 +194,7 @@ public class SmtpEmailChannel extends Channel {
         }
 
         /**
-         * 465 为 SMTPS 隐式 TLS 常用端口，未显式配置 sslEnabled 时应默认开启，否则易出现 bad greeting EOF
+         * 465 is the implicit-TLS SMTPS port; default to SSL on when sslEnabled is unset to avoid bad-greeting EOF
          */
         private static boolean defaultSslForPort(int port) {
             return port == 465;
