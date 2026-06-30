@@ -40,6 +40,10 @@ public class ChannelEntity {
          */
         private Map<String, String> properties = new HashMap<>();
 
+        private String creator;
+
+        private String updater;
+
         private Long createdAt;
         private Long updatedAt;
 }

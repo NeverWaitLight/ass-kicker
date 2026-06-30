@@ -35,6 +35,10 @@ public class ChannelVO {
     @Builder.Default
     private JsonNode properties = JsonNodeFactory.instance.objectNode();
 
+    private String creator;
+
+    private String updater;
+
     private Long createdAt;
 
     private Long updatedAt;

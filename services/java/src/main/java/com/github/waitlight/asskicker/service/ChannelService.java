@@ -84,8 +84,10 @@ public class ChannelService {
         return channelRepository.findByChannelTypeAndEnabled(type, true);
     }
 
-    public Mono<ChannelEntity> create(ChannelEntity c) {
+    public Mono<ChannelEntity> create(ChannelEntity c, String userId) {
         long now = Instant.now().toEpochMilli();
+        c.setCreator(userId);
+        c.setUpdater(userId);
         c.setCreatedAt(now);
         c.setUpdatedAt(now);
         return ensureUniqueKey(c.getCode(), null)
@@ -97,7 +99,7 @@ public class ChannelService {
                 });
     }
 
-    public Mono<ChannelEntity> update(String id, ChannelEntity patch) {
+    public Mono<ChannelEntity> update(String id, ChannelEntity patch, String userId) {
         return channelRepository.findById(id)
                 .switchIfEmpty(Mono.error(new NotFoundException("channel.notFound", new Object[] { id })))
                 .flatMap(existing -> {
@@ -105,6 +107,7 @@ public class ChannelService {
                     return ensureUniqueKey(patch.getCode(), id)
                             .then(Mono.defer(() -> {
                                 mergeEntity(patch, existing);
+                                existing.setUpdater(userId);
                                 existing.setUpdatedAt(Instant.now().toEpochMilli());
                                 return channelRepository.save(existing)
                                         .doOnSuccess(saved -> {
@@ -124,7 +127,7 @@ public class ChannelService {
     }
 
     /**
-     * 合并 patch 到 target，忽略 null 值，保持 id、createdAt、updatedAt 不变
+     * 合并 patch 到 target，忽略 null 值，保持 id、creator、createdAt、updatedAt 不变
      */
     private void mergeEntity(ChannelEntity patch, ChannelEntity target) {
         if (patch.getCode() != null) {
