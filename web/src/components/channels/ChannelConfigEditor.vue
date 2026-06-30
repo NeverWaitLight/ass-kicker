@@ -52,64 +52,7 @@
             />
           </div>
 
-          <a-form layout="vertical" class="config-form config-form--rate-limit">
-            <div class="rate-limit-header">
-              <div>
-                <h3>频率限制</h3>
-              </div>
-              <a-switch v-model:checked="form.rateLimit.enabled" />
-            </div>
-            <div v-if="form.rateLimit.enabled" class="rate-limit-grid">
-              <a-form-item
-                label="每秒请求数"
-                :validate-status="rateLimitPermitsError ? 'error' : ''"
-                :help="rateLimitPermitsError"
-              >
-                <a-input-number
-                  v-model:value="form.rateLimit.permitsPerSecond"
-                  :min="1"
-                  :precision="0"
-                  style="width: 100%"
-                  placeholder="例如 5"
-                />
-              </a-form-item>
-              <a-form-item
-                label="突发容量"
-                :validate-status="rateLimitBurstError ? 'error' : ''"
-                :help="rateLimitBurstError"
-              >
-                <a-input-number
-                  v-model:value="form.rateLimit.burstCapacity"
-                  :min="1"
-                  :precision="0"
-                  style="width: 100%"
-                  placeholder="默认等于每秒请求数"
-                />
-              </a-form-item>
-            </div>
-          </a-form>
-
           <a-form layout="vertical" class="config-form config-form--description">
-            <a-form-item
-              label="优先发送"
-              :validate-status="includeRegexError ? 'error' : ''"
-              :help="includeRegexError"
-            >
-              <a-input
-                v-model:value="form.includeRecipientRegex"
-                placeholder="可选，仅允许匹配该正则的收件人，优先于排除规则"
-              />
-            </a-form-item>
-            <a-form-item
-              label="拒绝发送"
-              :validate-status="excludeRegexError ? 'error' : ''"
-              :help="excludeRegexError"
-            >
-              <a-input
-                v-model:value="form.excludeRecipientRegex"
-                placeholder="可选，未配置包含规则时生效，匹配则拒绝"
-              />
-            </a-form-item>
             <a-form-item label="描述">
               <a-textarea v-model:value="form.description" rows="3" />
             </a-form-item>
@@ -169,14 +112,7 @@ const form = reactive({
   key: '',
   name: '',
   type: '',
-  description: '',
-  includeRecipientRegex: '',
-  excludeRecipientRegex: '',
-  rateLimit: {
-    enabled: false,
-    permitsPerSecond: null,
-    burstCapacity: null
-  }
+  description: ''
 })
 
 const loading = ref(false)
@@ -189,10 +125,6 @@ const objectInvalidIds = ref({})
 const objectErrors = ref({})
 const nameError = ref('')
 const typeError = ref('')
-const includeRegexError = ref('')
-const excludeRegexError = ref('')
-const rateLimitPermitsError = ref('')
-const rateLimitBurstError = ref('')
 const propertyError = ref('')
 const testModalOpen = ref(false)
 
@@ -294,9 +226,6 @@ const loadChannel = async () => {
     form.name = data.name || ''
     form.type = data.type || ''
     form.description = data.description || ''
-    form.includeRecipientRegex = data.priorityAddressRegex || data.includeRecipientRegex || ''
-    form.excludeRecipientRegex = data.excludeAddressRegex || data.excludeRecipientRegex || ''
-    applyRateLimit(data.rateLimit)
     await loadProviderOptionsByChannelType(form.type)
     if (form.type === 'EMAIL') {
       const protocol = resolveProtocolValue(data.providerType ?? data.provider ?? data.properties?.protocol)
@@ -329,49 +258,9 @@ const loadChannel = async () => {
   }
 }
 
-const validateRegexField = (value) => {
-  const trimmed = (value || '').trim()
-  if (!trimmed) return ''
-  try {
-    new RegExp(trimmed)
-    return ''
-  } catch {
-    return '正则语法无效'
-  }
-}
-
-const normalizePositiveInteger = (value) => {
-  if (value === null || value === undefined || value === '') return null
-  const numeric = Number(value)
-  if (!Number.isInteger(numeric) || numeric < 1) return null
-  return numeric
-}
-
-const validateRateLimit = () => {
-  rateLimitPermitsError.value = ''
-  rateLimitBurstError.value = ''
-  if (!form.rateLimit.enabled) return true
-
-  const permits = normalizePositiveInteger(form.rateLimit.permitsPerSecond)
-  const burst = normalizePositiveInteger(form.rateLimit.burstCapacity)
-  if (!permits) {
-    rateLimitPermitsError.value = '请填写大于等于 1 的整数'
-  }
-  if (form.rateLimit.burstCapacity !== null && form.rateLimit.burstCapacity !== undefined && form.rateLimit.burstCapacity !== '' && !burst) {
-    rateLimitBurstError.value = '请填写大于等于 1 的整数'
-  }
-  if (permits && burst && burst < permits) {
-    rateLimitBurstError.value = '突发容量不能小于每秒请求数'
-  }
-  return !rateLimitPermitsError.value && !rateLimitBurstError.value
-}
-
 const validateForm = () => {
   nameError.value = form.name.trim() ? '' : '通道名称不能为空'
   typeError.value = form.type ? '' : '请选择通道类型'
-  includeRegexError.value = validateRegexField(form.includeRecipientRegex)
-  excludeRegexError.value = validateRegexField(form.excludeRecipientRegex)
-  const rateLimitValid = validateRateLimit()
 
   const validation = validatePropertyRows(propertyRows.value)
   rowInvalidIds.value = validation.rowInvalidIds
@@ -383,38 +272,12 @@ const validateForm = () => {
   return (
     !nameError.value &&
     !typeError.value &&
-    !includeRegexError.value &&
-    !excludeRegexError.value &&
-    rateLimitValid &&
     !propertyError.value &&
     !hasObjectErrors
   )
 }
 
 const buildProperties = () => rowsToProperties(propertyRows.value)
-
-const applyRateLimit = (value) => {
-  form.rateLimit.enabled = value?.enabled === true
-  form.rateLimit.permitsPerSecond = normalizePositiveInteger(value?.permitsPerSecond)
-  form.rateLimit.burstCapacity = normalizePositiveInteger(value?.burstCapacity)
-}
-
-const buildRateLimit = () => {
-  if (!form.rateLimit.enabled) {
-    return {
-      enabled: false,
-      permitsPerSecond: null,
-      burstCapacity: null
-    }
-  }
-  const permits = normalizePositiveInteger(form.rateLimit.permitsPerSecond)
-  const burst = normalizePositiveInteger(form.rateLimit.burstCapacity) || permits
-  return {
-    enabled: true,
-    permitsPerSecond: permits,
-    burstCapacity: burst
-  }
-}
 
 const resolveProvider = () => {
   if (isEmailChannel.value) {
@@ -447,9 +310,6 @@ const saveChannel = async () => {
       provider: resolveProvider(),
       providerType: resolveProvider(),
       description: form.description?.trim() || '',
-      priorityAddressRegex: form.includeRecipientRegex?.trim() || '',
-      excludeAddressRegex: form.excludeRecipientRegex?.trim() || '',
-      rateLimit: buildRateLimit(),
       properties: buildProperties()
     }
     if (isEdit.value) {
@@ -477,9 +337,6 @@ const saveChannel = async () => {
 const openTestModal = () => {
   if (testDenied.value) return
   typeError.value = form.type ? '' : '请选择通道类型'
-  includeRegexError.value = validateRegexField(form.includeRecipientRegex)
-  excludeRegexError.value = validateRegexField(form.excludeRecipientRegex)
-  validateRateLimit()
   const validation = validatePropertyRows(propertyRows.value)
   rowInvalidIds.value = validation.rowInvalidIds
   objectInvalidIds.value = validation.objectInvalidIds
@@ -489,10 +346,6 @@ const openTestModal = () => {
   const hasObjectErrors = Object.keys(validation.objectInvalidIds).length > 0
   if (
     typeError.value ||
-    includeRegexError.value ||
-    excludeRegexError.value ||
-    rateLimitPermitsError.value ||
-    rateLimitBurstError.value ||
     propertyError.value ||
     hasObjectErrors
   ) {
@@ -712,28 +565,6 @@ defineExpose({
   margin-top: 8px;
 }
 
-.config-form--rate-limit {
-  margin-top: 8px;
-}
-
-.rate-limit-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.rate-limit-header h3 {
-  margin: 0;
-}
-
-.rate-limit-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: 12px;
-}
-
 .config-section h3 {
   margin: 0 0 4px;
 }
@@ -745,11 +576,5 @@ defineExpose({
 
 .channel-config-editor__toolbar {
   margin-bottom: 12px;
-}
-
-@media (max-width: 640px) {
-  .rate-limit-grid {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

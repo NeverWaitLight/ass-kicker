@@ -33,20 +33,7 @@ public class ChannelEntity {
 
         private String description;
 
-        /**
-         * 优先地址正则表达式，用于匹配优先地址
-         */
-        private String priorityAddressRegex;
-
-        /**
-         * 排除地址正则表达式，用于排除地址
-         */
-        private String excludeAddressRegex;
-
         private boolean enabled = true;
-
-        @Field("rate_limit")
-        private ChannelRateLimitConfig rateLimit;
 
         /**
          * 供应商配置，用于存储供应商的配置

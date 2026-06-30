@@ -15,14 +15,6 @@
       <template v-else-if="column.key === 'type'">
         <a-tag :color="getTypeColor(record.type)">{{ getTypeLabel(record.type) }}</a-tag>
       </template>
-      <template v-else-if="column.key === 'recipientRules'">
-        {{ recipientRulesLabel(record) }}
-      </template>
-      <template v-else-if="column.key === 'rateLimit'">
-        <a-tag :color="record.rateLimit?.enabled ? 'processing' : 'default'">
-          {{ rateLimitLabel(record) }}
-        </a-tag>
-      </template>
       <template v-else-if="column.key === 'updatedAt'">
         {{ formatTimestamp(record.updatedAt) }}
       </template>
@@ -57,29 +49,10 @@ defineProps({
 const emit = defineEmits(['test', 'edit', 'delete', 'page-change'])
 const { t, te } = useI18n()
 
-const recipientRulesLabel = (record) => {
-  const inc = record.includeRecipientRegex?.trim?.()
-  const exc = record.excludeRecipientRegex?.trim?.()
-  if (inc || exc) return '已配置'
-  return '—'
-}
-
-const rateLimitLabel = (record) => {
-  const rateLimit = record.rateLimit
-  if (!rateLimit?.enabled) return '未启用'
-  const permits = rateLimit.permitsPerSecond
-  const burst = rateLimit.burstCapacity
-  if (!permits) return '已启用'
-  if (burst && burst !== permits) return `${permits}/s，突发 ${burst}`
-  return `${permits}/s`
-}
-
 const columns = [
   { title: '序号', key: 'ordinal' },
   { title: '名称', dataIndex: 'name', key: 'name' },
   { title: '类型', dataIndex: 'type', key: 'type' },
-  { title: '收件人规则', key: 'recipientRules' },
-  { title: '频率限制', key: 'rateLimit' },
   { title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt' },
   { title: '操作', key: 'actions', width: 220, fixed: 'right' }
 ]

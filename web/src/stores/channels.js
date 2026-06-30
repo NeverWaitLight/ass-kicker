@@ -20,8 +20,6 @@ export const channelFormState = reactive({
     name: '',
     type: 'SMS',
     description: '',
-    includeRecipientRegex: '',
-    excludeRecipientRegex: '',
     properties: {}
   }
 })
@@ -38,8 +36,6 @@ export const resetChannelForm = () => {
     name: '',
     type: 'SMS',
     description: '',
-    includeRecipientRegex: '',
-    excludeRecipientRegex: '',
     properties: {}
   }
 }

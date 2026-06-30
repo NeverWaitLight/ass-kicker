@@ -142,17 +142,8 @@ public class ChannelService {
         if (patch.getDescription() != null) {
             target.setDescription(patch.getDescription());
         }
-        if (patch.getPriorityAddressRegex() != null) {
-            target.setPriorityAddressRegex(patch.getPriorityAddressRegex());
-        }
-        if (patch.getExcludeAddressRegex() != null) {
-            target.setExcludeAddressRegex(patch.getExcludeAddressRegex());
-        }
         if (patch.isEnabled() != target.isEnabled()) {
             target.setEnabled(patch.isEnabled());
-        }
-        if (patch.getRateLimit() != null) {
-            target.setRateLimit(patch.getRateLimit());
         }
         if (patch.getProperties() != null) {
             target.setProperties(patch.getProperties());

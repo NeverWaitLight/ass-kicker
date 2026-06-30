@@ -8,26 +8,17 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
-import com.github.waitlight.asskicker.channel.impl.AliyunSmsAbstractChannelImpl;
 import com.github.waitlight.asskicker.model.*;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.reactive.function.client.WebClient;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.AbstractChannelImpl;
 import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.dto.UniAddress;
@@ -36,23 +27,16 @@ import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.faced.Sender;
 import com.github.waitlight.asskicker.faced.TemplateEngine;
 
-import okhttp3.HttpUrl;
 import com.github.waitlight.asskicker.service.ChannelService;
 import com.github.waitlight.asskicker.service.RecordService;
 
 import org.bson.types.ObjectId;
 
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 @ExtendWith(MockitoExtension.class)
 class SenderTest {
-
-        private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
         @Mock
         private TemplateEngine templateEngine;
@@ -69,159 +53,11 @@ class SenderTest {
         @Mock
         private ChannelManager channelManager;
 
-        private MockWebServer aliyunServer;
-
-        @AfterEach
-        void tearDown() throws Exception {
-                if (aliyunServer != null) {
-                        aliyunServer.shutdown();
-                        aliyunServer = null;
-                }
-        }
-
-        @Test
-        void send_batchSmsTaskRoutesRecipientsToDifferentChannelInstancesByCountryCode() throws Exception {
-                aliyunServer = new MockWebServer();
-                aliyunServer.start();
-
-                aliyunServer.enqueue(new MockResponse().setResponseCode(200)
-                                .setHeader("Content-Type", "application/json;charset=UTF-8")
-                                .setBody("{\"Code\":\"OK\",\"Message\":\"OK\",\"RequestId\":\"aliyun-msg-1\"}"));
-
-                ChannelEntity usProvider = buildAwsProvider("http://unused");
-                ChannelEntity cnProvider = buildAliyunProvider(aliyunServer.url("/").toString());
-
-                AliyunSmsAbstractChannelImpl cnChannel = new AliyunSmsAbstractChannelImpl(cnProvider, WebClient.create(),
-                                OBJECT_MAPPER);
-
-                when(channelService.findEnabled()).thenReturn(Flux.just(usProvider, cnProvider));
-                when(channelFactory.create(usProvider)).thenAnswer(inv -> new AbstractChannelImpl(usProvider,
-                                WebClient.create(), OBJECT_MAPPER) {
-                        @Override
-                        protected Mono<String> doSend(UniMessage msg, UniAddress addr) {
-                                return Mono.just("ok");
-                        }
-                });
-                when(channelFactory.create(cnProvider)).thenReturn(cnChannel);
-
-                ChannelManager channelManager = new ChannelManager(channelService, channelFactory);
-                channelManager.refresh();
-
-                Sender sender = new Sender(templateEngine, channelManager, recordService);
-                UniMessage template = buildTemplate();
-                UniMessage renderedMessage = new UniMessage();
-                renderedMessage.setContent("rendered-content");
-                when(templateEngine.fill(template)).thenReturn(Mono.just(renderedMessage));
-
-                String usRecipient1 = "+14155550123";
-                String cnRecipient = "+8613800138000";
-                String usRecipient2 = "+12065550100";
-                UniTask batchTask = UniTask.builder()
-                                .message(template)
-                                .taskId("batch-task-1")
-                                .address(UniAddress.builder()
-                                                .channelType(ChannelType.SMS)
-                                                .recipients(new LinkedHashSet<>(List.of(
-                                                                usRecipient1,
-                                                                cnRecipient,
-                                                                usRecipient2)))
-                                                .build())
-                                .build();
-
-                StepVerifier.create(sender.send(batchTask))
-                                .expectNext("batch-task-1")
-                                .verifyComplete();
-
-                ArgumentCaptor<RecordEntity> recordCaptor = ArgumentCaptor
-                                .forClass(RecordEntity.class);
-                verify(recordService, timeout(10000).times(3)).writeRecord(recordCaptor.capture());
-
-                assertAliyunPayloadHasRecipient(recordedRequestPayload(takeRequest(aliyunServer)), cnRecipient);
-                assertThat(aliyunServer.takeRequest(200, TimeUnit.MILLISECONDS)).isNull();
-                assertThat(recordCaptor.getAllValues())
-                                .extracting(
-                                                RecordEntity::getRecipient,
-                                                RecordEntity::getChannelId,
-                                                RecordEntity::getChannelName)
-                                .containsExactlyInAnyOrder(
-                                                tuple(usRecipient1, "a-us-sms-id", "a-us-sms"),
-                                                tuple(cnRecipient, "z-cn-sms-id", "z-cn-sms"),
-                                                tuple(usRecipient2, "a-us-sms-id", "a-us-sms"));
-        }
-
         private static UniMessage buildTemplate() {
                 UniMessage message = new UniMessage();
                 message.setTemplateCode("sms-template");
                 message.setLanguage(Language.ZH_CN);
                 return message;
-        }
-
-        private static ChannelEntity buildAwsProvider(String endpoint) {
-                ChannelEntity entity = new ChannelEntity();
-                entity.setId("a-us-sms-id");
-                entity.setCode("a-us-sms");
-                entity.setChannelType(ChannelType.SMS);
-                entity.setProviderType(ProviderType.AWS_SMS);
-                entity.setPriorityAddressRegex("^\\+1\\d+$");
-                entity.setEnabled(true);
-                entity.setProperties(Map.of(
-                                "accessKeyId", "AKIAIOSFODNN7EXAMPLE",
-                                "secretAccessKey", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-                                "region", "us-east-1",
-                                "endpoint", endpoint));
-                return entity;
-        }
-
-        private static ChannelEntity buildAliyunProvider(String endpoint) {
-                ChannelEntity entity = new ChannelEntity();
-                entity.setId("z-cn-sms-id");
-                entity.setCode("z-cn-sms");
-                entity.setChannelType(ChannelType.SMS);
-                entity.setProviderType(ProviderType.ALIYUN_SMS);
-                entity.setPriorityAddressRegex("^\\+86\\d+$");
-                entity.setEnabled(true);
-                entity.setProperties(Map.of(
-                                "accessKeyId", "test-ak",
-                                "accessKeySecret", "test-sk",
-                                "signName", "test-sign",
-                                "templateCode", "SMS_TPL",
-                                "endpoint", endpoint));
-                return entity;
-        }
-
-        private static RecordedRequest takeRequest(MockWebServer server) throws InterruptedException {
-                RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
-                assertThat(request).isNotNull();
-                assertThat(request.getMethod()).isEqualTo("POST");
-                return request;
-        }
-
-        private static String extractFormParam(RecordedRequest request, String key) {
-                String body = request.getBody().readString(StandardCharsets.UTF_8);
-                return body.lines()
-                                .flatMap(line -> List.of(line.split("&")).stream())
-                                .map(pair -> pair.split("=", 2))
-                                .filter(parts -> parts.length == 2)
-                                .filter(parts -> key.equals(urlDecode(parts[0])))
-                                .map(parts -> urlDecode(parts[1]))
-                                .findFirst()
-                                .orElseThrow(() -> new AssertionError(
-                                                "Missing form param: " + key + " in body " + body));
-        }
-
-        /** 阿里云官方 SDK 可能把参数放在 URL 或 JSON 体内，集成测试只要求能观察到收件人号码 */
-        private static String recordedRequestPayload(RecordedRequest request) {
-                HttpUrl url = request.getRequestUrl();
-                String body = request.getBody().readString(StandardCharsets.UTF_8);
-                return (url != null ? url.toString() : "") + "\n" + body;
-        }
-
-        private static void assertAliyunPayloadHasRecipient(String payload, String e164) {
-                assertThat(payload.contains(e164) || payload.contains(e164.replace("+", "%2B"))).isTrue();
-        }
-
-        private static String urlDecode(String value) {
-                return URLDecoder.decode(value, StandardCharsets.UTF_8);
         }
 
         @Test

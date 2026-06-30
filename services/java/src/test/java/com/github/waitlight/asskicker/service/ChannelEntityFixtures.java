@@ -25,14 +25,7 @@ public final class ChannelEntityFixtures {
                   "channelType": "SMS",
                   "providerType": "ALIYUN_SMS",
                   "description": "Aliyun SMS",
-                  "priorityAddressRegex": "^1[3-9]\\\\d{9}$",
-                  "excludeAddressRegex": "^1(70|71|162)\\\\d{8}$",
                   "enabled": true,
-                  "rateLimit": {
-                    "enabled": true,
-                    "permitsPerSecond": 5,
-                    "burstCapacity": 10
-                  },
                   "properties": {
                     "accessKeyId": "ak-test",
                     "accessKeySecret": "sk-test",
@@ -54,8 +47,6 @@ public final class ChannelEntityFixtures {
                   "channelType": "EMAIL",
                   "providerType": "SMTP",
                   "description": "SMTP abstractChannelImpl",
-                  "priorityAddressRegex": "^[a-zA-Z0-9._%+-]+@(mail\\\\.)?corp\\\\.example\\\\.com$",
-                  "excludeAddressRegex": "^(no-?reply|bounce|mailer-daemon)@",
                   "enabled": true,
                   "properties": {
                     "host": "smtp.example.com",
@@ -81,8 +72,6 @@ public final class ChannelEntityFixtures {
                   "channelType": "IM",
                   "providerType": "DINGTALK_WEBHOOK",
                   "description": "DingTalk IM webhook",
-                  "priorityAddressRegex": "^(C|G|D)[A-Z0-9]{8,}$|^#[a-z0-9._-]+$",
-                  "excludeAddressRegex": "^D0[A-Z0-9]+$|^#archive-",
                   "enabled": true,
                   "properties": {
                     "url": "https://oapi.dingtalk.com/robot/send",
@@ -102,8 +91,6 @@ public final class ChannelEntityFixtures {
                   "channelType": "IM",
                   "providerType": "DINGTALK_WEBHOOK",
                   "description": "disabled",
-                  "priorityAddressRegex": "^(C|G|D)[A-Z0-9]{8,}$",
-                  "excludeAddressRegex": "^#archive-",
                   "enabled": false,
                   "properties": {
                     "url": ""
@@ -120,8 +107,6 @@ public final class ChannelEntityFixtures {
                   "channelType": "PUSH",
                   "providerType": "APNS",
                   "description": "APNs push",
-                  "priorityAddressRegex": "^[0-9a-fA-F]{64}$",
-                  "excludeAddressRegex": "^0{64}$|^[fF]{64}$",
                   "enabled": true,
                   "properties": {
                     "teamId": "APPLE_TEAM_ID",
@@ -145,8 +130,6 @@ public final class ChannelEntityFixtures {
                   "channelType": "PUSH",
                   "providerType": "APNS",
                   "description": "disabled",
-                  "priorityAddressRegex": "^[0-9a-fA-F]{64}$",
-                  "excludeAddressRegex": "^0{64}$",
                   "enabled": false,
                   "properties": {
                     "teamId": "T",

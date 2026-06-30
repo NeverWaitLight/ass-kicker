@@ -115,19 +115,12 @@ public class ChannelManager {
         List<AbstractChannelImpl> matching = cache.values().stream()
                 .filter(c -> c.getChannelType() == channelType)
                 .filter(AbstractChannelImpl::isEnabled)
-                .filter(c -> !c.matchesExclude(recipient))
+                .sorted(BY_CODE)
                 .toList();
         if (matching.isEmpty()) {
             return Mono.empty();
         }
-        List<AbstractChannelImpl> priorityMatches = matching.stream()
-                .filter(c -> c.matchesPriority(recipient))
-                .sorted(BY_CODE)
-                .toList();
-        List<AbstractChannelImpl> candidates = priorityMatches.isEmpty()
-                ? matching.stream().sorted(BY_CODE).toList()
-                : priorityMatches;
-        AbstractChannelImpl chosen = candidates.get(0);
+        AbstractChannelImpl chosen = matching.get(0);
         log.debug("Selected channel {} for recipient {}", chosen.getCode(), recipient);
         return Mono.just(chosen);
     }
