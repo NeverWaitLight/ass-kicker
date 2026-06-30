@@ -1,42 +1,50 @@
 package com.github.waitlight.asskicker.channel;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import java.util.concurrent.TimeUnit;
-
-import com.github.waitlight.asskicker.channel.impl.DingtalkBotChannel;
-import com.github.waitlight.asskicker.model.ChannelEntity;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.web.reactive.function.client.WebClient;
-
-import com.fasterxml.jackson.databind.JsonNode;
+import com.aliyun.dingtalkoauth2_1_0.models.GetAccessTokenRequest;
+import com.aliyun.dingtalkoauth2_1_0.models.GetAccessTokenResponse;
+import com.aliyun.dingtalkoauth2_1_0.models.GetAccessTokenResponseBody;
+import com.aliyun.dingtalkrobot_1_0.models.OrgGroupSendHeaders;
+import com.aliyun.dingtalkrobot_1_0.models.OrgGroupSendRequest;
+import com.aliyun.dingtalkrobot_1_0.models.OrgGroupSendResponse;
+import com.aliyun.dingtalkrobot_1_0.models.OrgGroupSendResponseBody;
+import com.aliyun.tea.TeaException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.waitlight.asskicker.channel.impl.DingtalkBotChannel;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
+import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
-
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.test.StepVerifier;
 
+import java.util.HashMap;
+
+@ExtendWith(MockitoExtension.class)
 class DingtalkBotChannelTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private MockWebServer mockWebServer;
+    @Mock
+    private com.aliyun.dingtalkoauth2_1_0.Client oauthClient;
+    @Mock
+    private com.aliyun.dingtalkrobot_1_0.Client robotClient;
+
     private DingtalkBotChannel channel;
 
-    @BeforeEach
-    void setUp() throws Exception {
-        mockWebServer = new MockWebServer();
-        mockWebServer.start();
-
-        String base = mockWebServer.url("/").toString().replaceAll("/$", "");
-        String providerJson = String.format("""
+    private static ChannelEntity createProvider() throws Exception {
+        String providerJson = """
                 {
                   "code": "dingtalk-bot-test",
                   "channelType": "IM",
@@ -45,31 +53,30 @@ class DingtalkBotChannelTest {
                   "properties": {
                     "appKey": "app-key-1",
                     "appSecret": "app-secret-1",
-                    "robotCode": "robot-code-1",
-                    "accessTokenUrl": "%s/v1.0/oauth2/accessToken",
-                    "groupSendUrl": "%s/v1.0/robot/groupMessages/send"
+                    "robotCode": "robot-code-1"
                   }
                 }
-                """, base, base);
-        ChannelEntity provider = MAPPER.readValue(providerJson, ChannelEntity.class);
-        channel = new DingtalkBotChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
+                """;
+        return MAPPER.readValue(providerJson, ChannelEntity.class);
     }
 
-    @AfterEach
-    void tearDown() throws Exception {
-        if (mockWebServer != null) {
-            mockWebServer.shutdown();
-        }
+    @BeforeEach
+    void setUp() throws Exception {
+        ChannelEntity provider = createProvider();
+        channel = DingtalkBotChannel.forTesting(provider, WebClient.create(),
+                ChannelTestObjectMappers.channelObjectMapper(), oauthClient, robotClient);
     }
 
     @Test
     void send_success_tokenThenGroupMessage() throws Exception {
-        mockWebServer.enqueue(new MockResponse().setResponseCode(200)
-                .setHeader("Content-Type", "application/json")
-                .setBody("{\"accessToken\":\"tok-abc\",\"expiresIn\":7200}"));
-        mockWebServer.enqueue(new MockResponse().setResponseCode(200)
-                .setHeader("Content-Type", "application/json")
-                .setBody("{\"processQueryKey\":\"pqk\"}"));
+        GetAccessTokenResponse tokenResp = new GetAccessTokenResponse();
+        tokenResp.setBody(new GetAccessTokenResponseBody().setAccessToken("tok-abc"));
+        when(oauthClient.getAccessToken(any(GetAccessTokenRequest.class))).thenReturn(tokenResp);
+
+        OrgGroupSendResponse sendResp = new OrgGroupSendResponse();
+        sendResp.setBody(new OrgGroupSendResponseBody().setProcessQueryKey("pqk"));
+        when(robotClient.orgGroupSendWithOptions(any(OrgGroupSendRequest.class),
+                any(OrgGroupSendHeaders.class), any())).thenReturn(sendResp);
 
         UniMessage message = new UniMessage();
         message.setTitle("告警");
@@ -80,29 +87,36 @@ class DingtalkBotChannelTest {
                 .expectNext("DINGTALK_BOT ok 1 chat(s)")
                 .verifyComplete();
 
-        RecordedRequest tokenReq = mockWebServer.takeRequest(5, TimeUnit.SECONDS);
-        assertThat(tokenReq.getPath()).isEqualTo("/v1.0/oauth2/accessToken");
-        JsonNode tokenBody = MAPPER.readTree(tokenReq.getBody().readUtf8());
-        assertThat(tokenBody.get("appKey").asText()).isEqualTo("app-key-1");
+        ArgumentCaptor<GetAccessTokenRequest> tokenCaptor = ArgumentCaptor.forClass(GetAccessTokenRequest.class);
+        verify(oauthClient).getAccessToken(tokenCaptor.capture());
+        assertThat(tokenCaptor.getValue().getAppKey()).isEqualTo("app-key-1");
+        assertThat(tokenCaptor.getValue().getAppSecret()).isEqualTo("app-secret-1");
 
-        RecordedRequest sendReq = mockWebServer.takeRequest(5, TimeUnit.SECONDS);
-        assertThat(sendReq.getPath()).isEqualTo("/v1.0/robot/groupMessages/send");
-        assertThat(sendReq.getHeader("x-acs-dingtalk-access-token")).isEqualTo("tok-abc");
-        JsonNode sendBody = MAPPER.readTree(sendReq.getBody().readUtf8());
-        assertThat(sendBody.get("robotCode").asText()).isEqualTo("robot-code-1");
-        assertThat(sendBody.get("openConversationId").asText()).isEqualTo("cid-open-1");
-        assertThat(sendBody.get("msgKey").asText()).isEqualTo("sampleText");
-        assertThat(sendBody.get("msgParam").asText()).contains("服务异常");
+        ArgumentCaptor<OrgGroupSendRequest> reqCaptor = ArgumentCaptor.forClass(OrgGroupSendRequest.class);
+        ArgumentCaptor<OrgGroupSendHeaders> headerCaptor = ArgumentCaptor.forClass(OrgGroupSendHeaders.class);
+        verify(robotClient).orgGroupSendWithOptions(reqCaptor.capture(), headerCaptor.capture(), any());
+        OrgGroupSendRequest sentReq = reqCaptor.getValue();
+        assertThat(sentReq.getRobotCode()).isEqualTo("robot-code-1");
+        assertThat(sentReq.getOpenConversationId()).isEqualTo("cid-open-1");
+        assertThat(sentReq.getMsgKey()).isEqualTo("sampleText");
+        assertThat(sentReq.getMsgParam()).contains("服务异常");
+        assertThat(headerCaptor.getValue().getXAcsDingtalkAccessToken()).isEqualTo("tok-abc");
     }
 
     @Test
-    void send_groupFailure_returnsMappedException() {
-        mockWebServer.enqueue(new MockResponse().setResponseCode(200)
-                .setHeader("Content-Type", "application/json")
-                .setBody("{\"accessToken\":\"tok-abc\"}"));
-        mockWebServer.enqueue(new MockResponse().setResponseCode(200)
-                .setHeader("Content-Type", "application/json")
-                .setBody("{\"errcode\":400,\"errmsg\":\"bad\"}"));
+    void send_groupFailure_returnsMappedException() throws Exception {
+        GetAccessTokenResponse tokenResp = new GetAccessTokenResponse();
+        tokenResp.setBody(new GetAccessTokenResponseBody().setAccessToken("tok-abc"));
+        when(oauthClient.getAccessToken(any(GetAccessTokenRequest.class))).thenReturn(tokenResp);
+
+        TeaException te = new TeaException(new HashMap<>() {
+            {
+                put("code", "400");
+                put("message", "bad");
+            }
+        });
+        when(robotClient.orgGroupSendWithOptions(any(OrgGroupSendRequest.class),
+                any(OrgGroupSendHeaders.class), any())).thenThrow(te);
 
         UniMessage message = new UniMessage();
         message.setContent("x");
@@ -127,31 +141,18 @@ class DingtalkBotChannelTest {
     }
 
     @Test
-    void send_missingGroupSendUrl_returnsIllegalStateException() throws Exception {
-        String providerJson = """
-                {
-                  "code": "dingtalk-bot-no-send-url",
-                  "channelType": "IM",
-                  "providerType": "DINGTALK_BOT",
-                  "enabled": true,
-                  "properties": {
-                    "appKey": "k",
-                    "appSecret": "s",
-                    "robotCode": "r",
-                    "accessTokenUrl": "https://example/v1.0/oauth2/accessToken"
-                  }
-                }
-                """;
-        ChannelEntity provider = MAPPER.readValue(providerJson, ChannelEntity.class);
-        DingtalkBotChannel ch = new DingtalkBotChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
+    void send_tokenMissing_throwsIllegalStateException() throws Exception {
+        GetAccessTokenResponse tokenResp = new GetAccessTokenResponse();
+        tokenResp.setBody(new GetAccessTokenResponseBody());
+        when(oauthClient.getAccessToken(any(GetAccessTokenRequest.class))).thenReturn(tokenResp);
 
         UniMessage message = new UniMessage();
         message.setContent("x");
         UniAddress address = UniAddress.ofImBot(ProviderType.DINGTALK_BOT, "k", "cid");
 
-        StepVerifier.create(ch.send(UniTask.builder().message(message).address(address).build()))
+        StepVerifier.create(channel.send(UniTask.builder().message(message).address(address).build()))
                 .expectErrorMatches(e -> e instanceof IllegalStateException
-                        && e.getMessage().contains("DINGTALK_BOT spec requires groupSendUrl"))
+                        && e.getMessage().contains("token response missing accessToken"))
                 .verify();
     }
 }

@@ -1,6 +1,5 @@
 package com.github.waitlight.asskicker.channel.impl;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -12,116 +11,149 @@ import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
 import jakarta.validation.constraints.NotBlank;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.aliyun.dingtalkoauth2_1_0.models.GetAccessTokenRequest;
+import com.aliyun.dingtalkoauth2_1_0.models.GetAccessTokenResponse;
+import com.aliyun.dingtalkoauth2_1_0.models.GetAccessTokenResponseBody;
+import com.aliyun.dingtalkrobot_1_0.models.OrgGroupSendHeaders;
+import com.aliyun.dingtalkrobot_1_0.models.OrgGroupSendRequest;
+import com.aliyun.dingtalkrobot_1_0.models.OrgGroupSendResponse;
+import com.aliyun.tea.TeaException;
+import com.aliyun.teaopenapi.models.Config;
+import com.aliyun.teautil.models.RuntimeOptions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /**
- * DingTalk enterprise robot: group messages via Open API (OAuth access token + group send).
+ * DingTalk enterprise robot: group messages via the official Open API SDK
+ * ({@code com.aliyun:dingtalk}), which encapsulates OAuth token retrieval +
+ * group-send under {@code api.dingtalk.com}.
  */
 @ChannelImpl(providerType = ProviderType.DINGTALK_BOT, propertyClass = DingtalkBotChannel.Properties.class)
 public class DingtalkBotChannel extends Channel {
 
-    private static final String HEADER_ACCESS_TOKEN = "x-acs-dingtalk-access-token";
     private static final String MSG_KEY_SAMPLE_TEXT = "sampleText";
 
     private final Properties properties;
+    private final com.aliyun.dingtalkoauth2_1_0.Client oauthClient;
+    private final com.aliyun.dingtalkrobot_1_0.Client robotClient;
 
     public DingtalkBotChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
+        try {
+            this.oauthClient = new com.aliyun.dingtalkoauth2_1_0.Client(buildConfig());
+            this.robotClient = new com.aliyun.dingtalkrobot_1_0.Client(buildConfig());
+        } catch (Exception e) {
+            throw new IllegalStateException("DINGTALK_BOT SDK client init failed", e);
+        }
+    }
+
+    DingtalkBotChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper,
+            com.aliyun.dingtalkoauth2_1_0.Client oauthClient,
+            com.aliyun.dingtalkrobot_1_0.Client robotClient) {
+        super(provider, webClient, objectMapper);
+        this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
+        this.oauthClient = oauthClient;
+        this.robotClient = robotClient;
+    }
+
+    /**
+     * Visible for testing — lets tests inject mocked SDK clients to avoid real network calls.
+     */
+    public static DingtalkBotChannel forTesting(ChannelEntity provider, WebClient webClient,
+            ObjectMapper objectMapper,
+            com.aliyun.dingtalkoauth2_1_0.Client oauthClient,
+            com.aliyun.dingtalkrobot_1_0.Client robotClient) {
+        return new DingtalkBotChannel(provider, webClient, objectMapper, oauthClient, robotClient);
+    }
+
+    private static Config buildConfig() {
+        Config config = new Config();
+        config.setProtocol("https");
+        config.setRegionId("central");
+        return config;
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
-            List<String> chatIds = normalizeRecipients(uniAddress, "DINGTALK_BOT");
-            requireNonBlank(properties.appKey(), "appKey", "DINGTALK_BOT");
-            requireNonBlank(properties.appSecret(), "appSecret", "DINGTALK_BOT");
-            requireNonBlank(properties.robotCode(), "robotCode", "DINGTALK_BOT");
-            String accessTokenUrl = requireNonBlank(properties.accessTokenUrl(), "accessTokenUrl", "DINGTALK_BOT");
-            String groupSendUrl = requireNonBlank(properties.groupSendUrl(), "groupSendUrl", "DINGTALK_BOT");
+            List<String> chatIds = normalizeRecipients(uniAddress);
+            requireNonBlank(properties.appKey(), "appKey");
+            requireNonBlank(properties.appSecret(), "appSecret");
+            requireNonBlank(properties.robotCode(), "robotCode");
 
-            String text = buildPlainText(uniMessage);
             String msgParamJson;
             try {
-                msgParamJson = objectMapper.writeValueAsString(Map.of("content", text));
-            } catch (JsonProcessingException e) {
+                msgParamJson = objectMapper.writeValueAsString(Map.of("content", buildPlainText(uniMessage)));
+            } catch (Exception e) {
                 return Mono.error(e);
             }
 
-            return fetchAccessToken(accessTokenUrl)
-                    .flatMap(token -> Flux.fromIterable(chatIds)
-                            .concatMap(openConversationId -> sendGroupMessage(groupSendUrl, token, openConversationId,
-                                    msgParamJson))
-                            .collectList()
-                            .map(ignore -> "DINGTALK_BOT ok " + chatIds.size() + " chat(s)"));
+            return Mono.fromCallable(() -> {
+                String token = fetchAccessToken();
+                for (String openConversationId : chatIds) {
+                    sendGroupMessage(token, openConversationId, msgParamJson);
+                }
+                return "DINGTALK_BOT ok " + chatIds.size() + " chat(s)";
+            }).subscribeOn(Schedulers.boundedElastic());
         });
     }
 
-    private Mono<String> fetchAccessToken(String accessTokenUrl) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("appKey", properties.appKey().trim());
-        body.put("appSecret", properties.appSecret().trim());
-        byte[] bytes;
+    private String fetchAccessToken() {
+        GetAccessTokenRequest req = new GetAccessTokenRequest()
+                .setAppKey(properties.appKey().trim())
+                .setAppSecret(properties.appSecret().trim());
         try {
-            bytes = toJsonBytes(body);
-        } catch (Exception e) {
-            return Mono.error(e);
-        }
-        return postJson(accessTokenUrl, bytes, "DINGTALK_BOT")
-                .flatMap(resp -> {
-                    String token = stringOrNull(resp.get("accessToken"));
-                    if (StringUtils.isBlank(token)) {
-                        token = stringOrNull(resp.get("access_token"));
-                    }
-                    if (StringUtils.isBlank(token)) {
-                        return Mono.error(new IllegalStateException(
-                                "DINGTALK_BOT token response missing accessToken"));
-                    }
-                    return Mono.just(token);
-                });
-    }
-
-    private Mono<String> sendGroupMessage(String groupSendUrl, String accessToken, String openConversationId,
-            String msgParamJson) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("robotCode", properties.robotCode().trim());
-        body.put("openConversationId", openConversationId);
-        body.put("msgKey", MSG_KEY_SAMPLE_TEXT);
-        body.put("msgParam", msgParamJson);
-        byte[] bytes;
-        try {
-            bytes = toJsonBytes(body);
-        } catch (Exception e) {
-            return Mono.error(e);
-        }
-        Map<String, String> headers = Map.of(HEADER_ACCESS_TOKEN, accessToken);
-        return postJson(groupSendUrl, bytes, headers, "DINGTALK_BOT")
-                .flatMap(this::resolveGroupSendResponse);
-    }
-
-    private Mono<String> resolveGroupSendResponse(Map<String, Object> response) {
-        if (response.containsKey("errcode")) {
-            int err = intValue(response.get("errcode"), -1);
-            if (err != 0) {
-                return Mono.error(new IllegalStateException(
-                        "DINGTALK_BOT platform failure errcode=" + err + " errmsg="
-                                + String.valueOf(response.get("errmsg"))));
+            GetAccessTokenResponse response = oauthClient.getAccessToken(req);
+            GetAccessTokenResponseBody body = response != null ? response.getBody() : null;
+            String token = body != null ? body.getAccessToken() : null;
+            if (StringUtils.isBlank(token)) {
+                throw new IllegalStateException("DINGTALK_BOT token response missing accessToken");
             }
+            return token;
+        } catch (TeaException te) {
+            throw new IllegalStateException(
+                    "DINGTALK_BOT platform failure code=" + te.getCode() + " message=" + te.getMessage(), te);
+        } catch (Exception e) {
+            if (e instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new IllegalStateException("DINGTALK_BOT getAccessToken failed: " + e.getMessage(), e);
         }
-        return Mono.just("ok");
     }
 
-    private List<String> normalizeRecipients(UniAddress uniAddress, String providerName) {
+    private void sendGroupMessage(String accessToken, String openConversationId, String msgParamJson) {
+        OrgGroupSendRequest req = new OrgGroupSendRequest()
+                .setRobotCode(properties.robotCode().trim())
+                .setOpenConversationId(openConversationId)
+                .setMsgKey(MSG_KEY_SAMPLE_TEXT)
+                .setMsgParam(msgParamJson);
+        OrgGroupSendHeaders headers = new OrgGroupSendHeaders();
+        headers.setXAcsDingtalkAccessToken(accessToken);
+        try {
+            OrgGroupSendResponse response = robotClient.orgGroupSendWithOptions(req, headers, new RuntimeOptions());
+            if (response == null || response.getBody() == null) {
+                throw new IllegalStateException("DINGTALK_BOT empty group send response");
+            }
+        } catch (TeaException te) {
+            throw new IllegalStateException(
+                    "DINGTALK_BOT platform failure code=" + te.getCode() + " message=" + te.getMessage(), te);
+        } catch (Exception e) {
+            if (e instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new IllegalStateException("DINGTALK_BOT orgGroupSend failed: " + e.getMessage(), e);
+        }
+    }
+
+    private List<String> normalizeRecipients(UniAddress uniAddress) {
         List<String> recipients = uniAddress == null || uniAddress.getRecipients() == null
                 ? List.of()
                 : uniAddress.getRecipients().stream()
@@ -130,65 +162,15 @@ public class DingtalkBotChannel extends Channel {
                         .filter(StringUtils::isNotBlank)
                         .collect(Collectors.toList());
         if (recipients.isEmpty()) {
-            throw new IllegalArgumentException(providerName + " recipients required (chat/session id)");
+            throw new IllegalArgumentException("DINGTALK_BOT recipients required (chat/session id)");
         }
         return recipients;
     }
 
-    private String requireNonBlank(String value, String fieldName, String providerName) {
+    private void requireNonBlank(String value, String fieldName) {
         if (StringUtils.isBlank(value)) {
-            throw new IllegalStateException(providerName + " spec requires " + fieldName);
+            throw new IllegalStateException("DINGTALK_BOT spec requires " + fieldName);
         }
-        return value.trim();
-    }
-
-    private byte[] toJsonBytes(Map<String, Object> payload) throws Exception {
-        return objectMapper.writeValueAsBytes(payload);
-    }
-
-    private Mono<Map<String, Object>> postJson(String uri, byte[] bodyBytes, String providerName) {
-        return postJson(uri, bodyBytes, Map.of(), providerName);
-    }
-
-    private Mono<Map<String, Object>> postJson(String uri, byte[] bodyBytes, Map<String, String> headers,
-            String providerName) {
-        return webClient.post()
-                .uri(uri)
-                .headers(h -> headers.forEach(h::add))
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(bodyBytes)
-                .retrieve()
-                .bodyToMono(String.class)
-                .map(responseBody -> parseJsonMap(responseBody, providerName))
-                .onErrorMap(WebClientResponseException.class, ex -> new IllegalStateException(
-                        providerName + " " + ex.getStatusCode().value()
-                                + (StringUtils.isNotBlank(ex.getResponseBodyAsString())
-                                        ? ": " + ex.getResponseBodyAsString()
-                                        : ""),
-                        ex));
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> parseJsonMap(String responseBody, String providerName) {
-        try {
-            return objectMapper.readValue(responseBody, Map.class);
-        } catch (Exception e) {
-            throw new IllegalStateException(providerName + " invalid response: " + responseBody, e);
-        }
-    }
-
-    private static int intValue(Object value, int defaultValue) {
-        if (value instanceof Number n) {
-            return n.intValue();
-        }
-        if (value instanceof String s && StringUtils.isNumeric(s)) {
-            return Integer.parseInt(s);
-        }
-        return defaultValue;
-    }
-
-    private static String stringOrNull(Object o) {
-        return o == null ? null : String.valueOf(o);
     }
 
     private static String buildPlainText(UniMessage uniMessage) {
@@ -203,8 +185,6 @@ public class DingtalkBotChannel extends Channel {
     record Properties(
             @NotBlank String appKey,
             @NotBlank String appSecret,
-            @NotBlank String robotCode,
-            @NotBlank String accessTokenUrl,
-            @NotBlank String groupSendUrl) {
+            @NotBlank String robotCode) {
     }
 }
