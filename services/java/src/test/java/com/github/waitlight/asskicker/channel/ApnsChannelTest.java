@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.channel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.impl.ApnsAbstractChannelImpl;
+import com.github.waitlight.asskicker.channel.impl.ApnsChannel;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * - Error scenarios (400, 401, 410, 500)
  * - Request validation (headers, payload structure)
  */
-class ApnsAbstractChannelImplTest {
+class ApnsChannelTest {
 
         private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -38,7 +38,7 @@ class ApnsAbstractChannelImplTest {
         private static final String DEVICE_TOKEN_2 = "1122334455667788990011223344556677889900aabbccddeeff001122334455";
 
         private ApnsMockServer mockServer;
-        private ApnsAbstractChannelImpl channel;
+        private ApnsChannel channel;
 
         /**
          * Creates a ChannelEntity configured for testing.
@@ -83,7 +83,7 @@ class ApnsAbstractChannelImplTest {
 
                 // Create provider configuration using mock server URL
                 ChannelEntity provider = createProvider(mockServer.getBaseUrl());
-                channel = new ApnsAbstractChannelImpl(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
+                channel = new ApnsChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
         }
 
         // ==================== Success Scenarios ====================

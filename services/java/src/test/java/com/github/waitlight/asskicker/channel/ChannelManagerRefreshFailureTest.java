@@ -23,7 +23,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @ExtendWith(MockitoExtension.class)
-class AbstractChannelImplManagerRefreshFailureTest {
+class ChannelManagerRefreshFailureTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -52,10 +52,10 @@ class AbstractChannelImplManagerRefreshFailureTest {
                 }
                 """;
         ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
-        AbstractChannelImpl abstractChannelImpl = new NoOpAbstractChannelImpl(entity, WebClient.create(),
+        Channel channel = new NoOpChannel(entity, WebClient.create(),
                 ChannelTestObjectMappers.channelObjectMapper());
-        ConcurrentHashMap<String, AbstractChannelImpl> map = new ConcurrentHashMap<>();
-        map.put("id-1", abstractChannelImpl);
+        ConcurrentHashMap<String, Channel> map = new ConcurrentHashMap<>();
+        map.put("id-1", channel);
         ReflectionTestUtils.setField(channelManager, "cache", map);
 
         when(channelService.findEnabled()).thenReturn(Flux.error(new RuntimeException("db unavailable")));
@@ -66,9 +66,9 @@ class AbstractChannelImplManagerRefreshFailureTest {
     }
 
     /** Avoids MapStruct-backed channels so this test does not depend on generated mapper classes. */
-    private static final class NoOpAbstractChannelImpl extends AbstractChannelImpl {
+    private static final class NoOpChannel extends Channel {
 
-        NoOpAbstractChannelImpl(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
+        NoOpChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
             super(entity, webClient, objectMapper);
         }
 

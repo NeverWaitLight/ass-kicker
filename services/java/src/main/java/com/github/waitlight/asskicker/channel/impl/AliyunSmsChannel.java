@@ -6,7 +6,7 @@ import com.aliyun.dysmsapi20170525.models.SendSmsResponse;
 import com.aliyun.dysmsapi20170525.models.SendSmsResponseBody;
 import com.aliyun.teaopenapi.models.Config;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.AbstractChannelImpl;
+import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelImpl;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
@@ -25,13 +25,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-@ChannelImpl(providerType = ProviderType.ALIYUN_SMS, propertyClass = AliyunSmsAbstractChannelImpl.Properties.class)
-public class AliyunSmsAbstractChannelImpl extends AbstractChannelImpl {
+@ChannelImpl(providerType = ProviderType.ALIYUN_SMS, propertyClass = AliyunSmsChannel.Properties.class)
+public class AliyunSmsChannel extends Channel {
 
     private final Properties properties;
     private final Client aliyunClient;
 
-    public AliyunSmsAbstractChannelImpl(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public AliyunSmsChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
         try {

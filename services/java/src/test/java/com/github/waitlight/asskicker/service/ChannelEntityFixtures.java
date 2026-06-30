@@ -7,7 +7,7 @@ import com.github.waitlight.asskicker.model.ChannelEntity;
 import java.io.UncheckedIOException;
 
 /**
- * 文档 {@code docs/message-template-and-abstractChannelImpl-provider.md} 中四类渠道的代表性样例，
+ * 文档 {@code docs/message-template-and-channel-provider.md} 中四类渠道的代表性样例，
  * 用于 ChannelService 内存 Mongo 测试。
  */
 public final class ChannelEntityFixtures {
@@ -46,7 +46,7 @@ public final class ChannelEntityFixtures {
                   "code": "smtp-email-prod",
                   "channelType": "EMAIL",
                   "providerType": "SMTP",
-                  "description": "SMTP abstractChannelImpl",
+                  "description": "SMTP channel",
                   "enabled": true,
                   "properties": {
                     "host": "smtp.example.com",

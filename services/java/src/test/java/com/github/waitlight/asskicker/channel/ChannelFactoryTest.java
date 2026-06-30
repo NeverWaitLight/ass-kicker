@@ -11,7 +11,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-class AbstractChannelImplFactoryTest {
+class ChannelFactoryTest {
 
   private static final ObjectMapper MAPPER = new ObjectMapper()
           .configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true);
@@ -38,7 +38,7 @@ class AbstractChannelImplFactoryTest {
         }
         """;
     ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
-    assertThat(factory.create(entity)).isInstanceOf(ApnsAbstractChannelImpl.class);
+    assertThat(factory.create(entity)).isInstanceOf(ApnsChannel.class);
   }
 
   @Test
@@ -58,25 +58,7 @@ class AbstractChannelImplFactoryTest {
         }
         """;
     ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
-    assertThat(factory.create(entity)).isInstanceOf(FcmAbstractChannelImpl.class);
-  }
-
-  @Test
-  @DisplayName("创建钉钉Webhook渠道")
-  void create_dingtalk_returnsDingtalkWebhookChannel() throws Exception {
-    String json = """
-        {
-          "code": "dingtalk-factory",
-          "channelType": "IM",
-          "providerType": "DINGTALK_WEBHOOK",
-          "enabled": true,
-          "properties": {
-            "url": "https://oapi.dingtalk.com/robot/send"
-          }
-        }
-        """;
-    ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
-    assertThat(factory.create(entity)).isInstanceOf(DingtalkWebhookAbstractChannelImpl.class);
+    assertThat(factory.create(entity)).isInstanceOf(FcmChannel.class);
   }
 
   @Test
@@ -96,7 +78,7 @@ class AbstractChannelImplFactoryTest {
         }
         """;
     ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
-    assertThat(factory.create(entity)).isInstanceOf(DingtalkBotAbstractChannelImpl.class);
+    assertThat(factory.create(entity)).isInstanceOf(DingtalkBotChannel.class);
   }
 
   @Test
@@ -134,7 +116,7 @@ class AbstractChannelImplFactoryTest {
         }
         """;
     ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
-    assertThat(factory.create(entity)).isInstanceOf(AliyunSmsAbstractChannelImpl.class);
+    assertThat(factory.create(entity)).isInstanceOf(AliyunSmsChannel.class);
   }
 
   @Test
@@ -156,6 +138,6 @@ class AbstractChannelImplFactoryTest {
         }
         """;
     ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
-    assertThat(factory.create(entity)).isInstanceOf(SmtpAbstractChannelImpl.class);
+    assertThat(factory.create(entity)).isInstanceOf(SmtpChannel.class);
   }
 }

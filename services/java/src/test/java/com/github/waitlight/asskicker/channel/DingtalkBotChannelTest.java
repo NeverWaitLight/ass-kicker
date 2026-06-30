@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.concurrent.TimeUnit;
 
-import com.github.waitlight.asskicker.channel.impl.DingtalkBotAbstractChannelImpl;
+import com.github.waitlight.asskicker.channel.impl.DingtalkBotChannel;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,12 +23,12 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import reactor.test.StepVerifier;
 
-class DingtalkBotAbstractChannelImplTest {
+class DingtalkBotChannelTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private MockWebServer mockWebServer;
-    private DingtalkBotAbstractChannelImpl channel;
+    private DingtalkBotChannel channel;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -52,7 +52,7 @@ class DingtalkBotAbstractChannelImplTest {
                 }
                 """, base, base);
         ChannelEntity provider = MAPPER.readValue(providerJson, ChannelEntity.class);
-        channel = new DingtalkBotAbstractChannelImpl(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
+        channel = new DingtalkBotChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
     }
 
     @AfterEach
@@ -143,7 +143,7 @@ class DingtalkBotAbstractChannelImplTest {
                 }
                 """;
         ChannelEntity provider = MAPPER.readValue(providerJson, ChannelEntity.class);
-        DingtalkBotAbstractChannelImpl ch = new DingtalkBotAbstractChannelImpl(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
+        DingtalkBotChannel ch = new DingtalkBotChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
 
         UniMessage message = new UniMessage();
         message.setContent("x");

@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.channel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.impl.FcmAbstractChannelImpl;
+import com.github.waitlight.asskicker.channel.impl.FcmChannel;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * - Error scenarios (400, 401, 404, 500)
  * - Request validation (headers, payload structure)
  */
-class FcmAbstractChannelImplTest {
+class FcmChannelTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final String PROJECT_ID = "test-project-12345";
@@ -39,7 +39,7 @@ class FcmAbstractChannelImplTest {
     private static final String DEVICE_TOKEN_2 = "aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ0011223344556";
 
     private FcmMockServer mockServer;
-    private FcmAbstractChannelImpl channel;
+    private FcmChannel channel;
 
     /**
      * Creates a ChannelEntity configured for testing.
@@ -72,7 +72,7 @@ class FcmAbstractChannelImplTest {
         mockServer.start();
 
         ChannelEntity provider = createProvider(mockServer.getBaseUrl());
-        channel = new FcmAbstractChannelImpl(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
+        channel = new FcmChannel(provider, WebClient.create(), ChannelTestObjectMappers.channelObjectMapper());
     }
 
     @AfterEach

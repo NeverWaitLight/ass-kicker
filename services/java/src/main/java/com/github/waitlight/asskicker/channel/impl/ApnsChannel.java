@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.github.waitlight.asskicker.channel.AbstractChannelImpl;
+import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelImpl;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
@@ -35,12 +35,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
-@ChannelImpl(providerType = ProviderType.APNS, propertyClass = ApnsAbstractChannelImpl.Properties.class)
-public class ApnsAbstractChannelImpl extends AbstractChannelImpl {
+@ChannelImpl(providerType = ProviderType.APNS, propertyClass = ApnsChannel.Properties.class)
+public class ApnsChannel extends Channel {
 
     private final Properties properties;
 
-    public ApnsAbstractChannelImpl(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public ApnsChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
     }

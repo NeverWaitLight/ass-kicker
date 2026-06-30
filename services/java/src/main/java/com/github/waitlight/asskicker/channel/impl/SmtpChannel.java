@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import com.github.waitlight.asskicker.channel.AbstractChannelImpl;
+import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -27,12 +27,12 @@ import jakarta.mail.internet.MimeMessage;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-@ChannelImpl(providerType = ProviderType.SMTP, propertyClass = SmtpAbstractChannelImpl.Properties.class)
-public class SmtpAbstractChannelImpl extends AbstractChannelImpl {
+@ChannelImpl(providerType = ProviderType.SMTP, propertyClass = SmtpChannel.Properties.class)
+public class SmtpChannel extends Channel {
 
     private final Properties properties;
 
-    public SmtpAbstractChannelImpl(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public SmtpChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.properties = Properties.fromProperties(provider.getProperties());
     }
