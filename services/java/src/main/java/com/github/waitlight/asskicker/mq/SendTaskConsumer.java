@@ -2,7 +2,7 @@ package com.github.waitlight.asskicker.mq;
 
 import com.github.waitlight.asskicker.config.RocketMQConfig;
 import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.faced.Sender;
+import com.github.waitlight.asskicker.service.Sender;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

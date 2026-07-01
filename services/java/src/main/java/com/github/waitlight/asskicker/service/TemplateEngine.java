@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.faced;
+package com.github.waitlight.asskicker.service;
 
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -22,8 +22,6 @@ import com.github.waitlight.asskicker.config.CaffeineCacheProperties;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.TemplateEntity;
-import com.github.waitlight.asskicker.service.GlobalVariableService;
-import com.github.waitlight.asskicker.service.TemplateService;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;

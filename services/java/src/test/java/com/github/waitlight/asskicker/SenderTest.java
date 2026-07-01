@@ -24,8 +24,8 @@ import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.faced.Sender;
-import com.github.waitlight.asskicker.faced.TemplateEngine;
+import com.github.waitlight.asskicker.service.Sender;
+import com.github.waitlight.asskicker.service.TemplateEngine;
 
 import com.github.waitlight.asskicker.service.ChannelService;
 import com.github.waitlight.asskicker.service.RecordService;

@@ -7,7 +7,7 @@ import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.dto.send.SendVO;
 import com.github.waitlight.asskicker.exception.BusinessException;
-import com.github.waitlight.asskicker.faced.TemplateEngine;
+import com.github.waitlight.asskicker.service.TemplateEngine;
 import com.github.waitlight.asskicker.mq.SendTaskProducer;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
