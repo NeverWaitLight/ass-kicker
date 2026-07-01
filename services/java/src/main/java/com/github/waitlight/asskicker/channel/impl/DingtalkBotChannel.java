@@ -10,7 +10,6 @@ import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -188,21 +187,17 @@ public class DingtalkBotChannel extends Channel<SendReq> {
         return StringUtils.defaultString(content);
     }
 
-    @Schema(description = "钉钉企业机器人通道配置")
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     static class Properties {
 
-        @Schema(description = "AppKey", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank
         private String appKey;
 
-        @Schema(description = "AppSecret", requiredMode = Schema.RequiredMode.REQUIRED, type = "password")
         @NotBlank
         private String appSecret;
 
-        @Schema(description = "RobotCode", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank
         private String robotCode;
     }

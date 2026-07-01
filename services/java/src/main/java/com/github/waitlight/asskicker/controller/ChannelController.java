@@ -21,7 +21,6 @@ import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.channel.CreateChannelDTO;
 import com.github.waitlight.asskicker.dto.channel.ChannelProviderOptionVO;
 import com.github.waitlight.asskicker.dto.channel.ChannelVO;
-import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.ProviderType;
 import com.github.waitlight.asskicker.dto.channel.UpdateChannelDTO;
@@ -33,7 +32,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.models.media.Schema;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
@@ -94,14 +92,6 @@ public class ChannelController {
         public Mono<Resp<ChannelVO>> getById(@PathVariable String id) {
                 return channelService.getById(id)
                                 .map(channelConverter::toVO)
-                                .map(Resp::success);
-        }
-
-        @Operation(summary = "服务商属性配置", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-        @GetMapping("/{type}/{provider}/properties")
-        public Mono<Resp<Schema<?>>> providerProperties(@PathVariable ChannelType type,
-                        @PathVariable ChannelProvider provider) {
-                return Mono.fromSupplier(() -> channelManager.getPropertiesSchema(type, provider))
                                 .map(Resp::success);
         }
 

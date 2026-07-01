@@ -5,8 +5,6 @@ import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.service.ChannelService;
-import io.swagger.v3.core.converter.ModelConverters;
-import io.swagger.v3.oas.models.media.Schema;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -50,15 +48,14 @@ public class ChannelManager {
     }
 
     /**
-     * Channel 元信息记录，保存扫描得到的 ChannelType、ChannelProvider、Properties 类、Channel 具体类
+     * Channel 元信息记录，保存扫描得到的 ChannelType、ChannelProvider、Channel 具体类
      */
-    public record ChannelMeta(ChannelType type, ChannelProvider provider, Class<?> propertyClass,
+    public record ChannelMeta(ChannelType type, ChannelProvider provider,
             Class<? extends Channel> channelClass) {
     }
 
     /**
-     * 扫描 channel 包下所有 Channel 具体子类，读取其静态字段 TYPE 和 PROVIDER 与内部类 Properties，
-     * 缓存元信息
+     * 扫描 channel 包下所有 Channel 具体子类，读取其静态字段 TYPE 和 PROVIDER，缓存元信息
      */
     private void scanChannelImplementations() {
         ClassPathScanningCandidateComponentProvider scanner =
@@ -87,13 +84,11 @@ public class ChannelManager {
                             channelClass.getName());
                     continue;
                 }
-                Class<?> propertyClass = findPropertiesClass(channelClass);
 
-                ChannelMeta meta = new ChannelMeta(type, provider, propertyClass, channelClass);
+                ChannelMeta meta = new ChannelMeta(type, provider, channelClass);
                 channelMetaCache.put(new ChannelKey(type, provider), meta);
 
-                log.info("Scanned Channel implementation: {}/{} -> propertyClass: {}",
-                        type, provider, propertyClass.getSimpleName());
+                log.info("Scanned Channel implementation: {}/{}", type, provider);
             } catch (ClassNotFoundException e) {
                 log.warn("Failed to load Channel class: {}", className, e);
             }
@@ -117,15 +112,6 @@ public class ChannelManager {
             throw new IllegalStateException(
                     "Failed to read " + fieldName + " from " + channelClass.getName(), e);
         }
-    }
-
-    private static Class<?> findPropertiesClass(Class<? extends Channel> channelClass) {
-        for (Class<?> nested : channelClass.getDeclaredClasses()) {
-            if ("Properties".equals(nested.getSimpleName())) {
-                return nested;
-            }
-        }
-        return Void.class;
     }
 
     @PostConstruct
@@ -228,19 +214,4 @@ public class ChannelManager {
                 .toList();
     }
 
-    public Schema<?> getPropertiesSchema(ChannelType type, ChannelProvider provider) {
-        Class<?> propertyClass = getPropertiesClass(type, provider)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Unknown channel: type=" + type + " provider=" + provider));
-        if (propertyClass == Void.class) {
-            return new Schema<>().type("object");
-        }
-        Map<String, Schema> all = ModelConverters.getInstance().readAll(propertyClass);
-        Schema<?> root = all.get(propertyClass.getSimpleName());
-        return root != null ? root : new Schema<>().type("object");
-    }
-
-    public Optional<Class<?>> getPropertiesClass(ChannelType type, ChannelProvider provider) {
-        return getChannelMeta(type, provider).map(ChannelMeta::propertyClass);
-    }
 }

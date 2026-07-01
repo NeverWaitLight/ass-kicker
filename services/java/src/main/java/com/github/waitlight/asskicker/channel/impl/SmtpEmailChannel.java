@@ -20,7 +20,6 @@ import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -126,44 +125,34 @@ public class SmtpEmailChannel extends Channel<SendReq> {
         return recipients;
     }
 
-    @Schema(description = "SMTP 邮件通道配置")
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     static class Properties {
 
-        @Schema(description = "SMTP 主机", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank
         private String host;
 
-        @Schema(description = "SMTP 端口", minimum = "1", maximum = "65535", defaultValue = "587")
         @Min(1)
         @Max(65535)
         private int port;
 
-        @Schema(description = "用户名", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank
         private String username;
 
-        @Schema(description = "密码", type = "password")
         private String password;
 
-        @Schema(description = "发件人", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank
         @Email
         private String from;
 
-        @Schema(description = "是否启用 SSL", defaultValue = "false")
         private boolean sslEnabled;
 
-        @Schema(description = "是否启用 STARTTLS", defaultValue = "true")
         private boolean startTls;
 
-        @Schema(description = "连接超时（毫秒）", minimum = "0")
         @Min(0)
         private Integer connectionTimeout;
 
-        @Schema(description = "读取超时（毫秒）", minimum = "0")
         @Min(0)
         private Integer readTimeout;
 
