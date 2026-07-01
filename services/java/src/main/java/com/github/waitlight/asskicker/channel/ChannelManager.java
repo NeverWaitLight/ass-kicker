@@ -19,11 +19,11 @@ import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
-import java.util.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Type;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -203,14 +203,6 @@ public class ChannelManager {
         }
     }
 
-    public Channel getChannelById(String id) {
-        return cache.get(id);
-    }
-
-    public List<Channel> getAllChannels() {
-        return cache.values().stream().toList();
-    }
-
     public int getChannelCount() {
         return cache.size();
     }
@@ -223,15 +215,6 @@ public class ChannelManager {
      */
     public Optional<ChannelMeta> getChannelMeta(ProviderType providerType) {
         return Optional.ofNullable(channelMetaCache.get(providerType));
-    }
-
-    /**
-     * 获取所有已扫描的 Channel 元信息
-     *
-     * @return 不可修改的 Channel 元信息 Map
-     */
-    public Map<ProviderType, ChannelMeta> getAllChannelMetas() {
-        return Map.copyOf(channelMetaCache);
     }
 
     public List<ChannelProviderOptionVO> getProvidersByChannelType(ChannelType channelType) {
