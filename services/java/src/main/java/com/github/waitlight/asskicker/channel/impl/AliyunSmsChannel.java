@@ -19,7 +19,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,6 +27,8 @@ import java.util.stream.Collectors;
 @ChannelImpl(providerType = ProviderType.ALIYUN_SMS, propertyClass = AliyunSmsChannel.Properties.class)
 public class AliyunSmsChannel extends Channel {
 
+    private static final String DEFAULT_ENDPOINT = "dysmsapi.aliyuncs.com";
+
     private final Properties properties;
     private final Client aliyunClient;
 
@@ -35,64 +36,25 @@ public class AliyunSmsChannel extends Channel {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
         try {
-            this.aliyunClient = new Client(buildConfig(properties));
+            this.aliyunClient = new Client(new Config()
+                    .setAccessKeyId(properties.accessKeyId())
+                    .setAccessKeySecret(properties.accessKeySecret())
+                    .setEndpoint(StringUtils.defaultIfBlank(properties.endpoint(), DEFAULT_ENDPOINT)));
         } catch (Exception e) {
             throw new IllegalStateException("ALIYUN_SMS SDK client init failed", e);
         }
-    }
-
-    private static Config buildConfig(Properties properties) {
-        Config config = new Config()
-                .setAccessKeyId(properties.accessKeyId().trim())
-                .setAccessKeySecret(properties.accessKeySecret().trim());
-        if (StringUtils.isNotBlank(properties.regionId())) {
-            config.setRegionId(properties.regionId().trim());
-        }
-        if (StringUtils.isNotBlank(properties.endpoint())) {
-            applyEndpoint(config, properties.endpoint().trim());
-        }
-        return config;
-    }
-
-    /**
-     * Endpoint 接受裸 host[:port] 或带 scheme 的 URL；带 scheme 时 protocol 也会被同步覆盖。
-     */
-    static void applyEndpoint(Config config, String endpointRaw) {
-        if (!endpointRaw.contains("://")) {
-            config.setEndpoint(endpointRaw);
-            return;
-        }
-        URI uri = URI.create(endpointRaw);
-        if (uri.getScheme() != null) {
-            config.setProtocol(uri.getScheme().toLowerCase());
-        }
-        String host = uri.getHost();
-        if (StringUtils.isBlank(host)) {
-            throw new IllegalStateException("ALIYUN_SMS endpoint has no host: " + endpointRaw);
-        }
-        int port = uri.getPort();
-        config.setEndpoint(port > 0 ? host + ":" + port : host);
     }
 
     @Override
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
             List<String> recipients = normalizeRecipients(uniAddress);
-            validateSpec();
-
             String templateCode = resolveTemplateCode(uniMessage);
             if (StringUtils.isBlank(templateCode)) {
                 return Mono.error(new IllegalStateException(
-                        "ALIYUN_SMS requires templateCode in channel properties or extraData.templateCode"));
+                        "ALIYUN_SMS requires templateCode in properties or extraData"));
             }
-
-            String templateParamJson;
-            try {
-                templateParamJson = buildTemplateParamJson(uniMessage);
-            } catch (Exception e) {
-                return Mono.error(e);
-            }
-
+            String templateParamJson = buildTemplateParamJson(uniMessage);
             return Flux.fromIterable(recipients)
                     .concatMap(phone -> sendOne(phone, templateCode, templateParamJson))
                     .collect(Collectors.joining(","))
@@ -100,39 +62,33 @@ public class AliyunSmsChannel extends Channel {
         });
     }
 
-    private void validateSpec() {
-        if (StringUtils.isBlank(properties.accessKeyId()) || StringUtils.isBlank(properties.accessKeySecret())
-                || StringUtils.isBlank(properties.signName())) {
-            throw new IllegalStateException("ALIYUN_SMS requires accessKeyId accessKeySecret signName");
-        }
-        if (StringUtils.isBlank(properties.regionId()) && StringUtils.isBlank(properties.endpoint())) {
-            throw new IllegalStateException("ALIYUN_SMS requires regionId or endpoint");
-        }
-    }
-
     private String resolveTemplateCode(UniMessage uniMessage) {
         if (uniMessage != null && uniMessage.getExtraData() != null) {
             Object o = uniMessage.getExtraData().get("templateCode");
             if (o != null && StringUtils.isNotBlank(String.valueOf(o))) {
-                return String.valueOf(o).trim();
+                return String.valueOf(o);
             }
         }
         return properties.templateCode();
     }
 
-    private String buildTemplateParamJson(UniMessage uniMessage) throws Exception {
+    private String buildTemplateParamJson(UniMessage uniMessage) {
         Map<String, Object> params = uniMessage != null ? uniMessage.getTemplateParams() : null;
         if (params == null || params.isEmpty()) {
             return "{}";
         }
-        return objectMapper.writeValueAsString(params);
+        try {
+            return objectMapper.writeValueAsString(params);
+        } catch (Exception e) {
+            throw new IllegalStateException("ALIYUN_SMS templateParam serialize failed", e);
+        }
     }
 
     private Mono<String> sendOne(String phoneNumbers, String templateCode, String templateParamJson) {
         return Mono.fromCallable(() -> {
             SendSmsRequest request = new SendSmsRequest()
                     .setPhoneNumbers(phoneNumbers)
-                    .setSignName(properties.signName().trim())
+                    .setSignName(properties.signName())
                     .setTemplateCode(templateCode)
                     .setTemplateParam(templateParamJson);
             SendSmsResponse response = aliyunClient.sendSms(request);
@@ -140,12 +96,11 @@ public class AliyunSmsChannel extends Channel {
             if (body == null) {
                 throw new IllegalStateException("ALIYUN_SMS empty response body");
             }
-            String code = body.getCode();
-            if ("OK".equalsIgnoreCase(code)) {
+            if ("OK".equalsIgnoreCase(body.getCode())) {
                 return "ok";
             }
             throw new IllegalStateException(
-                    "ALIYUN_SMS failure Code=" + code + " Message=" + body.getMessage());
+                    "ALIYUN_SMS failure Code=" + body.getCode() + " Message=" + body.getMessage());
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
@@ -168,7 +123,6 @@ public class AliyunSmsChannel extends Channel {
             @NotBlank String accessKeySecret,
             @NotBlank String signName,
             String templateCode,
-            String regionId,
             String endpoint) {
     }
 }
