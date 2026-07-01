@@ -19,12 +19,10 @@ import com.github.waitlight.asskicker.dto.PageReq;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.channel.CreateChannelDTO;
-import com.github.waitlight.asskicker.dto.channel.ChannelProviderOptionVO;
 import com.github.waitlight.asskicker.dto.channel.ChannelVO;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.ProviderType;
 import com.github.waitlight.asskicker.dto.channel.UpdateChannelDTO;
-import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.service.ChannelService;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -45,7 +43,6 @@ public class ChannelController {
 
         private final ChannelService channelService;
         private final ChannelConverter channelConverter;
-        private final ChannelManager channelManager;
 
         @Operation(summary = "创建渠道", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @PostMapping
@@ -92,14 +89,6 @@ public class ChannelController {
         public Mono<Resp<ChannelVO>> getById(@PathVariable String id) {
                 return channelService.getById(id)
                                 .map(channelConverter::toVO)
-                                .map(Resp::success);
-        }
-
-        @Operation(summary = "按渠道类型查询服务商", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-        @GetMapping("/{type}/providers")
-        public Mono<Resp<List<ChannelProviderOptionVO>>> providersByChannelType(
-                        @PathVariable ChannelType type) {
-                return Mono.fromSupplier(() -> channelManager.getProvidersByChannelType(type))
                                 .map(Resp::success);
         }
 

@@ -1,6 +1,5 @@
 package com.github.waitlight.asskicker.channel;
 
-import com.github.waitlight.asskicker.dto.channel.ChannelProviderOptionVO;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
@@ -199,19 +198,6 @@ public class ChannelManager {
 
     public Optional<ChannelMeta> getChannelMeta(ChannelType type, ChannelProvider provider) {
         return Optional.ofNullable(channelMetaCache.get(new ChannelKey(type, provider)));
-    }
-
-    public List<ChannelProviderOptionVO> getProvidersByChannelType(ChannelType channelType) {
-        return channelMetaCache.keySet().stream()
-                .filter(key -> key.type() == channelType)
-                .map(ChannelKey::provider)
-                .distinct()
-                .sorted(Comparator.comparing(Enum::name))
-                .map(provider -> ChannelProviderOptionVO.builder()
-                        .value(provider.name())
-                        .label(provider.name())
-                        .build())
-                .toList();
     }
 
 }
