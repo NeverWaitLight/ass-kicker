@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
-import com.github.waitlight.asskicker.model.ProviderType;
 import com.google.auth.oauth2.GoogleCredentials;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -35,8 +34,6 @@ import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 public class FcmPushChannel extends Channel {
-
-    public static final ProviderType PROVIDER_TYPE = ProviderType.FCM;
 
     private static final String FIREBASE_MESSAGING_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
     private static final String FCM_ENDPOINT_TEMPLATE = "https://fcm.googleapis.com/v1/projects/%s/messages:send";

@@ -10,7 +10,6 @@ import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
-import com.github.waitlight.asskicker.model.ProviderType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -29,8 +28,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class AliyunSmsChannel extends Channel {
-
-    public static final ProviderType PROVIDER_TYPE = ProviderType.ALIYUN_SMS;
 
     private static final String DEFAULT_ENDPOINT = "dysmsapi.aliyuncs.com";
 

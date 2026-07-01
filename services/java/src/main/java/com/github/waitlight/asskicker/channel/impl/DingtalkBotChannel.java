@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.model.ChannelEntity;
-import com.github.waitlight.asskicker.model.ProviderType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -29,7 +28,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -39,8 +37,6 @@ import reactor.core.scheduler.Schedulers;
  * group-send under {@code api.dingtalk.com}.
  */
 public class DingtalkBotChannel extends Channel {
-
-    public static final ProviderType PROVIDER_TYPE = ProviderType.DINGTALK_BOT;
 
     private static final String MSG_KEY_SAMPLE_TEXT = "sampleText";
 

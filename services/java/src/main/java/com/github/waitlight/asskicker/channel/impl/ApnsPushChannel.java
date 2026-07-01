@@ -1,45 +1,35 @@
 package com.github.waitlight.asskicker.channel.impl;
 
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
+import com.eatthepath.pushy.apns.ApnsClient;
+import com.eatthepath.pushy.apns.ApnsClientBuilder;
+import com.eatthepath.pushy.apns.PushNotificationResponse;
+import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
+import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.dto.UniAddress;
+import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
-import com.github.waitlight.asskicker.model.ProviderType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.dto.UniAddress;
-import com.github.waitlight.asskicker.dto.UniMessage;
-
-import com.eatthepath.pushy.apns.ApnsClient;
-import com.eatthepath.pushy.apns.ApnsClientBuilder;
-import com.eatthepath.pushy.apns.PushNotificationResponse;
-import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
-import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
-
-import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 @Slf4j
 public class ApnsPushChannel extends Channel {
-
-    public static final ProviderType PROVIDER_TYPE = ProviderType.APNS;
 
     private static final String SANDBOX_KEYWORD = "sandbox";
 

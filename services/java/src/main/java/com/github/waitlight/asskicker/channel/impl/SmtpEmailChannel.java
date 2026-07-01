@@ -16,7 +16,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
-import com.github.waitlight.asskicker.model.ProviderType;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
@@ -30,8 +29,6 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 public class SmtpEmailChannel extends Channel {
-
-    public static final ProviderType PROVIDER_TYPE = ProviderType.SMTP;
 
     private final Properties properties;
     private final JavaMailSender mailSender;
