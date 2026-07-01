@@ -1,16 +1,14 @@
 package com.github.waitlight.asskicker.channel;
 
-import com.github.waitlight.asskicker.dto.channel.ChannelPropertyFieldVO;
 import com.github.waitlight.asskicker.dto.channel.ChannelProviderOptionVO;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.ProviderType;
 import com.github.waitlight.asskicker.service.ChannelService;
+import io.swagger.v3.core.converter.ModelConverters;
+import io.swagger.v3.oas.models.media.Schema;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -21,8 +19,6 @@ import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.RecordComponent;
-import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -207,12 +203,6 @@ public class ChannelManager {
         return cache.size();
     }
 
-    /**
-     * 获取指定 ProviderType 的 Channel 元信息
-     *
-     * @param providerType 服务提供商类型
-     * @return Channel 元信息，如果不存在则返回 Optional.empty()
-     */
     public Optional<ChannelMeta> getChannelMeta(ProviderType providerType) {
         return Optional.ofNullable(channelMetaCache.get(providerType));
     }
@@ -227,80 +217,17 @@ public class ChannelManager {
                 .toList();
     }
 
-    public List<ChannelPropertyFieldVO> getPropertiesSchema(ProviderType providerType) {
+    public Schema<?> getPropertiesSchema(ProviderType providerType) {
         Class<?> propertyClass = getPropertiesClass(providerType)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown ProviderType: " + providerType));
         if (propertyClass == Void.class) {
-            return List.of();
+            return new Schema<>().type("object");
         }
-        if (propertyClass.isRecord()) {
-            return Arrays.stream(propertyClass.getRecordComponents())
-                    .map(this::toFieldVO)
-                    .toList();
-        }
-        return Arrays.stream(propertyClass.getDeclaredFields())
-                .filter(field -> !java.lang.reflect.Modifier.isStatic(field.getModifiers()))
-                .map(this::toFieldVO)
-                .toList();
+        Map<String, Schema> all = ModelConverters.getInstance().readAll(propertyClass);
+        Schema<?> root = all.get(propertyClass.getSimpleName());
+        return root != null ? root : new Schema<>().type("object");
     }
 
-    private ChannelPropertyFieldVO toFieldVO(RecordComponent component) {
-        return ChannelPropertyFieldVO.builder()
-                .key(component.getName())
-                .valueType(resolveValueType(component.getGenericType()))
-                .required(isRequired(component.getDeclaredAnnotationsByType(NotBlank.class).length > 0,
-                        component.getDeclaredAnnotationsByType(NotEmpty.class).length > 0,
-                        component.getDeclaredAnnotationsByType(NotNull.class).length > 0))
-                .build();
-    }
-
-    private ChannelPropertyFieldVO toFieldVO(Field field) {
-        return ChannelPropertyFieldVO.builder()
-                .key(field.getName())
-                .valueType(resolveValueType(field.getGenericType()))
-                .required(isRequired(field.getDeclaredAnnotationsByType(NotBlank.class).length > 0,
-                        field.getDeclaredAnnotationsByType(NotEmpty.class).length > 0,
-                        field.getDeclaredAnnotationsByType(NotNull.class).length > 0))
-                .build();
-    }
-
-    private boolean isRequired(boolean notBlank, boolean notEmpty, boolean notNull) {
-        return notBlank || notEmpty || notNull;
-    }
-
-    private String resolveValueType(Type type) {
-        if (type == null) {
-            return "string";
-        }
-        String typeName = type.getTypeName();
-        if (typeName.endsWith("String")) {
-            return "string";
-        }
-        if (typeName.endsWith("boolean") || typeName.endsWith("Boolean")) {
-            return "boolean";
-        }
-        if (typeName.endsWith("int") || typeName.endsWith("Integer")
-                || typeName.endsWith("long") || typeName.endsWith("Long")
-                || typeName.endsWith("double") || typeName.endsWith("Double")
-                || typeName.endsWith("float") || typeName.endsWith("Float")
-                || typeName.endsWith("short") || typeName.endsWith("Short")) {
-            return "number";
-        }
-        if (typeName.contains("Map")) {
-            return "object";
-        }
-        if (typeName.contains("List") || typeName.endsWith("[]")) {
-            return "array";
-        }
-        return "string";
-    }
-
-    /**
-     * 获取指定 ProviderType 对应的属性类
-     *
-     * @param providerType 服务提供商类型
-     * @return 属性类，如果不存在则返回 Optional.empty()
-     */
     public Optional<Class<?>> getPropertiesClass(ProviderType providerType) {
         return getChannelMeta(providerType).map(ChannelMeta::propertyClass);
     }

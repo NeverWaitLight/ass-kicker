@@ -165,6 +165,31 @@ const sectionHint = computed(() => {
   return `${baseSectionHint} ${providerLabel}必填：${labels}。`
 })
 
+const OPENAPI_TYPE_TO_VALUE_TYPE = {
+  string: 'string',
+  integer: 'number',
+  number: 'number',
+  boolean: 'boolean',
+  array: 'array',
+  object: 'object'
+}
+
+const flattenSchemaFields = (schema) => {
+  if (!schema || typeof schema !== 'object') return []
+  const properties = schema.properties && typeof schema.properties === 'object' ? schema.properties : {}
+  const requiredSet = new Set(Array.isArray(schema.required) ? schema.required : [])
+  return Object.entries(properties).map(([key, field]) => {
+    const type = field?.type || (field?.$ref ? 'object' : 'string')
+    return {
+      key,
+      valueType: OPENAPI_TYPE_TO_VALUE_TYPE[type] || 'string',
+      required: requiredSet.has(key),
+      defaultValue: field?.default,
+      description: field?.description
+    }
+  })
+}
+
 const loadProviderSchemaFields = async (selectedProviderType) => {
   if (!selectedProviderType) {
     providerSchemaFields.value = []
@@ -172,7 +197,7 @@ const loadProviderSchemaFields = async (selectedProviderType) => {
   }
   try {
     const schema = await fetchProviderProperties(selectedProviderType)
-    const fields = Array.isArray(schema?.properties) ? schema.properties : []
+    const fields = flattenSchemaFields(schema)
     providerSchemaFields.value = fields
     return fields
   } catch (error) {
