@@ -22,7 +22,8 @@ public final class ChannelEntityFixtures {
                 {
                   "name": "阿里云短信",
                   "code": "aliyun-sms-prod",
-                  "channelType": "SMS",
+                  "type": "SMS",
+                  "provider": "ALIYUN",
                   "providerType": "ALIYUN_SMS",
                   "description": "Aliyun SMS",
                   "enabled": true,
@@ -44,7 +45,7 @@ public final class ChannelEntityFixtures {
                 {
                   "name": "SMTP 邮件",
                   "code": "smtp-email-prod",
-                  "channelType": "EMAIL",
+                  "type": "EMAIL",
                   "providerType": "SMTP",
                   "description": "SMTP channel",
                   "enabled": true,
@@ -69,7 +70,8 @@ public final class ChannelEntityFixtures {
                 {
                   "name": "钉钉 Webhook 渠道",
                   "code": "dingtalk-webhook-prod",
-                  "channelType": "IM",
+                  "type": "IM",
+                  "provider": "DINGTALK",
                   "providerType": "DINGTALK_WEBHOOK",
                   "description": "DingTalk IM webhook",
                   "enabled": true,
@@ -88,7 +90,8 @@ public final class ChannelEntityFixtures {
                 {
                   "name": "钉钉 Webhook 停用",
                   "code": "dingtalk-webhook-disabled",
-                  "channelType": "IM",
+                  "type": "IM",
+                  "provider": "DINGTALK",
                   "providerType": "DINGTALK_WEBHOOK",
                   "description": "disabled",
                   "enabled": false,
@@ -104,7 +107,8 @@ public final class ChannelEntityFixtures {
                 {
                   "name": "苹果推送",
                   "code": "apns-app-dev",
-                  "channelType": "PUSH",
+                  "type": "PUSH",
+                  "provider": "APPLE",
                   "providerType": "APNS",
                   "description": "APNs push",
                   "enabled": true,
@@ -127,7 +131,8 @@ public final class ChannelEntityFixtures {
                 {
                   "name": "苹果推送停用",
                   "code": "apns-app-disabled",
-                  "channelType": "PUSH",
+                  "type": "PUSH",
+                  "provider": "APPLE",
                   "providerType": "APNS",
                   "description": "disabled",
                   "enabled": false,

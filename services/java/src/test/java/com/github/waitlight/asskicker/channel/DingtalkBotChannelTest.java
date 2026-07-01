@@ -47,7 +47,8 @@ class DingtalkBotChannelTest {
         String providerJson = """
                 {
                   "code": "dingtalk-bot-test",
-                  "channelType": "IM",
+                  "type": "IM",
+                  "provider": "DINGTALK",
                   "providerType": "DINGTALK_BOT",
                   "enabled": true,
                   "properties": {

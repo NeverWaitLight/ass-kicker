@@ -25,7 +25,8 @@ class ChannelFactoryTest {
     String json = """
         {
           "code": "apns-factory",
-          "channelType": "PUSH",
+          "type": "PUSH",
+          "provider": "APPLE",
           "providerType": "APNS",
           "enabled": true,
           "properties": {
@@ -79,7 +80,8 @@ class ChannelFactoryTest {
     String json = """
         {
           "code": "fcm-factory",
-          "channelType": "PUSH",
+          "type": "PUSH",
+          "provider": "GOOGLE",
           "providerType": "FCM",
           "enabled": true,
           "properties": {
@@ -98,7 +100,8 @@ class ChannelFactoryTest {
     String json = """
         {
           "code": "dingtalk-bot-factory",
-          "channelType": "IM",
+          "type": "IM",
+          "provider": "DINGTALK",
           "providerType": "DINGTALK_BOT",
           "enabled": true,
           "properties": {
@@ -118,7 +121,7 @@ class ChannelFactoryTest {
     String json = """
         {
           "code": "slack-factory",
-          "channelType": "IM",
+          "type": "IM",
           "providerType": "SLACK",
           "enabled": true,
           "properties": {}
@@ -134,7 +137,8 @@ class ChannelFactoryTest {
     String json = """
         {
           "code": "aliyun-sms-factory",
-          "channelType": "SMS",
+          "type": "SMS",
+          "provider": "ALIYUN",
           "providerType": "ALIYUN_SMS",
           "enabled": true,
           "properties": {
@@ -156,7 +160,7 @@ class ChannelFactoryTest {
     String json = """
         {
           "code": "smtp-factory",
-          "channelType": "EMAIL",
+          "type": "EMAIL",
           "providerType": "SMTP",
           "enabled": true,
           "properties": {

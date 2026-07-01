@@ -78,7 +78,7 @@ public class ChannelController {
                 ephemeral.setId("0");
                 ephemeral.setCode("test");
                 ephemeral.setName("test");
-                ephemeral.setChannelType(request.getType());
+                ephemeral.setType(request.getType());
                 ephemeral.setProviderType(provider);
                 ephemeral.setEnabled(true);
                 ephemeral.setProperties(channelPropertiesMapper.channelObjectPropertiesToProperties(props));
@@ -126,7 +126,7 @@ public class ChannelController {
                 }
                 sr.setRecipient(recipient);
                 sr.setChannelId(channelEntity.getId());
-                sr.setChannelType(channelEntity.getChannelType());
+                sr.setChannelType(channelEntity.getType());
                 sr.setChannelName(channelEntity.getCode());
                 sr.setSubmittedAt(task.getSubmittedAt() != null ? task.getSubmittedAt()
                                 : System.currentTimeMillis());

@@ -48,7 +48,8 @@ class FcmPushChannelTest {
                 {
                   "name": "FCM Mock Test",
                   "code": "fcm-mock-test",
-                  "channelType": "PUSH",
+                  "type": "PUSH",
+                  "provider": "GOOGLE",
                   "providerType": "FCM",
                   "description": "FcmPushChannel test with MockWebServer",
                   "enabled": true,

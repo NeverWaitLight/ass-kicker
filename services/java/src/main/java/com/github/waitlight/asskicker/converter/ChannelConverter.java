@@ -16,7 +16,7 @@ public interface ChannelConverter {
 
     // Entity -> VO (用于响应)
     @Mapping(target = "key", source = "code")
-    @Mapping(target = "type", source = "channelType")
+    @Mapping(target = "type", source = "type")
     @Mapping(target = "provider", source = "providerType")
     @Mapping(target = "properties", qualifiedByName = "channelPropertiesToJson")
     ChannelVO toVO(ChannelEntity entity);
@@ -24,7 +24,8 @@ public interface ChannelConverter {
     // CreateChannelDTO -> Entity (用于创建)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "code", source = "key")
-    @Mapping(target = "channelType", source = "type")
+    @Mapping(target = "type", source = "type")
+    @Mapping(target = "provider", ignore = true)
     @Mapping(target = "providerType", source = "provider")
     @Mapping(target = "creator", ignore = true)
     @Mapping(target = "updater", ignore = true)
@@ -36,7 +37,8 @@ public interface ChannelConverter {
     // UpdateChannelDTO -> Entity (用于更新，null 值会被忽略)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "code", source = "key")
-    @Mapping(target = "channelType", source = "type")
+    @Mapping(target = "type", source = "type")
+    @Mapping(target = "provider", ignore = true)
     @Mapping(target = "providerType", source = "provider")
     @Mapping(target = "creator", ignore = true)
     @Mapping(target = "updater", ignore = true)

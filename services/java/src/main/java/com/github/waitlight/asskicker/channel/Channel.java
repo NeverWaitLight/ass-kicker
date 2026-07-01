@@ -27,7 +27,7 @@ public abstract class Channel {
     protected Channel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
         this.id = entity.getId();
         this.code = entity.getCode();
-        this.channelType = entity.getChannelType();
+        this.channelType = entity.getType();
         this.enabled = entity.isEnabled();
 
         this.webClient = webClient;

@@ -136,8 +136,11 @@ public class ChannelService {
         if (patch.getName() != null) {
             target.setName(patch.getName());
         }
-        if (patch.getChannelType() != null) {
-            target.setChannelType(patch.getChannelType());
+        if (patch.getType() != null) {
+            target.setType(patch.getType());
+        }
+        if (patch.getProvider() != null) {
+            target.setProvider(patch.getProvider());
         }
         if (patch.getProviderType() != null) {
             target.setProviderType(patch.getProviderType());

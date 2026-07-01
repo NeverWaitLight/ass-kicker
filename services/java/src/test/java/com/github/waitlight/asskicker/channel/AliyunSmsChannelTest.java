@@ -42,7 +42,8 @@ class AliyunSmsChannelTest {
         String providerJson = String.format("""
                 {
                   "code": "aliyun-sms-test",
-                  "channelType": "SMS",
+                  "type": "SMS",
+                  "provider": "ALIYUN",
                   "providerType": "ALIYUN_SMS",
                   "enabled": true,
                   "properties": {

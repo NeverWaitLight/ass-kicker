@@ -27,7 +27,11 @@ public class ChannelEntity {
         private String name;
 
         @Field("channel_type")
-        private ChannelType channelType;
+        private ChannelType type;
+
+        @Field("provider")
+        private ChannelProvider provider;
+
         @Field("provider_type")
         private ProviderType providerType;
 

@@ -67,7 +67,8 @@ class ApnsPushChannelTest {
                 {
                   "name": "APNs Mock Test",
                   "code": "apns-mock-test",
-                  "channelType": "PUSH",
+                  "type": "PUSH",
+                  "provider": "APPLE",
                   "providerType": "APNS",
                   "description": "ApnsPushChannel test with mocked ApnsClient",
                   "enabled": true,

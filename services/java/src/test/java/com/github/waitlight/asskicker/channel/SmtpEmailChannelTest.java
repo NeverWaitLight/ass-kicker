@@ -39,7 +39,7 @@ class SmtpEmailChannelTest {
         String providerJson = String.format("""
                 {
                   "code": "smtp-test",
-                  "channelType": "EMAIL",
+                  "type": "EMAIL",
                   "providerType": "SMTP",
                   "enabled": true,
                   "properties": {

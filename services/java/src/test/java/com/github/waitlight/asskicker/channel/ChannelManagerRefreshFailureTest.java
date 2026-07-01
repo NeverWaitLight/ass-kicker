@@ -46,7 +46,8 @@ class ChannelManagerRefreshFailureTest {
                 {
                   "id": "id-1",
                   "code": "dummy-refresh",
-                  "channelType": "PUSH",
+                  "type": "PUSH",
+                  "provider": "APPLE",
                   "providerType": "APNS",
                   "enabled": true
                 }
