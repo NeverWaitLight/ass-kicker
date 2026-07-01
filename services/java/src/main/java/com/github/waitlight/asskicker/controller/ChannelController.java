@@ -244,8 +244,8 @@ public class ChannelController {
                 return switch (channelType) {
                         case EMAIL -> UniAddress.ofEmail(target);
                         case SMS -> UniAddress.ofSms(target);
-                        case PUSH -> UniAddress.ofPush(provider, target);
-                        case IM -> {
+                        case PUSH, APNS, FCM -> UniAddress.ofPush(provider, target);
+                        case IM, DINGTALK -> {
                                 if (provider.name().endsWith("_WEBHOOK")) {
                                         yield UniAddress.ofImWebhook(provider, target);
                                 }
