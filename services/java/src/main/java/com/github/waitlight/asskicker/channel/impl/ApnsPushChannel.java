@@ -13,7 +13,9 @@ import java.util.stream.Collectors;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -202,19 +204,33 @@ public class ApnsPushChannel extends Channel {
         }
     }
 
+    @Schema(description = "APNs 推送通道配置")
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     static class Properties {
+
+        @Schema(description = "APNs 服务地址")
         private String url;
+
+        @Schema(description = "BundleId Topic", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank
         private String bundleIdTopic;
+
+        @Schema(description = "Team ID", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank
         private String teamId;
+
+        @Schema(description = "Key ID", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank
         private String keyId;
+
+        @Schema(description = "签名私钥 PEM", requiredMode = Schema.RequiredMode.REQUIRED, type = "password")
         @NotBlank
         private String privateKeyPem;
+
+        @Schema(description = "自定义 apns-id")
+        @Pattern(regexp = "^$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
         private String apnsId;
     }
 }

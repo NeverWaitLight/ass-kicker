@@ -11,7 +11,9 @@ import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -121,17 +123,29 @@ public class AliyunSmsChannel extends Channel {
         return recipients;
     }
 
+    @Schema(description = "阿里云短信通道配置")
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     static class Properties {
+
+        @Schema(description = "AccessKey ID", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank
         private String accessKeyId;
+
+        @Schema(description = "AccessKey Secret", requiredMode = Schema.RequiredMode.REQUIRED, type = "password")
         @NotBlank
         private String accessKeySecret;
+
+        @Schema(description = "短信签名", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank
         private String signName;
+
+        @Schema(description = "短信模板 Code")
         private String templateCode;
+
+        @Schema(description = "服务接入点")
+        @Pattern(regexp = "^$|^[A-Za-z0-9.-]+(:\\d+)?$")
         private String endpoint;
     }
 }

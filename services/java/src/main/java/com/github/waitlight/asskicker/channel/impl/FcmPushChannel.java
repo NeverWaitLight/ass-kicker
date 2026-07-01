@@ -23,6 +23,7 @@ import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
 import com.google.auth.oauth2.GoogleCredentials;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -201,12 +202,17 @@ public class FcmPushChannel extends Channel {
                         ex));
     }
 
+    @Schema(description = "FCM 推送通道配置")
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     static class Properties {
+
+        @Schema(description = "Firebase 项目 ID", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank
         private String projectId;
+
+        @Schema(description = "Service Account JSON", requiredMode = Schema.RequiredMode.REQUIRED, type = "password")
         @NotBlank
         private String serviceAccountJson;
     }
