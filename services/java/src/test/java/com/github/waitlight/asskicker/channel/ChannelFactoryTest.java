@@ -144,8 +144,6 @@ class ChannelFactoryTest {
           "properties": {
             "accessKeyId": "a",
             "accessKeySecret": "s",
-            "signName": "sig",
-            "templateCode": "SMS_1",
             "endpoint": "dysmsapi.aliyuncs.com"
           }
         }

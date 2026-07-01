@@ -30,7 +30,6 @@ public final class ChannelEntityFixtures {
                   "properties": {
                     "accessKeyId": "ak-test",
                     "accessKeySecret": "sk-test",
-                    "signName": "签名",
                     "regionId": "cn-hangzhou",
                     "maxRetries": "3",
                     "timeout": "10000",

@@ -49,8 +49,6 @@ class AliyunSmsChannelTest {
                   "properties": {
                     "accessKeyId": "test-ak",
                     "accessKeySecret": "test-sk",
-                    "signName": "测试签名",
-                    "templateCode": "SMS_TPL",
                     "endpoint": "%s"
                   }
                 }
@@ -74,7 +72,9 @@ class AliyunSmsChannelTest {
 
         UniMessage message = new UniMessage();
         message.setContent("ignored-for-template");
+        message.setTemplateCode("SMS_TPL");
         message.setTemplateParams(Map.of("code", "1234"));
+        message.setExtraData(Map.of("signName", "测试签名"));
         UniAddress address = UniAddress.builder()
                 .channelType(com.github.waitlight.asskicker.model.ChannelType.SMS)
                 .providerType(ProviderType.ALIYUN_SMS)

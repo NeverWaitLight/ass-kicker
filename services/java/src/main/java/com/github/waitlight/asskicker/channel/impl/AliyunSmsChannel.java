@@ -51,27 +51,30 @@ public class AliyunSmsChannel extends Channel {
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
             List<String> recipients = normalizeRecipients(uniAddress);
-            String templateCode = resolveTemplateCode(uniMessage);
+            String templateCode = uniMessage != null ? uniMessage.getTemplateCode() : null;
             if (StringUtils.isBlank(templateCode)) {
                 return Mono.error(new IllegalStateException(
-                        "ALIYUN_SMS requires templateCode in properties or extraData"));
+                        "ALIYUN_SMS requires templateCode in UniMessage"));
+            }
+            String signName = resolveSignName(uniMessage);
+            if (StringUtils.isBlank(signName)) {
+                return Mono.error(new IllegalStateException(
+                        "ALIYUN_SMS requires signName in UniMessage.extraData"));
             }
             String templateParamJson = buildTemplateParamJson(uniMessage);
             return Flux.fromIterable(recipients)
-                    .concatMap(phone -> sendOne(phone, templateCode, templateParamJson))
+                    .concatMap(phone -> sendOne(phone, signName, templateCode, templateParamJson))
                     .collect(Collectors.joining(","))
                     .map(ignore -> "ALIYUN_SMS ok " + recipients.size() + " recipient(s)");
         });
     }
 
-    private String resolveTemplateCode(UniMessage uniMessage) {
-        if (uniMessage != null && uniMessage.getExtraData() != null) {
-            Object o = uniMessage.getExtraData().get("templateCode");
-            if (o != null && StringUtils.isNotBlank(String.valueOf(o))) {
-                return String.valueOf(o);
-            }
+    private String resolveSignName(UniMessage uniMessage) {
+        if (uniMessage == null || uniMessage.getExtraData() == null) {
+            return null;
         }
-        return properties.getTemplateCode();
+        Object o = uniMessage.getExtraData().get("signName");
+        return o == null ? null : String.valueOf(o);
     }
 
     private String buildTemplateParamJson(UniMessage uniMessage) {
@@ -86,11 +89,11 @@ public class AliyunSmsChannel extends Channel {
         }
     }
 
-    private Mono<String> sendOne(String phoneNumbers, String templateCode, String templateParamJson) {
+    private Mono<String> sendOne(String phoneNumbers, String signName, String templateCode, String templateParamJson) {
         return Mono.fromCallable(() -> {
             SendSmsRequest request = new SendSmsRequest()
                     .setPhoneNumbers(phoneNumbers)
-                    .setSignName(properties.getSignName())
+                    .setSignName(signName)
                     .setTemplateCode(templateCode)
                     .setTemplateParam(templateParamJson);
             SendSmsResponse response = aliyunClient.sendSms(request);
@@ -133,13 +136,6 @@ public class AliyunSmsChannel extends Channel {
         @Schema(description = "AccessKey Secret", requiredMode = Schema.RequiredMode.REQUIRED, type = "password")
         @NotBlank
         private String accessKeySecret;
-
-        @Schema(description = "短信签名", requiredMode = Schema.RequiredMode.REQUIRED)
-        @NotBlank
-        private String signName;
-
-        @Schema(description = "短信模板 Code")
-        private String templateCode;
 
         @Schema(description = "服务接入点")
         @Pattern(regexp = "^$|^[A-Za-z0-9.-]+(:\\d+)?$")
