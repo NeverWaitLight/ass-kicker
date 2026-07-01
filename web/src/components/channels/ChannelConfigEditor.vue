@@ -61,14 +61,6 @@
       </a-spin>
     </template>
 
-    <ChannelTestModal
-      :open="testModalOpen"
-      :channel-type="form.type"
-      :channel-name="form.name"
-      :properties="testProperties"
-      :disabled="testDenied"
-      @cancel="closeTestModal"
-    />
   </div>
 </template>
 
@@ -78,7 +70,6 @@ import { message } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import PropertyEditor from './PropertyEditor.vue'
-import ChannelTestModal from './ChannelTestModal.vue'
 import {
   createChannel,
   fetchChannel,
@@ -126,7 +117,6 @@ const objectErrors = ref({})
 const nameError = ref('')
 const typeError = ref('')
 const propertyError = ref('')
-const testModalOpen = ref(false)
 
 const channelTypes = ref([])
 const typeOptions = computed(() => buildChannelTypeOptions(channelTypes.value, t, te))
@@ -165,7 +155,6 @@ const denied = computed(() => {
   return !hasPermission(currentUser.value, permission)
 })
 
-const testDenied = computed(() => denied.value || !form.type)
 const baseSectionHint = '每一行可选择字符串或对象类型。'
 const sectionHint = computed(() => {
   const requiredFields = (providerSchemaFields.value || []).filter((field) => field.required)
@@ -334,31 +323,6 @@ const saveChannel = async () => {
   }
 }
 
-const openTestModal = () => {
-  if (testDenied.value) return
-  typeError.value = form.type ? '' : '请选择通道类型'
-  const validation = validatePropertyRows(propertyRows.value)
-  rowInvalidIds.value = validation.rowInvalidIds
-  objectInvalidIds.value = validation.objectInvalidIds
-  objectErrors.value = validation.objectErrors
-  propertyError.value = validation.message
-
-  const hasObjectErrors = Object.keys(validation.objectInvalidIds).length > 0
-  if (
-    typeError.value ||
-    propertyError.value ||
-    hasObjectErrors
-  ) {
-    message.warning('请先完善通道配置再进行测试发送')
-    return
-  }
-  testModalOpen.value = true
-}
-
-const closeTestModal = () => {
-  testModalOpen.value = false
-}
-
 const goBack = () => {
   router.push('/channels')
 }
@@ -370,8 +334,6 @@ onMounted(async () => {
     await loadProviderOptionsByChannelType(form.type)
   }
 })
-
-const testProperties = computed(() => buildProperties())
 
 const handleProtocolChange = async (value) => {
   if (!value) return
@@ -526,10 +488,8 @@ watch(
 
 defineExpose({
   saveChannel,
-  openTestModal,
   saving,
-  denied,
-  testDenied
+  denied
 })
 </script>
 

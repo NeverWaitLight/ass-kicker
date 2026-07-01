@@ -7,7 +7,6 @@
         <a-tooltip title="返回列表">
           <a-button @click="goBack">返回</a-button>
         </a-tooltip>
-        <a-button :disabled="editorRef?.testDenied ?? true" @click="() => editorRef?.openTestModal()">测试</a-button>
         <a-button
           type="primary"
           :loading="editorRef?.saving"

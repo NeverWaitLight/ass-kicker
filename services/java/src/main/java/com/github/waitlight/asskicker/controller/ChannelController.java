@@ -1,8 +1,6 @@
 package com.github.waitlight.asskicker.controller;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,35 +14,21 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.github.waitlight.asskicker.config.OpenApiConfig;
-import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.converter.ChannelConverter;
-import com.github.waitlight.asskicker.converter.ChannelPropertiesMapper;
 import com.github.waitlight.asskicker.dto.PageReq;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
-import com.github.waitlight.asskicker.dto.UniAddress;
-import com.github.waitlight.asskicker.dto.UniMessage;
-import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.dto.channel.ChannelTestResultVO;
 import com.github.waitlight.asskicker.dto.channel.CreateChannelDTO;
-import com.github.waitlight.asskicker.dto.channel.TestChannelDTO;
 import com.github.waitlight.asskicker.dto.channel.ChannelPropertiesSchemaVO;
 import com.github.waitlight.asskicker.dto.channel.ChannelProviderOptionVO;
 import com.github.waitlight.asskicker.dto.channel.ChannelVO;
-import com.github.waitlight.asskicker.exception.BadRequestException;
-import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.ProviderType;
 import com.github.waitlight.asskicker.dto.channel.UpdateChannelDTO;
 import com.github.waitlight.asskicker.channel.ChannelManager;
 import com.github.waitlight.asskicker.service.ChannelService;
-import com.github.waitlight.asskicker.service.RecordService;
-import com.github.waitlight.asskicker.model.RecordEntity;
-import com.github.waitlight.asskicker.model.SendRecordStatus;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.bson.types.ObjectId;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -52,7 +36,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
-import java.time.Instant;
 
 @Tag(name = "渠道管理")
 @RestController
@@ -64,82 +47,6 @@ public class ChannelController {
         private final ChannelService channelService;
         private final ChannelConverter channelConverter;
         private final ChannelManager channelManager;
-        private final ChannelFactory channelFactory;
-        private final ChannelPropertiesMapper channelPropertiesMapper;
-        private final RecordService recordService;
-
-        @Operation(summary = "测试渠道", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-        @PostMapping("/test")
-        public Mono<Resp<ChannelTestResultVO>> test(@Valid @RequestBody TestChannelDTO request) {
-                ProviderType provider = resolveProviderForTest(request.getType(), request.getProvider());
-                Map<String, Object> props = request.getProperties() != null ? request.getProperties() : Map.of();
-
-                ChannelEntity ephemeral = new ChannelEntity();
-                ephemeral.setId("0");
-                ephemeral.setCode("test");
-                ephemeral.setName("test");
-                ephemeral.setType(request.getType());
-                ephemeral.setProviderType(provider);
-                ephemeral.setEnabled(true);
-                ephemeral.setProperties(channelPropertiesMapper.channelObjectPropertiesToProperties(props));
-
-                Channel channel = channelFactory.create(ephemeral);
-                if (channel == null) {
-                        return Mono.just(Resp.success(ChannelTestResultVO.fail("unsupported provider")));
-                }
-
-                UniMessage message = new UniMessage();
-                message.setContent(request.getContent());
-
-                UniAddress address = buildTestAddress(request.getType(), provider, request.getTarget(),
-                                ephemeral.getCode());
-
-                long submittedAt = Instant.now().toEpochMilli();
-                String taskId = ObjectId.get().toString();
-                UniTask task = UniTask.builder().message(message).address(address).taskId(taskId).submittedAt(submittedAt)
-                                .build();
-
-                return channel.send(task)
-                                .flatMap(ignore -> {
-                                        writeChannelTestRecord(ephemeral, task, request.getTarget(),
-                                                        message.getContent(), true, null);
-                                        return Mono.just(Resp.success(ChannelTestResultVO.ok()));
-                                })
-                                .onErrorResume(e -> {
-                                        writeChannelTestRecord(ephemeral, task, request.getTarget(),
-                                                        message.getContent(), false, e.getMessage());
-                                        return Mono.just(Resp.success(ChannelTestResultVO.fail(e.getMessage())));
-                                });
-        }
-
-        private void writeChannelTestRecord(ChannelEntity channelEntity, UniTask task, String recipient,
-                        String renderedContent, boolean success, String errorMessage) {
-                RecordEntity sr = new RecordEntity();
-                sr.setTaskId(task.getTaskId());
-                UniMessage msg = task.getMessage();
-                if (msg != null) {
-                        sr.setTemplateCode(msg.getTemplateCode());
-                        if (msg.getLanguage() != null) {
-                                sr.setLanguageCode(msg.getLanguage().getCode());
-                        }
-                        sr.setParams(msg.getTemplateParams());
-                }
-                sr.setRecipient(recipient);
-                sr.setChannelId(channelEntity.getId());
-                sr.setChannelType(channelEntity.getType());
-                sr.setChannelName(channelEntity.getCode());
-                sr.setSubmittedAt(task.getSubmittedAt() != null ? task.getSubmittedAt()
-                                : System.currentTimeMillis());
-                sr.setRenderedContent(renderedContent);
-                if (success) {
-                        sr.setStatus(SendRecordStatus.SUCCESS);
-                        sr.setSentAt(System.currentTimeMillis());
-                } else {
-                        sr.setStatus(SendRecordStatus.FAILED);
-                        sr.setErrorMessage(errorMessage);
-                }
-                recordService.writeRecord(sr);
-        }
 
         @Operation(summary = "创建渠道", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @PostMapping
@@ -223,34 +130,4 @@ public class ChannelController {
                 return channelService.delete(id);
         }
 
-        private static ProviderType resolveProviderForTest(ChannelType channelType, ProviderType explicit) {
-                if (explicit != null) {
-                        if (explicit.getChannelType() != channelType) {
-                                throw new BadRequestException("provider does not match channel type");
-                        }
-                        return explicit;
-                }
-                List<ProviderType> candidates = Arrays.stream(ProviderType.values())
-                                .filter(p -> p.getChannelType() == channelType)
-                                .toList();
-                if (candidates.size() == 1) {
-                        return candidates.get(0);
-                }
-                throw new BadRequestException("provider is required when multiple providers exist for this channel type");
-        }
-
-        private static UniAddress buildTestAddress(ChannelType channelType, ProviderType provider, String target,
-                        String channelCode) {
-                return switch (channelType) {
-                        case EMAIL -> UniAddress.ofEmail(target);
-                        case SMS -> UniAddress.ofSms(target);
-                        case PUSH, APNS, FCM -> UniAddress.ofPush(provider, target);
-                        case IM, DINGTALK -> {
-                                if (provider.name().endsWith("_WEBHOOK")) {
-                                        yield UniAddress.ofImWebhook(provider, target);
-                                }
-                                yield UniAddress.ofImBot(provider, channelCode, target);
-                        }
-                };
-        }
 }

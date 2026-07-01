@@ -49,10 +49,8 @@
         :rows="pagedChannels"
         :loading="channelLoading"
         :pagination="tablePagination"
-        :can-test="canEdit"
         :can-edit="canEdit"
         :can-delete="canDelete"
-        @test="openTest"
         @edit="openEdit"
         @delete="openDelete"
         @page-change="handleTableChange"
@@ -65,16 +63,6 @@
       :channel="channelDeleteState.target"
       @confirm="confirmDelete"
       @cancel="closeDelete"
-    />
-
-    <ChannelTestModal
-      :open="testModalOpen"
-      :loading="testModalLoading"
-      :channel-type="testChannel ? testChannel.type : ''"
-      :channel-name="testChannel ? testChannel.name : ''"
-      :properties="testChannel ? testChannel.properties : null"
-      :disabled="!canEdit"
-      @cancel="closeTestModal"
     />
 
     <a-modal
@@ -121,10 +109,8 @@ import { PlusOutlined, ReloadOutlined, SaveOutlined, SearchOutlined, UndoOutline
 import ChannelManagementLayout from '../components/channels/ChannelManagementLayout.vue'
 import ChannelTable from '../components/channels/ChannelsPage.vue'
 import ChannelDeleteModal from '../components/channels/ChannelDeleteModal.vue'
-import ChannelTestModal from '../components/channels/ChannelTestModal.vue'
 import ChannelConfigEditor from '../components/channels/ChannelConfigEditor.vue'
 import {
-  fetchChannel,
   fetchChannelTypes,
   fetchChannels,
   fetchProvidersByChannelType,
@@ -156,10 +142,6 @@ const canCreate = computed(() => hasPermission(currentUser.value, CHANNEL_PERMIS
 const canEdit = computed(() => hasPermission(currentUser.value, CHANNEL_PERMISSIONS.edit))
 const canDelete = computed(() => hasPermission(currentUser.value, CHANNEL_PERMISSIONS.remove))
 const denied = computed(() => !canView.value)
-const testModalOpen = ref(false)
-const testModalLoading = ref(false)
-const testChannel = ref(null)
-
 const typeProviderFilter = ref(undefined)
 
 const buildFallbackCascaderOptions = () =>
@@ -297,29 +279,6 @@ const handleChannelEditorOk = async () => {
 const handleChannelSaved = async () => {
   closeChannelEditor()
   await loadChannels()
-}
-
-const openTest = async (record) => {
-  if (!record?.id || !canEdit.value) return
-  testModalLoading.value = true
-  try {
-    if (record.properties && record.type) {
-      testChannel.value = record
-    } else {
-      testChannel.value = await fetchChannel(record.id)
-    }
-    testModalOpen.value = true
-  } catch (error) {
-    message.error(error?.message || '获取通道信息失败')
-    testModalOpen.value = false
-  } finally {
-    testModalLoading.value = false
-  }
-}
-
-const closeTestModal = () => {
-  testModalOpen.value = false
-  testChannel.value = null
 }
 
 const openDelete = (record) => {

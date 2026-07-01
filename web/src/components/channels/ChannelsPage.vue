@@ -20,7 +20,6 @@
       </template>
       <template v-else-if="column.key === 'actions'">
         <a-space>
-          <a-button size="small" :disabled="!canTest" @click="$emit('test', record)">测试</a-button>
           <a-button size="small" :disabled="!canEdit" @click="$emit('edit', record)">编辑</a-button>
           <a-button size="small" danger :disabled="!canDelete" title="删除" @click="$emit('delete', record)">
             <template #icon><DeleteOutlined /></template>
@@ -41,12 +40,11 @@ defineProps({
   rows: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
   pagination: { type: Object, default: () => ({}) },
-  canTest: { type: Boolean, default: false },
   canEdit: { type: Boolean, default: false },
   canDelete: { type: Boolean, default: false }
 })
 
-const emit = defineEmits(['test', 'edit', 'delete', 'page-change'])
+const emit = defineEmits(['edit', 'delete', 'page-change'])
 const { t, te } = useI18n()
 
 const columns = [
