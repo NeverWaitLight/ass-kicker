@@ -124,7 +124,7 @@ public class Sender {
                     .submittedAt(ctx.getTask().getSubmittedAt())
                     .build();
 
-            String result = channel.send(sendTask).block();
+            String result = channel.send(sendTask).block().toString();
             ctx.setSendResult(result);
 
             processRecord(ctx);

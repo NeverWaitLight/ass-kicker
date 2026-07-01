@@ -7,6 +7,7 @@ import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
 import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
@@ -29,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class ApnsPushChannel extends Channel {
+public class ApnsPushChannel extends Channel<SendReq> {
 
     private static final String SANDBOX_KEYWORD = "sandbox";
 

@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -36,7 +37,7 @@ import reactor.core.scheduler.Schedulers;
  * ({@code com.aliyun:dingtalk}), which encapsulates OAuth token retrieval +
  * group-send under {@code api.dingtalk.com}.
  */
-public class DingtalkBotChannel extends Channel {
+public class DingtalkBotChannel extends Channel<SendReq> {
 
     private static final String MSG_KEY_SAMPLE_TEXT = "sampleText";
 

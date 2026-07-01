@@ -3,12 +3,13 @@ package com.github.waitlight.asskicker.channel.impl;
 import com.aliyun.dysmsapi20170525.Client;
 import com.aliyun.dysmsapi20170525.models.SendSmsRequest;
 import com.aliyun.dysmsapi20170525.models.SendSmsResponse;
-import com.aliyun.dysmsapi20170525.models.SendSmsResponseBody;
 import com.aliyun.teaopenapi.models.Config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.SmsSendReq;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
+import com.github.waitlight.asskicker.exception.SendException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -18,27 +19,19 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-public class AliyunSmsChannel extends Channel {
+public class AliyunSmsChannel extends Channel<SmsSendReq> {
 
     private static final String DEFAULT_ENDPOINT = "dysmsapi.aliyuncs.com";
 
-    private final Properties properties;
-    private final Client aliyunClient;
+    private final Client client;
 
-    public AliyunSmsChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
-        super(provider, webClient, objectMapper);
-        this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
+    public AliyunSmsChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
+        super(entity, webClient, objectMapper);
+        Properties properties = objectMapper.convertValue(entity.getProperties(), Properties.class);
         try {
-            this.aliyunClient = new Client(new Config()
+            this.client = new Client(new Config()
                     .setAccessKeyId(properties.getAccessKeyId())
                     .setAccessKeySecret(properties.getAccessKeySecret())
                     .setEndpoint(StringUtils.defaultIfBlank(properties.getEndpoint(), DEFAULT_ENDPOINT)));
@@ -48,79 +41,31 @@ public class AliyunSmsChannel extends Channel {
     }
 
     @Override
-    protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
-        return Mono.defer(() -> {
-            List<String> recipients = normalizeRecipients(uniAddress);
-            String templateCode = uniMessage != null ? uniMessage.getTemplateCode() : null;
-            if (StringUtils.isBlank(templateCode)) {
-                return Mono.error(new IllegalStateException(
-                        "ALIYUN_SMS requires templateCode in UniMessage"));
-            }
-            String signName = resolveSignName(uniMessage);
-            if (StringUtils.isBlank(signName)) {
-                return Mono.error(new IllegalStateException(
-                        "ALIYUN_SMS requires signName in UniMessage.extraData"));
-            }
-            String templateParamJson = buildTemplateParamJson(uniMessage);
-            return Flux.fromIterable(recipients)
-                    .concatMap(phone -> sendOne(phone, signName, templateCode, templateParamJson))
-                    .collect(Collectors.joining(","))
-                    .map(ignore -> "ALIYUN_SMS ok " + recipients.size() + " recipient(s)");
-        });
-    }
-
-    private String resolveSignName(UniMessage uniMessage) {
-        if (uniMessage == null || uniMessage.getExtraData() == null) {
-            return null;
-        }
-        Object o = uniMessage.getExtraData().get("signName");
-        return o == null ? null : String.valueOf(o);
-    }
-
-    private String buildTemplateParamJson(UniMessage uniMessage) {
-        Map<String, Object> params = uniMessage != null ? uniMessage.getTemplateParams() : null;
-        if (params == null || params.isEmpty()) {
-            return "{}";
-        }
+    public Mono<String> send(SmsSendReq req) {
         try {
-            return objectMapper.writeValueAsString(params);
+            String templateParam = req.getTemplateParam() == null
+                    ? "{}"
+                    : objectMapper.writeValueAsString(req.getTemplateParam());
+
+            SendSmsRequest sendSmsRequest = new SendSmsRequest()
+                    .setPhoneNumbers(req.getPhoneNumber())
+                    .setSignName(req.getSignName())
+                    .setTemplateCode(req.getTemplateCode())
+                    .setTemplateParam(templateParam);
+
+            SendSmsResponse resp = client.sendSms(sendSmsRequest);
+            if (!StringUtils.equalsIgnoreCase("OK", resp.getBody().getCode())) {
+                return Mono.error(new SendException(resp.getBody().getMessage()));
+            }
         } catch (Exception e) {
-            throw new IllegalStateException("ALIYUN_SMS templateParam serialize failed", e);
+            throw new SendException(e.getMessage());
         }
+        return Mono.empty();
     }
 
-    private Mono<String> sendOne(String phoneNumbers, String signName, String templateCode, String templateParamJson) {
-        return Mono.fromCallable(() -> {
-            SendSmsRequest request = new SendSmsRequest()
-                    .setPhoneNumbers(phoneNumbers)
-                    .setSignName(signName)
-                    .setTemplateCode(templateCode)
-                    .setTemplateParam(templateParamJson);
-            SendSmsResponse response = aliyunClient.sendSms(request);
-            SendSmsResponseBody body = response.getBody();
-            if (body == null) {
-                throw new IllegalStateException("ALIYUN_SMS empty response body");
-            }
-            if ("OK".equalsIgnoreCase(body.getCode())) {
-                return "ok";
-            }
-            throw new IllegalStateException(
-                    "ALIYUN_SMS failure Code=" + body.getCode() + " Message=" + body.getMessage());
-        }).subscribeOn(Schedulers.boundedElastic());
-    }
-
-    private List<String> normalizeRecipients(UniAddress uniAddress) {
-        List<String> recipients = uniAddress == null || uniAddress.getRecipients() == null
-                ? List.of()
-                : uniAddress.getRecipients().stream()
-                        .filter(Objects::nonNull)
-                        .map(String::trim)
-                        .filter(StringUtils::isNotBlank)
-                        .collect(Collectors.toList());
-        if (recipients.isEmpty()) {
-            throw new IllegalArgumentException("ALIYUN_SMS recipients required");
-        }
-        return recipients;
+    @Override
+    protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
+        return Mono.empty();
     }
 
     @Schema(description = "阿里云短信通道配置")

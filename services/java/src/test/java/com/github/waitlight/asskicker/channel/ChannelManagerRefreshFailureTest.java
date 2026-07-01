@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.github.waitlight.asskicker.model.ChannelEntity;
+import com.github.waitlight.asskicker.channel.SendReq;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,7 +68,7 @@ class ChannelManagerRefreshFailureTest {
     }
 
     /** Avoids MapStruct-backed channels so this test does not depend on generated mapper classes. */
-    private static final class NoOpChannel extends Channel {
+    private static final class NoOpChannel extends Channel<SendReq> {
 
         NoOpChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
             super(entity, webClient, objectMapper);

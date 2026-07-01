@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 
 @Getter
 @Slf4j
-public abstract class Channel {
+public abstract class Channel<T extends SendReq> {
 
     private final String id;
     private final String code;
@@ -31,6 +31,11 @@ public abstract class Channel {
 
         this.webClient = webClient;
         this.objectMapper = objectMapper;
+    }
+
+    public Mono<String> send(T req) {
+        return Mono.error(new UnsupportedOperationException(
+                getClass().getSimpleName() + " does not implement typed send(" + (req == null ? "null" : req.getClass().getSimpleName()) + ")"));
     }
 
     public final Mono<String> send(UniTask task) {
