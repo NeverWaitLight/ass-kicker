@@ -15,12 +15,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.core.type.filter.AnnotationTypeFilter;
+import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Type;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,51 +48,84 @@ public class ChannelManager {
     private final Map<ProviderType, ChannelMeta> channelMetaCache = new ConcurrentHashMap<>();
 
     /**
-     * Channel 元信息记录，存储 @ChannelImpl 注解中的信息
+     * Channel 元信息记录，保存扫描得到的 ProviderType、Properties 类、Channel 具体类
      */
     public record ChannelMeta(ProviderType providerType, Class<?> propertyClass, Class<? extends Channel> channelClass) {
     }
 
     /**
-     * 扫描 channel 包下所有带有 @ChannelImpl 注解的类，缓存其元信息
+     * 扫描 channel 包下所有 Channel 具体子类，读取其静态字段 PROVIDER_TYPE 与内部类 Properties，
+     * 缓存元信息
      */
     private void scanChannelImplementations() {
         ClassPathScanningCandidateComponentProvider scanner =
                 new ClassPathScanningCandidateComponentProvider(false);
-        scanner.addIncludeFilter(new AnnotationTypeFilter(ChannelImpl.class));
+        scanner.addIncludeFilter(new AssignableTypeFilter(Channel.class));
 
         Set<BeanDefinition> candidates = scanner.findCandidateComponents(CHANNEL_PACKAGE);
 
         for (BeanDefinition bd : candidates) {
+            String className = bd.getBeanClassName();
             try {
-                @SuppressWarnings("unchecked")
-                Class<? extends Channel> channelClass = (Class<? extends Channel>)
-                        Class.forName(bd.getBeanClassName());
-
-                ChannelImpl annotation = channelClass.getAnnotation(ChannelImpl.class);
-                if (annotation != null) {
-                    ProviderType providerType = annotation.providerType();
-                    Class<?> propertyClass = annotation.propertyClass();
-
-                    ChannelMeta meta = new ChannelMeta(providerType, propertyClass, channelClass);
-                    channelMetaCache.put(providerType, meta);
-
-                    log.info("Scanned Channel implementation: {} -> propertyClass: {}",
-                            providerType, propertyClass.getSimpleName());
+                Class<?> loaded = Class.forName(className);
+                if (!Channel.class.isAssignableFrom(loaded) || loaded == Channel.class) {
+                    continue;
                 }
+                if (Modifier.isAbstract(loaded.getModifiers())) {
+                    continue;
+                }
+                @SuppressWarnings("unchecked")
+                Class<? extends Channel> channelClass = (Class<? extends Channel>) loaded;
+
+                ProviderType providerType = readProviderType(channelClass);
+                if (providerType == null) {
+                    log.warn("Skip Channel {}: missing public static final ProviderType PROVIDER_TYPE",
+                            channelClass.getName());
+                    continue;
+                }
+                Class<?> propertyClass = findPropertiesClass(channelClass);
+
+                ChannelMeta meta = new ChannelMeta(providerType, propertyClass, channelClass);
+                channelMetaCache.put(providerType, meta);
+
+                log.info("Scanned Channel implementation: {} -> propertyClass: {}",
+                        providerType, propertyClass.getSimpleName());
             } catch (ClassNotFoundException e) {
-                log.warn("Failed to load Channel class: {}", bd.getBeanClassName(), e);
-            } catch (ClassCastException e) {
-                log.warn("Scanned class does not extend Channel: {}", bd.getBeanClassName(), e);
+                log.warn("Failed to load Channel class: {}", className, e);
             }
         }
 
         log.info("Channel scan completed, found {} implementation(s)", channelMetaCache.size());
     }
 
+    private static ProviderType readProviderType(Class<? extends Channel> channelClass) {
+        try {
+            Field field = channelClass.getDeclaredField("PROVIDER_TYPE");
+            int mods = field.getModifiers();
+            if (!Modifier.isStatic(mods) || !ProviderType.class.isAssignableFrom(field.getType())) {
+                return null;
+            }
+            field.setAccessible(true);
+            return (ProviderType) field.get(null);
+        } catch (NoSuchFieldException e) {
+            return null;
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException(
+                    "Failed to read PROVIDER_TYPE from " + channelClass.getName(), e);
+        }
+    }
+
+    private static Class<?> findPropertiesClass(Class<? extends Channel> channelClass) {
+        for (Class<?> nested : channelClass.getDeclaredClasses()) {
+            if ("Properties".equals(nested.getSimpleName())) {
+                return nested;
+            }
+        }
+        return Void.class;
+    }
+
     @PostConstruct
     void init() {
-        // 扫描 @ChannelImpl 注解的类
         scanChannelImplementations();
 
         // 加载已启用的 Channel

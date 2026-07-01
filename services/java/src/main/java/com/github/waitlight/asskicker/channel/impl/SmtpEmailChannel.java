@@ -6,7 +6,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.ChannelImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -23,8 +22,9 @@ import jakarta.validation.constraints.NotBlank;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-@ChannelImpl(providerType = ProviderType.SMTP, propertyClass = SmtpEmailChannel.Properties.class)
 public class SmtpEmailChannel extends Channel {
+
+    public static final ProviderType PROVIDER_TYPE = ProviderType.SMTP;
 
     private final Properties properties;
     private final JavaMailSender mailSender;

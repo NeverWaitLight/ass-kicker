@@ -11,7 +11,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.ChannelImpl;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
 import jakarta.validation.constraints.NotBlank;
@@ -33,8 +32,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
-@ChannelImpl(providerType = ProviderType.APNS, propertyClass = ApnsPushChannel.Properties.class)
 public class ApnsPushChannel extends Channel {
+
+    public static final ProviderType PROVIDER_TYPE = ProviderType.APNS;
 
     private static final String SANDBOX_KEYWORD = "sandbox";
 

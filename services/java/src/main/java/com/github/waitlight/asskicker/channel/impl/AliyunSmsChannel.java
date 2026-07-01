@@ -7,7 +7,6 @@ import com.aliyun.dysmsapi20170525.models.SendSmsResponseBody;
 import com.aliyun.teaopenapi.models.Config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.ChannelImpl;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
@@ -24,8 +23,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-@ChannelImpl(providerType = ProviderType.ALIYUN_SMS, propertyClass = AliyunSmsChannel.Properties.class)
 public class AliyunSmsChannel extends Channel {
+
+    public static final ProviderType PROVIDER_TYPE = ProviderType.ALIYUN_SMS;
 
     private static final String DEFAULT_ENDPOINT = "dysmsapi.aliyuncs.com";
 
