@@ -6,5 +6,6 @@ public enum ChannelProvider {
     DINGTALK,
     APPLE,
     GOOGLE,
+    SMTP,
     ;
 }

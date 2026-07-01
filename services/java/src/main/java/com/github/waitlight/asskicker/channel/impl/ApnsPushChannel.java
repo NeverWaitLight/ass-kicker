@@ -11,6 +11,8 @@ import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
+import com.github.waitlight.asskicker.model.ChannelProvider;
+import com.github.waitlight.asskicker.model.ChannelType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -31,6 +33,9 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public class ApnsPushChannel extends Channel<SendReq> {
+
+    public static final ChannelType TYPE = ChannelType.APNS;
+    public static final ChannelProvider PROVIDER = ChannelProvider.APPLE;
 
     private static final String SANDBOX_KEYWORD = "sandbox";
 

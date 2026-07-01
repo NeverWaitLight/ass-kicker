@@ -21,6 +21,7 @@ import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.channel.CreateChannelDTO;
 import com.github.waitlight.asskicker.dto.channel.ChannelProviderOptionVO;
 import com.github.waitlight.asskicker.dto.channel.ChannelVO;
+import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.ProviderType;
 import com.github.waitlight.asskicker.dto.channel.UpdateChannelDTO;
@@ -97,17 +98,18 @@ public class ChannelController {
         }
 
         @Operation(summary = "服务商属性配置", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-        @GetMapping("/{providerType}/properties")
-        public Mono<Resp<Schema<?>>> providerProperties(@PathVariable ProviderType providerType) {
-                return Mono.fromSupplier(() -> channelManager.getPropertiesSchema(providerType))
+        @GetMapping("/{type}/{provider}/properties")
+        public Mono<Resp<Schema<?>>> providerProperties(@PathVariable ChannelType type,
+                        @PathVariable ChannelProvider provider) {
+                return Mono.fromSupplier(() -> channelManager.getPropertiesSchema(type, provider))
                                 .map(Resp::success);
         }
 
         @Operation(summary = "按渠道类型查询服务商", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-        @GetMapping("/{channelType}/providers")
+        @GetMapping("/{type}/providers")
         public Mono<Resp<List<ChannelProviderOptionVO>>> providersByChannelType(
-                        @PathVariable ChannelType channelType) {
-                return Mono.fromSupplier(() -> channelManager.getProvidersByChannelType(channelType))
+                        @PathVariable ChannelType type) {
+                return Mono.fromSupplier(() -> channelManager.getProvidersByChannelType(type))
                                 .map(Resp::success);
         }
 

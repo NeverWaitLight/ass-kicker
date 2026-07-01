@@ -190,13 +190,13 @@ const flattenSchemaFields = (schema) => {
   })
 }
 
-const loadProviderSchemaFields = async (selectedProviderType) => {
-  if (!selectedProviderType) {
+const loadProviderSchemaFields = async (selectedProvider) => {
+  if (!form.type || !selectedProvider) {
     providerSchemaFields.value = []
     return []
   }
   try {
-    const schema = await fetchProviderProperties(selectedProviderType)
+    const schema = await fetchProviderProperties(form.type, selectedProvider)
     const fields = flattenSchemaFields(schema)
     providerSchemaFields.value = fields
     return fields

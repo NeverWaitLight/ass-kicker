@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.model.ChannelEntity;
+import com.github.waitlight.asskicker.model.ChannelProvider;
+import com.github.waitlight.asskicker.model.ChannelType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -38,6 +40,9 @@ import reactor.core.scheduler.Schedulers;
  * group-send under {@code api.dingtalk.com}.
  */
 public class DingtalkBotChannel extends Channel<SendReq> {
+
+    public static final ChannelType TYPE = ChannelType.DINGTALK;
+    public static final ChannelProvider PROVIDER = ChannelProvider.DINGTALK;
 
     private static final String MSG_KEY_SAMPLE_TEXT = "sampleText";
 

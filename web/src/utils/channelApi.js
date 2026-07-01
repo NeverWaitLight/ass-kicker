@@ -64,8 +64,8 @@ export const fetchProvidersByChannelType = async (channelType) => {
   return unwrapData(json)
 }
 
-export const fetchProviderProperties = async (providerType) => {
-  const response = await apiFetch(`/v1/channels/${providerType}/properties`)
+export const fetchProviderProperties = async (type, provider) => {
+  const response = await apiFetch(`/v1/channels/${type}/${provider}/properties`)
   if (!response.ok) {
     throw new Error(await response.text())
   }

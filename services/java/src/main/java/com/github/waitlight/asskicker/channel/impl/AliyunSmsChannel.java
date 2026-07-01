@@ -11,6 +11,8 @@ import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.exception.SendException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
+import com.github.waitlight.asskicker.model.ChannelProvider;
+import com.github.waitlight.asskicker.model.ChannelType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -22,6 +24,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 public class AliyunSmsChannel extends Channel<SmsSendReq> {
+
+    public static final ChannelType TYPE = ChannelType.SMS;
+    public static final ChannelProvider PROVIDER = ChannelProvider.ALIYUN;
 
     private static final String DEFAULT_ENDPOINT = "dysmsapi.aliyuncs.com";
 

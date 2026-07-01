@@ -2,8 +2,8 @@ package com.github.waitlight.asskicker.channel;
 
 import com.github.waitlight.asskicker.dto.channel.ChannelProviderOptionVO;
 import com.github.waitlight.asskicker.model.ChannelEntity;
+import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.model.ProviderType;
 import com.github.waitlight.asskicker.service.ChannelService;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.oas.models.media.Schema;
@@ -39,18 +39,25 @@ public class ChannelManager {
     private final ReentrantLock refreshLock = new ReentrantLock();
 
     /**
-     * 缓存 Channel 元信息：ProviderType -> ChannelMeta
+     * 缓存 Channel 元信息：(ChannelType, ChannelProvider) -> ChannelMeta
      */
-    private final Map<ProviderType, ChannelMeta> channelMetaCache = new ConcurrentHashMap<>();
+    private final Map<ChannelKey, ChannelMeta> channelMetaCache = new ConcurrentHashMap<>();
 
     /**
-     * Channel 元信息记录，保存扫描得到的 ProviderType、Properties 类、Channel 具体类
+     * (ChannelType, ChannelProvider) 联合键，作为 channelMetaCache 的索引
      */
-    public record ChannelMeta(ProviderType providerType, Class<?> propertyClass, Class<? extends Channel> channelClass) {
+    public record ChannelKey(ChannelType type, ChannelProvider provider) {
     }
 
     /**
-     * 扫描 channel 包下所有 Channel 具体子类，读取其静态字段 PROVIDER_TYPE 与内部类 Properties，
+     * Channel 元信息记录，保存扫描得到的 ChannelType、ChannelProvider、Properties 类、Channel 具体类
+     */
+    public record ChannelMeta(ChannelType type, ChannelProvider provider, Class<?> propertyClass,
+            Class<? extends Channel> channelClass) {
+    }
+
+    /**
+     * 扫描 channel 包下所有 Channel 具体子类，读取其静态字段 TYPE 和 PROVIDER 与内部类 Properties，
      * 缓存元信息
      */
     private void scanChannelImplementations() {
@@ -73,19 +80,20 @@ public class ChannelManager {
                 @SuppressWarnings("unchecked")
                 Class<? extends Channel> channelClass = (Class<? extends Channel>) loaded;
 
-                ProviderType providerType = readProviderType(channelClass);
-                if (providerType == null) {
-                    log.warn("Skip Channel {}: missing public static final ProviderType PROVIDER_TYPE",
+                ChannelType type = readStatic(channelClass, "TYPE", ChannelType.class);
+                ChannelProvider provider = readStatic(channelClass, "PROVIDER", ChannelProvider.class);
+                if (type == null || provider == null) {
+                    log.warn("Skip Channel {}: missing public static final TYPE/PROVIDER",
                             channelClass.getName());
                     continue;
                 }
                 Class<?> propertyClass = findPropertiesClass(channelClass);
 
-                ChannelMeta meta = new ChannelMeta(providerType, propertyClass, channelClass);
-                channelMetaCache.put(providerType, meta);
+                ChannelMeta meta = new ChannelMeta(type, provider, propertyClass, channelClass);
+                channelMetaCache.put(new ChannelKey(type, provider), meta);
 
-                log.info("Scanned Channel implementation: {} -> propertyClass: {}",
-                        providerType, propertyClass.getSimpleName());
+                log.info("Scanned Channel implementation: {}/{} -> propertyClass: {}",
+                        type, provider, propertyClass.getSimpleName());
             } catch (ClassNotFoundException e) {
                 log.warn("Failed to load Channel class: {}", className, e);
             }
@@ -94,20 +102,20 @@ public class ChannelManager {
         log.info("Channel scan completed, found {} implementation(s)", channelMetaCache.size());
     }
 
-    private static ProviderType readProviderType(Class<? extends Channel> channelClass) {
+    private static <T> T readStatic(Class<? extends Channel> channelClass, String fieldName, Class<T> expectedType) {
         try {
-            Field field = channelClass.getDeclaredField("PROVIDER_TYPE");
+            Field field = channelClass.getDeclaredField(fieldName);
             int mods = field.getModifiers();
-            if (!Modifier.isStatic(mods) || !ProviderType.class.isAssignableFrom(field.getType())) {
+            if (!Modifier.isStatic(mods) || !expectedType.isAssignableFrom(field.getType())) {
                 return null;
             }
             field.setAccessible(true);
-            return (ProviderType) field.get(null);
+            return expectedType.cast(field.get(null));
         } catch (NoSuchFieldException e) {
             return null;
         } catch (IllegalAccessException e) {
             throw new IllegalStateException(
-                    "Failed to read PROVIDER_TYPE from " + channelClass.getName(), e);
+                    "Failed to read " + fieldName + " from " + channelClass.getName(), e);
         }
     }
 
@@ -203,23 +211,27 @@ public class ChannelManager {
         return cache.size();
     }
 
-    public Optional<ChannelMeta> getChannelMeta(ProviderType providerType) {
-        return Optional.ofNullable(channelMetaCache.get(providerType));
+    public Optional<ChannelMeta> getChannelMeta(ChannelType type, ChannelProvider provider) {
+        return Optional.ofNullable(channelMetaCache.get(new ChannelKey(type, provider)));
     }
 
     public List<ChannelProviderOptionVO> getProvidersByChannelType(ChannelType channelType) {
-        return Arrays.stream(ProviderType.values())
-                .filter(providerType -> providerType.getChannelType() == channelType)
-                .map(providerType -> ChannelProviderOptionVO.builder()
-                        .value(providerType.name())
-                        .label(providerType.name())
+        return channelMetaCache.keySet().stream()
+                .filter(key -> key.type() == channelType)
+                .map(ChannelKey::provider)
+                .distinct()
+                .sorted(Comparator.comparing(Enum::name))
+                .map(provider -> ChannelProviderOptionVO.builder()
+                        .value(provider.name())
+                        .label(provider.name())
                         .build())
                 .toList();
     }
 
-    public Schema<?> getPropertiesSchema(ProviderType providerType) {
-        Class<?> propertyClass = getPropertiesClass(providerType)
-                .orElseThrow(() -> new IllegalArgumentException("Unknown ProviderType: " + providerType));
+    public Schema<?> getPropertiesSchema(ChannelType type, ChannelProvider provider) {
+        Class<?> propertyClass = getPropertiesClass(type, provider)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Unknown channel: type=" + type + " provider=" + provider));
         if (propertyClass == Void.class) {
             return new Schema<>().type("object");
         }
@@ -228,7 +240,7 @@ public class ChannelManager {
         return root != null ? root : new Schema<>().type("object");
     }
 
-    public Optional<Class<?>> getPropertiesClass(ProviderType providerType) {
-        return getChannelMeta(providerType).map(ChannelMeta::propertyClass);
+    public Optional<Class<?>> getPropertiesClass(ChannelType type, ChannelProvider provider) {
+        return getChannelMeta(type, provider).map(ChannelMeta::propertyClass);
     }
 }
