@@ -19,6 +19,9 @@ import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -42,7 +45,7 @@ public class SmtpEmailChannel extends Channel {
             validateSpec();
 
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(properties.from().trim());
+            message.setFrom(properties.getFrom().trim());
             message.setTo(recipients.toArray(String[]::new));
             message.setSubject(StringUtils.defaultString(uniMessage != null ? uniMessage.getTitle() : null));
             message.setText(buildBody(uniMessage));
@@ -54,38 +57,38 @@ public class SmtpEmailChannel extends Channel {
     }
 
     private void validateSpec() {
-        if (StringUtils.isBlank(properties.host()) || StringUtils.isBlank(properties.username())
-                || StringUtils.isBlank(properties.password()) || StringUtils.isBlank(properties.from())) {
+        if (StringUtils.isBlank(properties.getHost()) || StringUtils.isBlank(properties.getUsername())
+                || StringUtils.isBlank(properties.getPassword()) || StringUtils.isBlank(properties.getFrom())) {
             throw new IllegalStateException("SMTP requires host username password from");
         }
     }
 
     private static JavaMailSender buildMailSender(Properties properties) {
         JavaMailSenderImpl sender = new JavaMailSenderImpl();
-        sender.setHost(properties.host() == null ? null : properties.host().trim());
-        sender.setPort(properties.port());
-        sender.setUsername(properties.username() == null ? null : properties.username().trim());
-        sender.setPassword(properties.password());
+        sender.setHost(properties.getHost() == null ? null : properties.getHost().trim());
+        sender.setPort(properties.getPort());
+        sender.setUsername(properties.getUsername() == null ? null : properties.getUsername().trim());
+        sender.setPassword(properties.getPassword());
         sender.setDefaultEncoding("UTF-8");
 
         java.util.Properties javaMailProperties = sender.getJavaMailProperties();
         javaMailProperties.put("mail.smtp.auth", "true");
         // align with most providers, avoid old TLS negotiation or unfinished STARTTLS upgrades
         javaMailProperties.put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3");
-        if (properties.sslEnabled()) {
+        if (properties.isSslEnabled()) {
             javaMailProperties.put("mail.smtp.ssl.enable", "true");
-            if (StringUtils.isNotBlank(properties.host())) {
-                javaMailProperties.put("mail.smtp.ssl.trust", properties.host().trim());
+            if (StringUtils.isNotBlank(properties.getHost())) {
+                javaMailProperties.put("mail.smtp.ssl.trust", properties.getHost().trim());
             }
-        } else if (properties.startTls()) {
+        } else if (properties.isStartTls()) {
             javaMailProperties.put("mail.smtp.starttls.enable", "true");
             javaMailProperties.put("mail.smtp.starttls.required", "true");
         }
-        if (properties.connectionTimeout() != null) {
-            javaMailProperties.put("mail.smtp.connectiontimeout", String.valueOf(properties.connectionTimeout()));
+        if (properties.getConnectionTimeout() != null) {
+            javaMailProperties.put("mail.smtp.connectiontimeout", String.valueOf(properties.getConnectionTimeout()));
         }
-        if (properties.readTimeout() != null) {
-            javaMailProperties.put("mail.smtp.timeout", String.valueOf(properties.readTimeout()));
+        if (properties.getReadTimeout() != null) {
+            javaMailProperties.put("mail.smtp.timeout", String.valueOf(properties.getReadTimeout()));
         }
         return sender;
     }
@@ -116,16 +119,22 @@ public class SmtpEmailChannel extends Channel {
         return recipients;
     }
 
-    record Properties(
-            @NotBlank String host,
-            int port,
-            @NotBlank String username,
-            String password,
-            @NotBlank String from,
-            boolean sslEnabled,
-            boolean startTls,
-            Integer connectionTimeout,
-            Integer readTimeout) {
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    static class Properties {
+        @NotBlank
+        private String host;
+        private int port;
+        @NotBlank
+        private String username;
+        private String password;
+        @NotBlank
+        private String from;
+        private boolean sslEnabled;
+        private boolean startTls;
+        private Integer connectionTimeout;
+        private Integer readTimeout;
 
         static Properties fromProperties(Map<String, String> p) {
             if (p == null) {
@@ -136,16 +145,17 @@ public class SmtpEmailChannel extends Channel {
             boolean startTls = parseBool(firstNonBlank(p.get("starttls"), p.get("startTls")), true);
             Integer conn = parseIntObj(p.get("connectionTimeout"));
             Integer read = parseIntObj(p.get("readTimeout"));
-            return new Properties(
-                    trimToNull(p.get("host")),
-                    port,
-                    trimToNull(p.get("username")),
-                    trimPassword(p.get("password")),
-                    trimToNull(p.get("from")),
-                    ssl,
-                    startTls,
-                    conn,
-                    read);
+            Properties props = new Properties();
+            props.host = trimToNull(p.get("host"));
+            props.port = port;
+            props.username = trimToNull(p.get("username"));
+            props.password = trimPassword(p.get("password"));
+            props.from = trimToNull(p.get("from"));
+            props.sslEnabled = ssl;
+            props.startTls = startTls;
+            props.connectionTimeout = conn;
+            props.readTimeout = read;
+            return props;
         }
 
         private static String trimToNull(String s) {
@@ -193,9 +203,6 @@ public class SmtpEmailChannel extends Channel {
             return Boolean.parseBoolean(s.trim()) || "1".equals(s.trim()) || "yes".equalsIgnoreCase(s.trim());
         }
 
-        /**
-         * 465 is the implicit-TLS SMTPS port; default to SSL on when sslEnabled is unset to avoid bad-greeting EOF
-         */
         private static boolean defaultSslForPort(int port) {
             return port == 465;
         }

@@ -12,6 +12,9 @@ import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
@@ -37,9 +40,9 @@ public class AliyunSmsChannel extends Channel {
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
         try {
             this.aliyunClient = new Client(new Config()
-                    .setAccessKeyId(properties.accessKeyId())
-                    .setAccessKeySecret(properties.accessKeySecret())
-                    .setEndpoint(StringUtils.defaultIfBlank(properties.endpoint(), DEFAULT_ENDPOINT)));
+                    .setAccessKeyId(properties.getAccessKeyId())
+                    .setAccessKeySecret(properties.getAccessKeySecret())
+                    .setEndpoint(StringUtils.defaultIfBlank(properties.getEndpoint(), DEFAULT_ENDPOINT)));
         } catch (Exception e) {
             throw new IllegalStateException("ALIYUN_SMS SDK client init failed", e);
         }
@@ -69,7 +72,7 @@ public class AliyunSmsChannel extends Channel {
                 return String.valueOf(o);
             }
         }
-        return properties.templateCode();
+        return properties.getTemplateCode();
     }
 
     private String buildTemplateParamJson(UniMessage uniMessage) {
@@ -88,7 +91,7 @@ public class AliyunSmsChannel extends Channel {
         return Mono.fromCallable(() -> {
             SendSmsRequest request = new SendSmsRequest()
                     .setPhoneNumbers(phoneNumbers)
-                    .setSignName(properties.signName())
+                    .setSignName(properties.getSignName())
                     .setTemplateCode(templateCode)
                     .setTemplateParam(templateParamJson);
             SendSmsResponse response = aliyunClient.sendSms(request);
@@ -118,11 +121,17 @@ public class AliyunSmsChannel extends Channel {
         return recipients;
     }
 
-    record Properties(
-            @NotBlank String accessKeyId,
-            @NotBlank String accessKeySecret,
-            @NotBlank String signName,
-            String templateCode,
-            String endpoint) {
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    static class Properties {
+        @NotBlank
+        private String accessKeyId;
+        @NotBlank
+        private String accessKeySecret;
+        @NotBlank
+        private String signName;
+        private String templateCode;
+        private String endpoint;
     }
 }

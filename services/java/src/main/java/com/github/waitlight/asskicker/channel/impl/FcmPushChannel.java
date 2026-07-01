@@ -24,6 +24,9 @@ import com.github.waitlight.asskicker.model.ProviderType;
 import com.google.auth.oauth2.GoogleCredentials;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -45,8 +48,8 @@ public class FcmPushChannel extends Channel {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
         validateSpec(this.properties);
-        this.credentials = loadCredentials(this.properties.serviceAccountJson());
-        this.endpoint = String.format(FCM_ENDPOINT_TEMPLATE, this.properties.projectId().trim());
+        this.credentials = loadCredentials(this.properties.getServiceAccountJson());
+        this.endpoint = String.format(FCM_ENDPOINT_TEMPLATE, this.properties.getProjectId().trim());
     }
 
     // Package-private constructor for tests: lets MockWebServer intercept and inject fake credentials
@@ -111,7 +114,7 @@ public class FcmPushChannel extends Channel {
     }
 
     private static void validateSpec(Properties p) {
-        if (StringUtils.isBlank(p.projectId()) || StringUtils.isBlank(p.serviceAccountJson())) {
+        if (StringUtils.isBlank(p.getProjectId()) || StringUtils.isBlank(p.getServiceAccountJson())) {
             throw new IllegalStateException("FCM spec requires projectId serviceAccountJson");
         }
     }
@@ -198,8 +201,13 @@ public class FcmPushChannel extends Channel {
                         ex));
     }
 
-    record Properties(
-            @NotBlank String projectId,
-            @NotBlank String serviceAccountJson) {
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    static class Properties {
+        @NotBlank
+        private String projectId;
+        @NotBlank
+        private String serviceAccountJson;
     }
 }

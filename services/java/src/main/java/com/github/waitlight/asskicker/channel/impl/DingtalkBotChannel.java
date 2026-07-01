@@ -9,6 +9,9 @@ import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -85,9 +88,9 @@ public class DingtalkBotChannel extends Channel {
     protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.defer(() -> {
             List<String> chatIds = normalizeRecipients(uniAddress);
-            requireNonBlank(properties.appKey(), "appKey");
-            requireNonBlank(properties.appSecret(), "appSecret");
-            requireNonBlank(properties.robotCode(), "robotCode");
+            requireNonBlank(properties.getAppKey(), "appKey");
+            requireNonBlank(properties.getAppSecret(), "appSecret");
+            requireNonBlank(properties.getRobotCode(), "robotCode");
 
             String msgParamJson;
             try {
@@ -108,8 +111,8 @@ public class DingtalkBotChannel extends Channel {
 
     private String fetchAccessToken() {
         GetAccessTokenRequest req = new GetAccessTokenRequest()
-                .setAppKey(properties.appKey().trim())
-                .setAppSecret(properties.appSecret().trim());
+                .setAppKey(properties.getAppKey().trim())
+                .setAppSecret(properties.getAppSecret().trim());
         try {
             GetAccessTokenResponse response = oauthClient.getAccessToken(req);
             GetAccessTokenResponseBody body = response != null ? response.getBody() : null;
@@ -131,7 +134,7 @@ public class DingtalkBotChannel extends Channel {
 
     private void sendGroupMessage(String accessToken, String openConversationId, String msgParamJson) {
         OrgGroupSendRequest req = new OrgGroupSendRequest()
-                .setRobotCode(properties.robotCode().trim())
+                .setRobotCode(properties.getRobotCode().trim())
                 .setOpenConversationId(openConversationId)
                 .setMsgKey(MSG_KEY_SAMPLE_TEXT)
                 .setMsgParam(msgParamJson);
@@ -182,9 +185,15 @@ public class DingtalkBotChannel extends Channel {
         return StringUtils.defaultString(content);
     }
 
-    record Properties(
-            @NotBlank String appKey,
-            @NotBlank String appSecret,
-            @NotBlank String robotCode) {
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    static class Properties {
+        @NotBlank
+        private String appKey;
+        @NotBlank
+        private String appSecret;
+        @NotBlank
+        private String robotCode;
     }
 }

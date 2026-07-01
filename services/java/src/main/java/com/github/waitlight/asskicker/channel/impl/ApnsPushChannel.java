@@ -14,6 +14,9 @@ import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ProviderType;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -67,10 +70,10 @@ public class ApnsPushChannel extends Channel {
         return Mono.defer(() -> {
             List<String> recipients = normalizeRecipients(uniAddress);
 
-            UUID parsedApnsId = StringUtils.isBlank(properties.apnsId())
+            UUID parsedApnsId = StringUtils.isBlank(properties.getApnsId())
                     ? null
-                    : UUID.fromString(properties.apnsId().trim());
-            String topic = properties.bundleIdTopic().trim();
+                    : UUID.fromString(properties.getApnsId().trim());
+            String topic = properties.getBundleIdTopic().trim();
             String payload;
             try {
                 payload = buildApnsPayload(uniMessage);
@@ -153,10 +156,10 @@ public class ApnsPushChannel extends Channel {
     }
 
     private static void validateSpec(Properties p) {
-        if (StringUtils.isBlank(p.bundleIdTopic())
-                || StringUtils.isBlank(p.teamId())
-                || StringUtils.isBlank(p.keyId())
-                || StringUtils.isBlank(p.privateKeyPem())) {
+        if (StringUtils.isBlank(p.getBundleIdTopic())
+                || StringUtils.isBlank(p.getTeamId())
+                || StringUtils.isBlank(p.getKeyId())
+                || StringUtils.isBlank(p.getPrivateKeyPem())) {
             throw new IllegalStateException(
                     "APNs spec requires bundleIdTopic teamId keyId privateKeyPem");
         }
@@ -165,14 +168,14 @@ public class ApnsPushChannel extends Channel {
     private static ApnsClient buildApnsClient(Properties p) {
         try {
             ApnsSigningKey signingKey = ApnsSigningKey.loadFromInputStream(
-                    new ByteArrayInputStream(p.privateKeyPem().getBytes(StandardCharsets.UTF_8)),
-                    p.teamId().trim(),
-                    p.keyId().trim());
+                    new ByteArrayInputStream(p.getPrivateKeyPem().getBytes(StandardCharsets.UTF_8)),
+                    p.getTeamId().trim(),
+                    p.getKeyId().trim());
 
             ApnsClientBuilder builder = new ApnsClientBuilder()
                     .setSigningKey(signingKey);
 
-            String url = StringUtils.trimToNull(p.url());
+            String url = StringUtils.trimToNull(p.getUrl());
             if (url == null) {
                 builder.setApnsServer(ApnsClientBuilder.PRODUCTION_APNS_HOST);
             } else if (SANDBOX_KEYWORD.equalsIgnoreCase(url)) {
@@ -199,12 +202,19 @@ public class ApnsPushChannel extends Channel {
         }
     }
 
-    record Properties(
-            String url,
-            @NotBlank String bundleIdTopic,
-            @NotBlank String teamId,
-            @NotBlank String keyId,
-            @NotBlank String privateKeyPem,
-            String apnsId) {
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    static class Properties {
+        private String url;
+        @NotBlank
+        private String bundleIdTopic;
+        @NotBlank
+        private String teamId;
+        @NotBlank
+        private String keyId;
+        @NotBlank
+        private String privateKeyPem;
+        private String apnsId;
     }
 }
