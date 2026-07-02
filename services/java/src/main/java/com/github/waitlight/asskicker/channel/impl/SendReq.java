@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.channel;
+package com.github.waitlight.asskicker.channel.impl;
 
 import com.github.waitlight.asskicker.model.ChannelType;
 import lombok.Data;

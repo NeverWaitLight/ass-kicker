@@ -1,6 +1,7 @@
 package com.github.waitlight.asskicker.channel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.waitlight.asskicker.channel.impl.SendReq;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;

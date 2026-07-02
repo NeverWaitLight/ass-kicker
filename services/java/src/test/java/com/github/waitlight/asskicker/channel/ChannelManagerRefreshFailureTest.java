@@ -6,7 +6,7 @@ import static org.mockito.Mockito.when;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.github.waitlight.asskicker.model.ChannelEntity;
-import com.github.waitlight.asskicker.channel.SendReq;
+import com.github.waitlight.asskicker.channel.impl.SendReq;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
