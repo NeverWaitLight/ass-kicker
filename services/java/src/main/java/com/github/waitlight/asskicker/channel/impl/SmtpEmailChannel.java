@@ -1,8 +1,6 @@
 package com.github.waitlight.asskicker.channel.impl;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.model.ChannelProvider;
@@ -14,8 +12,6 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.dto.UniAddress;
-import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 
 import jakarta.validation.constraints.Email;
@@ -51,17 +47,14 @@ public class SmtpEmailChannel extends Channel<EmailSendReq> {
             }
 
             SimpleMailMessage message = new SimpleMailMessage();
-            String fromAddr = StringUtils.isNotBlank(req.getFrom()) ? req.getFrom() : properties.getFrom().trim();
-            message.setFrom(fromAddr);
+            message.setFrom(StringUtils.defaultIfBlank(req.getFrom(), properties.getFrom()));
             message.setTo(recipients.toArray(String[]::new));
-
             if (req.getCc() != null && !req.getCc().isEmpty()) {
                 message.setCc(req.getCc().toArray(String[]::new));
             }
             if (req.getBcc() != null && !req.getBcc().isEmpty()) {
                 message.setBcc(req.getBcc().toArray(String[]::new));
             }
-
             message.setSubject(StringUtils.defaultString(req.getSubject()));
             message.setText(StringUtils.defaultString(req.getBody()));
 
@@ -73,51 +66,21 @@ public class SmtpEmailChannel extends Channel<EmailSendReq> {
 
     private static JavaMailSender buildMailSender(Properties properties) {
         JavaMailSenderImpl sender = new JavaMailSenderImpl();
-        sender.setHost(properties.getHost() == null ? null : properties.getHost().trim());
+        sender.setHost(properties.getHost());
         sender.setPort(properties.getPort());
-        sender.setUsername(properties.getUsername() == null ? null : properties.getUsername().trim());
+        sender.setUsername(properties.getUsername());
         sender.setPassword(properties.getPassword());
         sender.setDefaultEncoding("UTF-8");
 
-        java.util.Properties javaMailProperties = sender.getJavaMailProperties();
-        javaMailProperties.put("mail.smtp.auth", "true");
-        javaMailProperties.put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3");
+        java.util.Properties mailProps = sender.getJavaMailProperties();
+        mailProps.put("mail.smtp.auth", "true");
         if (properties.getPort() == 465) {
-            javaMailProperties.put("mail.smtp.ssl.enable", "true");
-            if (StringUtils.isNotBlank(properties.getHost())) {
-                javaMailProperties.put("mail.smtp.ssl.trust", properties.getHost().trim());
-            }
+            mailProps.put("mail.smtp.ssl.enable", "true");
         } else {
-            javaMailProperties.put("mail.smtp.starttls.enable", "true");
-            javaMailProperties.put("mail.smtp.starttls.required", "true");
+            mailProps.put("mail.smtp.starttls.enable", "true");
+            mailProps.put("mail.smtp.starttls.required", "true");
         }
         return sender;
-    }
-
-    private static String buildBody(UniMessage uniMessage) {
-        if (uniMessage == null) {
-            return "";
-        }
-        String title = StringUtils.defaultString(uniMessage.getTitle());
-        String content = StringUtils.defaultString(uniMessage.getContent());
-        if (StringUtils.isNotBlank(title)) {
-            return title + "\n\n" + content;
-        }
-        return content;
-    }
-
-    private List<String> normalizeRecipients(UniAddress uniAddress) {
-        List<String> recipients = uniAddress == null || uniAddress.getRecipients() == null
-                ? List.of()
-                : uniAddress.getRecipients().stream()
-                        .filter(Objects::nonNull)
-                        .map(String::trim)
-                        .filter(StringUtils::isNotBlank)
-                        .collect(Collectors.toList());
-        if (recipients.isEmpty()) {
-            throw new IllegalArgumentException("SMTP recipients required");
-        }
-        return recipients;
     }
 
     @Data
