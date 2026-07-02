@@ -1,7 +1,6 @@
 package com.github.waitlight.asskicker.channel.impl;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -39,7 +38,7 @@ public class SmtpEmailChannel extends Channel<EmailSendReq> {
 
     public SmtpEmailChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
-        this.properties = Properties.fromProperties(provider.getProperties());
+        this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
         this.mailSender = buildMailSender(this.properties);
     }
 
@@ -50,7 +49,6 @@ public class SmtpEmailChannel extends Channel<EmailSendReq> {
             if (recipients == null || recipients.isEmpty()) {
                 return Mono.error(new IllegalArgumentException("SMTP recipients (to) required"));
             }
-            validateSpec();
 
             SimpleMailMessage message = new SimpleMailMessage();
             String fromAddr = StringUtils.isNotBlank(req.getFrom()) ? req.getFrom() : properties.getFrom().trim();
@@ -73,13 +71,6 @@ public class SmtpEmailChannel extends Channel<EmailSendReq> {
         });
     }
 
-    private void validateSpec() {
-        if (StringUtils.isBlank(properties.getHost()) || StringUtils.isBlank(properties.getUsername())
-                || StringUtils.isBlank(properties.getPassword()) || StringUtils.isBlank(properties.getFrom())) {
-            throw new IllegalStateException("SMTP requires host username password from");
-        }
-    }
-
     private static JavaMailSender buildMailSender(Properties properties) {
         JavaMailSenderImpl sender = new JavaMailSenderImpl();
         sender.setHost(properties.getHost() == null ? null : properties.getHost().trim());
@@ -90,22 +81,15 @@ public class SmtpEmailChannel extends Channel<EmailSendReq> {
 
         java.util.Properties javaMailProperties = sender.getJavaMailProperties();
         javaMailProperties.put("mail.smtp.auth", "true");
-        // align with most providers, avoid old TLS negotiation or unfinished STARTTLS upgrades
         javaMailProperties.put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3");
-        if (properties.isSslEnabled()) {
+        if (properties.getPort() == 465) {
             javaMailProperties.put("mail.smtp.ssl.enable", "true");
             if (StringUtils.isNotBlank(properties.getHost())) {
                 javaMailProperties.put("mail.smtp.ssl.trust", properties.getHost().trim());
             }
-        } else if (properties.isStartTls()) {
+        } else {
             javaMailProperties.put("mail.smtp.starttls.enable", "true");
             javaMailProperties.put("mail.smtp.starttls.required", "true");
-        }
-        if (properties.getConnectionTimeout() != null) {
-            javaMailProperties.put("mail.smtp.connectiontimeout", String.valueOf(properties.getConnectionTimeout()));
-        }
-        if (properties.getReadTimeout() != null) {
-            javaMailProperties.put("mail.smtp.timeout", String.valueOf(properties.getReadTimeout()));
         }
         return sender;
     }
@@ -146,7 +130,7 @@ public class SmtpEmailChannel extends Channel<EmailSendReq> {
 
         @Min(1)
         @Max(65535)
-        private int port;
+        private int port = 587;
 
         @NotBlank
         private String username;
@@ -156,93 +140,5 @@ public class SmtpEmailChannel extends Channel<EmailSendReq> {
         @NotBlank
         @Email
         private String from;
-
-        private boolean sslEnabled;
-
-        private boolean startTls;
-
-        @Min(0)
-        private Integer connectionTimeout;
-
-        @Min(0)
-        private Integer readTimeout;
-
-        static Properties fromProperties(Map<String, String> p) {
-            if (p == null) {
-                p = Map.of();
-            }
-            int port = parseInt(p.get("port"), 587);
-            boolean ssl = parseBool(p.get("sslEnabled"), defaultSslForPort(port));
-            boolean startTls = parseBool(firstNonBlank(p.get("starttls"), p.get("startTls")), true);
-            Integer conn = parseIntObj(p.get("connectionTimeout"));
-            Integer read = parseIntObj(p.get("readTimeout"));
-            Properties props = new Properties();
-            props.host = trimToNull(p.get("host"));
-            props.port = port;
-            props.username = trimToNull(p.get("username"));
-            props.password = trimPassword(p.get("password"));
-            props.from = trimToNull(p.get("from"));
-            props.sslEnabled = ssl;
-            props.startTls = startTls;
-            props.connectionTimeout = conn;
-            props.readTimeout = read;
-            return props;
-        }
-
-        private static String trimToNull(String s) {
-            if (s == null) {
-                return null;
-            }
-            String t = s.trim();
-            return t.isEmpty() ? null : t;
-        }
-
-        private static String trimPassword(String s) {
-            if (s == null) {
-                return null;
-            }
-            String t = s.trim();
-            return t.isEmpty() ? null : t;
-        }
-
-        private static int parseInt(String s, int def) {
-            if (StringUtils.isBlank(s)) {
-                return def;
-            }
-            try {
-                return Integer.parseInt(s.trim());
-            } catch (NumberFormatException e) {
-                return def;
-            }
-        }
-
-        private static Integer parseIntObj(String s) {
-            if (StringUtils.isBlank(s)) {
-                return null;
-            }
-            try {
-                return Integer.parseInt(s.trim());
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-
-        private static boolean parseBool(String s, boolean defaultValue) {
-            if (StringUtils.isBlank(s)) {
-                return defaultValue;
-            }
-            return Boolean.parseBoolean(s.trim()) || "1".equals(s.trim()) || "yes".equalsIgnoreCase(s.trim());
-        }
-
-        private static boolean defaultSslForPort(int port) {
-            return port == 465;
-        }
-
-        private static String firstNonBlank(String a, String b) {
-            if (StringUtils.isNotBlank(a)) {
-                return a;
-            }
-            return b;
-        }
     }
 }
