@@ -24,7 +24,6 @@ public final class ChannelEntityFixtures {
                   "code": "aliyun-sms-prod",
                   "type": "SMS",
                   "provider": "ALIYUN",
-                  "providerType": "ALIYUN_SMS",
                   "description": "Aliyun SMS",
                   "enabled": true,
                   "properties": {
@@ -45,7 +44,6 @@ public final class ChannelEntityFixtures {
                   "name": "SMTP 邮件",
                   "code": "smtp-email-prod",
                   "type": "EMAIL",
-                  "providerType": "SMTP",
                   "description": "SMTP channel",
                   "enabled": true,
                   "properties": {
@@ -71,7 +69,6 @@ public final class ChannelEntityFixtures {
                   "code": "dingtalk-webhook-prod",
                   "type": "IM",
                   "provider": "DINGTALK",
-                  "providerType": "DINGTALK_WEBHOOK",
                   "description": "DingTalk IM webhook",
                   "enabled": true,
                   "properties": {
@@ -91,7 +88,6 @@ public final class ChannelEntityFixtures {
                   "code": "dingtalk-webhook-disabled",
                   "type": "IM",
                   "provider": "DINGTALK",
-                  "providerType": "DINGTALK_WEBHOOK",
                   "description": "disabled",
                   "enabled": false,
                   "properties": {
@@ -108,7 +104,6 @@ public final class ChannelEntityFixtures {
                   "code": "apns-app-dev",
                   "type": "PUSH",
                   "provider": "APPLE",
-                  "providerType": "APNS",
                   "description": "APNs push",
                   "enabled": true,
                   "properties": {
@@ -132,7 +127,6 @@ public final class ChannelEntityFixtures {
                   "code": "apns-app-disabled",
                   "type": "PUSH",
                   "provider": "APPLE",
-                  "providerType": "APNS",
                   "description": "disabled",
                   "enabled": false,
                   "properties": {

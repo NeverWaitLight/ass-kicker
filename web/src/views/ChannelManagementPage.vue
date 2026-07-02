@@ -214,13 +214,13 @@ const loadChannels = async () => {
   try {
     const sel = typeProviderFilter.value
     const channelType = Array.isArray(sel) && sel.length > 0 ? sel[0] : undefined
-    const providerType = Array.isArray(sel) && sel.length > 1 ? sel[1] : undefined
+    const provider = Array.isArray(sel) && sel.length > 1 ? sel[1] : undefined
     const data = await fetchChannels({
       page: 1,
       size: 10000,
       keyword: channelSearch.value.trim() || undefined,
       channelType,
-      providerType
+      provider
     })
     setChannelList(data)
   } catch (error) {

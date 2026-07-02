@@ -3,8 +3,8 @@ package com.github.waitlight.asskicker.dto.channel;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.model.ProviderType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -24,7 +24,7 @@ public class CreateChannelDTO {
 
     @NotBlank
     @Size(max = 100)
-    private String key;
+    private String code;
 
     @NotBlank
     @Size(max = 255)
@@ -34,7 +34,7 @@ public class CreateChannelDTO {
     private ChannelType type;
 
     @NotNull
-    private ProviderType provider;
+    private ChannelProvider provider;
 
     @Size(max = 1000)
     private String description;

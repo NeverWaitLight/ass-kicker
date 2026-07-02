@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.dto.channel;
 
+import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.model.ProviderType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -24,14 +24,14 @@ public class UpdateChannelDTO {
     private String id;
 
     @Size(max = 100)
-    private String key;
+    private String code;
 
     @Size(max = 255)
     private String name;
 
     private ChannelType type;
 
-    private ProviderType provider;
+    private ChannelProvider provider;
 
     @Size(max = 1000)
     private String description;

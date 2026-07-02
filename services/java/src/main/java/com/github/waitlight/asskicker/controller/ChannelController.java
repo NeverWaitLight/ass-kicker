@@ -21,7 +21,7 @@ import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.channel.CreateChannelDTO;
 import com.github.waitlight.asskicker.dto.channel.ChannelVO;
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.model.ProviderType;
+import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.dto.channel.UpdateChannelDTO;
 import com.github.waitlight.asskicker.service.ChannelService;
 import com.github.waitlight.asskicker.security.UserPrincipal;
@@ -59,18 +59,18 @@ public class ChannelController {
         @GetMapping
         public Mono<PageResp<ChannelVO>> page(@Validated PageReq pageReq,
                         @RequestParam(required = false) ChannelType channelType,
-                        @RequestParam(required = false) ProviderType providerType) {
+                        @RequestParam(required = false) ChannelProvider provider) {
                 int page = pageReq.getPage();
                 int size = pageReq.getSize();
                 String keyword = pageReq.getKeyword();
                 int offset = (page - 1) * size;
 
-                return channelService.count(keyword, channelType, providerType)
+                return channelService.count(keyword, channelType, provider)
                                 .flatMap(total -> {
                                         if (total == 0) {
                                                 return Mono.just(PageResp.success(page, size, total, List.of()));
                                         }
-                                        return channelService.list(keyword, channelType, providerType, size, offset)
+                                        return channelService.list(keyword, channelType, provider, size, offset)
                                                         .map(channelConverter::toVO)
                                                         .collectList()
                                                         .map(channels -> PageResp.success(page, size, total, channels));

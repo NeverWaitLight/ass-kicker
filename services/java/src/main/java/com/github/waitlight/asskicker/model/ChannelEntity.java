@@ -32,9 +32,6 @@ public class ChannelEntity {
         @Field("provider")
         private ChannelProvider provider;
 
-        @Field("provider_type")
-        private ProviderType providerType;
-
         private String description;
 
         private boolean enabled = true;

@@ -9,7 +9,7 @@ export const fetchChannels = async (params = {}) => {
   searchParams.set('size', String(size))
   if (params.keyword) searchParams.set('keyword', params.keyword)
   if (params.channelType) searchParams.set('channelType', params.channelType)
-  if (params.providerType) searchParams.set('providerType', params.providerType)
+  if (params.provider) searchParams.set('provider', params.provider)
   const qs = searchParams.toString()
   const response = await apiFetch(`/v1/channels?${qs}`)
   if (!response.ok) {

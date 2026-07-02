@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.waitlight.asskicker.channel.impl.*;
 import com.github.waitlight.asskicker.model.ChannelEntity;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -19,15 +20,19 @@ class ChannelFactoryTest {
   private final ChannelFactory factory = new ChannelFactory(WebClient.create(),
           ChannelTestObjectMappers.channelObjectMapper());
 
+  @BeforeEach
+  void scan() {
+    factory.scanChannelImplementations();
+  }
+
   @Test
   @DisplayName("创建APNS渠道")
   void create_apns_returnsApnsChannel() throws Exception {
     String json = """
         {
           "code": "apns-factory",
-          "type": "PUSH",
+          "type": "APNS",
           "provider": "APPLE",
-          "providerType": "APNS",
           "enabled": true,
           "properties": {
             "url": "https://api.sandbox.push.apple.com",
@@ -80,9 +85,8 @@ class ChannelFactoryTest {
     String json = """
         {
           "code": "fcm-factory",
-          "type": "PUSH",
+          "type": "FCM",
           "provider": "GOOGLE",
-          "providerType": "FCM",
           "enabled": true,
           "properties": {
             "projectId": "demo",
@@ -100,9 +104,8 @@ class ChannelFactoryTest {
     String json = """
         {
           "code": "dingtalk-bot-factory",
-          "type": "IM",
+          "type": "DINGTALK",
           "provider": "DINGTALK",
-          "providerType": "DINGTALK_BOT",
           "enabled": true,
           "properties": {
             "appKey": "k",
@@ -121,8 +124,8 @@ class ChannelFactoryTest {
     String json = """
         {
           "code": "slack-factory",
-          "type": "IM",
-          "providerType": "SLACK",
+          "type": "DINGTALK",
+          "provider": "SLACK",
           "enabled": true,
           "properties": {}
         }
@@ -139,7 +142,6 @@ class ChannelFactoryTest {
           "code": "aliyun-sms-factory",
           "type": "SMS",
           "provider": "ALIYUN",
-          "providerType": "ALIYUN_SMS",
           "enabled": true,
           "properties": {
             "accessKeyId": "a",
@@ -159,7 +161,7 @@ class ChannelFactoryTest {
         {
           "code": "smtp-factory",
           "type": "EMAIL",
-          "providerType": "SMTP",
+          "provider": "SMTP",
           "enabled": true,
           "properties": {
             "host": "localhost",

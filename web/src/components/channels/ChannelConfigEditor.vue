@@ -100,7 +100,7 @@ const { t, te } = useI18n()
 
 const form = reactive({
   id: null,
-  key: '',
+  code: '',
   name: '',
   type: '',
   description: ''
@@ -236,7 +236,7 @@ const loadChannel = async () => {
   try {
     const data = await fetchChannel(props.channelId)
     form.id = data.id
-    form.key = data.key || ''
+    form.code = data.code || ''
     form.name = data.name || ''
     form.type = data.type || ''
     form.description = data.description || ''
@@ -318,11 +318,10 @@ const saveChannel = async () => {
   saving.value = true
   try {
     const payload = {
-      key: (form.key || form.name).trim(),
+      code: (form.code || form.name).trim(),
       name: form.name.trim(),
       type: form.type,
       provider: resolveProvider(),
-      providerType: resolveProvider(),
       description: form.description?.trim() || '',
       properties: buildProperties()
     }
@@ -450,15 +449,10 @@ const resolveProtocolValue = (value) => {
 
 
 const resolveImTypeValue = (value) => {
-  const fallback = providerTypeOptions.value[0]?.value || 'DINGTALK_WEBHOOK'
+  const fallback = providerTypeOptions.value[0]?.value || 'DINGTALK'
   if (!value) return fallback
   const normalized = String(value).trim()
-  const mapped = {
-    DINGTALK: 'DINGTALK_WEBHOOK',
-    WECOM: 'WECOM_WEBHOOK',
-    FEISHU: 'FEISHU_WEBHOOK'
-  }
-  return mapped[normalized.toUpperCase()] || normalized.toUpperCase() || fallback
+  return normalized ? normalized.toUpperCase() : fallback
 }
 
 const resolvePushTypeValue = (value) => {
@@ -469,14 +463,10 @@ const resolvePushTypeValue = (value) => {
 }
 
 const resolveSmsTypeValue = (value) => {
-  const fallback = providerTypeOptions.value[0]?.value || 'ALIYUN_SMS'
+  const fallback = providerTypeOptions.value[0]?.value || 'ALIYUN'
   if (!value) return fallback
   const normalized = String(value).trim()
-  const mapped = {
-    ALIYUN: 'ALIYUN_SMS',
-    AWS: 'AWS_SMS'
-  }
-  return mapped[normalized.toUpperCase()] || normalized.toUpperCase() || fallback
+  return normalized ? normalized.toUpperCase() : fallback
 }
 
 

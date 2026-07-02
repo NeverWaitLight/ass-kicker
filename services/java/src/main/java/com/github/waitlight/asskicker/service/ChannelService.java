@@ -6,7 +6,7 @@ import com.github.waitlight.asskicker.exception.ConflictException;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.model.ProviderType;
+import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.repository.ChannelRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ public class ChannelService {
     private final CaffeineCacheConfig caffeineCacheConfig;
 
     private AsyncLoadingCache<String, Optional<ChannelEntity>> channelByIdCache;
-    private AsyncLoadingCache<String, Optional<ChannelEntity>> channelByKeyCache;
+    private AsyncLoadingCache<String, Optional<ChannelEntity>> channelByCodeCache;
 
     @PostConstruct
     void initCaches() {
@@ -36,7 +36,7 @@ public class ChannelService {
                 .defaultIfEmpty(Optional.empty())
                 .toFuture());
 
-        channelByKeyCache = caffeineCacheConfig.buildCache((key, executor) -> channelRepository.findByCode(key)
+        channelByCodeCache = caffeineCacheConfig.buildCache((code, executor) -> channelRepository.findByCode(code)
                 .map(Optional::of)
                 .defaultIfEmpty(Optional.empty())
                 .toFuture());
@@ -50,13 +50,13 @@ public class ChannelService {
         return channelRepository.findByEnabled(true);
     }
 
-    public Mono<Long> count(String keyword, ChannelType channelType, ProviderType providerType) {
-        return channelRepository.count(keyword, channelType, providerType);
+    public Mono<Long> count(String keyword, ChannelType channelType, ChannelProvider provider) {
+        return channelRepository.count(keyword, channelType, provider);
     }
 
-    public Flux<ChannelEntity> list(String keyword, ChannelType channelType, ProviderType providerType, int limit,
+    public Flux<ChannelEntity> list(String keyword, ChannelType channelType, ChannelProvider provider, int limit,
             int offset) {
-        return channelRepository.list(keyword, channelType, providerType, limit, offset);
+        return channelRepository.list(keyword, channelType, provider, limit, offset);
     }
 
     public Mono<ChannelEntity> findById(String id) {
@@ -71,8 +71,8 @@ public class ChannelService {
                         .orElseGet(() -> Mono.error(new NotFoundException("channel.notFound", new Object[] { id }))));
     }
 
-    public Mono<ChannelEntity> findByKey(String key) {
-        return Mono.fromFuture(channelByKeyCache.get(key))
+    public Mono<ChannelEntity> findByCode(String code) {
+        return Mono.fromFuture(channelByCodeCache.get(code))
                 .flatMap(opt -> opt.map(Mono::just).orElse(Mono.empty()));
     }
 
@@ -90,7 +90,7 @@ public class ChannelService {
         c.setUpdater(userId);
         c.setCreatedAt(now);
         c.setUpdatedAt(now);
-        return ensureUniqueKey(c.getCode(), null)
+        return ensureUniqueCode(c.getCode(), null)
                 .then(Mono.defer(() -> channelRepository.save(c)))
                 .doOnSuccess(saved -> {
                     if (saved != null) {
@@ -104,7 +104,7 @@ public class ChannelService {
                 .switchIfEmpty(Mono.error(new NotFoundException("channel.notFound", new Object[] { id })))
                 .flatMap(existing -> {
                     String oldCode = existing.getCode();
-                    return ensureUniqueKey(patch.getCode(), id)
+                    return ensureUniqueCode(patch.getCode(), id)
                             .then(Mono.defer(() -> {
                                 mergeEntity(patch, existing);
                                 existing.setUpdater(userId);
@@ -142,9 +142,6 @@ public class ChannelService {
         if (patch.getProvider() != null) {
             target.setProvider(patch.getProvider());
         }
-        if (patch.getProviderType() != null) {
-            target.setProviderType(patch.getProviderType());
-        }
         if (patch.getDescription() != null) {
             target.setDescription(patch.getDescription());
         }
@@ -159,27 +156,27 @@ public class ChannelService {
     private void invalidateChannelCaches(String id, String code) {
         channelByIdCache.synchronous().invalidate(id);
         if (code != null) {
-            channelByKeyCache.synchronous().invalidate(code);
+            channelByCodeCache.synchronous().invalidate(code);
         }
     }
 
     private void invalidateChannelCaches(String id, String oldCode, String newCode) {
         channelByIdCache.synchronous().invalidate(id);
         if (oldCode != null) {
-            channelByKeyCache.synchronous().invalidate(oldCode);
+            channelByCodeCache.synchronous().invalidate(oldCode);
         }
         if (newCode != null && !newCode.equals(oldCode)) {
-            channelByKeyCache.synchronous().invalidate(newCode);
+            channelByCodeCache.synchronous().invalidate(newCode);
         }
     }
 
-    private Mono<Void> ensureUniqueKey(String key, String currentId) {
-        return channelRepository.findByCode(key)
+    private Mono<Void> ensureUniqueCode(String code, String currentId) {
+        return channelRepository.findByCode(code)
                 .flatMap(existing -> {
                     if (currentId != null && currentId.equals(existing.getId())) {
                         return Mono.empty();
                     }
-                    return Mono.error(new ConflictException("channel.key.exists", new Object[] { key }));
+                    return Mono.error(new ConflictException("channel.code.exists", new Object[] { code }));
                 })
                 .then();
     }

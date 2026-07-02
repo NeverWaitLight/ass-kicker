@@ -2,8 +2,8 @@ package com.github.waitlight.asskicker.dto.channel;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.model.ProviderType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,13 +20,13 @@ public class ChannelVO {
 
     private String id;
 
-    private String key;
+    private String code;
 
     private String name;
 
     private ChannelType type;
 
-    private ProviderType provider;
+    private ChannelProvider provider;
 
     private String description;
 

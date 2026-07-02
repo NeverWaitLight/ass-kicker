@@ -49,7 +49,6 @@ class ChannelManagerRefreshFailureTest {
                   "code": "dummy-refresh",
                   "type": "PUSH",
                   "provider": "APPLE",
-                  "providerType": "APNS",
                   "enabled": true
                 }
                 """;

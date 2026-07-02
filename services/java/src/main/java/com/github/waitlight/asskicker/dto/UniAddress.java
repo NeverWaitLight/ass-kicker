@@ -2,7 +2,7 @@ package com.github.waitlight.asskicker.dto;
 
 import java.util.Set;
 
-import com.github.waitlight.asskicker.model.ProviderType;
+import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
 
 import lombok.AccessLevel;
@@ -20,7 +20,7 @@ import lombok.Setter;
 public class UniAddress {
 
     private ChannelType channelType;
-    private ProviderType providerType;
+    private ChannelProvider provider;
     private String channelKey;
     private Set<String> recipients;
 
@@ -38,27 +38,27 @@ public class UniAddress {
                 .build();
     }
 
-    public static UniAddress ofImBot(ProviderType provider, String channelKey, String... targetId) {
+    public static UniAddress ofImBot(ChannelProvider provider, String channelKey, String... targetId) {
         return UniAddress.builder()
                 .channelType(ChannelType.IM)
-                .providerType(provider)
+                .provider(provider)
                 .channelKey(channelKey)
                 .recipients(Set.of(targetId))
                 .build();
     }
 
-    public static UniAddress ofImWebhook(ProviderType provider, String... webhookToken) {
+    public static UniAddress ofImWebhook(ChannelProvider provider, String... webhookToken) {
         return UniAddress.builder()
                 .channelType(ChannelType.IM)
-                .providerType(provider)
+                .provider(provider)
                 .recipients(Set.of(webhookToken))
                 .build();
     }
 
-    public static UniAddress ofPush(ProviderType provider, String... deviceToken) {
+    public static UniAddress ofPush(ChannelProvider provider, String... deviceToken) {
         return UniAddress.builder()
                 .channelType(ChannelType.PUSH)
-                .providerType(provider)
+                .provider(provider)
                 .recipients(Set.of(deviceToken))
                 .build();
     }

@@ -2,7 +2,7 @@ package com.github.waitlight.asskicker.repository;
 
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.model.ProviderType;
+import com.github.waitlight.asskicker.model.ChannelProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
@@ -75,20 +75,20 @@ public class ChannelRepository {
         return entities.flatMap(mongoTemplate::save);
     }
 
-    public Flux<ChannelEntity> list(String keyword, ChannelType channelType, ProviderType providerType, int limit,
+    public Flux<ChannelEntity> list(String keyword, ChannelType channelType, ChannelProvider provider, int limit,
             int offset) {
-        Query query = buildQuery(keyword, channelType, providerType);
+        Query query = buildQuery(keyword, channelType, provider);
         query.with(Sort.by(Sort.Direction.DESC, "_id"));
         query.skip(offset).limit(limit);
         return mongoTemplate.find(query, ChannelEntity.class);
     }
 
-    public Mono<Long> count(String keyword, ChannelType channelType, ProviderType providerType) {
-        Query query = buildQuery(keyword, channelType, providerType);
+    public Mono<Long> count(String keyword, ChannelType channelType, ChannelProvider provider) {
+        Query query = buildQuery(keyword, channelType, provider);
         return mongoTemplate.count(query, ChannelEntity.class);
     }
 
-    private Query buildQuery(String keyword, ChannelType channelType, ProviderType providerType) {
+    private Query buildQuery(String keyword, ChannelType channelType, ChannelProvider provider) {
         Query query = new Query();
         if (StringUtils.hasText(keyword)) {
             query.addCriteria(Criteria.where("name").regex(".*" + keyword + ".*", "i"));
@@ -96,8 +96,8 @@ public class ChannelRepository {
         if (channelType != null) {
             query.addCriteria(Criteria.where("channel_type").is(channelType));
         }
-        if (providerType != null) {
-            query.addCriteria(Criteria.where("provider_type").is(providerType));
+        if (provider != null) {
+            query.addCriteria(Criteria.where("provider").is(provider));
         }
         return query;
     }
