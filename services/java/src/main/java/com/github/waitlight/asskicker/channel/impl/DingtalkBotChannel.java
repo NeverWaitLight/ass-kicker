@@ -27,7 +27,6 @@ import com.aliyun.teaopenapi.models.Config;
 import com.aliyun.teautil.models.RuntimeOptions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
-import com.github.waitlight.asskicker.dto.UniMessage;
 
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -37,7 +36,7 @@ import reactor.core.scheduler.Schedulers;
  * ({@code com.aliyun:dingtalk}), which encapsulates OAuth token retrieval +
  * group-send under {@code api.dingtalk.com}.
  */
-public class DingtalkBotChannel extends Channel<SendReq> {
+public class DingtalkBotChannel extends Channel<DingtalkSendReq> {
 
     public static final ChannelType TYPE = ChannelType.DINGTALK;
     public static final ChannelProvider PROVIDER = ChannelProvider.DINGTALK;
@@ -86,16 +85,19 @@ public class DingtalkBotChannel extends Channel<SendReq> {
     }
 
     @Override
-    protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
+    public Mono<String> send(DingtalkSendReq req) {
         return Mono.defer(() -> {
-            List<String> chatIds = normalizeRecipients(uniAddress);
+            List<String> chatIds = req.getOpenConversationIds();
+            if (chatIds == null || chatIds.isEmpty()) {
+                return Mono.error(new IllegalArgumentException("DINGTALK_BOT openConversationIds required"));
+            }
             requireNonBlank(properties.getAppKey(), "appKey");
             requireNonBlank(properties.getAppSecret(), "appSecret");
             requireNonBlank(properties.getRobotCode(), "robotCode");
 
             String msgParamJson;
             try {
-                msgParamJson = objectMapper.writeValueAsString(Map.of("content", buildPlainText(uniMessage)));
+                msgParamJson = objectMapper.writeValueAsString(Map.of("content", buildPlainText(req)));
             } catch (Exception e) {
                 return Mono.error(e);
             }
@@ -177,9 +179,9 @@ public class DingtalkBotChannel extends Channel<SendReq> {
         }
     }
 
-    private static String buildPlainText(UniMessage uniMessage) {
-        String title = uniMessage != null ? uniMessage.getTitle() : null;
-        String content = uniMessage != null ? uniMessage.getContent() : null;
+    private static String buildPlainText(DingtalkSendReq req) {
+        String title = req.getTitle();
+        String content = req.getContent();
         if (StringUtils.isNotBlank(title)) {
             return title + "\n" + StringUtils.defaultString(content);
         }

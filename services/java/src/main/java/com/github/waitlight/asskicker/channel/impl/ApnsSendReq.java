@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.channel.impl;
 
+import com.github.waitlight.asskicker.channel.SendReq;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

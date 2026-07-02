@@ -8,7 +8,6 @@ import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.dto.UniAddress;
-import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
@@ -30,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class ApnsPushChannel extends Channel<SendReq> {
+public class ApnsPushChannel extends Channel<ApnsSendReq> {
 
     public static final ChannelType TYPE = ChannelType.APNS;
     public static final ChannelProvider PROVIDER = ChannelProvider.APPLE;
@@ -62,9 +61,12 @@ public class ApnsPushChannel extends Channel<SendReq> {
     }
 
     @Override
-    protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
+    public Mono<String> send(ApnsSendReq req) {
         return Mono.defer(() -> {
-            List<String> recipients = normalizeRecipients(uniAddress);
+            List<String> recipients = req.getDeviceTokens();
+            if (recipients == null || recipients.isEmpty()) {
+                return Mono.error(new IllegalArgumentException("APNs deviceTokens required"));
+            }
 
             UUID parsedApnsId = StringUtils.isBlank(properties.getApnsId())
                     ? null
@@ -72,7 +74,7 @@ public class ApnsPushChannel extends Channel<SendReq> {
             String topic = properties.getBundleIdTopic().trim();
             String payload;
             try {
-                payload = buildApnsPayload(uniMessage);
+                payload = buildApnsPayload(req);
             } catch (Exception e) {
                 return Mono.error(e);
             }
@@ -125,23 +127,23 @@ public class ApnsPushChannel extends Channel<SendReq> {
         return recipients;
     }
 
-    private String buildApnsPayload(UniMessage uniMessage) throws Exception {
-        String title = uniMessage != null ? uniMessage.getTitle() : null;
-        String body = uniMessage != null ? uniMessage.getContent() : null;
-        Map<String, Object> extraData = uniMessage != null ? uniMessage.getExtraData() : null;
-
+    private String buildApnsPayload(ApnsSendReq req) throws Exception {
         Map<String, Object> alert = new LinkedHashMap<>();
-        if (StringUtils.isNotBlank(title)) {
-            alert.put("title", title);
+        if (StringUtils.isNotBlank(req.getTitle())) {
+            alert.put("title", req.getTitle());
         }
-        alert.put("body", body != null ? body : "");
+        alert.put("body", req.getBody() != null ? req.getBody() : "");
         Map<String, Object> aps = new LinkedHashMap<>();
         aps.put("alert", alert);
-        aps.put("sound", "default");
+        aps.put("sound", req.getSound() != null ? req.getSound() : "default");
+        if (req.getBadge() != null) {
+            aps.put("badge", req.getBadge());
+        }
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("aps", aps);
-        if (extraData != null && !extraData.isEmpty()) {
-            for (Map.Entry<String, Object> e : extraData.entrySet()) {
+        Map<String, Object> customData = req.getCustomData();
+        if (customData != null && !customData.isEmpty()) {
+            for (Map.Entry<String, Object> e : customData.entrySet()) {
                 String k = e.getKey();
                 if (k != null && !k.isBlank() && !"aps".equals(k)) {
                     payload.put(k, e.getValue());

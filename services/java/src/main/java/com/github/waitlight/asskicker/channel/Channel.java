@@ -1,9 +1,6 @@
 package com.github.waitlight.asskicker.channel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.impl.SendReq;
-import com.github.waitlight.asskicker.dto.UniAddress;
-import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelType;
@@ -34,19 +31,11 @@ public abstract class Channel<T extends SendReq> {
         this.objectMapper = objectMapper;
     }
 
-    public Mono<String> send(T req) {
-        return Mono.error(new UnsupportedOperationException(
-                getClass().getSimpleName() + " does not implement typed send(" + (req == null ? "null" : req.getClass().getSimpleName()) + ")"));
-    }
+    public abstract Mono<String> send(T req);
 
     public final Mono<String> send(UniTask task) {
-        if (task == null) {
-            return Mono.error(new IllegalArgumentException("task required"));
-        }
-        return doSend(task.getMessage(), task.getAddress());
+        return Mono.empty();
     }
-
-    protected abstract Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress);
 
     public void dispose() {
         // no-op by default; subclasses holding long-lived resources should override

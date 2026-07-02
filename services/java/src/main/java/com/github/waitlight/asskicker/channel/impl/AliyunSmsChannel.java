@@ -6,8 +6,7 @@ import com.aliyun.dysmsapi20170525.models.SendSmsResponse;
 import com.aliyun.teaopenapi.models.Config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.dto.UniAddress;
-import com.github.waitlight.asskicker.dto.UniMessage;
+
 import com.github.waitlight.asskicker.exception.SendException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
@@ -63,11 +62,6 @@ public class AliyunSmsChannel extends Channel<SmsSendReq> {
         } catch (Exception e) {
             throw new SendException(e.getMessage());
         }
-        return Mono.empty();
-    }
-
-    @Override
-    protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
         return Mono.empty();
     }
 

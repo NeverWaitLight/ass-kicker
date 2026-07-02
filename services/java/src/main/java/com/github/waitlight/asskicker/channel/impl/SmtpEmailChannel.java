@@ -29,7 +29,7 @@ import lombok.NoArgsConstructor;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-public class SmtpEmailChannel extends Channel<SendReq> {
+public class SmtpEmailChannel extends Channel<EmailSendReq> {
 
     public static final ChannelType TYPE = ChannelType.EMAIL;
     public static final ChannelProvider PROVIDER = ChannelProvider.SMTP;
@@ -44,16 +44,28 @@ public class SmtpEmailChannel extends Channel<SendReq> {
     }
 
     @Override
-    protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
+    public Mono<String> send(EmailSendReq req) {
         return Mono.defer(() -> {
-            List<String> recipients = normalizeRecipients(uniAddress);
+            List<String> recipients = req.getTo();
+            if (recipients == null || recipients.isEmpty()) {
+                return Mono.error(new IllegalArgumentException("SMTP recipients (to) required"));
+            }
             validateSpec();
 
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(properties.getFrom().trim());
+            String fromAddr = StringUtils.isNotBlank(req.getFrom()) ? req.getFrom() : properties.getFrom().trim();
+            message.setFrom(fromAddr);
             message.setTo(recipients.toArray(String[]::new));
-            message.setSubject(StringUtils.defaultString(uniMessage != null ? uniMessage.getTitle() : null));
-            message.setText(buildBody(uniMessage));
+
+            if (req.getCc() != null && !req.getCc().isEmpty()) {
+                message.setCc(req.getCc().toArray(String[]::new));
+            }
+            if (req.getBcc() != null && !req.getBcc().isEmpty()) {
+                message.setBcc(req.getBcc().toArray(String[]::new));
+            }
+
+            message.setSubject(StringUtils.defaultString(req.getSubject()));
+            message.setText(StringUtils.defaultString(req.getBody()));
 
             return Mono.fromRunnable(() -> mailSender.send(message))
                     .subscribeOn(Schedulers.boundedElastic())

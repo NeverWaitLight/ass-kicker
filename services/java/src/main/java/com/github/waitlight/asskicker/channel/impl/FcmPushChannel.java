@@ -18,7 +18,6 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniAddress;
-import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
@@ -34,7 +33,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 @Slf4j
-public class FcmPushChannel extends Channel<SendReq> {
+public class FcmPushChannel extends Channel<FcmSendReq> {
 
     public static final ChannelType TYPE = ChannelType.FCM;
     public static final ChannelProvider PROVIDER = ChannelProvider.GOOGLE;
@@ -73,13 +72,12 @@ public class FcmPushChannel extends Channel<SendReq> {
     }
 
     @Override
-    protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
+    public Mono<String> send(FcmSendReq req) {
         return Mono.defer(() -> {
-            List<String> recipients = normalizeRecipients(uniAddress);
-
-            String alertTitle = uniMessage != null ? uniMessage.getTitle() : null;
-            String alertBody = uniMessage != null ? uniMessage.getContent() : null;
-            Map<String, Object> extraData = uniMessage != null ? uniMessage.getExtraData() : null;
+            List<String> recipients = req.getDeviceTokens();
+            if (recipients == null || recipients.isEmpty()) {
+                return Mono.error(new IllegalArgumentException("FCM deviceTokens required"));
+            }
 
             log.info("Sending FCM notification to {} recipient(s)", recipients.size());
 
@@ -87,10 +85,17 @@ public class FcmPushChannel extends Channel<SendReq> {
                     .subscribeOn(Schedulers.boundedElastic())
                     .flatMapMany(token -> Flux.fromIterable(recipients)
                             .concatMap(deviceToken -> {
+                                FcmSendReq singleReq = new FcmSendReq();
+                                singleReq.setChannelType(req.getChannelType());
+                                singleReq.setDeviceTokens(List.of(deviceToken));
+                                singleReq.setTitle(req.getTitle());
+                                singleReq.setBody(req.getBody());
+                                singleReq.setData(req.getData());
+                                singleReq.setPriority(req.getPriority());
+
                                 byte[] bodyBytes;
                                 try {
-                                    bodyBytes = buildFcmPayloadBytes(objectMapper, deviceToken, alertTitle, alertBody,
-                                            extraData);
+                                    bodyBytes = buildFcmPayloadBytes(objectMapper, singleReq);
                                 } catch (Exception e) {
                                     return Mono.error(e);
                                 }
@@ -136,45 +141,44 @@ public class FcmPushChannel extends Channel<SendReq> {
         return credentials.getAccessToken().getTokenValue();
     }
 
-    private static byte[] buildFcmPayloadBytes(ObjectMapper objectMapper, String token, String title, String body,
-            Map<String, Object> extraData) throws Exception {
+    private static byte[] buildFcmPayloadBytes(ObjectMapper objectMapper, FcmSendReq req) throws Exception {
         Map<String, Object> notification = new LinkedHashMap<>();
-        if (StringUtils.isNotBlank(title)) {
-            notification.put("title", title);
+        if (StringUtils.isNotBlank(req.getTitle())) {
+            notification.put("title", req.getTitle());
         }
-        notification.put("body", body != null ? body : "");
+        notification.put("body", req.getBody() != null ? req.getBody() : "");
 
         Map<String, Object> androidNotification = new LinkedHashMap<>();
-        if (StringUtils.isNotBlank(title)) {
-            androidNotification.put("title", title);
+        if (StringUtils.isNotBlank(req.getTitle())) {
+            androidNotification.put("title", req.getTitle());
         }
-        androidNotification.put("body", body != null ? body : "");
+        androidNotification.put("body", req.getBody() != null ? req.getBody() : "");
 
         Map<String, Object> android = new LinkedHashMap<>();
-        android.put("priority", "HIGH");
+        android.put("priority", StringUtils.isNotBlank(req.getPriority()) ? req.getPriority() : "HIGH");
         android.put("notification", androidNotification);
 
-        Map<String, Object> message = new LinkedHashMap<>();
-        message.put("token", token);
-        message.put("notification", notification);
-        message.put("android", android);
-
-        if (extraData != null && !extraData.isEmpty()) {
+        Map<String, Object> data = req.getData();
+        if (data != null && !data.isEmpty()) {
             Map<String, String> dataMap = new LinkedHashMap<>();
-            for (Map.Entry<String, Object> e : extraData.entrySet()) {
+            for (Map.Entry<String, Object> e : data.entrySet()) {
                 String k = e.getKey();
                 if (k != null && !k.isBlank()) {
                     dataMap.put(k, e.getValue() != null ? e.getValue().toString() : "");
                 }
             }
             if (!dataMap.isEmpty()) {
-                message.put("data", dataMap);
+                android.put("data", dataMap);
             }
         }
 
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("message", message);
-        return objectMapper.writeValueAsBytes(payload);
+        return objectMapper.writeValueAsBytes(Map.of(
+                "message", Map.of(
+                        "token", req.getDeviceTokens().get(0),
+                        "notification", notification,
+                        "android", android
+                )
+        ));
     }
 
     private Mono<String> postFcmMessage(String accessToken, String endpoint, byte[] bodyBytes) {

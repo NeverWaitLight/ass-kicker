@@ -6,7 +6,6 @@ import static org.mockito.Mockito.when;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.github.waitlight.asskicker.model.ChannelEntity;
-import com.github.waitlight.asskicker.channel.impl.SendReq;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,8 +15,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.dto.UniAddress;
-import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.service.ChannelService;
 
 import reactor.core.publisher.Flux;
@@ -74,8 +71,9 @@ class ChannelManagerRefreshFailureTest {
         }
 
         @Override
-        protected Mono<String> doSend(UniMessage uniMessage, UniAddress uniAddress) {
+        public Mono<String> send(SendReq req) {
             return Mono.empty();
         }
+
     }
 }
