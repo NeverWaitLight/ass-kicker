@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.github.waitlight.asskicker.config.OpenApiConfig;
 import com.github.waitlight.asskicker.converter.ChannelConverter;
-import com.github.waitlight.asskicker.dto.PageReq;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.channel.CreateChannelDTO;
@@ -57,23 +56,25 @@ public class ChannelController {
 
         @Operation(summary = "分页查询", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @GetMapping
-        public Mono<PageResp<ChannelVO>> page(@Validated PageReq pageReq,
+        public Mono<PageResp<ChannelVO>> page(
+                        @RequestParam(defaultValue = "1") int page,
+                        @RequestParam(defaultValue = "10") int size,
+                        @RequestParam(required = false) String keyword,
                         @RequestParam(required = false) ChannelType channelType,
                         @RequestParam(required = false) ChannelProvider provider) {
-                int page = pageReq.getPage();
-                int size = pageReq.getSize();
-                String keyword = pageReq.getKeyword();
-                int offset = (page - 1) * size;
+                int p = Math.max(page, 1);
+                int s = Math.max(size, 1);
+                int offset = (p - 1) * s;
 
                 return channelService.count(keyword, channelType, provider)
                                 .flatMap(total -> {
                                         if (total == 0) {
-                                                return Mono.just(PageResp.success(page, size, total, List.of()));
+                                                return Mono.just(PageResp.success(p, s, total, List.of()));
                                         }
-                                        return channelService.list(keyword, channelType, provider, size, offset)
+                                        return channelService.list(keyword, channelType, provider, s, offset)
                                                         .map(channelConverter::toVO)
                                                         .collectList()
-                                                        .map(channels -> PageResp.success(page, size, total, channels));
+                                                        .map(channels -> PageResp.success(p, s, total, channels));
                                 });
         }
 
