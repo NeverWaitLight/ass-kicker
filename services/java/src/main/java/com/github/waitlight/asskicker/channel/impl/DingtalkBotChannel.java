@@ -91,8 +91,8 @@ public class DingtalkBotChannel extends Channel<DingtalkSendReq> {
             if (chatIds == null || chatIds.isEmpty()) {
                 return Mono.error(new IllegalArgumentException("DINGTALK_BOT openConversationIds required"));
             }
-            requireNonBlank(properties.getAppKey(), "appKey");
-            requireNonBlank(properties.getAppSecret(), "appSecret");
+            requireNonBlank(properties.getClientId(), "appKey");
+            requireNonBlank(properties.getClientSecret(), "appSecret");
             requireNonBlank(properties.getRobotCode(), "robotCode");
 
             String msgParamJson;
@@ -114,8 +114,8 @@ public class DingtalkBotChannel extends Channel<DingtalkSendReq> {
 
     private String fetchAccessToken() {
         GetAccessTokenRequest req = new GetAccessTokenRequest()
-                .setAppKey(properties.getAppKey().trim())
-                .setAppSecret(properties.getAppSecret().trim());
+                .setAppKey(properties.getClientId().trim())
+                .setAppSecret(properties.getClientSecret().trim());
         try {
             GetAccessTokenResponse response = oauthClient.getAccessToken(req);
             GetAccessTokenResponseBody body = response != null ? response.getBody() : null;
@@ -194,10 +194,10 @@ public class DingtalkBotChannel extends Channel<DingtalkSendReq> {
     static class Properties {
 
         @NotBlank
-        private String appKey;
+        private String clientId;
 
         @NotBlank
-        private String appSecret;
+        private String clientSecret;
 
         @NotBlank
         private String robotCode;
