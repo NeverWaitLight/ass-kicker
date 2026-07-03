@@ -8,7 +8,7 @@ import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class DingtalkSendReq extends SendReq {
+public class DingTalkSendReq extends SendReq {
     private List<String> openConversationIds;
     private String content;
     private String title;

@@ -36,7 +36,7 @@ import reactor.core.scheduler.Schedulers;
  * ({@code com.aliyun:dingtalk}), which encapsulates OAuth token retrieval +
  * group-send under {@code api.dingtalk.com}.
  */
-public class DingtalkBotChannel extends Channel<DingtalkSendReq> {
+public class DingTalkBotChannel extends Channel<DingTalkSendReq> {
 
     public static final ChannelType TYPE = ChannelType.DINGTALK;
     public static final ChannelProvider PROVIDER = ChannelProvider.DINGTALK;
@@ -47,7 +47,7 @@ public class DingtalkBotChannel extends Channel<DingtalkSendReq> {
     private final com.aliyun.dingtalkoauth2_1_0.Client oauthClient;
     private final com.aliyun.dingtalkrobot_1_0.Client robotClient;
 
-    public DingtalkBotChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
+    public DingTalkBotChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
         try {
@@ -58,9 +58,9 @@ public class DingtalkBotChannel extends Channel<DingtalkSendReq> {
         }
     }
 
-    DingtalkBotChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper,
-            com.aliyun.dingtalkoauth2_1_0.Client oauthClient,
-            com.aliyun.dingtalkrobot_1_0.Client robotClient) {
+    DingTalkBotChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper,
+                       com.aliyun.dingtalkoauth2_1_0.Client oauthClient,
+                       com.aliyun.dingtalkrobot_1_0.Client robotClient) {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
         this.oauthClient = oauthClient;
@@ -70,11 +70,11 @@ public class DingtalkBotChannel extends Channel<DingtalkSendReq> {
     /**
      * Visible for testing — lets tests inject mocked SDK clients to avoid real network calls.
      */
-    public static DingtalkBotChannel forTesting(ChannelEntity provider, WebClient webClient,
-            ObjectMapper objectMapper,
-            com.aliyun.dingtalkoauth2_1_0.Client oauthClient,
-            com.aliyun.dingtalkrobot_1_0.Client robotClient) {
-        return new DingtalkBotChannel(provider, webClient, objectMapper, oauthClient, robotClient);
+    public static DingTalkBotChannel forTesting(ChannelEntity provider, WebClient webClient,
+                                                ObjectMapper objectMapper,
+                                                com.aliyun.dingtalkoauth2_1_0.Client oauthClient,
+                                                com.aliyun.dingtalkrobot_1_0.Client robotClient) {
+        return new DingTalkBotChannel(provider, webClient, objectMapper, oauthClient, robotClient);
     }
 
     private static Config buildConfig() {
@@ -85,7 +85,7 @@ public class DingtalkBotChannel extends Channel<DingtalkSendReq> {
     }
 
     @Override
-    public Mono<String> send(DingtalkSendReq req) {
+    public Mono<String> send(DingTalkSendReq req) {
         return Mono.defer(() -> {
             List<String> chatIds = req.getOpenConversationIds();
             if (chatIds == null || chatIds.isEmpty()) {
@@ -179,7 +179,7 @@ public class DingtalkBotChannel extends Channel<DingtalkSendReq> {
         }
     }
 
-    private static String buildPlainText(DingtalkSendReq req) {
+    private static String buildPlainText(DingTalkSendReq req) {
         String title = req.getTitle();
         String content = req.getContent();
         if (StringUtils.isNotBlank(title)) {

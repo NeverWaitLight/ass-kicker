@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.channel.SendReq;
+import com.github.waitlight.asskicker.channel.impl.DingTalkSendReq;
 import com.github.waitlight.asskicker.dto.channel.ChannelDebugResultVO;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
@@ -96,7 +97,7 @@ public class ChannelDebugService {
         } else if (className.contains("FcmPushChannel")) {
             return com.github.waitlight.asskicker.channel.impl.FcmSendReq.class;
         } else if (className.contains("DingtalkBotChannel")) {
-            return com.github.waitlight.asskicker.channel.impl.DingtalkSendReq.class;
+            return DingTalkSendReq.class;
         }
 
         throw new IllegalArgumentException("Unknown channel type: " + className);

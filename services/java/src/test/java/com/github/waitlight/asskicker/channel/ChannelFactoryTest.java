@@ -115,7 +115,7 @@ class ChannelFactoryTest {
         }
         """;
     ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
-    assertThat(factory.create(entity)).isInstanceOf(DingtalkBotChannel.class);
+    assertThat(factory.create(entity)).isInstanceOf(DingTalkBotChannel.class);
   }
 
   @Test
