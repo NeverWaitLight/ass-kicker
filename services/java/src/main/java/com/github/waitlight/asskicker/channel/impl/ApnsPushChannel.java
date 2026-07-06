@@ -31,7 +31,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-@Channel(type = ChannelType.APNS, provider = ChannelProvider.APPLE)
+@Channel(type = ChannelType.APNS, provider = ChannelProvider.APPLE, reqType = PushReq.class)
 public class ApnsPushChannel extends AbstractChannel<PushReq> {
 
     private static final String SANDBOX_KEYWORD = "sandbox";

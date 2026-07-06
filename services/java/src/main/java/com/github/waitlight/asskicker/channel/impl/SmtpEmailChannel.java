@@ -25,7 +25,7 @@ import lombok.NoArgsConstructor;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-@Channel(type = ChannelType.EMAIL, provider = ChannelProvider.SMTP)
+@Channel(type = ChannelType.EMAIL, provider = ChannelProvider.SMTP, reqType = EmailReq.class)
 public class SmtpEmailChannel extends AbstractChannel<EmailReq> {
 
     private final Properties properties;

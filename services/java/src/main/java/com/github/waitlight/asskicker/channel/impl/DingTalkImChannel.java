@@ -24,7 +24,7 @@ import reactor.core.scheduler.Schedulers;
 /**
  * DingTalk custom robot: sends text messages via webhook with HMAC-SHA256 signing.
  */
-@Channel(type = ChannelType.DINGTALK, provider = ChannelProvider.DINGTALK)
+@Channel(type = ChannelType.DINGTALK, provider = ChannelProvider.DINGTALK, reqType = ImReq.class)
 public class DingTalkImChannel extends AbstractChannel<ImReq> {
 
     private static final String WEBHOOK_URL = "https://oapi.dingtalk.com/robot/send";

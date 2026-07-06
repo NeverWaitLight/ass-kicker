@@ -20,7 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-@Channel(type = ChannelType.SMS, provider = ChannelProvider.ALIYUN)
+@Channel(type = ChannelType.SMS, provider = ChannelProvider.ALIYUN, reqType = SmsReq.class)
 public class AliyunSmsChannel extends AbstractChannel<SmsReq> {
 
     private static final String DEFAULT_ENDPOINT = "dysmsapi.aliyuncs.com";

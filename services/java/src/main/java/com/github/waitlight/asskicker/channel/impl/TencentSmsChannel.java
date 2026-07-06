@@ -23,7 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-@Channel(type = ChannelType.SMS, provider = ChannelProvider.TENCENT)
+@Channel(type = ChannelType.SMS, provider = ChannelProvider.TENCENT, reqType = SmsReq.class)
 public class TencentSmsChannel extends AbstractChannel<SmsReq> {
 
     private static final String DEFAULT_ENDPOINT = "sms.tencentcloudapi.com";

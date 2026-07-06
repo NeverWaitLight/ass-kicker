@@ -27,7 +27,7 @@ import reactor.core.publisher.Mono;
  * Feishu 官方 SDK (com.larksuite.oapi:larksuite-oapi) 面向企业应用 (需 AppID/AppSecret 走 OAuth),
  * 并未提供自定义机器人 webhook 的封装类,因此这里直接使用 WebClient 调用 webhook。
  */
-@Channel(type = ChannelType.FEISHU, provider = ChannelProvider.FEISHU)
+@Channel(type = ChannelType.FEISHU, provider = ChannelProvider.FEISHU, reqType = ImReq.class)
 public class FeishuImChannel extends AbstractChannel<ImReq> {
 
     private static final String WEBHOOK_URL_TEMPLATE = "https://open.feishu.cn/open-apis/bot/v2/hook/%s";

@@ -34,7 +34,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 @Slf4j
-@Channel(type = ChannelType.FCM, provider = ChannelProvider.GOOGLE)
+@Channel(type = ChannelType.FCM, provider = ChannelProvider.GOOGLE, reqType = PushReq.class)
 public class FcmPushChannel extends AbstractChannel<PushReq> {
 
     private final Properties properties;

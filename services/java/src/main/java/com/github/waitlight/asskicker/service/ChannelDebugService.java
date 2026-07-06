@@ -2,18 +2,16 @@ package com.github.waitlight.asskicker.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.AbstractChannel;
+import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.channel.SendReq;
-import com.github.waitlight.asskicker.channel.impl.EmailReq;
-import com.github.waitlight.asskicker.channel.impl.ImReq;
-import com.github.waitlight.asskicker.channel.impl.PushReq;
-import com.github.waitlight.asskicker.channel.impl.SmsReq;
 import com.github.waitlight.asskicker.dto.channel.ChannelDebugResultVO;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -89,18 +87,11 @@ public class ChannelDebugService {
     }
 
     private Class<? extends SendReq> determineSendReqClass(AbstractChannel<?> channel) {
-        String className = channel.getClass().getName();
-
-        if (className.contains("SmtpEmailChannel")) {
-            return EmailReq.class;
-        } else if (className.contains("AliyunSmsChannel") || className.contains("TencentSmsChannel")) {
-            return SmsReq.class;
-        } else if (className.contains("ApnsPushChannel") || className.contains("FcmPushChannel")) {
-            return PushReq.class;
-        } else if (className.contains("DingTalkImChannel") || className.contains("FeishuImChannel")) {
-            return ImReq.class;
+        Channel spec = AnnotationUtils.findAnnotation(channel.getClass(), Channel.class);
+        if (spec == null) {
+            throw new IllegalArgumentException(
+                    "Channel " + channel.getClass().getName() + " missing @Channel annotation");
         }
-
-        throw new IllegalArgumentException("Unknown channel type: " + className);
+        return spec.reqType();
     }
 }
