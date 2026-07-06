@@ -29,6 +29,7 @@ public class ChannelManager {
 
     private final ConcurrentHashMap<String, AbstractChannel<?>> cache = new ConcurrentHashMap<>();
     private final ReentrantLock refreshLock = new ReentrantLock();
+    private volatile boolean closed = false;
 
     @PostConstruct
     void init() {
@@ -66,6 +67,10 @@ public class ChannelManager {
     public void refresh() {
         refreshLock.lock();
         try {
+            if (closed) {
+                log.info("Channel cache refresh skipped, manager already closed");
+                return;
+            }
             ConcurrentHashMap<String, AbstractChannel<?>> next = new ConcurrentHashMap<>();
             List<ChannelEntity> enabledProvider = channelService.findEnabled().collectList().block();
             if (enabledProvider == null) {
@@ -92,8 +97,20 @@ public class ChannelManager {
 
     @PreDestroy
     void shutdown() {
-        disposeAll(new ArrayList<>(cache.values()));
-        cache.clear();
+        refreshLock.lock();
+        try {
+            if (closed) {
+                return;
+            }
+            closed = true;
+            List<AbstractChannel<?>> toDispose = new ArrayList<>(cache.values());
+            cache.clear();
+            log.info("Shutting down ChannelManager, disposing {} channel(s)", toDispose.size());
+            disposeAll(toDispose);
+            log.info("ChannelManager shutdown complete");
+        } finally {
+            refreshLock.unlock();
+        }
     }
 
     private void disposeAll(List<AbstractChannel<?>> channels) {
