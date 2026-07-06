@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.channel.SendReq;
-import com.github.waitlight.asskicker.channel.impl.DingTalkBotChannel;
 import com.github.waitlight.asskicker.channel.impl.EmailReq;
+import com.github.waitlight.asskicker.channel.impl.ImReq;
 import com.github.waitlight.asskicker.channel.impl.PushReq;
 import com.github.waitlight.asskicker.channel.impl.SmsReq;
 import com.github.waitlight.asskicker.dto.channel.ChannelDebugResultVO;
@@ -97,8 +97,8 @@ public class ChannelDebugService {
             return SmsReq.class;
         } else if (className.contains("ApnsPushChannel") || className.contains("FcmPushChannel")) {
             return PushReq.class;
-        } else if (className.contains("DingTalkBotChannel")) {
-            return DingTalkBotChannel.DingTalkSendReq.class;
+        } else if (className.contains("DingTalkImChannel") || className.contains("FeishuImChannel")) {
+            return ImReq.class;
         }
 
         throw new IllegalArgumentException("Unknown channel type: " + className);

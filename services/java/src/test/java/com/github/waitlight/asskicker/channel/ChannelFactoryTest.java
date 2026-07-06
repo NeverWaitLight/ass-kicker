@@ -111,7 +111,23 @@ class ChannelFactoryTest {
         }
         """;
     ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
-    assertThat(factory.create(entity)).isInstanceOf(DingTalkBotChannel.class);
+    assertThat(factory.create(entity)).isInstanceOf(DingTalkImChannel.class);
+  }
+
+  @Test
+  @DisplayName("创建飞书Bot渠道")
+  void create_feishuBot_returnsFeishuImChannel() throws Exception {
+    String json = """
+        {
+          "code": "feishu-bot-factory",
+          "type": "FEISHU",
+          "provider": "FEISHU",
+          "enabled": true,
+          "properties": {}
+        }
+        """;
+    ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
+    assertThat(factory.create(entity)).isInstanceOf(FeishuImChannel.class);
   }
 
   @Test

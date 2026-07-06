@@ -13,6 +13,7 @@ public enum ChannelType {
     @Deprecated
     PUSH(ChannelGroup.PUSH),
     DINGTALK(ChannelGroup.IM),
+    FEISHU(ChannelGroup.IM),
     APNS(ChannelGroup.PUSH),
     FCM(ChannelGroup.PUSH);
 

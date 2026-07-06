@@ -12,12 +12,9 @@ import com.dingtalk.api.request.OapiRobotSendRequest;
 import com.dingtalk.api.response.OapiRobotSendResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -26,19 +23,19 @@ import reactor.core.scheduler.Schedulers;
 /**
  * DingTalk custom robot: sends text messages via webhook with HMAC-SHA256 signing.
  */
-public class DingTalkBotChannel extends Channel<DingTalkBotChannel.DingTalkSendReq> {
+public class DingTalkImChannel extends Channel<ImReq> {
 
     public static final ChannelType TYPE = ChannelType.DINGTALK;
     public static final ChannelProvider PROVIDER = ChannelProvider.DINGTALK;
 
     private static final String WEBHOOK_URL = "https://oapi.dingtalk.com/robot/send";
 
-    public DingTalkBotChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
+    public DingTalkImChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
         super(entity, webClient, objectMapper);
     }
 
     @Override
-    public Mono<String> send(DingTalkSendReq req) {
+    public Mono<String> send(ImReq req) {
         return Mono.fromCallable(() -> {
             String url = buildSignedUrl(req.getToken(), req.getSecret());
             DefaultDingTalkClient client = new DefaultDingTalkClient(url);
@@ -62,13 +59,14 @@ public class DingTalkBotChannel extends Channel<DingTalkBotChannel.DingTalkSendR
     }
 
     private static String buildSignedUrl(String token, String secret) {
-        long timestamp = System.currentTimeMillis();
-        String stringToSign = timestamp + "\n" + secret;
-        String sign = sign(stringToSign, secret);
-        return WEBHOOK_URL
-                + "?access_token=" + token
-                + "&timestamp=" + timestamp
-                + "&sign=" + sign;
+        StringBuilder url = new StringBuilder(WEBHOOK_URL).append("?access_token=").append(token);
+        if (StringUtils.isNotBlank(secret)) {
+            long timestamp = System.currentTimeMillis();
+            String stringToSign = timestamp + "\n" + secret;
+            String sign = sign(stringToSign, secret);
+            url.append("&timestamp=").append(timestamp).append("&sign=").append(sign);
+        }
+        return url.toString();
     }
 
     private static String sign(String stringToSign, String secret) {
@@ -80,16 +78,5 @@ public class DingTalkBotChannel extends Channel<DingTalkBotChannel.DingTalkSendR
         } catch (Exception e) {
             throw new IllegalStateException("DINGTALK_BOT sign failed", e);
         }
-    }
-
-    @EqualsAndHashCode(callSuper = true)
-    @Data
-    public static class DingTalkSendReq extends SendReq {
-        /** 机器人 webhook 的 access_token 参数值 */
-        private String token;
-        /** 机器人加签模式下的密钥,用于 HMAC-SHA256 签名;若机器人未启用加签可留空 */
-        private String secret;
-        /** 消息文本内容 */
-        private String content;
     }
 }

@@ -4,6 +4,7 @@ public enum ChannelProvider {
     ALIYUN,
     AWS,
     DINGTALK,
+    FEISHU,
     APPLE,
     GOOGLE,
     SMTP,
