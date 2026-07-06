@@ -6,7 +6,6 @@ import com.aliyun.dysmsapi20170525.models.SendSmsResponse;
 import com.aliyun.teaopenapi.models.Config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.exception.SendException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
@@ -15,15 +14,12 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.util.Map;
-
-public class AliyunSmsChannel extends Channel<AliyunSmsChannel.SmsSendReq> {
+public class AliyunSmsChannel extends Channel<SmsReq> {
 
     public static final ChannelType TYPE = ChannelType.SMS;
     public static final ChannelProvider PROVIDER = ChannelProvider.ALIYUN;
@@ -46,7 +42,7 @@ public class AliyunSmsChannel extends Channel<AliyunSmsChannel.SmsSendReq> {
     }
 
     @Override
-    public Mono<String> send(SmsSendReq req) {
+    public Mono<String> send(SmsReq req) {
         try {
             String templateParam = req.getTemplateParam() == null
                     ? "{}"
@@ -55,7 +51,7 @@ public class AliyunSmsChannel extends Channel<AliyunSmsChannel.SmsSendReq> {
             SendSmsRequest sendSmsRequest = new SendSmsRequest()
                     .setPhoneNumbers(req.getPhoneNumber())
                     .setSignName(req.getSignName())
-                    .setTemplateCode(req.getTemplateCode())
+                    .setTemplateCode(req.getTemplateId())
                     .setTemplateParam(templateParam);
 
             SendSmsResponse resp = client.sendSms(sendSmsRequest);
@@ -81,15 +77,5 @@ public class AliyunSmsChannel extends Channel<AliyunSmsChannel.SmsSendReq> {
 
         @Pattern(regexp = "^$|^[A-Za-z0-9.-]+(:\\d+)?$")
         private String endpoint;
-    }
-
-    @EqualsAndHashCode(callSuper = true)
-    @Data
-    public static class SmsSendReq extends SendReq {
-        private String countryCode;
-        private String phoneNumber;
-        private String signName;
-        private String templateCode;
-        private Map<String, String> templateParam;
     }
 }

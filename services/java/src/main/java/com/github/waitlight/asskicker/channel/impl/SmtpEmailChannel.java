@@ -3,7 +3,6 @@ package com.github.waitlight.asskicker.channel.impl;
 import java.util.List;
 
 import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
 import org.apache.commons.lang3.StringUtils;
@@ -21,12 +20,11 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-public class SmtpEmailChannel extends Channel<SmtpEmailChannel.EmailSendReq> {
+public class SmtpEmailChannel extends Channel<EmailReq> {
 
     public static final ChannelType TYPE = ChannelType.EMAIL;
     public static final ChannelProvider PROVIDER = ChannelProvider.SMTP;
@@ -41,7 +39,7 @@ public class SmtpEmailChannel extends Channel<SmtpEmailChannel.EmailSendReq> {
     }
 
     @Override
-    public Mono<String> send(EmailSendReq req) {
+    public Mono<String> send(EmailReq req) {
         return Mono.defer(() -> {
             List<String> recipients = req.getTo();
             if (recipients == null || recipients.isEmpty()) {
@@ -104,17 +102,6 @@ public class SmtpEmailChannel extends Channel<SmtpEmailChannel.EmailSendReq> {
 
         @NotBlank
         @Email
-        private String from;
-    }
-
-    @EqualsAndHashCode(callSuper = true)
-    @Data
-    public static class EmailSendReq extends SendReq {
-        private List<String> to;
-        private List<String> cc;
-        private List<String> bcc;
-        private String subject;
-        private String body;
         private String from;
     }
 }

@@ -4,12 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.channel.SendReq;
-import com.github.waitlight.asskicker.channel.impl.AliyunSmsChannel;
 import com.github.waitlight.asskicker.channel.impl.ApnsPushChannel;
 import com.github.waitlight.asskicker.channel.impl.DingTalkBotChannel;
+import com.github.waitlight.asskicker.channel.impl.EmailReq;
 import com.github.waitlight.asskicker.channel.impl.FcmPushChannel;
-import com.github.waitlight.asskicker.channel.impl.SmtpEmailChannel;
-import com.github.waitlight.asskicker.channel.impl.TencentSmsChannel;
+import com.github.waitlight.asskicker.channel.impl.SmsReq;
 import com.github.waitlight.asskicker.dto.channel.ChannelDebugResultVO;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
@@ -94,11 +93,9 @@ public class ChannelDebugService {
         String className = channel.getClass().getName();
 
         if (className.contains("SmtpEmailChannel")) {
-            return SmtpEmailChannel.EmailSendReq.class;
-        } else if (className.contains("AliyunSmsChannel")) {
-            return AliyunSmsChannel.SmsSendReq.class;
-        } else if (className.contains("TencentSmsChannel")) {
-            return TencentSmsChannel.SmsSendReq.class;
+            return EmailReq.class;
+        } else if (className.contains("AliyunSmsChannel") || className.contains("TencentSmsChannel")) {
+            return SmsReq.class;
         } else if (className.contains("ApnsPushChannel")) {
             return ApnsPushChannel.ApnsSendReq.class;
         } else if (className.contains("FcmPushChannel")) {

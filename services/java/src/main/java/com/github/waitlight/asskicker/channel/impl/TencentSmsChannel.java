@@ -2,7 +2,6 @@ package com.github.waitlight.asskicker.channel.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.exception.SendException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
@@ -18,15 +17,12 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-
-public class TencentSmsChannel extends Channel<TencentSmsChannel.SmsSendReq> {
+public class TencentSmsChannel extends Channel<SmsReq> {
 
     public static final ChannelType TYPE = ChannelType.SMS;
     public static final ChannelProvider PROVIDER = ChannelProvider.TENCENT;
@@ -36,6 +32,7 @@ public class TencentSmsChannel extends Channel<TencentSmsChannel.SmsSendReq> {
     private static final String SUCCESS_CODE = "Ok";
 
     private final SmsClient client;
+    private final String smsSdkAppId;
 
     public TencentSmsChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
         super(entity, webClient, objectMapper);
@@ -49,21 +46,22 @@ public class TencentSmsChannel extends Channel<TencentSmsChannel.SmsSendReq> {
             this.client = new SmsClient(credential,
                     StringUtils.defaultIfBlank(properties.getRegion(), DEFAULT_REGION),
                     clientProfile);
+            this.smsSdkAppId = properties.getSmsSdkAppId();
         } catch (Exception e) {
             throw new IllegalStateException("TENCENT_SMS SDK client init failed", e);
         }
     }
 
     @Override
-    public Mono<String> send(SmsSendReq req) {
+    public Mono<String> send(SmsReq req) {
         try {
             SendSmsRequest sendSmsRequest = new SendSmsRequest();
-            sendSmsRequest.setSmsSdkAppId(req.getSmsSdkAppId());
+            sendSmsRequest.setSmsSdkAppId(smsSdkAppId);
             sendSmsRequest.setSignName(req.getSignName());
             sendSmsRequest.setTemplateId(req.getTemplateId());
             sendSmsRequest.setPhoneNumberSet(new String[]{buildE164(req.getCountryCode(), req.getPhoneNumber())});
             if (req.getTemplateParam() != null && !req.getTemplateParam().isEmpty()) {
-                sendSmsRequest.setTemplateParamSet(req.getTemplateParam().toArray(new String[0]));
+                sendSmsRequest.setTemplateParamSet(req.getTemplateParam().values().toArray(new String[0]));
             }
 
             SendSmsResponse resp = client.SendSms(sendSmsRequest);
@@ -106,20 +104,12 @@ public class TencentSmsChannel extends Channel<TencentSmsChannel.SmsSendReq> {
         @NotBlank
         private String secretKey;
 
+        @NotBlank
+        private String smsSdkAppId;
+
         private String region;
 
         @Pattern(regexp = "^$|^[A-Za-z0-9.-]+(:\\d+)?$")
         private String endpoint;
-    }
-
-    @EqualsAndHashCode(callSuper = true)
-    @Data
-    public static class SmsSendReq extends SendReq {
-        private String countryCode;
-        private String phoneNumber;
-        private String smsSdkAppId;
-        private String signName;
-        private String templateId;
-        private List<String> templateParam;
     }
 }
