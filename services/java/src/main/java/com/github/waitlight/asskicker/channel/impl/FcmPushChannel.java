@@ -4,25 +4,26 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.SendReq;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
+import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.dto.UniAddress;
+import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.Notification;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -30,7 +31,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -40,125 +40,86 @@ public class FcmPushChannel extends Channel<FcmPushChannel.FcmSendReq> {
     public static final ChannelType TYPE = ChannelType.FCM;
     public static final ChannelProvider PROVIDER = ChannelProvider.GOOGLE;
 
-    private static final String FIREBASE_MESSAGING_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
-    private static final String FCM_ENDPOINT_TEMPLATE = "https://fcm.googleapis.com/v1/projects/%s/messages:send";
-
     private final Properties properties;
-    private final GoogleCredentials credentials;
-    private final String endpoint;
+    private final FirebaseApp firebaseApp;
+    private final FirebaseMessaging messaging;
 
     public FcmPushChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
         validateSpec(this.properties);
-        this.credentials = loadCredentials(this.properties.getServiceAccountJson());
-        this.endpoint = String.format(FCM_ENDPOINT_TEMPLATE, this.properties.getProjectId().trim());
+        this.firebaseApp = buildFirebaseApp(provider, this.properties);
+        this.messaging = FirebaseMessaging.getInstance(this.firebaseApp);
     }
 
-    // Package-private constructor for tests: lets MockWebServer intercept and inject fake credentials
     FcmPushChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper,
-            GoogleCredentials credentials, String endpoint) {
+            FirebaseApp firebaseApp, FirebaseMessaging messaging) {
         super(provider, webClient, objectMapper);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
-        this.credentials = credentials;
-        this.endpoint = endpoint;
+        this.firebaseApp = firebaseApp;
+        this.messaging = messaging;
     }
 
     /**
-     * Visible for testing — bypasses serviceAccountJson parsing and lets callers point the channel
-     * at a custom endpoint (e.g. MockWebServer) with pre-baked GoogleCredentials.
+     * Visible for testing — bypasses FirebaseApp initialization so tests can inject a mocked
+     * FirebaseMessaging without touching Google credentials or the network.
      */
     public static FcmPushChannel forTesting(ChannelEntity provider, WebClient webClient,
-            ObjectMapper objectMapper, GoogleCredentials credentials, String endpoint) {
-        return new FcmPushChannel(provider, webClient, objectMapper, credentials, endpoint);
+            ObjectMapper objectMapper, FirebaseMessaging messaging) {
+        return new FcmPushChannel(provider, webClient, objectMapper, null, messaging);
     }
 
     @Override
     public Mono<String> send(FcmSendReq req) {
         return Mono.defer(() -> {
-            List<String> recipients = req.getDeviceTokens();
-            if (recipients == null || recipients.isEmpty()) {
-                return Mono.error(new IllegalArgumentException("FCM deviceTokens required"));
+            String token = StringUtils.trimToNull(req.getDeviceToken());
+            if (token == null) {
+                return Mono.error(new IllegalArgumentException("FCM deviceToken required"));
             }
-
-            log.info("Sending FCM notification to {} recipient(s)", recipients.size());
-
-            return Mono.fromCallable(this::resolveAccessToken)
+            Message message = buildMessage(token, req);
+            log.info("Sending FCM notification to device token ***{}",
+                    token.length() > 6 ? token.substring(token.length() - 6) : token);
+            return Mono.fromCallable(() -> messaging.send(message))
                     .subscribeOn(Schedulers.boundedElastic())
-                    .flatMapMany(token -> Flux.fromIterable(recipients)
-                            .concatMap(deviceToken -> {
-                                FcmSendReq singleReq = new FcmSendReq();
-                                singleReq.setChannelType(req.getChannelType());
-                                singleReq.setDeviceTokens(List.of(deviceToken));
-                                singleReq.setTitle(req.getTitle());
-                                singleReq.setBody(req.getBody());
-                                singleReq.setData(req.getData());
-                                singleReq.setPriority(req.getPriority());
-
-                                byte[] bodyBytes;
-                                try {
-                                    bodyBytes = buildFcmPayloadBytes(objectMapper, singleReq);
-                                } catch (Exception e) {
-                                    return Mono.error(e);
-                                }
-                                return postFcmMessage(token, endpoint, bodyBytes);
-                            }))
-                    .collect(Collectors.joining(","))
-                    .map(names -> "FCM ok " + recipients.size() + " device(s) name=" + names);
+                    .map(name -> "FCM ok name=" + name)
+                    .onErrorMap(FirebaseMessagingException.class, ex -> new IllegalStateException(
+                            "FCM " + ex.getMessagingErrorCode() + ": " + ex.getMessage(), ex));
         });
     }
 
-    private List<String> normalizeRecipients(UniAddress uniAddress) {
-        List<String> recipients = uniAddress == null || uniAddress.getRecipients() == null
-                ? List.of()
-                : uniAddress.getRecipients().stream()
-                        .filter(Objects::nonNull)
-                        .map(String::trim)
-                        .filter(StringUtils::isNotBlank)
-                        .collect(Collectors.toList());
-        if (recipients.isEmpty()) {
-            throw new IllegalArgumentException("FCM recipients required");
-        }
-        return recipients;
-    }
-
-    private static void validateSpec(Properties p) {
-        if (StringUtils.isBlank(p.getProjectId()) || StringUtils.isBlank(p.getServiceAccountJson())) {
-            throw new IllegalStateException("FCM spec requires projectId serviceAccountJson");
+    @Override
+    public void dispose() {
+        if (firebaseApp != null) {
+            try {
+                firebaseApp.delete();
+            } catch (Exception e) {
+                log.warn("FCM FirebaseApp delete failed", e);
+            }
         }
     }
 
-    private static GoogleCredentials loadCredentials(String serviceAccountJson) {
-        try {
-            return GoogleCredentials.fromStream(
-                    new ByteArrayInputStream(serviceAccountJson.getBytes(StandardCharsets.UTF_8)))
-                    .createScoped(FIREBASE_MESSAGING_SCOPE);
-        } catch (IOException e) {
-            throw new IllegalStateException("FCM credentials init failed", e);
-        }
-    }
-
-    private String resolveAccessToken() throws IOException {
-        credentials.refreshIfExpired();
-        return credentials.getAccessToken().getTokenValue();
-    }
-
-    private static byte[] buildFcmPayloadBytes(ObjectMapper objectMapper, FcmSendReq req) throws Exception {
-        Map<String, Object> notification = new LinkedHashMap<>();
+    private static Message buildMessage(String deviceToken, FcmSendReq req) {
+        Notification.Builder notification = Notification.builder()
+                .setBody(req.getBody() != null ? req.getBody() : "");
         if (StringUtils.isNotBlank(req.getTitle())) {
-            notification.put("title", req.getTitle());
+            notification.setTitle(req.getTitle());
         }
-        notification.put("body", req.getBody() != null ? req.getBody() : "");
 
-        Map<String, Object> androidNotification = new LinkedHashMap<>();
+        AndroidNotification.Builder androidNotification = AndroidNotification.builder()
+                .setBody(req.getBody() != null ? req.getBody() : "");
         if (StringUtils.isNotBlank(req.getTitle())) {
-            androidNotification.put("title", req.getTitle());
+            androidNotification.setTitle(req.getTitle());
         }
-        androidNotification.put("body", req.getBody() != null ? req.getBody() : "");
 
-        Map<String, Object> android = new LinkedHashMap<>();
-        android.put("priority", StringUtils.isNotBlank(req.getPriority()) ? req.getPriority() : "HIGH");
-        android.put("notification", androidNotification);
+        AndroidConfig androidConfig = AndroidConfig.builder()
+                .setPriority(resolveAndroidPriority(req.getPriority()))
+                .setNotification(androidNotification.build())
+                .build();
+
+        Message.Builder builder = Message.builder()
+                .setToken(deviceToken)
+                .setNotification(notification.build())
+                .setAndroidConfig(androidConfig);
 
         Map<String, Object> data = req.getData();
         if (data != null && !data.isEmpty()) {
@@ -170,43 +131,44 @@ public class FcmPushChannel extends Channel<FcmPushChannel.FcmSendReq> {
                 }
             }
             if (!dataMap.isEmpty()) {
-                android.put("data", dataMap);
+                builder.putAllData(dataMap);
             }
         }
-
-        return objectMapper.writeValueAsBytes(Map.of(
-                "message", Map.of(
-                        "token", req.getDeviceTokens().get(0),
-                        "notification", notification,
-                        "android", android
-                )
-        ));
+        return builder.build();
     }
 
-    private Mono<String> postFcmMessage(String accessToken, String endpoint, byte[] bodyBytes) {
-        return webClient.post()
-                .uri(endpoint)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(bodyBytes)
-                .retrieve()
-                .bodyToMono(String.class)
-                .map(responseBody -> {
-                    try {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> resp = objectMapper.readValue(responseBody, Map.class);
-                        Object name = resp.get("name");
-                        return name != null ? name.toString() : "ok";
-                    } catch (Exception e) {
-                        return "ok";
-                    }
-                })
-                .onErrorMap(WebClientResponseException.class, ex -> new IllegalStateException(
-                        "FCM " + ex.getStatusCode().value()
-                                + (ex.getResponseBodyAsString() != null && !ex.getResponseBodyAsString().isBlank()
-                                        ? ": " + ex.getResponseBodyAsString()
-                                        : ""),
-                        ex));
+    private static AndroidConfig.Priority resolveAndroidPriority(String value) {
+        if (StringUtils.isBlank(value)) {
+            return AndroidConfig.Priority.HIGH;
+        }
+        try {
+            return AndroidConfig.Priority.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException(
+                    "FCM unsupported priority: " + value + " (allowed: NORMAL, HIGH)", ex);
+        }
+    }
+
+    private static void validateSpec(Properties p) {
+        if (StringUtils.isBlank(p.getProjectId()) || StringUtils.isBlank(p.getServiceAccountJson())) {
+            throw new IllegalStateException("FCM spec requires projectId serviceAccountJson");
+        }
+    }
+
+    private static FirebaseApp buildFirebaseApp(ChannelEntity entity, Properties p) {
+        try {
+            GoogleCredentials credentials = GoogleCredentials.fromStream(
+                    new ByteArrayInputStream(p.getServiceAccountJson().getBytes(StandardCharsets.UTF_8)));
+            FirebaseOptions options = FirebaseOptions.builder()
+                    .setCredentials(credentials)
+                    .setProjectId(p.getProjectId().trim())
+                    .build();
+            String base = StringUtils.isNotBlank(entity.getId()) ? entity.getId() : "fcm";
+            String appName = "fcm-" + base + "-" + UUID.randomUUID();
+            return FirebaseApp.initializeApp(options, appName);
+        } catch (IOException e) {
+            throw new IllegalStateException("FCM credentials init failed", e);
+        }
     }
 
     @Data
@@ -224,7 +186,7 @@ public class FcmPushChannel extends Channel<FcmPushChannel.FcmSendReq> {
     @EqualsAndHashCode(callSuper = true)
     @Data
     public static class FcmSendReq extends SendReq {
-        private List<String> deviceTokens;
+        private String deviceToken;
         private String title;
         private String body;
         private Map<String, Object> data;
