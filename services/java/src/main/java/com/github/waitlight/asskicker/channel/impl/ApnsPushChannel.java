@@ -2,13 +2,15 @@ package com.github.waitlight.asskicker.channel.impl;
 
 import com.eatthepath.pushy.apns.ApnsClient;
 import com.eatthepath.pushy.apns.ApnsClientBuilder;
+import com.eatthepath.pushy.apns.DeliveryPriority;
 import com.eatthepath.pushy.apns.PushNotificationResponse;
+import com.eatthepath.pushy.apns.PushType;
 import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
+import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
 import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.SendReq;
-import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
@@ -26,7 +28,10 @@ import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -70,25 +75,31 @@ public class ApnsPushChannel extends Channel<ApnsPushChannel.ApnsSendReq> {
                 return Mono.error(new IllegalArgumentException("APNs deviceTokens required"));
             }
 
-            UUID parsedApnsId = StringUtils.isBlank(properties.getApnsId())
+            UUID defaultApnsId = StringUtils.isBlank(properties.getApnsId())
                     ? null
                     : UUID.fromString(properties.getApnsId().trim());
+            UUID reqApnsId = StringUtils.isBlank(req.getApnsId())
+                    ? null
+                    : UUID.fromString(req.getApnsId().trim());
+            UUID apnsId = reqApnsId != null ? reqApnsId : defaultApnsId;
+
             String topic = properties.getBundleIdTopic().trim();
-            String payload;
-            try {
-                payload = buildApnsPayload(req);
-            } catch (Exception e) {
-                return Mono.error(e);
-            }
+            DeliveryPriority priority = resolveDeliveryPriority(req.getPriority());
+            PushType pushType = resolvePushType(req.getPushType());
+            Instant invalidationTime = req.getExpirationEpochMillis() == null
+                    ? null
+                    : Instant.ofEpochMilli(req.getExpirationEpochMillis());
+            String collapseId = StringUtils.trimToNull(req.getCollapseId());
+
+            String payload = buildApnsPayload(req);
 
             log.info("Sending APNs notification to {} recipient(s)", recipients.size());
 
             return Flux.fromIterable(recipients)
                     .concatMap(token -> {
                         SimpleApnsPushNotification notification = new SimpleApnsPushNotification(
-                                token, topic, payload, null,
-                                com.eatthepath.pushy.apns.DeliveryPriority.IMMEDIATE,
-                                com.eatthepath.pushy.apns.PushType.ALERT, null, parsedApnsId);
+                                token, topic, payload, invalidationTime,
+                                priority, pushType, collapseId, apnsId);
                         return Mono.fromFuture(apnsClient.sendNotification(notification))
                                 .map(this::extractApnsId);
                     })
@@ -115,44 +126,66 @@ public class ApnsPushChannel extends Channel<ApnsPushChannel.ApnsSendReq> {
         return apnsId != null ? apnsId.toString() : "ok";
     }
 
-    private List<String> normalizeRecipients(UniAddress uniAddress) {
-        List<String> recipients = uniAddress == null || uniAddress.getRecipients() == null
-                ? List.of()
-                : uniAddress.getRecipients().stream()
-                        .filter(Objects::nonNull)
-                        .map(String::trim)
-                        .filter(StringUtils::isNotBlank)
-                        .collect(Collectors.toList());
-        if (recipients.isEmpty()) {
-            throw new IllegalArgumentException("APNs recipients required");
-        }
-        return recipients;
-    }
+    private String buildApnsPayload(ApnsSendReq req) {
+        SimpleApnsPayloadBuilder builder = new SimpleApnsPayloadBuilder();
 
-    private String buildApnsPayload(ApnsSendReq req) throws Exception {
-        Map<String, Object> alert = new LinkedHashMap<>();
         if (StringUtils.isNotBlank(req.getTitle())) {
-            alert.put("title", req.getTitle());
+            builder.setAlertTitle(req.getTitle());
         }
-        alert.put("body", req.getBody() != null ? req.getBody() : "");
-        Map<String, Object> aps = new LinkedHashMap<>();
-        aps.put("alert", alert);
-        aps.put("sound", req.getSound() != null ? req.getSound() : "default");
+        if (StringUtils.isNotBlank(req.getSubtitle())) {
+            builder.setAlertSubtitle(req.getSubtitle());
+        }
+        builder.setAlertBody(req.getBody() != null ? req.getBody() : "");
+        builder.setSound(req.getSound() != null ? req.getSound() : "default");
         if (req.getBadge() != null) {
-            aps.put("badge", req.getBadge());
+            builder.setBadgeNumber(req.getBadge());
         }
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("aps", aps);
+        if (StringUtils.isNotBlank(req.getCategory())) {
+            builder.setCategoryName(req.getCategory());
+        }
+        if (StringUtils.isNotBlank(req.getThreadId())) {
+            builder.setThreadId(req.getThreadId());
+        }
+        if (req.getContentAvailable() != null) {
+            builder.setContentAvailable(req.getContentAvailable());
+        }
+        if (req.getMutableContent() != null) {
+            builder.setMutableContent(req.getMutableContent());
+        }
+
         Map<String, Object> customData = req.getCustomData();
         if (customData != null && !customData.isEmpty()) {
             for (Map.Entry<String, Object> e : customData.entrySet()) {
                 String k = e.getKey();
                 if (k != null && !k.isBlank() && !"aps".equals(k)) {
-                    payload.put(k, e.getValue());
+                    builder.addCustomProperty(k, e.getValue());
                 }
             }
         }
-        return objectMapper.writeValueAsString(payload);
+        return builder.build();
+    }
+
+    private static DeliveryPriority resolveDeliveryPriority(String value) {
+        if (StringUtils.isBlank(value)) {
+            return DeliveryPriority.IMMEDIATE;
+        }
+        try {
+            return DeliveryPriority.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException(
+                    "APNs unsupported priority: " + value + " (allowed: IMMEDIATE, CONSERVE_POWER)", ex);
+        }
+    }
+
+    private static PushType resolvePushType(String value) {
+        if (StringUtils.isBlank(value)) {
+            return PushType.ALERT;
+        }
+        try {
+            return PushType.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("APNs unsupported pushType: " + value, ex);
+        }
     }
 
     private static void validateSpec(Properties p) {
@@ -230,9 +263,19 @@ public class ApnsPushChannel extends Channel<ApnsPushChannel.ApnsSendReq> {
     public static class ApnsSendReq extends SendReq {
         private List<String> deviceTokens;
         private String title;
+        private String subtitle;
         private String body;
         private Integer badge;
         private String sound;
+        private String category;
+        private String threadId;
+        private String collapseId;
+        private Boolean contentAvailable;
+        private Boolean mutableContent;
+        private String priority;
+        private String pushType;
+        private String apnsId;
+        private Long expirationEpochMillis;
         private Map<String, Object> customData;
     }
 }
