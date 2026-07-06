@@ -4,7 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.channel.SendReq;
-import com.github.waitlight.asskicker.channel.impl.DingTalkSendReq;
+import com.github.waitlight.asskicker.channel.impl.AliyunSmsChannel;
+import com.github.waitlight.asskicker.channel.impl.ApnsPushChannel;
+import com.github.waitlight.asskicker.channel.impl.DingTalkBotChannel;
+import com.github.waitlight.asskicker.channel.impl.FcmPushChannel;
+import com.github.waitlight.asskicker.channel.impl.SmtpEmailChannel;
 import com.github.waitlight.asskicker.dto.channel.ChannelDebugResultVO;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
@@ -89,15 +93,15 @@ public class ChannelDebugService {
         String className = channel.getClass().getName();
 
         if (className.contains("SmtpEmailChannel")) {
-            return com.github.waitlight.asskicker.channel.impl.EmailSendReq.class;
+            return SmtpEmailChannel.EmailSendReq.class;
         } else if (className.contains("AliyunSmsChannel")) {
-            return com.github.waitlight.asskicker.channel.impl.SmsSendReq.class;
+            return AliyunSmsChannel.SmsSendReq.class;
         } else if (className.contains("ApnsPushChannel")) {
-            return com.github.waitlight.asskicker.channel.impl.ApnsSendReq.class;
+            return ApnsPushChannel.ApnsSendReq.class;
         } else if (className.contains("FcmPushChannel")) {
-            return com.github.waitlight.asskicker.channel.impl.FcmSendReq.class;
+            return FcmPushChannel.FcmSendReq.class;
         } else if (className.contains("DingTalkBotChannel")) {
-            return DingTalkSendReq.class;
+            return DingTalkBotChannel.DingTalkSendReq.class;
         }
 
         throw new IllegalArgumentException("Unknown channel type: " + className);

@@ -7,6 +7,7 @@ import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
 import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
@@ -15,6 +16,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class ApnsPushChannel extends Channel<ApnsSendReq> {
+public class ApnsPushChannel extends Channel<ApnsPushChannel.ApnsSendReq> {
 
     public static final ChannelType TYPE = ChannelType.APNS;
     public static final ChannelProvider PROVIDER = ChannelProvider.APPLE;
@@ -221,5 +223,16 @@ public class ApnsPushChannel extends Channel<ApnsSendReq> {
 
         @Pattern(regexp = "^$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
         private String apnsId;
+    }
+
+    @EqualsAndHashCode(callSuper = true)
+    @Data
+    public static class ApnsSendReq extends SendReq {
+        private List<String> deviceTokens;
+        private String title;
+        private String body;
+        private Integer badge;
+        private String sound;
+        private Map<String, Object> customData;
     }
 }

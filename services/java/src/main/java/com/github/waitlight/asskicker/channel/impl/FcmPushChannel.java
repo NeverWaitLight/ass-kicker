@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.SendReq;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -26,6 +27,7 @@ import com.google.auth.oauth2.GoogleCredentials;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -33,7 +35,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 @Slf4j
-public class FcmPushChannel extends Channel<FcmSendReq> {
+public class FcmPushChannel extends Channel<FcmPushChannel.FcmSendReq> {
 
     public static final ChannelType TYPE = ChannelType.FCM;
     public static final ChannelProvider PROVIDER = ChannelProvider.GOOGLE;
@@ -217,5 +219,15 @@ public class FcmPushChannel extends Channel<FcmSendReq> {
 
         @NotBlank
         private String serviceAccountJson;
+    }
+
+    @EqualsAndHashCode(callSuper = true)
+    @Data
+    public static class FcmSendReq extends SendReq {
+        private List<String> deviceTokens;
+        private String title;
+        private String body;
+        private Map<String, Object> data;
+        private String priority;
     }
 }
