@@ -28,11 +28,11 @@ import reactor.core.publisher.Mono;
  * 并未提供自定义机器人 webhook 的封装类,因此这里直接使用 WebClient 调用 webhook。
  */
 @Channel(type = ChannelType.FEISHU, provider = ChannelProvider.FEISHU, reqType = ImReq.class)
-public class FeishuImChannel extends AbstractChannel<ImReq> {
+public class FeiShuImChannel extends AbstractChannel<ImReq> {
 
     private static final String WEBHOOK_URL_TEMPLATE = "https://open.feishu.cn/open-apis/bot/v2/hook/%s";
 
-    public FeishuImChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
+    public FeiShuImChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
         super(entity, webClient, objectMapper);
     }
 
@@ -53,7 +53,7 @@ public class FeishuImChannel extends AbstractChannel<ImReq> {
                     .retrieve()
                     .bodyToMono(Map.class)
                     .timeout(Duration.ofSeconds(10))
-                    .flatMap(FeishuImChannel::verifyResponse);
+                    .flatMap(FeiShuImChannel::verifyResponse);
         });
     }
 

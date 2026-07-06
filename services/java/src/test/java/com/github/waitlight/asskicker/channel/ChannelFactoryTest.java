@@ -116,7 +116,7 @@ class ChannelFactoryTest {
 
   @Test
   @DisplayName("创建飞书Bot渠道")
-  void create_feishuBot_returnsFeishuImChannel() throws Exception {
+  void create_feishuBot_returnsFeiShuImChannel() throws Exception {
     String json = """
         {
           "code": "feishu-bot-factory",
@@ -127,7 +127,7 @@ class ChannelFactoryTest {
         }
         """;
     ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
-    assertThat(factory.create(entity)).isInstanceOf(FeishuImChannel.class);
+    assertThat(factory.create(entity)).isInstanceOf(FeiShuImChannel.class);
   }
 
   @Test
