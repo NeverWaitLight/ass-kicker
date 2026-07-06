@@ -29,6 +29,7 @@
     <mustache.version>0.9.14</mustache.version>
     <aws.java.sdk.version>2.29.45</aws.java.sdk.version>
     <aliyun.dysmsapi.version>4.1.1</aliyun.dysmsapi.version>
+    <tencentcloud.sms.version>3.1.1451</tencentcloud.sms.version>
     <pushy.version>0.15.4</pushy.version>
     <dingtalk.service.sdk.version>2.0.0</dingtalk.service.sdk.version>
     <commons-codec.version>1.11</commons-codec.version>
@@ -167,6 +168,13 @@
       <groupId>com.aliyun</groupId>
       <artifactId>dysmsapi20170525</artifactId>
       <version>${aliyun.dysmsapi.version}</version>
+    </dependency>
+
+    <!-- Tencent Cloud SMS -->
+    <dependency>
+      <groupId>com.tencentcloudapi</groupId>
+      <artifactId>tencentcloud-sdk-java-sms</artifactId>
+      <version>${tencentcloud.sms.version}</version>
     </dependency>
 
     <!-- Dingtalk Custom Robot SDK -->

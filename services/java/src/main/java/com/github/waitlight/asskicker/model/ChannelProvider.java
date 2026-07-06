@@ -7,5 +7,6 @@ public enum ChannelProvider {
     APPLE,
     GOOGLE,
     SMTP,
+    TENCENT,
     ;
 }

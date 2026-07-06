@@ -9,6 +9,7 @@ import com.github.waitlight.asskicker.channel.impl.ApnsPushChannel;
 import com.github.waitlight.asskicker.channel.impl.DingTalkBotChannel;
 import com.github.waitlight.asskicker.channel.impl.FcmPushChannel;
 import com.github.waitlight.asskicker.channel.impl.SmtpEmailChannel;
+import com.github.waitlight.asskicker.channel.impl.TencentSmsChannel;
 import com.github.waitlight.asskicker.dto.channel.ChannelDebugResultVO;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
@@ -96,6 +97,8 @@ public class ChannelDebugService {
             return SmtpEmailChannel.EmailSendReq.class;
         } else if (className.contains("AliyunSmsChannel")) {
             return AliyunSmsChannel.SmsSendReq.class;
+        } else if (className.contains("TencentSmsChannel")) {
+            return TencentSmsChannel.SmsSendReq.class;
         } else if (className.contains("ApnsPushChannel")) {
             return ApnsPushChannel.ApnsSendReq.class;
         } else if (className.contains("FcmPushChannel")) {

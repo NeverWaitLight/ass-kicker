@@ -151,6 +151,27 @@ class ChannelFactoryTest {
   }
 
   @Test
+  @DisplayName("创建腾讯云短信渠道")
+  void create_tencentSms_returnsTencentSmsChannel() throws Exception {
+    String json = """
+        {
+          "code": "tencent-sms-factory",
+          "type": "SMS",
+          "provider": "TENCENT",
+          "enabled": true,
+          "properties": {
+            "secretId": "id",
+            "secretKey": "key",
+            "region": "ap-guangzhou",
+            "endpoint": "sms.tencentcloudapi.com"
+          }
+        }
+        """;
+    ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
+    assertThat(factory.create(entity)).isInstanceOf(TencentSmsChannel.class);
+  }
+
+  @Test
   @DisplayName("创建 SMTP 邮件渠道")
   void create_smtp_returnsSmtpChannel() throws Exception {
     String json = """
