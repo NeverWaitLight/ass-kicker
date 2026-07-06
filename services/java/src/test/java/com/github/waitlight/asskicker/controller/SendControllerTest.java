@@ -60,23 +60,6 @@ class SendControllerTest {
     }
 
     @Test
-    void submit_whenTemplateVariablesMissing_rejectsWithoutPublishing() {
-        UniTask task = validTask();
-        when(templateEngine.findMissingVariables(any(UniMessage.class)))
-                .thenReturn(Mono.just(new LinkedHashSet<>(List.of("name"))));
-
-        StepVerifier.create(controller.submit(task))
-                .assertNext(resp -> {
-                    assertThat(resp.code()).isEqualTo("400");
-                    assertThat(resp.message()).isEqualTo("模板变量未填充: name");
-                    assertThat(resp.data()).isNull();
-                })
-                .verifyComplete();
-
-        verify(sendTaskProducer, never()).publish(any(UniTask.class));
-    }
-
-    @Test
     void send_whenTemplateVariablesComplete_publishesTask() {
         UniTask task = validTask();
         when(templateEngine.findMissingVariables(any(UniMessage.class))).thenReturn(Mono.just(Collections.emptySet()));

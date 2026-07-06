@@ -75,5 +75,10 @@ class ChannelManagerRefreshFailureTest {
             return Mono.empty();
         }
 
+        @Override
+        public void dispose() {
+
+        }
+
     }
 }
