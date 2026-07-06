@@ -5,6 +5,7 @@ import com.aliyun.dysmsapi20170525.models.SendSmsRequest;
 import com.aliyun.dysmsapi20170525.models.SendSmsResponse;
 import com.aliyun.teaopenapi.models.Config;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.waitlight.asskicker.channel.AbstractChannel;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.exception.SendException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
@@ -19,10 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-public class AliyunSmsChannel extends Channel<SmsReq> {
-
-    public static final ChannelType TYPE = ChannelType.SMS;
-    public static final ChannelProvider PROVIDER = ChannelProvider.ALIYUN;
+@Channel(type = ChannelType.SMS, provider = ChannelProvider.ALIYUN)
+public class AliyunSmsChannel extends AbstractChannel<SmsReq> {
 
     private static final String DEFAULT_ENDPOINT = "dysmsapi.aliyuncs.com";
 

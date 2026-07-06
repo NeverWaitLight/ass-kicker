@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.waitlight.asskicker.channel.AbstractChannel;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
@@ -33,10 +34,8 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 @Slf4j
-public class FcmPushChannel extends Channel<PushReq> {
-
-    public static final ChannelType TYPE = ChannelType.FCM;
-    public static final ChannelProvider PROVIDER = ChannelProvider.GOOGLE;
+@Channel(type = ChannelType.FCM, provider = ChannelProvider.GOOGLE)
+public class FcmPushChannel extends AbstractChannel<PushReq> {
 
     private final Properties properties;
     private final FirebaseApp firebaseApp;

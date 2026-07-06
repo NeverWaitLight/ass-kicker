@@ -11,6 +11,7 @@ import com.dingtalk.api.DefaultDingTalkClient;
 import com.dingtalk.api.request.OapiRobotSendRequest;
 import com.dingtalk.api.response.OapiRobotSendResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.waitlight.asskicker.channel.AbstractChannel;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
@@ -23,10 +24,8 @@ import reactor.core.scheduler.Schedulers;
 /**
  * DingTalk custom robot: sends text messages via webhook with HMAC-SHA256 signing.
  */
-public class DingTalkImChannel extends Channel<ImReq> {
-
-    public static final ChannelType TYPE = ChannelType.DINGTALK;
-    public static final ChannelProvider PROVIDER = ChannelProvider.DINGTALK;
+@Channel(type = ChannelType.DINGTALK, provider = ChannelProvider.DINGTALK)
+public class DingTalkImChannel extends AbstractChannel<ImReq> {
 
     private static final String WEBHOOK_URL = "https://oapi.dingtalk.com/robot/send";
 

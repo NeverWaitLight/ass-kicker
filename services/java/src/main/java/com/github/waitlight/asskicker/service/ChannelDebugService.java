@@ -1,7 +1,7 @@
 package com.github.waitlight.asskicker.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.AbstractChannel;
 import com.github.waitlight.asskicker.channel.ChannelFactory;
 import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.channel.impl.EmailReq;
@@ -45,7 +45,7 @@ public class ChannelDebugService {
     }
 
     private Mono<ChannelDebugResultVO> executeSend(ChannelEntity entity, Map<String, Object> requestPayload) {
-        Channel<?> channel = null;
+        AbstractChannel<?> channel = null;
         try {
             channel = channelFactory.create(entity);
             if (channel == null) {
@@ -54,7 +54,7 @@ public class ChannelDebugService {
                         ", provider=" + entity.getProvider()));
             }
 
-            Channel<?> finalChannel = channel;
+            AbstractChannel<?> finalChannel = channel;
             return sendWithChannel(finalChannel, requestPayload)
                     .map(ChannelDebugResultVO::success)
                     .doFinally(signal -> {
@@ -78,7 +78,7 @@ public class ChannelDebugService {
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends SendReq> Mono<String> sendWithChannel(Channel<T> channel, Map<String, Object> requestPayload) {
+    private <T extends SendReq> Mono<String> sendWithChannel(AbstractChannel<T> channel, Map<String, Object> requestPayload) {
         try {
             Class<? extends SendReq> reqClass = determineSendReqClass(channel);
             T sendReq = (T) channelObjectMapper.convertValue(requestPayload, reqClass);
@@ -88,7 +88,7 @@ public class ChannelDebugService {
         }
     }
 
-    private Class<? extends SendReq> determineSendReqClass(Channel<?> channel) {
+    private Class<? extends SendReq> determineSendReqClass(AbstractChannel<?> channel) {
         String className = channel.getClass().getName();
 
         if (className.contains("SmtpEmailChannel")) {

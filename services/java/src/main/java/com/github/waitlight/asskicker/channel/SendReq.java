@@ -4,6 +4,6 @@ import com.github.waitlight.asskicker.model.ChannelType;
 import lombok.Data;
 
 @Data
-public class SendReq {
+public abstract class SendReq {
     protected ChannelType channelType;
 }

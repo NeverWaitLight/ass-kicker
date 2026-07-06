@@ -9,6 +9,7 @@ import com.eatthepath.pushy.apns.auth.ApnsSigningKey;
 import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
 import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.waitlight.asskicker.channel.AbstractChannel;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
@@ -30,10 +31,8 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class ApnsPushChannel extends Channel<PushReq> {
-
-    public static final ChannelType TYPE = ChannelType.APNS;
-    public static final ChannelProvider PROVIDER = ChannelProvider.APPLE;
+@Channel(type = ChannelType.APNS, provider = ChannelProvider.APPLE)
+public class ApnsPushChannel extends AbstractChannel<PushReq> {
 
     private static final String SANDBOX_KEYWORD = "sandbox";
 

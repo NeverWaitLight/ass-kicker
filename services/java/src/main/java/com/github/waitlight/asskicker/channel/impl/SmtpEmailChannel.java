@@ -2,6 +2,7 @@ package com.github.waitlight.asskicker.channel.impl;
 
 import java.util.List;
 
+import com.github.waitlight.asskicker.channel.AbstractChannel;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
@@ -24,10 +25,8 @@ import lombok.NoArgsConstructor;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-public class SmtpEmailChannel extends Channel<EmailReq> {
-
-    public static final ChannelType TYPE = ChannelType.EMAIL;
-    public static final ChannelProvider PROVIDER = ChannelProvider.SMTP;
+@Channel(type = ChannelType.EMAIL, provider = ChannelProvider.SMTP)
+public class SmtpEmailChannel extends AbstractChannel<EmailReq> {
 
     private final Properties properties;
     private final JavaMailSender mailSender;

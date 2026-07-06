@@ -1,6 +1,7 @@
 package com.github.waitlight.asskicker.channel.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.waitlight.asskicker.channel.AbstractChannel;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.exception.SendException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
@@ -22,10 +23,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-public class TencentSmsChannel extends Channel<SmsReq> {
-
-    public static final ChannelType TYPE = ChannelType.SMS;
-    public static final ChannelProvider PROVIDER = ChannelProvider.TENCENT;
+@Channel(type = ChannelType.SMS, provider = ChannelProvider.TENCENT)
+public class TencentSmsChannel extends AbstractChannel<SmsReq> {
 
     private static final String DEFAULT_ENDPOINT = "sms.tencentcloudapi.com";
     private static final String DEFAULT_REGION = "ap-guangzhou";

@@ -6,7 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import com.github.waitlight.asskicker.channel.Channel;
+import com.github.waitlight.asskicker.channel.AbstractChannel;
 import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Component;
 
@@ -105,7 +105,7 @@ public class Sender {
     }
 
     private void doSendForRecipient(SendContext baseCtx, String recipient) {
-        Channel channel = null;
+        AbstractChannel channel = null;
         try {
             UniAddress singleAddr = buildSingleRecipientAddress(baseCtx.getTask().getAddress(), recipient);
             channel = channelManager.chose(singleAddr.getChannelType(), recipient).block();
@@ -163,7 +163,7 @@ public class Sender {
         recordService.writeRecord(sr);
     }
 
-    private void writeFailedRecord(UniTask task, String recipient, Channel channel, String errorMessage) {
+    private void writeFailedRecord(UniTask task, String recipient, AbstractChannel channel, String errorMessage) {
         UniMessage message = task.getMessage();
 
         RecordEntity sr = new RecordEntity();
@@ -198,12 +198,12 @@ public class Sender {
 
         private final UniTask task;
         private UniMessage uniMessage;
-        private Channel channel;
+        private AbstractChannel channel;
         private String sendResult;
         private String recipient;
         private UniAddress singleAddress;
 
-        private SendContext fork(String recipient, Channel channel, UniAddress singleAddress) {
+        private SendContext fork(String recipient, AbstractChannel channel, UniAddress singleAddress) {
             SendContext forked = new SendContext(this.task);
             forked.uniMessage = this.uniMessage;
             forked.recipient = recipient;

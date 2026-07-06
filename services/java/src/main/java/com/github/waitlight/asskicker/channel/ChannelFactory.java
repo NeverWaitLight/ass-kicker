@@ -7,8 +7,10 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ClassUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,7 +19,6 @@ import com.github.waitlight.asskicker.config.ChannelObjectMapperConfig;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.Optional;
@@ -43,7 +44,7 @@ public class ChannelFactory {
      * Channel 元信息：扫描得到的 ChannelType、ChannelProvider 及对应 Channel 具体类
      */
     public record ChannelMeta(ChannelType type, ChannelProvider provider,
-            Class<? extends Channel<?>> channelClass) {
+            Class<? extends AbstractChannel<?>> channelClass) {
     }
 
     private final Map<ChannelKey, ChannelMeta> channelMetaCache = new ConcurrentHashMap<>();
@@ -58,65 +59,47 @@ public class ChannelFactory {
     void scanChannelImplementations() {
         ClassPathScanningCandidateComponentProvider scanner =
                 new ClassPathScanningCandidateComponentProvider(false);
-        scanner.addIncludeFilter(new AssignableTypeFilter(Channel.class));
+        scanner.addIncludeFilter(new AssignableTypeFilter(AbstractChannel.class));
 
         Set<BeanDefinition> candidates = scanner.findCandidateComponents(CHANNEL_PACKAGE);
 
         for (BeanDefinition bd : candidates) {
             String className = bd.getBeanClassName();
-            try {
-                Class<?> loaded = Class.forName(className);
-                if (!Channel.class.isAssignableFrom(loaded) || loaded == Channel.class) {
-                    continue;
-                }
-                if (Modifier.isAbstract(loaded.getModifiers())) {
-                    continue;
-                }
-                @SuppressWarnings("unchecked")
-                Class<? extends Channel<?>> channelClass = (Class<? extends Channel<?>>) loaded;
-
-                ChannelType type = readStatic(channelClass, "TYPE", ChannelType.class);
-                ChannelProvider provider = readStatic(channelClass, "PROVIDER", ChannelProvider.class);
-                if (type == null || provider == null) {
-                    log.warn("Skip Channel {}: missing public static final TYPE/PROVIDER",
-                            channelClass.getName());
-                    continue;
-                }
-
-                channelMetaCache.put(new ChannelKey(type, provider),
-                        new ChannelMeta(type, provider, channelClass));
-
-                log.info("Scanned Channel implementation: {}/{}", type, provider);
-            } catch (ClassNotFoundException e) {
-                log.warn("Failed to load Channel class: {}", className, e);
+            Class<?> loaded = ClassUtils.resolveClassName(className, getClass().getClassLoader());
+            if (!AbstractChannel.class.isAssignableFrom(loaded) || loaded == AbstractChannel.class
+                    || Modifier.isAbstract(loaded.getModifiers())) {
+                continue;
             }
+            @SuppressWarnings("unchecked")
+            Class<? extends AbstractChannel<?>> channelClass = (Class<? extends AbstractChannel<?>>) loaded;
+
+            Channel spec = AnnotationUtils.findAnnotation(channelClass, Channel.class);
+            if (spec == null) {
+                log.warn("Skip Channel {}: missing @ChannelImpl", channelClass.getName());
+                continue;
+            }
+
+            ChannelKey key = new ChannelKey(spec.type(), spec.provider());
+            ChannelMeta previous = channelMetaCache.putIfAbsent(key,
+                    new ChannelMeta(spec.type(), spec.provider(), channelClass));
+            if (previous != null) {
+                log.warn("Duplicate @ChannelImpl for {}/{}: {} already registered, {} ignored",
+                        spec.type(), spec.provider(),
+                        previous.channelClass().getName(), channelClass.getName());
+                continue;
+            }
+
+            log.info("Scanned Channel implementation: {}/{}", spec.type(), spec.provider());
         }
 
         log.info("Channel scan completed, found {} implementation(s)", channelMetaCache.size());
-    }
-
-    private static <T> T readStatic(Class<? extends Channel<?>> channelClass, String fieldName, Class<T> expectedType) {
-        try {
-            Field field = channelClass.getDeclaredField(fieldName);
-            int mods = field.getModifiers();
-            if (!Modifier.isStatic(mods) || !expectedType.isAssignableFrom(field.getType())) {
-                return null;
-            }
-            field.setAccessible(true);
-            return expectedType.cast(field.get(null));
-        } catch (NoSuchFieldException e) {
-            return null;
-        } catch (IllegalAccessException e) {
-            throw new IllegalStateException(
-                    "Failed to read " + fieldName + " from " + channelClass.getName(), e);
-        }
     }
 
     public Optional<ChannelMeta> getChannelMeta(ChannelType type, ChannelProvider provider) {
         return Optional.ofNullable(channelMetaCache.get(new ChannelKey(type, provider)));
     }
 
-    public Channel<?> create(ChannelEntity entity) {
+    public AbstractChannel<?> create(ChannelEntity entity) {
         if (entity == null) {
             throw new IllegalArgumentException("ChannelEntity must not be null");
         }
@@ -137,7 +120,7 @@ public class ChannelFactory {
         }
 
         try {
-            Constructor<? extends Channel<?>> ctor = meta.channelClass()
+            Constructor<? extends AbstractChannel<?>> ctor = meta.channelClass()
                     .getDeclaredConstructor(ChannelEntity.class, WebClient.class, ObjectMapper.class);
             ctor.setAccessible(true);
             return ctor.newInstance(entity, webClient, channelObjectMapper);

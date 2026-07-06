@@ -21,13 +21,13 @@ import java.util.concurrent.locks.ReentrantLock;
 @RequiredArgsConstructor
 public class ChannelManager {
 
-    private static final Comparator<Channel<?>> BY_CODE = Comparator
-            .comparing(Channel::getCode);
+    private static final Comparator<AbstractChannel<?>> BY_CODE = Comparator
+            .comparing(AbstractChannel::getCode);
 
     private final ChannelService channelService;
     private final ChannelFactory channelFactory;
 
-    private final ConcurrentHashMap<String, Channel<?>> cache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AbstractChannel<?>> cache = new ConcurrentHashMap<>();
     private final ReentrantLock refreshLock = new ReentrantLock();
 
     @PostConstruct
@@ -38,7 +38,7 @@ public class ChannelManager {
         }
         int loaded = 0;
         for (ChannelEntity entity : enabled) {
-            Channel<?> channel = channelFactory.create(entity);
+            AbstractChannel<?> channel = channelFactory.create(entity);
             if (channel == null) {
                 log.warn("Skip channel {}, channel creation returned null", entity.getCode());
                 continue;
@@ -49,16 +49,16 @@ public class ChannelManager {
         log.info("Loaded {} channel channel(s)", loaded);
     }
 
-    public Mono<Channel<?>> chose(ChannelType channelType, String recipient) {
-        List<Channel<?>> matching = cache.values().stream()
+    public Mono<AbstractChannel<?>> chose(ChannelType channelType, String recipient) {
+        List<AbstractChannel<?>> matching = cache.values().stream()
                 .filter(c -> c.getChannelType() == channelType)
-                .filter(Channel::isEnabled)
+                .filter(AbstractChannel::isEnabled)
                 .sorted(BY_CODE)
                 .toList();
         if (matching.isEmpty()) {
             return Mono.empty();
         }
-        Channel<?> chosen = matching.get(0);
+        AbstractChannel<?> chosen = matching.get(0);
         log.debug("Selected channel {} for recipient {}", chosen.getCode(), recipient);
         return Mono.just(chosen);
     }
@@ -66,19 +66,19 @@ public class ChannelManager {
     public void refresh() {
         refreshLock.lock();
         try {
-            ConcurrentHashMap<String, Channel<?>> next = new ConcurrentHashMap<>();
+            ConcurrentHashMap<String, AbstractChannel<?>> next = new ConcurrentHashMap<>();
             List<ChannelEntity> enabledProvider = channelService.findEnabled().collectList().block();
             if (enabledProvider == null) {
                 enabledProvider = List.of();
             }
 
             for (ChannelEntity entity : enabledProvider) {
-                Channel<?> channel = channelFactory.create(entity);
+                AbstractChannel<?> channel = channelFactory.create(entity);
                 if (channel != null) {
                     next.put(entity.getId(), channel);
                 }
             }
-            List<Channel<?>> previous = new ArrayList<>(cache.values());
+            List<AbstractChannel<?>> previous = new ArrayList<>(cache.values());
             cache.clear();
             cache.putAll(next);
             log.info("Refreshed channel cache, {} channel(s)", next.size());
@@ -96,8 +96,8 @@ public class ChannelManager {
         cache.clear();
     }
 
-    private void disposeAll(List<Channel<?>> channels) {
-        for (Channel<?> c : channels) {
+    private void disposeAll(List<AbstractChannel<?>> channels) {
+        for (AbstractChannel<?> c : channels) {
             try {
                 c.dispose();
             } catch (Exception e) {
