@@ -63,6 +63,10 @@ public class AliyunSmsChannel extends AbstractChannel<SmsReq> {
         return Mono.empty();
     }
 
+    @Override
+    public void dispose() {
+    }
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

@@ -37,7 +37,5 @@ public abstract class AbstractChannel<T extends SendReq> {
         return Mono.empty();
     }
 
-    public void dispose() {
-        // no-op by default; subclasses holding long-lived resources should override
-    }
+    public abstract void dispose();
 }

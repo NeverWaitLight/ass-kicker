@@ -57,6 +57,10 @@ public class FeishuImChannel extends AbstractChannel<ImReq> {
         });
     }
 
+    @Override
+    public void dispose() {
+    }
+
     private static Map<String, Object> buildBody(ImReq req) {
         Map<String, Object> body = new LinkedHashMap<>();
         if (StringUtils.isNotBlank(req.getSecret())) {

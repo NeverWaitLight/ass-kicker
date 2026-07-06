@@ -57,6 +57,10 @@ public class DingTalkImChannel extends AbstractChannel<ImReq> {
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
+    @Override
+    public void dispose() {
+    }
+
     private static String buildSignedUrl(String token, String secret) {
         StringBuilder url = new StringBuilder(WEBHOOK_URL).append("?access_token=").append(token);
         if (StringUtils.isNotBlank(secret)) {

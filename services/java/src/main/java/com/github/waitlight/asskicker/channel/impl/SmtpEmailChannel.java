@@ -63,6 +63,10 @@ public class SmtpEmailChannel extends AbstractChannel<EmailReq> {
         });
     }
 
+    @Override
+    public void dispose() {
+    }
+
     private static JavaMailSender buildMailSender(Properties properties) {
         JavaMailSenderImpl sender = new JavaMailSenderImpl();
         sender.setHost(properties.getHost());

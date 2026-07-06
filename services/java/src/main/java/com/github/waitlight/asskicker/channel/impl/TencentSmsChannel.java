@@ -92,6 +92,10 @@ public class TencentSmsChannel extends AbstractChannel<SmsReq> {
         return "+" + cc + phoneNumber;
     }
 
+    @Override
+    public void dispose() {
+    }
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
