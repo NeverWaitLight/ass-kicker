@@ -27,6 +27,6 @@ public class OpenApiConfig {
                                 .type(SecurityScheme.Type.APIKEY)
                                 .in(SecurityScheme.In.HEADER)
                                 .name("X-API-Key")
-                                .description("可与 JWT 二选一用于 /v1/send 与 /v1/submit")));
+                                .description("可与 JWT 二选一用于 /v1/send")));
     }
 }

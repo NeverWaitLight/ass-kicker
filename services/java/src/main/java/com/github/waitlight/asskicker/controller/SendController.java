@@ -51,21 +51,6 @@ public class SendController {
                         ex.getReason() == null ? "发送失败" : ex.getReason())));
     }
 
-    @Operation(summary = "提交任务", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
-    @PostMapping("/submit")
-    public Mono<Resp<SendVO>> submit(@Valid @RequestBody UniTask rawTask) {
-        return Mono.just(rawTask)
-                .map(this::validateAndEnrich)
-                .flatMap(task -> validateTemplateVariables(task)
-                        .thenReturn(task))
-                .flatMap(task -> sendTaskProducer.publish(task).thenReturn(task.getTaskId()))
-                .map(SendVO::new)
-                .map(Resp::success)
-                .onErrorResume(ResponseStatusException.class, ex -> Mono.just(
-                    Resp.error(String.valueOf(ex.getStatusCode().value()),
-                        ex.getReason() == null ? "提交失败" : ex.getReason())));
-    }
-
     private UniTask validateAndEnrich(UniTask task) {
         if (task == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请求体不能为空");

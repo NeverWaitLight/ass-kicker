@@ -58,7 +58,7 @@ mvn spring-boot:run
   Authorization: Bearer <access_token>
   ```
 
-- **API Key** (可与 JWT 二选一，用于 `/v1/send` 和 `/v1/submit`):
+- **API Key** (可与 JWT 二选一，用于 `/v1/send`):
   ```
   X-API-Key: <api-key>
   ```

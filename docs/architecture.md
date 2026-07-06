@@ -72,14 +72,13 @@ Ass Kicker 当前采用前后端分离 + 双后端服务拆分架构：
 - 调用模板渲染与渠道调度逻辑执行发送
 - 写入发送记录
 
-当前代码实现里，任务接入和任务消费都位于 `svr/worker` 模块内：`SendController` 负责 `/v1/send`、`/v1/submit` 的 HTTP 接入和任务补全，`SendTaskProducer` 负责将 `UniTask` 投递到 Kafka，`SendTaskConsumer` 负责监听 Kafka 并触发真实发送。这意味着 `worker` 不是单纯的 MQ 消费进程，而是同时包含“接收任务并入队”和“消费任务并发送”两段链路。
+当前代码实现里，任务接入和任务消费都位于 `svr/worker` 模块内：`SendController` 负责 `/v1/send` 的 HTTP 接入和任务补全，`SendTaskProducer` 负责将 `UniTask` 投递到 Kafka，`SendTaskConsumer` 负责监听 Kafka 并触发真实发送。这意味着 `worker` 不是单纯的 MQ 消费进程，而是同时包含“接收任务并入队”和“消费任务并发送”两段链路。
 
 主要接口：
 
 - `POST /v1/send`
-- `POST /v1/submit`
 
-当前这两个接口都采用“入队并返回 `taskId`”语义，接口成功返回不表示消息已经发送完成，真正发送在 Kafka 消费端异步完成。
+该接口采用“入队并返回 `taskId`”语义，接口成功返回不表示消息已经发送完成，真正发送在 Kafka 消费端异步完成。
 
 ## 数据流与调用链路
 
@@ -92,7 +91,7 @@ Ass Kicker 当前采用前后端分离 + 双后端服务拆分架构：
 
 ### 发送链路
 
-1. 调用方访问 `worker` 的 `/v1/send` 或 `/v1/submit`。
+1. 调用方访问 `worker` 的 `/v1/send`。
 2. `worker` 校验请求并补全 `taskId`、`submittedAt` 等字段。
 3. `worker` 将 `UniTask` 写入 Kafka。
 4. Kafka 消费端读取任务并调用 `TemplateEngine` 渲染模板。

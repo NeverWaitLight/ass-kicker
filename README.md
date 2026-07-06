@@ -139,11 +139,10 @@ bash infra/scripts/debug.sh
 `worker` 负责发送链路，主要入口包括：
 
 - `POST /v1/send`
-- `POST /v1/submit`
 
 当前代码实现中，`worker` 同时承担任务接入和任务执行两类职责：`SendController` 接收发送请求并完成校验、补全 `taskId` 和 `submittedAt`，随后调用 `SendTaskProducer` 将 `UniTask` 写入 Kafka；同一个 `worker` 服务内的 `SendTaskConsumer` 再从 Kafka 消费任务并调用发送链路执行真实发送。
 
-因此，`/v1/send` 和 `/v1/submit` 都采用“入队返回 `taskId`”语义，接口返回成功只表示任务已提交到 Kafka，真正的发送由 Kafka 消费端异步完成。
+因此，`/v1/send` 采用“入队返回 `taskId`”语义，接口返回成功只表示任务已提交到 Kafka，真正的发送由 Kafka 消费端异步完成。
 
 ### Example
 
