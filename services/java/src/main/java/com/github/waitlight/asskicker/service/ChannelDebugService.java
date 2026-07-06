@@ -96,7 +96,7 @@ public class ChannelDebugService {
             return com.github.waitlight.asskicker.channel.impl.ApnsSendReq.class;
         } else if (className.contains("FcmPushChannel")) {
             return com.github.waitlight.asskicker.channel.impl.FcmSendReq.class;
-        } else if (className.contains("DingtalkBotChannel")) {
+        } else if (className.contains("DingTalkBotChannel")) {
             return DingTalkSendReq.class;
         }
 

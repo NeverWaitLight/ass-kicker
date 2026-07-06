@@ -4,12 +4,10 @@ import com.github.waitlight.asskicker.channel.SendReq;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.util.List;
-
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class DingTalkSendReq extends SendReq {
-    private List<String> openConversationIds;
+    private String token;
+    private String secret;
     private String content;
-    private String title;
 }

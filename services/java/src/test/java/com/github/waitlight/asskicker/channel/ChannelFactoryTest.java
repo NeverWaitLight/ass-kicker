@@ -107,11 +107,7 @@ class ChannelFactoryTest {
           "type": "DINGTALK",
           "provider": "DINGTALK",
           "enabled": true,
-          "properties": {
-            "appKey": "k",
-            "appSecret": "s",
-            "robotCode": "r"
-          }
+          "properties": {}
         }
         """;
     ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);

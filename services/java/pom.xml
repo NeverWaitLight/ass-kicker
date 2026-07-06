@@ -29,7 +29,8 @@
     <aws.java.sdk.version>2.29.45</aws.java.sdk.version>
     <aliyun.dysmsapi.version>4.1.1</aliyun.dysmsapi.version>
     <pushy.version>0.15.4</pushy.version>
-    <dingtalk.sdk.version>2.2.56</dingtalk.sdk.version>
+    <dingtalk.service.sdk.version>2.0.0</dingtalk.service.sdk.version>
+    <commons-codec.version>1.11</commons-codec.version>
     <springdoc.version>2.8.16</springdoc.version>
     <commons-lang3.version>3.15.0</commons-lang3.version>
   </properties>
@@ -162,11 +163,16 @@
       <version>${aliyun.dysmsapi.version}</version>
     </dependency>
 
-    <!-- Dingtalk Open API SDK -->
+    <!-- Dingtalk Custom Robot SDK -->
     <dependency>
       <groupId>com.aliyun</groupId>
-      <artifactId>dingtalk</artifactId>
-      <version>${dingtalk.sdk.version}</version>
+      <artifactId>alibaba-dingtalk-service-sdk</artifactId>
+      <version>${dingtalk.service.sdk.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>${commons-codec.version}</version>
     </dependency>
 
     <!-- APNs (Pushy) -->

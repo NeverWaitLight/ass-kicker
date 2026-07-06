@@ -1,205 +1,81 @@
 package com.github.waitlight.asskicker.channel.impl;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import com.dingtalk.api.DefaultDingTalkClient;
+import com.dingtalk.api.request.OapiRobotSendRequest;
+import com.dingtalk.api.response.OapiRobotSendResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
-import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
-
-import com.aliyun.dingtalkoauth2_1_0.models.GetAccessTokenRequest;
-import com.aliyun.dingtalkoauth2_1_0.models.GetAccessTokenResponse;
-import com.aliyun.dingtalkoauth2_1_0.models.GetAccessTokenResponseBody;
-import com.aliyun.dingtalkrobot_1_0.models.OrgGroupSendHeaders;
-import com.aliyun.dingtalkrobot_1_0.models.OrgGroupSendRequest;
-import com.aliyun.dingtalkrobot_1_0.models.OrgGroupSendResponse;
-import com.aliyun.tea.TeaException;
-import com.aliyun.teaopenapi.models.Config;
-import com.aliyun.teautil.models.RuntimeOptions;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.waitlight.asskicker.dto.UniAddress;
-
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 /**
- * DingTalk enterprise robot: group messages via the official Open API SDK
- * ({@code com.aliyun:dingtalk}), which encapsulates OAuth token retrieval +
- * group-send under {@code api.dingtalk.com}.
+ * DingTalk custom robot: sends text messages via webhook with HMAC-SHA256 signing.
  */
 public class DingTalkBotChannel extends Channel<DingTalkSendReq> {
 
     public static final ChannelType TYPE = ChannelType.DINGTALK;
     public static final ChannelProvider PROVIDER = ChannelProvider.DINGTALK;
 
-    private static final String MSG_KEY_SAMPLE_TEXT = "sampleText";
+    private static final String WEBHOOK_URL = "https://oapi.dingtalk.com/robot/send";
 
-    private final Properties properties;
-    private final com.aliyun.dingtalkoauth2_1_0.Client oauthClient;
-    private final com.aliyun.dingtalkrobot_1_0.Client robotClient;
-
-    public DingTalkBotChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
-        super(provider, webClient, objectMapper);
-        this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
-        try {
-            this.oauthClient = new com.aliyun.dingtalkoauth2_1_0.Client(buildConfig());
-            this.robotClient = new com.aliyun.dingtalkrobot_1_0.Client(buildConfig());
-        } catch (Exception e) {
-            throw new IllegalStateException("DINGTALK_BOT SDK client init failed", e);
-        }
-    }
-
-    DingTalkBotChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper,
-                       com.aliyun.dingtalkoauth2_1_0.Client oauthClient,
-                       com.aliyun.dingtalkrobot_1_0.Client robotClient) {
-        super(provider, webClient, objectMapper);
-        this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
-        this.oauthClient = oauthClient;
-        this.robotClient = robotClient;
-    }
-
-    /**
-     * Visible for testing — lets tests inject mocked SDK clients to avoid real network calls.
-     */
-    public static DingTalkBotChannel forTesting(ChannelEntity provider, WebClient webClient,
-                                                ObjectMapper objectMapper,
-                                                com.aliyun.dingtalkoauth2_1_0.Client oauthClient,
-                                                com.aliyun.dingtalkrobot_1_0.Client robotClient) {
-        return new DingTalkBotChannel(provider, webClient, objectMapper, oauthClient, robotClient);
-    }
-
-    private static Config buildConfig() {
-        Config config = new Config();
-        config.setProtocol("https");
-        config.setRegionId("central");
-        return config;
+    public DingTalkBotChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
+        super(entity, webClient, objectMapper);
     }
 
     @Override
     public Mono<String> send(DingTalkSendReq req) {
-        return Mono.defer(() -> {
-            List<String> chatIds = req.getOpenConversationIds();
-            if (chatIds == null || chatIds.isEmpty()) {
-                return Mono.error(new IllegalArgumentException("DINGTALK_BOT openConversationIds required"));
-            }
-            requireNonBlank(properties.getClientId(), "appKey");
-            requireNonBlank(properties.getClientSecret(), "appSecret");
-            requireNonBlank(properties.getRobotCode(), "robotCode");
+        return Mono.fromCallable(() -> {
+            String url = buildSignedUrl(req.getToken(), req.getSecret());
+            DefaultDingTalkClient client = new DefaultDingTalkClient(url);
 
-            String msgParamJson;
-            try {
-                msgParamJson = objectMapper.writeValueAsString(Map.of("content", buildPlainText(req)));
-            } catch (Exception e) {
-                return Mono.error(e);
-            }
+            OapiRobotSendRequest request = new OapiRobotSendRequest();
+            request.setMsgtype("text");
+            OapiRobotSendRequest.Text text = new OapiRobotSendRequest.Text();
+            text.setContent(StringUtils.defaultString(req.getContent()));
+            request.setText(text);
 
-            return Mono.fromCallable(() -> {
-                String token = fetchAccessToken();
-                for (String openConversationId : chatIds) {
-                    sendGroupMessage(token, openConversationId, msgParamJson);
-                }
-                return "DINGTALK_BOT ok " + chatIds.size() + " chat(s)";
-            }).subscribeOn(Schedulers.boundedElastic());
-        });
+            OapiRobotSendResponse response = client.execute(request);
+            if (response == null) {
+                throw new IllegalStateException("DINGTALK_BOT empty response");
+            }
+            if (response.getErrcode() != null && response.getErrcode() != 0L) {
+                throw new IllegalStateException(
+                        "DINGTALK_BOT err code=" + response.getErrcode() + " msg=" + response.getErrmsg());
+            }
+            return "DINGTALK_BOT ok";
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 
-    private String fetchAccessToken() {
-        GetAccessTokenRequest req = new GetAccessTokenRequest()
-                .setAppKey(properties.getClientId().trim())
-                .setAppSecret(properties.getClientSecret().trim());
+    private static String buildSignedUrl(String token, String secret) {
+        long timestamp = System.currentTimeMillis();
+        String stringToSign = timestamp + "\n" + secret;
+        String sign = sign(stringToSign, secret);
+        return WEBHOOK_URL
+                + "?access_token=" + token
+                + "&timestamp=" + timestamp
+                + "&sign=" + sign;
+    }
+
+    private static String sign(String stringToSign, String secret) {
         try {
-            GetAccessTokenResponse response = oauthClient.getAccessToken(req);
-            GetAccessTokenResponseBody body = response != null ? response.getBody() : null;
-            String token = body != null ? body.getAccessToken() : null;
-            if (StringUtils.isBlank(token)) {
-                throw new IllegalStateException("DINGTALK_BOT token response missing accessToken");
-            }
-            return token;
-        } catch (TeaException te) {
-            throw new IllegalStateException(
-                    "DINGTALK_BOT platform failure code=" + te.getCode() + " message=" + te.getMessage(), te);
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            byte[] signData = mac.doFinal(stringToSign.getBytes(StandardCharsets.UTF_8));
+            return URLEncoder.encode(Base64.getEncoder().encodeToString(signData), StandardCharsets.UTF_8);
         } catch (Exception e) {
-            if (e instanceof RuntimeException re) {
-                throw re;
-            }
-            throw new IllegalStateException("DINGTALK_BOT getAccessToken failed: " + e.getMessage(), e);
+            throw new IllegalStateException("DINGTALK_BOT sign failed", e);
         }
-    }
-
-    private void sendGroupMessage(String accessToken, String openConversationId, String msgParamJson) {
-        OrgGroupSendRequest req = new OrgGroupSendRequest()
-                .setRobotCode(properties.getRobotCode().trim())
-                .setOpenConversationId(openConversationId)
-                .setMsgKey(MSG_KEY_SAMPLE_TEXT)
-                .setMsgParam(msgParamJson);
-        OrgGroupSendHeaders headers = new OrgGroupSendHeaders();
-        headers.setXAcsDingtalkAccessToken(accessToken);
-        try {
-            OrgGroupSendResponse response = robotClient.orgGroupSendWithOptions(req, headers, new RuntimeOptions());
-            if (response == null || response.getBody() == null) {
-                throw new IllegalStateException("DINGTALK_BOT empty group send response");
-            }
-        } catch (TeaException te) {
-            throw new IllegalStateException(
-                    "DINGTALK_BOT platform failure code=" + te.getCode() + " message=" + te.getMessage(), te);
-        } catch (Exception e) {
-            if (e instanceof RuntimeException re) {
-                throw re;
-            }
-            throw new IllegalStateException("DINGTALK_BOT orgGroupSend failed: " + e.getMessage(), e);
-        }
-    }
-
-    private List<String> normalizeRecipients(UniAddress uniAddress) {
-        List<String> recipients = uniAddress == null || uniAddress.getRecipients() == null
-                ? List.of()
-                : uniAddress.getRecipients().stream()
-                        .filter(Objects::nonNull)
-                        .map(String::trim)
-                        .filter(StringUtils::isNotBlank)
-                        .collect(Collectors.toList());
-        if (recipients.isEmpty()) {
-            throw new IllegalArgumentException("DINGTALK_BOT recipients required (chat/session id)");
-        }
-        return recipients;
-    }
-
-    private void requireNonBlank(String value, String fieldName) {
-        if (StringUtils.isBlank(value)) {
-            throw new IllegalStateException("DINGTALK_BOT spec requires " + fieldName);
-        }
-    }
-
-    private static String buildPlainText(DingTalkSendReq req) {
-        String title = req.getTitle();
-        String content = req.getContent();
-        if (StringUtils.isNotBlank(title)) {
-            return title + "\n" + StringUtils.defaultString(content);
-        }
-        return StringUtils.defaultString(content);
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    static class Properties {
-
-        @NotBlank
-        private String clientId;
-
-        @NotBlank
-        private String clientSecret;
-
-        @NotBlank
-        private String robotCode;
     }
 }
