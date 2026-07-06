@@ -9,7 +9,6 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
@@ -28,14 +27,13 @@ import org.springframework.web.reactive.function.client.WebClient;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 @Slf4j
-public class FcmPushChannel extends Channel<FcmPushChannel.FcmSendReq> {
+public class FcmPushChannel extends Channel<PushReq> {
 
     public static final ChannelType TYPE = ChannelType.FCM;
     public static final ChannelProvider PROVIDER = ChannelProvider.GOOGLE;
@@ -70,7 +68,7 @@ public class FcmPushChannel extends Channel<FcmPushChannel.FcmSendReq> {
     }
 
     @Override
-    public Mono<String> send(FcmSendReq req) {
+    public Mono<String> send(PushReq req) {
         return Mono.defer(() -> {
             String token = StringUtils.trimToNull(req.getDeviceToken());
             if (token == null) {
@@ -98,7 +96,7 @@ public class FcmPushChannel extends Channel<FcmPushChannel.FcmSendReq> {
         }
     }
 
-    private static Message buildMessage(String deviceToken, FcmSendReq req) {
+    private static Message buildMessage(String deviceToken, PushReq req) {
         Notification.Builder notification = Notification.builder()
                 .setBody(req.getBody() != null ? req.getBody() : "");
         if (StringUtils.isNotBlank(req.getTitle())) {
@@ -183,13 +181,4 @@ public class FcmPushChannel extends Channel<FcmPushChannel.FcmSendReq> {
         private String serviceAccountJson;
     }
 
-    @EqualsAndHashCode(callSuper = true)
-    @Data
-    public static class FcmSendReq extends SendReq {
-        private String deviceToken;
-        private String title;
-        private String body;
-        private Map<String, Object> data;
-        private String priority;
-    }
 }

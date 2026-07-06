@@ -10,7 +10,6 @@ import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
 import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.Channel;
-import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
@@ -18,25 +17,20 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Slf4j
-public class ApnsPushChannel extends Channel<ApnsPushChannel.ApnsSendReq> {
+public class ApnsPushChannel extends Channel<PushReq> {
 
     public static final ChannelType TYPE = ChannelType.APNS;
     public static final ChannelProvider PROVIDER = ChannelProvider.APPLE;
@@ -59,52 +53,34 @@ public class ApnsPushChannel extends Channel<ApnsPushChannel.ApnsSendReq> {
         this.apnsClient = apnsClient;
     }
 
-    /**
-     * Visible for testing — bypasses Pushy ApnsClient construction so tests can inject a Mockito mock.
-     */
     public static ApnsPushChannel forTesting(ChannelEntity provider, WebClient webClient,
             ObjectMapper objectMapper, ApnsClient apnsClient) {
         return new ApnsPushChannel(provider, webClient, objectMapper, apnsClient);
     }
 
     @Override
-    public Mono<String> send(ApnsSendReq req) {
+    public Mono<String> send(PushReq req) {
         return Mono.defer(() -> {
-            List<String> recipients = req.getDeviceTokens();
-            if (recipients == null || recipients.isEmpty()) {
-                return Mono.error(new IllegalArgumentException("APNs deviceTokens required"));
+            String token = StringUtils.trimToNull(req.getDeviceToken());
+            if (token == null) {
+                return Mono.error(new IllegalArgumentException("APNs deviceToken required"));
             }
 
-            UUID defaultApnsId = StringUtils.isBlank(properties.getApnsId())
+            UUID apnsId = StringUtils.isBlank(properties.getApnsId())
                     ? null
                     : UUID.fromString(properties.getApnsId().trim());
-            UUID reqApnsId = StringUtils.isBlank(req.getApnsId())
-                    ? null
-                    : UUID.fromString(req.getApnsId().trim());
-            UUID apnsId = reqApnsId != null ? reqApnsId : defaultApnsId;
-
             String topic = properties.getBundleIdTopic().trim();
             DeliveryPriority priority = resolveDeliveryPriority(req.getPriority());
-            PushType pushType = resolvePushType(req.getPushType());
-            Instant invalidationTime = req.getExpirationEpochMillis() == null
-                    ? null
-                    : Instant.ofEpochMilli(req.getExpirationEpochMillis());
-            String collapseId = StringUtils.trimToNull(req.getCollapseId());
-
             String payload = buildApnsPayload(req);
 
-            log.info("Sending APNs notification to {} recipient(s)", recipients.size());
+            log.info("Sending APNs notification to device token ***{}",
+                    token.length() > 6 ? token.substring(token.length() - 6) : token);
 
-            return Flux.fromIterable(recipients)
-                    .concatMap(token -> {
-                        SimpleApnsPushNotification notification = new SimpleApnsPushNotification(
-                                token, topic, payload, invalidationTime,
-                                priority, pushType, collapseId, apnsId);
-                        return Mono.fromFuture(apnsClient.sendNotification(notification))
-                                .map(this::extractApnsId);
-                    })
-                    .collect(Collectors.joining(","))
-                    .map(ids -> "APNs ok " + recipients.size() + " device(s) apns-id=" + ids);
+            SimpleApnsPushNotification notification = new SimpleApnsPushNotification(
+                    token, topic, payload, null, priority, PushType.ALERT, null, apnsId);
+            return Mono.fromFuture(apnsClient.sendNotification(notification))
+                    .map(this::extractApnsId)
+                    .map(id -> "APNs ok apns-id=" + id);
         });
     }
 
@@ -126,36 +102,17 @@ public class ApnsPushChannel extends Channel<ApnsPushChannel.ApnsSendReq> {
         return apnsId != null ? apnsId.toString() : "ok";
     }
 
-    private String buildApnsPayload(ApnsSendReq req) {
+    private String buildApnsPayload(PushReq req) {
         SimpleApnsPayloadBuilder builder = new SimpleApnsPayloadBuilder();
-
         if (StringUtils.isNotBlank(req.getTitle())) {
             builder.setAlertTitle(req.getTitle());
         }
-        if (StringUtils.isNotBlank(req.getSubtitle())) {
-            builder.setAlertSubtitle(req.getSubtitle());
-        }
         builder.setAlertBody(req.getBody() != null ? req.getBody() : "");
-        builder.setSound(req.getSound() != null ? req.getSound() : "default");
-        if (req.getBadge() != null) {
-            builder.setBadgeNumber(req.getBadge());
-        }
-        if (StringUtils.isNotBlank(req.getCategory())) {
-            builder.setCategoryName(req.getCategory());
-        }
-        if (StringUtils.isNotBlank(req.getThreadId())) {
-            builder.setThreadId(req.getThreadId());
-        }
-        if (req.getContentAvailable() != null) {
-            builder.setContentAvailable(req.getContentAvailable());
-        }
-        if (req.getMutableContent() != null) {
-            builder.setMutableContent(req.getMutableContent());
-        }
+        builder.setSound("default");
 
-        Map<String, Object> customData = req.getCustomData();
-        if (customData != null && !customData.isEmpty()) {
-            for (Map.Entry<String, Object> e : customData.entrySet()) {
+        Map<String, Object> data = req.getData();
+        if (data != null && !data.isEmpty()) {
+            for (Map.Entry<String, Object> e : data.entrySet()) {
                 String k = e.getKey();
                 if (k != null && !k.isBlank() && !"aps".equals(k)) {
                     builder.addCustomProperty(k, e.getValue());
@@ -174,17 +131,6 @@ public class ApnsPushChannel extends Channel<ApnsPushChannel.ApnsSendReq> {
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException(
                     "APNs unsupported priority: " + value + " (allowed: IMMEDIATE, CONSERVE_POWER)", ex);
-        }
-    }
-
-    private static PushType resolvePushType(String value) {
-        if (StringUtils.isBlank(value)) {
-            return PushType.ALERT;
-        }
-        try {
-            return PushType.valueOf(value.trim().toUpperCase());
-        } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("APNs unsupported pushType: " + value, ex);
         }
     }
 
@@ -256,26 +202,5 @@ public class ApnsPushChannel extends Channel<ApnsPushChannel.ApnsSendReq> {
 
         @Pattern(regexp = "^$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
         private String apnsId;
-    }
-
-    @EqualsAndHashCode(callSuper = true)
-    @Data
-    public static class ApnsSendReq extends SendReq {
-        private List<String> deviceTokens;
-        private String title;
-        private String subtitle;
-        private String body;
-        private Integer badge;
-        private String sound;
-        private String category;
-        private String threadId;
-        private String collapseId;
-        private Boolean contentAvailable;
-        private Boolean mutableContent;
-        private String priority;
-        private String pushType;
-        private String apnsId;
-        private Long expirationEpochMillis;
-        private Map<String, Object> customData;
     }
 }
