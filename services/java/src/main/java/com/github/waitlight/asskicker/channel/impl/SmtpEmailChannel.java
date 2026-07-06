@@ -88,18 +88,23 @@ public class SmtpEmailChannel extends Channel<EmailReq> {
     @AllArgsConstructor
     static class Properties {
 
+        /** SMTP 服务器主机名,如 smtp.gmail.com */
         @NotBlank
         private String host;
 
+        /** SMTP 端口:465 走 SSL,其他端口走 STARTTLS(默认 587) */
         @Min(1)
         @Max(65535)
         private int port = 587;
 
+        /** SMTP 登录用户名,通常与 from 邮箱相同 */
         @NotBlank
         private String username;
 
+        /** SMTP 登录密码或应用专用密码 */
         private String password;
 
+        /** 默认发件人地址,当 EmailReq.from 为空时使用 */
         @NotBlank
         @Email
         private String from;

@@ -174,9 +174,11 @@ public class FcmPushChannel extends Channel<PushReq> {
     @AllArgsConstructor
     static class Properties {
 
+        /** Firebase 项目 ID,对应 Firebase 控制台的 project id */
         @NotBlank
         private String projectId;
 
+        /** Firebase 服务账号 JSON 密钥文件的完整内容(字符串形式),用于获取 OAuth2 access token */
         @NotBlank
         private String serviceAccountJson;
     }

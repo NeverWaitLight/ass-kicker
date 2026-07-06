@@ -98,17 +98,22 @@ public class TencentSmsChannel extends Channel<SmsReq> {
     @AllArgsConstructor
     static class Properties {
 
+        /** 腾讯云 API 密钥 SecretId */
         @NotBlank
         private String secretId;
 
+        /** 腾讯云 API 密钥 SecretKey */
         @NotBlank
         private String secretKey;
 
+        /** 短信应用 SDK AppID,在腾讯云短信控制台创建应用后获取 */
         @NotBlank
         private String smsSdkAppId;
 
+        /** 服务地域,如 ap-guangzhou;留空使用默认 ap-guangzhou */
         private String region;
 
+        /** 短信服务 endpoint,留空使用默认值 sms.tencentcloudapi.com,可写 host 或 host:port */
         @Pattern(regexp = "^$|^[A-Za-z0-9.-]+(:\\d+)?$")
         private String endpoint;
     }

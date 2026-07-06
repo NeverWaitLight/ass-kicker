@@ -69,12 +69,15 @@ public class AliyunSmsChannel extends Channel<SmsReq> {
     @AllArgsConstructor
     static class Properties {
 
+        /** 阿里云访问密钥 AccessKey ID */
         @NotBlank
         private String accessKeyId;
 
+        /** 阿里云访问密钥 AccessKey Secret */
         @NotBlank
         private String accessKeySecret;
 
+        /** 短信服务 endpoint,留空使用默认值 dysmsapi.aliyuncs.com,可写 host 或 host:port */
         @Pattern(regexp = "^$|^[A-Za-z0-9.-]+(:\\d+)?$")
         private String endpoint;
     }

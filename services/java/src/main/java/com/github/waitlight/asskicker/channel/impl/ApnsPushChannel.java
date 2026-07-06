@@ -186,20 +186,26 @@ public class ApnsPushChannel extends Channel<PushReq> {
     @AllArgsConstructor
     static class Properties {
 
+        /** APNs 服务器地址:留空走生产环境;"sandbox" 走开发环境;也可显式写 host 或 host:port */
         private String url;
 
+        /** iOS App 的 bundle id,作为 APNs topic 使用 */
         @NotBlank
         private String bundleIdTopic;
 
+        /** Apple 开发者账号的 team id(10 位字符) */
         @NotBlank
         private String teamId;
 
+        /** APNs 认证私钥的 key id(10 位字符),对应 Apple Developer 控制台生成的 Key */
         @NotBlank
         private String keyId;
 
+        /** APNs 认证私钥的 PEM 内容(.p8 文件全文,含 BEGIN/END PRIVATE KEY 行) */
         @NotBlank
         private String privateKeyPem;
 
+        /** 账号级默认 apns-id(UUID 格式),用于服务端去重;留空则每次请求由 APNs 生成 */
         @Pattern(regexp = "^$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
         private String apnsId;
     }

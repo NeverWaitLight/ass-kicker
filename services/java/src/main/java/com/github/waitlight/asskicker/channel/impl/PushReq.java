@@ -9,9 +9,14 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class PushReq extends SendReq {
+    /** 目标设备令牌:APNs device token 或 FCM registration token */
     private String deviceToken;
+    /** 通知标题 */
     private String title;
+    /** 通知正文 */
     private String body;
+    /** 投递优先级:APNs 取 IMMEDIATE/CONSERVE_POWER,FCM 取 HIGH/NORMAL,空则用平台默认 */
     private String priority;
+    /** 自定义数据字段,APNs 作为 payload 自定义键,FCM 转为 data map(值会 toString) */
     private Map<String, Object> data;
 }

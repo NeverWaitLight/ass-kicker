@@ -85,8 +85,11 @@ public class DingTalkBotChannel extends Channel<DingTalkBotChannel.DingTalkSendR
     @EqualsAndHashCode(callSuper = true)
     @Data
     public static class DingTalkSendReq extends SendReq {
+        /** 机器人 webhook 的 access_token 参数值 */
         private String token;
+        /** 机器人加签模式下的密钥,用于 HMAC-SHA256 签名;若机器人未启用加签可留空 */
         private String secret;
+        /** 消息文本内容 */
         private String content;
     }
 }
