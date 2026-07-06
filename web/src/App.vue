@@ -44,10 +44,6 @@
               <template #icon><FileTextOutlined /></template>
               {{ t('nav.templates') }}
             </a-menu-item>
-            <a-menu-item v-if="isAdmin" key="/global-variables">
-              <template #icon><DatabaseOutlined /></template>
-              {{ t('nav.globalVariables') }}
-            </a-menu-item>
             <a-menu-item v-if="canViewChannel" key="/channels">
               <template #icon><ApiOutlined /></template>
               {{ t('nav.channels') }}
@@ -83,7 +79,6 @@ import { currentTheme } from './stores/theme'
 import { CHANNEL_PERMISSIONS, hasPermission } from './utils/permissions'
 import {
   ApiOutlined,
-  DatabaseOutlined,
   FileTextOutlined,
   HistoryOutlined,
   TeamOutlined
@@ -108,7 +103,7 @@ const selectedKeys = computed(() => {
     return []
   }
   const base = `/${path.split('/')[1] || ''}`
-  const menuKeys = ['/users', '/channels', '/templates', '/global-variables', '/send-records']
+  const menuKeys = ['/users', '/channels', '/templates', '/send-records']
   if (menuKeys.includes(base)) {
     return [base]
   }

@@ -51,7 +51,6 @@ public class SecurityConfig {
                         .permitAll()
                         .pathMatchers("/v1/me/**").authenticated()
                         .pathMatchers("/v1/users/**").hasRole("ADMIN")
-                        .pathMatchers("/v1/global-variables/**").hasRole("ADMIN")
                         .pathMatchers("/v1/channel-providers/**").hasRole("ADMIN")
                         .pathMatchers("/v1/**").authenticated()
                         .anyExchange().permitAll()

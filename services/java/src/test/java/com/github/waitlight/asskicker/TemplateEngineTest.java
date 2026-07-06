@@ -1,7 +1,6 @@
 package com.github.waitlight.asskicker;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,7 +21,6 @@ import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.service.TemplateEngine;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.TemplateEntity;
-import com.github.waitlight.asskicker.service.GlobalVariableService;
 import com.github.waitlight.asskicker.service.TemplateEntityFixtures;
 import com.github.waitlight.asskicker.service.TemplateService;
 
@@ -35,9 +33,6 @@ class TemplateEngineTest {
     @Mock
     private TemplateService templateService;
 
-    @Mock
-    private GlobalVariableService globalVariableService;
-
     private TemplateEngine engine;
 
     @BeforeEach
@@ -45,8 +40,7 @@ class TemplateEngineTest {
         CaffeineCacheProperties cacheProperties = new CaffeineCacheProperties();
         cacheProperties.setMaximumSize(100);
         cacheProperties.setExpireAfterWriteMinutes(60);
-        engine = new TemplateEngine(templateService, globalVariableService, cacheProperties);
-        lenient().when(globalVariableService.findEnabledVariablesMap()).thenReturn(Mono.just(Map.of()));
+        engine = new TemplateEngine(templateService, cacheProperties);
     }
 
     @Test
@@ -80,55 +74,6 @@ class TemplateEngineTest {
     }
 
     @Test
-    void fill_mergesGlobalVariables_rendersTitleAndContent() {
-        TemplateEntity entity = TemplateEntityFixtures.brandWelcomeEmail();
-        when(templateService.findByCode("brand_welcome")).thenReturn(Mono.just(entity));
-        when(globalVariableService.findEnabledVariablesMap()).thenReturn(Mono.just(Map.of(
-                "brandName", "Ass Kicker",
-                "teamName", "Ops Team")));
-
-        UniMessage req = new UniMessage();
-        req.setTemplateCode("brand_welcome");
-        req.setLanguage(Language.EN);
-        req.setTemplateParams(Map.of("name", "Alice"));
-
-        StepVerifier.create(engine.fill(req))
-                .assertNext(msg -> {
-                    assertThat(msg.getTitle()).isEqualTo("Welcome to Ass Kicker from Ops Team");
-                    assertThat(msg.getContent()).isEqualTo("Hello Alice, Ass Kicker is ready");
-                    assertThat(msg.getTemplateParams())
-                            .containsEntry("brandName", "Ass Kicker")
-                            .containsEntry("teamName", "Ops Team")
-                            .containsEntry("name", "Alice");
-                })
-                .verifyComplete();
-    }
-
-    @Test
-    void fill_requestParamsOverrideGlobalVariables() {
-        TemplateEntity entity = TemplateEntityFixtures.brandWelcomeEmail();
-        when(templateService.findByCode("brand_welcome")).thenReturn(Mono.just(entity));
-        when(globalVariableService.findEnabledVariablesMap()).thenReturn(Mono.just(Map.of(
-                "brandName", "Global Brand",
-                "teamName", "Global Team")));
-
-        UniMessage req = new UniMessage();
-        req.setTemplateCode("brand_welcome");
-        req.setLanguage(Language.EN);
-        req.setTemplateParams(Map.of(
-                "brandName", "Request Brand",
-                "name", "Bob"));
-
-        StepVerifier.create(engine.fill(req))
-                .assertNext(msg -> {
-                    assertThat(msg.getTitle()).isEqualTo("Welcome to Request Brand from Global Team");
-                    assertThat(msg.getContent()).isEqualTo("Hello Bob, Request Brand is ready");
-                    assertThat(msg.getTemplateParams()).containsEntry("brandName", "Request Brand");
-                })
-                .verifyComplete();
-    }
-
-    @Test
     void findMissingVariables_whenRequestParamsComplete_passes() {
         TemplateEntity entity = TemplateEntityFixtures.brandWelcomeEmail();
         when(templateService.findByCode("brand_welcome")).thenReturn(Mono.just(entity));
@@ -140,24 +85,6 @@ class TemplateEngineTest {
                 "brandName", "Ass Kicker",
                 "teamName", "Ops Team",
                 "name", "Alice"));
-
-        StepVerifier.create(engine.findMissingVariables(req))
-                .assertNext(missing -> assertThat(missing).isEmpty())
-                .verifyComplete();
-    }
-
-    @Test
-    void findMissingVariables_mergesGlobalVariables() {
-        TemplateEntity entity = TemplateEntityFixtures.brandWelcomeEmail();
-        when(templateService.findByCode("brand_welcome")).thenReturn(Mono.just(entity));
-        when(globalVariableService.findEnabledVariablesMap()).thenReturn(Mono.just(Map.of(
-                "brandName", "Ass Kicker",
-                "teamName", "Ops Team")));
-
-        UniMessage req = new UniMessage();
-        req.setTemplateCode("brand_welcome");
-        req.setLanguage(Language.EN);
-        req.setTemplateParams(Map.of("name", "Alice"));
 
         StepVerifier.create(engine.findMissingVariables(req))
                 .assertNext(missing -> assertThat(missing).isEmpty())

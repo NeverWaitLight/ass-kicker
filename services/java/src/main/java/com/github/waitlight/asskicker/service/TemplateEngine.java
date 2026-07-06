@@ -3,7 +3,6 @@ package com.github.waitlight.asskicker.service;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -33,15 +32,12 @@ public class TemplateEngine {
     private static final Pattern MUSTACHE_VARIABLE_PATTERN = Pattern.compile("\\{\\{\\s*([A-Za-z0-9_.-]+)\\s*}}");
 
     private final TemplateService templateService;
-    private final GlobalVariableService globalVariableService;
     private final MustacheFactory mustacheFactory;
     private final Cache<String, Mustache> compiledTemplateCache;
 
     public TemplateEngine(TemplateService templateService,
-            GlobalVariableService globalVariableService,
             CaffeineCacheProperties cacheProperties) {
         this.templateService = templateService;
-        this.globalVariableService = globalVariableService;
         this.mustacheFactory = new DefaultMustacheFactory();
         this.compiledTemplateCache = Caffeine.newBuilder()
                 .maximumSize(cacheProperties.getMaximumSize())
@@ -55,19 +51,19 @@ public class TemplateEngine {
                         tpl.getLocalizedTemplates() != null
                                 ? tpl.getLocalizedTemplates().get(req.getLanguage())
                                 : null))
-                .zipWith(globalVariableService.findEnabledVariablesMap())
-                .map(tuple -> {
-                    TemplateEntity.LocalizedTemplate tpl = tuple.getT1();
-                    Map<String, Object> mergedParams = mergeParams(tuple.getT2(), req.getTemplateParams());
-                    String title = fill(req.getTemplateCode(), req.getLanguage(), tpl.getTitle(), mergedParams);
-                    String content = fill(req.getTemplateCode(), req.getLanguage(), tpl.getContent(), mergedParams);
+                .map(tpl -> {
+                    Map<String, Object> params = req.getTemplateParams() != null
+                            ? req.getTemplateParams()
+                            : Collections.emptyMap();
+                    String title = fill(req.getTemplateCode(), req.getLanguage(), tpl.getTitle(), params);
+                    String content = fill(req.getTemplateCode(), req.getLanguage(), tpl.getContent(), params);
                     UniMessage uniMessage = new UniMessage();
                     uniMessage.setTemplateCode(req.getTemplateCode());
                     uniMessage.setLanguage(req.getLanguage());
                     uniMessage.setTitle(title);
                     uniMessage.setContent(content);
                     uniMessage.setExtraData(req.getExtraData());
-                    uniMessage.setTemplateParams(mergedParams);
+                    uniMessage.setTemplateParams(params);
                     return uniMessage;
                 });
     }
@@ -78,15 +74,15 @@ public class TemplateEngine {
                         tpl.getLocalizedTemplates() != null
                                 ? tpl.getLocalizedTemplates().get(req.getLanguage())
                                 : null))
-                .zipWith(globalVariableService.findEnabledVariablesMap())
-                .map(tuple -> {
-                    TemplateEntity.LocalizedTemplate tpl = tuple.getT1();
-                    Map<String, Object> mergedParams = mergeParams(tuple.getT2(), req.getTemplateParams());
+                .map(tpl -> {
+                    Map<String, Object> params = req.getTemplateParams() != null
+                            ? req.getTemplateParams()
+                            : Collections.emptyMap();
                     Set<String> variables = extractVariableNames(tpl.getTitle());
                     variables.addAll(extractVariableNames(tpl.getContent()));
                     Set<String> missing = new LinkedHashSet<>();
                     for (String variable : variables) {
-                        if (!isVariableFilled(mergedParams, variable)) {
+                        if (!isVariableFilled(params, variable)) {
                             missing.add(variable);
                         }
                     }
@@ -112,17 +108,6 @@ public class TemplateEngine {
         Map<String, Object> params = templateParams != null ? templateParams : Collections.emptyMap();
         mustache.execute(writer, params);
         return writer.toString();
-    }
-
-    private Map<String, Object> mergeParams(Map<String, Object> globalParams, Map<String, Object> requestParams) {
-        Map<String, Object> merged = new LinkedHashMap<>();
-        if (globalParams != null) {
-            merged.putAll(globalParams);
-        }
-        if (requestParams != null) {
-            merged.putAll(requestParams);
-        }
-        return Collections.unmodifiableMap(merged);
     }
 
     private Set<String> extractVariableNames(String templateContent) {
