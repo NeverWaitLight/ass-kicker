@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
+import com.github.waitlight.asskicker.service.Sender;
 import com.github.waitlight.asskicker.service.TemplateEngine;
 import com.github.waitlight.asskicker.mq.SendTaskProducer;
 import com.github.waitlight.asskicker.model.Language;
@@ -35,11 +36,14 @@ class SendControllerTest {
     @Mock
     private TemplateEngine templateEngine;
 
+    @Mock
+    private Sender sender;
+
     private SendController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new SendController(sendTaskProducer, templateEngine);
+        controller = new SendController(sendTaskProducer, templateEngine, sender);
     }
 
     @Test
