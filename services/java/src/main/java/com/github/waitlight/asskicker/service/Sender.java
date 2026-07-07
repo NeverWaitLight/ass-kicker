@@ -1,29 +1,27 @@
 package com.github.waitlight.asskicker.service;
 
-import java.time.Instant;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
 import com.github.waitlight.asskicker.channel.AbstractChannel;
-import jakarta.annotation.PreDestroy;
-import org.springframework.stereotype.Component;
-
 import com.github.waitlight.asskicker.channel.ChannelManager;
+import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.RecordEntity;
 import com.github.waitlight.asskicker.model.SendRecordStatus;
-
-import org.bson.types.ObjectId;
-
+import jakarta.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
+import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+
+import java.time.Instant;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @Slf4j
@@ -48,6 +46,23 @@ public class Sender {
             log.warn("Sender executor did not terminate in time, forcing shutdown");
             executor.shutdownNow();
         }
+    }
+
+    public <T extends SendReq> Mono<String> send(T req) {
+        if (req == null || req.getChannelType() == null) {
+            return Mono.empty();
+        }
+        return channelManager.chose(req.getChannelType(), (String) null)
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.warn("No channel available for channelType={}", req.getChannelType());
+                    return Mono.empty();
+                }))
+                .flatMap(channel -> invokeChannelSend(channel, req));
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Mono<String> invokeChannelSend(AbstractChannel<?> channel, SendReq req) {
+        return ((AbstractChannel) channel).send(req);
     }
 
     public Mono<String> send(UniTask task) {
