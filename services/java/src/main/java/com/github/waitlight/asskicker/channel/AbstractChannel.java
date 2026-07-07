@@ -3,6 +3,7 @@ package com.github.waitlight.asskicker.channel;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.model.ChannelEntity;
+import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ public abstract class AbstractChannel<T extends SendReq> {
     private final String id;
     private final String code;
     private final ChannelType channelType;
+    private final ChannelProvider provider;
     private final boolean enabled;
 
     protected final WebClient webClient;
@@ -25,6 +27,7 @@ public abstract class AbstractChannel<T extends SendReq> {
         this.id = entity.getId();
         this.code = entity.getCode();
         this.channelType = entity.getType();
+        this.provider = entity.getProvider();
         this.enabled = entity.isEnabled();
 
         this.webClient = webClient;

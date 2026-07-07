@@ -1,6 +1,7 @@
 package com.github.waitlight.asskicker.channel;
 
 import com.github.waitlight.asskicker.model.ChannelEntity;
+import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.service.ChannelService;
 import jakarta.annotation.PostConstruct;
@@ -62,6 +63,16 @@ public class ChannelManager {
         AbstractChannel<?> chosen = matching.get(0);
         log.debug("Selected channel {} for recipient {}", chosen.getCode(), recipient);
         return Mono.just(chosen);
+    }
+
+    public Mono<AbstractChannel<?>> chose(ChannelType channelType, ChannelProvider provider) {
+        AbstractChannel<?> chosen = cache.values().stream()
+                .filter(AbstractChannel::isEnabled)
+                .filter(c -> channelType == null || c.getChannelType() == channelType)
+                .filter(c -> provider == null || c.getProvider() == provider)
+                .min(BY_CODE)
+                .orElse(null);
+        return chosen == null ? Mono.empty() : Mono.just(chosen);
     }
 
     public void refresh() {
