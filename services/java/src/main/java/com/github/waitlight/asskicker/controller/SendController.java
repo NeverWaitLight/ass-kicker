@@ -1,5 +1,6 @@
 package com.github.waitlight.asskicker.controller;
 
+import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.config.OpenApiConfig;
 import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.UniAddress;
@@ -7,6 +8,7 @@ import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
 import com.github.waitlight.asskicker.dto.send.SendVO;
 import com.github.waitlight.asskicker.exception.BusinessException;
+import com.github.waitlight.asskicker.service.Sender;
 import com.github.waitlight.asskicker.service.TemplateEngine;
 import com.github.waitlight.asskicker.mq.SendTaskProducer;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +37,7 @@ public class SendController {
 
     private final SendTaskProducer sendTaskProducer;
     private final TemplateEngine templateEngine;
+    private final Sender sender;
 
     @Operation(summary = "发送消息", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping("/send")
@@ -49,6 +52,27 @@ public class SendController {
                 .onErrorResume(ResponseStatusException.class, ex -> Mono.just(
                     Resp.error(String.valueOf(ex.getStatusCode().value()),
                         ex.getReason() == null ? "发送失败" : ex.getReason())));
+    }
+
+    @Operation(summary = "直接发送(不经模板/MQ)", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @PostMapping("/send/direct")
+    public Mono<Resp<SendVO>> sendDirect(@RequestBody SendReq req) {
+        if (req == null) {
+            return Mono.just(Resp.error(String.valueOf(HttpStatus.BAD_REQUEST.value()), "请求体不能为空"));
+        }
+        if (req.getChannelType() == null) {
+            return Mono.just(Resp.error(String.valueOf(HttpStatus.BAD_REQUEST.value()), "channelType 不能为空"));
+        }
+        return sender.send(req)
+                .switchIfEmpty(Mono.error(new ResponseStatusException(
+                        HttpStatus.SERVICE_UNAVAILABLE,
+                        "无可用渠道: channelType=" + req.getChannelType()
+                                + (req.getProvider() == null ? "" : ", provider=" + req.getProvider()))))
+                .map(SendVO::new)
+                .map(Resp::success)
+                .onErrorResume(ResponseStatusException.class, ex -> Mono.just(
+                        Resp.error(String.valueOf(ex.getStatusCode().value()),
+                                ex.getReason() == null ? "发送失败" : ex.getReason())));
     }
 
     private UniTask validateAndEnrich(UniTask task) {
