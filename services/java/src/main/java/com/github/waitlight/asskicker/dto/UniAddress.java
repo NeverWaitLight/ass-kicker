@@ -38,28 +38,4 @@ public class UniAddress {
                 .build();
     }
 
-    public static UniAddress ofImBot(ChannelProvider provider, String channelKey, String... targetId) {
-        return UniAddress.builder()
-                .channelType(ChannelType.IM)
-                .provider(provider)
-                .channelKey(channelKey)
-                .recipients(Set.of(targetId))
-                .build();
-    }
-
-    public static UniAddress ofImWebhook(ChannelProvider provider, String... webhookToken) {
-        return UniAddress.builder()
-                .channelType(ChannelType.IM)
-                .provider(provider)
-                .recipients(Set.of(webhookToken))
-                .build();
-    }
-
-    public static UniAddress ofPush(ChannelProvider provider, String... deviceToken) {
-        return UniAddress.builder()
-                .channelType(ChannelType.PUSH)
-                .provider(provider)
-                .recipients(Set.of(deviceToken))
-                .build();
-    }
 }

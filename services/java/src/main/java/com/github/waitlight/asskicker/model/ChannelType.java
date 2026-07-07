@@ -8,10 +8,6 @@ import lombok.RequiredArgsConstructor;
 public enum ChannelType {
     SMS(ChannelGroup.SMS),
     EMAIL(ChannelGroup.EMAIL),
-    @Deprecated
-    IM(ChannelGroup.IM),
-    @Deprecated
-    PUSH(ChannelGroup.PUSH),
     DINGTALK(ChannelGroup.IM),
     FEISHU(ChannelGroup.IM),
     APNS(ChannelGroup.PUSH),
