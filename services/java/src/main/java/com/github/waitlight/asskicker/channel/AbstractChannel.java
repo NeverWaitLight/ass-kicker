@@ -18,7 +18,6 @@ public abstract class AbstractChannel<T extends SendReq> {
     private final String code;
     private final ChannelType type;
     private final ChannelProvider provider;
-    private final boolean enabled;
 
     protected final WebClient webClient;
     protected final ObjectMapper objectMapper;
@@ -28,7 +27,6 @@ public abstract class AbstractChannel<T extends SendReq> {
         this.code = entity.getCode();
         this.type = entity.getType();
         this.provider = entity.getProvider();
-        this.enabled = entity.isEnabled();
 
         this.webClient = webClient;
         this.objectMapper = objectMapper;
