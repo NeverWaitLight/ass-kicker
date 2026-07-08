@@ -47,4 +47,10 @@ public abstract class SendReq {
      * 空值不覆盖，以兼容服务商托管模板（content 由服务商侧渲染）。
      */
     public abstract void applyRendered(String title, String content);
+
+    /**
+     * 返回该请求的收件人标识，用于写入发送记录。
+     * SMS 为手机号，Email 为收件人列表，IM 为 webhook token，Push 为 device token。
+     */
+    public abstract String recipient();
 }

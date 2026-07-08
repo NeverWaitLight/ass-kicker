@@ -39,4 +39,10 @@ public class EmailReq extends SendReq {
         if (title != null && !title.isBlank()) this.subject = title;
         if (content != null && !content.isBlank()) this.body = content;
     }
+
+    @Override
+    public String recipient() {
+        if (to == null || to.isEmpty()) return null;
+        return String.join(",", to);
+    }
 }

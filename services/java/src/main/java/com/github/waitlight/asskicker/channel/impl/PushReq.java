@@ -35,4 +35,9 @@ public class PushReq extends SendReq {
         if (title != null && !title.isBlank()) this.title = title;
         if (content != null && !content.isBlank()) this.body = content;
     }
+
+    @Override
+    public String recipient() {
+        return deviceToken;
+    }
 }

@@ -23,4 +23,9 @@ public class ImReq extends SendReq {
     public void applyRendered(String title, String content) {
         if (content != null && !content.isBlank()) this.content = content;
     }
+
+    @Override
+    public String recipient() {
+        return token;
+    }
 }

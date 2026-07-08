@@ -26,4 +26,12 @@ public class SmsReq extends SendReq {
     public void applyRendered(String title, String content) {
         // SMS 正文由服务商模板管理，本地无内容字段可填充
     }
+
+    @Override
+    public String recipient() {
+        if (phoneNumber == null) return null;
+        return (countryCode != null && !countryCode.isBlank())
+                ? "+" + countryCode + phoneNumber
+                : phoneNumber;
+    }
 }
