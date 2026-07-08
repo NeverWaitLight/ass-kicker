@@ -2,6 +2,7 @@ package com.github.waitlight.asskicker.service;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig;
+import com.github.waitlight.asskicker.converter.RecordConverter;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.record.RecordVO;
 import com.github.waitlight.asskicker.model.RecordEntity;
@@ -27,6 +28,7 @@ public class RecordService implements DisposableBean {
 
     private final RecordRepository recordRepository;
     private final CaffeineCacheConfig caffeineCacheConfig;
+    private final RecordConverter recordConverter;
     private final List<RecordEntity> buffer = Collections.synchronizedList(new ArrayList<>());
     @Value("${send-record.buffer-size:100}")
     private int bufferSize;
@@ -35,16 +37,18 @@ public class RecordService implements DisposableBean {
     private AsyncLoadingCache<String, Optional<RecordVO>> recordByIdCache;
 
     public RecordService(RecordRepository recordRepository,
-                         CaffeineCacheConfig caffeineCacheConfig) {
+                         CaffeineCacheConfig caffeineCacheConfig,
+                         RecordConverter recordConverter) {
         this.recordRepository = recordRepository;
         this.caffeineCacheConfig = caffeineCacheConfig;
+        this.recordConverter = recordConverter;
     }
 
     @PostConstruct
     void initCaches() {
         recordByIdCache = caffeineCacheConfig.buildCache((id, executor) ->
                 recordRepository.findById(id)
-                        .map(r -> Optional.of(toView(r)))
+                        .map(r -> Optional.of(recordConverter.toVO(r)))
                         .defaultIfEmpty(Optional.empty())
                         .toFuture());
     }
@@ -58,7 +62,7 @@ public class RecordService implements DisposableBean {
 
         Mono<Long> totalMono = recordRepository.countAll(recipientFilter, channelTypeFilter);
         Mono<List<RecordVO>> itemsMono = recordRepository.findPage(normalizedSize, offset, recipientFilter, channelTypeFilter)
-                .map(this::toView)
+                .map(recordConverter::toVO)
                 .collectList();
 
         return Mono.zip(itemsMono, totalMono)
@@ -119,25 +123,5 @@ public class RecordService implements DisposableBean {
         recordRepository.saveAll(batch)
                 .doOnError(e -> log.error("SEND_RECORD_BATCH_SAVE_FAILED size={} error={}", batch.size(), e.getMessage()))
                 .subscribe();
-    }
-
-    private RecordVO toView(RecordEntity r) {
-        return new RecordVO(
-                r.getId(),
-                r.getTaskId(),
-                r.getTemplateCode(),
-                r.getLanguageCode(),
-                r.getParams(),
-                r.getChannelId(),
-                r.getRecipient(),
-                r.getSubmittedAt(),
-                r.getRenderedContent(),
-                r.getChannelType(),
-                r.getChannelName(),
-                r.getStatus(),
-                r.getErrorCode(),
-                r.getErrorMessage(),
-                r.getSentAt()
-        );
     }
 }
