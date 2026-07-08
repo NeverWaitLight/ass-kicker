@@ -57,12 +57,6 @@ public class SendController {
     @Operation(summary = "直接发送(不经模板/MQ)", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping("/send/direct")
     public Mono<Resp<SendVO>> sendDirect(@Valid @RequestBody SendReq req) {
-        if (req == null) {
-            return Mono.just(Resp.error(String.valueOf(HttpStatus.BAD_REQUEST.value()), "请求体不能为空"));
-        }
-        if (req.getType() == null) {
-            return Mono.just(Resp.error(String.valueOf(HttpStatus.BAD_REQUEST.value()), "channelType 不能为空"));
-        }
         return sender.send(req)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(
                         HttpStatus.SERVICE_UNAVAILABLE,

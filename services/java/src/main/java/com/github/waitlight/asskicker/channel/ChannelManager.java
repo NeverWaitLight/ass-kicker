@@ -65,6 +65,10 @@ public class ChannelManager {
         return Mono.just(chosen);
     }
 
+    public Mono<AbstractChannel<?>> chose(SendReq req) {
+        return chose(req.getType(), req.getProvider());
+    }
+
     public Mono<AbstractChannel<?>> chose(ChannelType channelType, ChannelProvider provider) {
         AbstractChannel<?> chosen = cache.values().stream()
                 .filter(AbstractChannel::isEnabled)

@@ -52,12 +52,7 @@ public class Sender {
         if (req == null || req.getType() == null) {
             return Mono.empty();
         }
-        return channelManager.chose(req.getType(), req.getProvider())
-                .switchIfEmpty(Mono.defer(() -> {
-                    log.warn("No channel available for channelType={} provider={}",
-                            req.getType(), req.getProvider());
-                    return Mono.empty();
-                }))
+        return channelManager.chose(req)
                 .flatMap(channel -> invokeChannelSend(channel, req));
     }
 
