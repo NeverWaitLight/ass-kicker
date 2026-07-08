@@ -11,6 +11,8 @@ import com.github.waitlight.asskicker.model.ChannelType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.util.Map;
+
 @Data
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "channelType", visible = true)
 @JsonSubTypes({
@@ -21,9 +23,13 @@ import lombok.Data;
         @JsonSubTypes.Type(value = PushReq.class, name = "APNS"),
         @JsonSubTypes.Type(value = PushReq.class, name = "FCM"),
 })
-public abstract class ChannelReq {
+public abstract class SendReq {
     @NotNull
-    protected ChannelType type;
+    private ChannelType type;
 
-    protected ChannelProvider provider;
+    private ChannelProvider provider;
+
+    private String templateCode;
+
+    private Map<String, String> templateParams;
 }

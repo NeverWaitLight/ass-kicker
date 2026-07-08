@@ -16,5 +16,5 @@ public @interface Channel {
 
     ChannelProvider provider();
 
-    Class<? extends ChannelReq> reqType();
+    Class<? extends SendReq> reqType();
 }

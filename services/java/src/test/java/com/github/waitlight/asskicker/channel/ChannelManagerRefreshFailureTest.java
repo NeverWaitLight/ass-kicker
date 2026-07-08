@@ -64,14 +64,14 @@ class ChannelManagerRefreshFailureTest {
     }
 
     /** Avoids MapStruct-backed channels so this test does not depend on generated mapper classes. */
-    private static final class NoOpChannel extends AbstractChannel<ChannelReq> {
+    private static final class NoOpChannel extends AbstractChannel<SendReq> {
 
         NoOpChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
             super(entity, webClient, objectMapper);
         }
 
         @Override
-        public Mono<String> send(ChannelReq req) {
+        public Mono<String> send(SendReq req) {
             return Mono.empty();
         }
 

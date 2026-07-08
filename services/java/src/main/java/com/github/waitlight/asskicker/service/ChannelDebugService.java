@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.channel.AbstractChannel;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.channel.ChannelFactory;
-import com.github.waitlight.asskicker.channel.ChannelReq;
+import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.config.ChannelObjectMapperConfig;
 import com.github.waitlight.asskicker.dto.channel.ChannelDebugResultVO;
 import com.github.waitlight.asskicker.exception.NotFoundException;
@@ -54,8 +54,8 @@ public class ChannelDebugService {
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends ChannelReq> Mono<String> sendWithChannel(AbstractChannel<T> channel,
-                                                                Map<String, Object> requestPayload) {
+    private <T extends SendReq> Mono<String> sendWithChannel(AbstractChannel<T> channel,
+                                                             Map<String, Object> requestPayload) {
         Channel spec = AnnotationUtils.findAnnotation(channel.getClass(), Channel.class);
         if (spec == null) {
             return Mono.error(new IllegalArgumentException(

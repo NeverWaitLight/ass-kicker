@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.channel.impl;
 
-import com.github.waitlight.asskicker.channel.ChannelReq;
+import com.github.waitlight.asskicker.channel.SendReq;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
@@ -10,7 +10,7 @@ import java.util.Map;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class PushReq extends ChannelReq {
+public class PushReq extends SendReq {
     /** 目标设备令牌:APNs device token 或 FCM registration token */
     @NotBlank
     private String deviceToken;

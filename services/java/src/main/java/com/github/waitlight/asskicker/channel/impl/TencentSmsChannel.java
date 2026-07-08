@@ -57,10 +57,10 @@ public class TencentSmsChannel extends AbstractChannel<SmsReq> {
             SendSmsRequest sendSmsRequest = new SendSmsRequest();
             sendSmsRequest.setSmsSdkAppId(smsSdkAppId);
             sendSmsRequest.setSignName(req.getSignName());
-            sendSmsRequest.setTemplateId(req.getTemplateId());
+            sendSmsRequest.setTemplateId(req.getTemplateCode());
             sendSmsRequest.setPhoneNumberSet(new String[]{buildE164(req.getCountryCode(), req.getPhoneNumber())});
-            if (req.getTemplateParam() != null && !req.getTemplateParam().isEmpty()) {
-                sendSmsRequest.setTemplateParamSet(req.getTemplateParam().values().toArray(new String[0]));
+            if (req.getTemplateParams() != null && !req.getTemplateParams().isEmpty()) {
+                sendSmsRequest.setTemplateParamSet(req.getTemplateParams().values().toArray(new String[0]));
             }
 
             SendSmsResponse resp = client.SendSms(sendSmsRequest);

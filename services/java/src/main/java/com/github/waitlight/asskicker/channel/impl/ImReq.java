@@ -1,13 +1,13 @@
 package com.github.waitlight.asskicker.channel.impl;
 
-import com.github.waitlight.asskicker.channel.ChannelReq;
+import com.github.waitlight.asskicker.channel.SendReq;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class ImReq extends ChannelReq {
+public class ImReq extends SendReq {
     /**
      * IM 机器人 webhook token:
      * - DingTalk: webhook URL 中的 access_token 参数值

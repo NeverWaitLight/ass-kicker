@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.channel.impl;
 
-import com.github.waitlight.asskicker.channel.ChannelReq;
+import com.github.waitlight.asskicker.channel.SendReq;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -11,7 +11,7 @@ import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class EmailReq extends ChannelReq {
+public class EmailReq extends SendReq {
     /** 发件人地址,留空则回退到 channel 配置里的 from */
     @Email
     private String from;

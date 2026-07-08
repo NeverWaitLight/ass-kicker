@@ -2,7 +2,7 @@ package com.github.waitlight.asskicker.service;
 
 import com.github.waitlight.asskicker.channel.AbstractChannel;
 import com.github.waitlight.asskicker.channel.ChannelManager;
-import com.github.waitlight.asskicker.channel.ChannelReq;
+import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
@@ -48,7 +48,7 @@ public class Sender {
         }
     }
 
-    public <T extends ChannelReq> Mono<String> send(T req) {
+    public <T extends SendReq> Mono<String> send(T req) {
         if (req == null || req.getType() == null) {
             return Mono.empty();
         }
@@ -62,7 +62,7 @@ public class Sender {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private Mono<String> invokeChannelSend(AbstractChannel<?> channel, ChannelReq req) {
+    private Mono<String> invokeChannelSend(AbstractChannel<?> channel, SendReq req) {
         return ((AbstractChannel) channel).send(req);
     }
 

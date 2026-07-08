@@ -43,14 +43,14 @@ public class AliyunSmsChannel extends AbstractChannel<SmsReq> {
     @Override
     public Mono<String> send(SmsReq req) {
         try {
-            String templateParam = req.getTemplateParam() == null
+            String templateParam = req.getTemplateParams() == null
                     ? "{}"
-                    : objectMapper.writeValueAsString(req.getTemplateParam());
+                    : objectMapper.writeValueAsString(req.getTemplateParams());
 
             SendSmsRequest sendSmsRequest = new SendSmsRequest()
                     .setPhoneNumbers(req.getPhoneNumber())
                     .setSignName(req.getSignName())
-                    .setTemplateCode(req.getTemplateId())
+                    .setTemplateCode(req.getTemplateCode())
                     .setTemplateParam(templateParam);
 
             SendSmsResponse resp = client.sendSms(sendSmsRequest);
