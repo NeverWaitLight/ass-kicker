@@ -8,6 +8,7 @@ import com.github.waitlight.asskicker.channel.impl.PushReq;
 import com.github.waitlight.asskicker.channel.impl.SmsReq;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
@@ -20,7 +21,9 @@ import lombok.Data;
         @JsonSubTypes.Type(value = PushReq.class, name = "APNS"),
         @JsonSubTypes.Type(value = PushReq.class, name = "FCM"),
 })
-public abstract class SendReq {
-    protected ChannelType channelType;
+public abstract class ChannelReq {
+    @NotNull
+    protected ChannelType type;
+
     protected ChannelProvider provider;
 }

@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 
 @Getter
 @Slf4j
-public abstract class AbstractChannel<T extends SendReq> {
+public abstract class AbstractChannel<T extends ChannelReq> {
 
     private final String id;
     private final String code;

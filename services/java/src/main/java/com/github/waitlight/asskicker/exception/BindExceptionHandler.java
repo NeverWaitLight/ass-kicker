@@ -30,7 +30,7 @@ public class BindExceptionHandler {
      * 命中则走 {@code validation.{Annotation}} 通用模板，否则按 {@code {messageKey}} 原样查表。
      */
     private static final Set<String> COMMON_VALIDATION_ANNOTATIONS = Set.of(
-            "NotBlank", "NotNull", "NotEmpty", "Min", "Max", "Pattern", "Size");
+            "NotBlank", "NotNull", "NotEmpty", "Min", "Max", "Pattern", "Size", "Email");
 
     private final MessageSource messageSource;
 

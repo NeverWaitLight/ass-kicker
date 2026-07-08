@@ -2,7 +2,7 @@ package com.github.waitlight.asskicker.service;
 
 import com.github.waitlight.asskicker.channel.AbstractChannel;
 import com.github.waitlight.asskicker.channel.ChannelManager;
-import com.github.waitlight.asskicker.channel.SendReq;
+import com.github.waitlight.asskicker.channel.ChannelReq;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
@@ -48,21 +48,21 @@ public class Sender {
         }
     }
 
-    public <T extends SendReq> Mono<String> send(T req) {
-        if (req == null || req.getChannelType() == null) {
+    public <T extends ChannelReq> Mono<String> send(T req) {
+        if (req == null || req.getType() == null) {
             return Mono.empty();
         }
-        return channelManager.chose(req.getChannelType(), req.getProvider())
+        return channelManager.chose(req.getType(), req.getProvider())
                 .switchIfEmpty(Mono.defer(() -> {
                     log.warn("No channel available for channelType={} provider={}",
-                            req.getChannelType(), req.getProvider());
+                            req.getType(), req.getProvider());
                     return Mono.empty();
                 }))
                 .flatMap(channel -> invokeChannelSend(channel, req));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private Mono<String> invokeChannelSend(AbstractChannel<?> channel, SendReq req) {
+    private Mono<String> invokeChannelSend(AbstractChannel<?> channel, ChannelReq req) {
         return ((AbstractChannel) channel).send(req);
     }
 
