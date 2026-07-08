@@ -15,7 +15,7 @@ import lombok.Data;
 import java.util.Map;
 
 @Data
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "channelType", visible = true)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
 @JsonSubTypes({
         @JsonSubTypes.Type(value = SmsReq.class, name = "SMS"),
         @JsonSubTypes.Type(value = EmailReq.class, name = "EMAIL"),
