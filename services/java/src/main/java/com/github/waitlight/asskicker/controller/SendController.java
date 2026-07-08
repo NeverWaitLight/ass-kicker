@@ -39,6 +39,10 @@ public class SendController {
     private final TemplateEngine templateEngine;
     private final Sender sender;
 
+    /**
+     * @deprecated 改用 {@code POST /v1/send/direct}（{@link SendReq} 体系）。
+     */
+    @Deprecated
     @Operation(summary = "发送消息", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping("/send")
     public Mono<Resp<SendVO>> send(@Valid @RequestBody UniTask rawTask) {
@@ -69,6 +73,10 @@ public class SendController {
                                 ex.getReason() == null ? "发送失败" : ex.getReason())));
     }
 
+    /**
+     * @deprecated 随 {@link UniTask} 废弃而废弃。
+     */
+    @Deprecated
     private UniTask validateAndEnrich(UniTask task) {
         if (task == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请求体不能为空");
@@ -104,6 +112,10 @@ public class SendController {
                 .build();
     }
 
+    /**
+     * @deprecated 随 {@link UniTask} 废弃而废弃。
+     */
+    @Deprecated
     private Mono<Void> validateTemplateVariables(UniTask task) {
         return templateEngine.findMissingVariables(task.getMessage())
                 .onErrorMap(BusinessException.class,

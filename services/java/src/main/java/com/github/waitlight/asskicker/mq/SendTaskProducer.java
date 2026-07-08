@@ -20,6 +20,10 @@ public class SendTaskProducer {
         this.rocketMQTemplate = rocketMQTemplate;
     }
 
+    /**
+     * @deprecated 随 {@link com.github.waitlight.asskicker.dto.UniTask} 废弃而废弃。
+     */
+    @Deprecated
     public Mono<UniTask> publish(UniTask task) {
         return Mono.fromCallable(() -> {
             rocketMQTemplate.syncSend(

@@ -36,6 +36,10 @@ public abstract class AbstractChannel<T extends SendReq> {
 
     public abstract Mono<String> send(T req);
 
+    /**
+     * @deprecated 随 {@link com.github.waitlight.asskicker.dto.UniTask} 废弃而废弃，改用 {@link #send(SendReq)}
+     */
+    @Deprecated
     public final Mono<String> send(UniTask task) {
         return Mono.empty();
     }

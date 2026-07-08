@@ -46,6 +46,10 @@ public class TemplateEngine {
                 .build();
     }
 
+    /**
+     * @deprecated 改用 {@link #fill(SendReq)}
+     */
+    @Deprecated
     public Mono<UniMessage> fillold(UniMessage req) {
         if (req.isDirectSend() || req.getTemplateCode() == null || req.getTemplateCode().isBlank()) {
             return Mono.just(req);
@@ -70,6 +74,10 @@ public class TemplateEngine {
                 });
     }
 
+    /**
+     * @deprecated 随 {@link UniMessage} 废弃而废弃。
+     */
+    @Deprecated
     private UniMessage buildUniMessage(UniMessage req, String title, String content, Map<String, Object> params) {
         UniMessage uniMessage = new UniMessage();
         uniMessage.setTemplateCode(req.getTemplateCode());
@@ -101,6 +109,10 @@ public class TemplateEngine {
         return msg;
     }
 
+    /**
+     * @deprecated 随 {@link UniMessage} 废弃而废弃。
+     */
+    @Deprecated
     public Mono<Set<String>> findMissingVariables(UniMessage req) {
         return templateService.findByCode(req.getTemplateCode())
                 .flatMap(tpl -> Mono.justOrEmpty(

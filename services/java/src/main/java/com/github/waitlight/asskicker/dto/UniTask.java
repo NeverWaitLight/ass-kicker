@@ -6,6 +6,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * @deprecated 已被 {@link com.github.waitlight.asskicker.channel.SendReq} 体系取代。
+ */
+@Deprecated
 @Setter
 @Getter
 @Builder

@@ -62,6 +62,10 @@ public class Sender {
         return ((AbstractChannel) channel).send(req);
     }
 
+    /**
+     * @deprecated 改用 {@link #send(SendReq)}
+     */
+    @Deprecated
     public Mono<String> send(UniTask task) {
         if (task == null || task.getMessage() == null || task.getAddress() == null) {
             return Mono.empty();
@@ -79,6 +83,10 @@ public class Sender {
         return Mono.just(task.getTaskId());
     }
 
+    /**
+     * @deprecated 随 {@link UniTask} 废弃而废弃。
+     */
+    @Deprecated
     private void normalize(UniTask task) {
         if (task.getTaskId() == null || task.getTaskId().isBlank()) {
             task.setTaskId(ObjectId.get().toString());
@@ -88,6 +96,10 @@ public class Sender {
         }
     }
 
+    /**
+     * @deprecated 随 {@link UniTask} 废弃而废弃。
+     */
+    @Deprecated
     private void process(UniTask task) {
         UniMessage filled = null;
         try {
@@ -146,6 +158,10 @@ public class Sender {
         }
     }
 
+    /**
+     * @deprecated 随 {@link UniAddress} 废弃而废弃。
+     */
+    @Deprecated
     private UniAddress buildSingleRecipientAddress(UniAddress original, String recipient) {
         return UniAddress.builder()
                 .channelType(original.getChannelType())
@@ -175,6 +191,10 @@ public class Sender {
         recordService.writeRecord(sr);
     }
 
+    /**
+     * @deprecated 随 {@link UniTask} 废弃而废弃。
+     */
+    @Deprecated
     private void writeFailedRecord(UniTask task, String recipient, AbstractChannel channel, String errorMessage) {
         UniMessage message = task.getMessage();
 
@@ -199,6 +219,10 @@ public class Sender {
         recordService.writeRecord(sr);
     }
 
+    /**
+     * @deprecated 随 {@link UniTask} 废弃而废弃。
+     */
+    @Deprecated
     private long resolveSubmittedAt(UniTask task) {
         return task.getSubmittedAt() != null ? task.getSubmittedAt() : System.currentTimeMillis();
     }
@@ -215,6 +239,10 @@ public class Sender {
         private String recipient;
         private UniAddress singleAddress;
 
+        /**
+         * @deprecated 随 {@link UniAddress} 废弃而废弃。
+         */
+        @Deprecated
         private SendContext fork(String recipient, AbstractChannel channel, UniAddress singleAddress) {
             SendContext forked = new SendContext(this.task);
             forked.uniMessage = this.uniMessage;

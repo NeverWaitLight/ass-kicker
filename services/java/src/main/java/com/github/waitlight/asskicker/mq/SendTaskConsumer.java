@@ -21,6 +21,10 @@ public class SendTaskConsumer implements RocketMQListener<UniTask> {
 
     private final Sender sender;
 
+    /**
+     * @deprecated 随 {@link com.github.waitlight.asskicker.dto.UniTask} 废弃而废弃。
+     */
+    @Deprecated
     @Override
     public void onMessage(UniTask task) {
         if (task == null || task.getMessage() == null || task.getAddress() == null) {
