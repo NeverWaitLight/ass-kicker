@@ -47,25 +47,34 @@ public class TemplateEngine {
 
     public Mono<UniMessage> fill(UniMessage req) {
         return templateService.findByCode(req.getTemplateCode())
-                .flatMap(tpl -> Mono.justOrEmpty(
-                        tpl.getLocalizedTemplates() != null
-                                ? tpl.getLocalizedTemplates().get(req.getLanguage())
-                                : null))
-                .map(tpl -> {
-                    Map<String, Object> params = req.getTemplateParams() != null
-                            ? req.getTemplateParams()
-                            : Collections.emptyMap();
-                    String title = fill(req.getTemplateCode(), req.getLanguage(), tpl.getTitle(), params);
-                    String content = fill(req.getTemplateCode(), req.getLanguage(), tpl.getContent(), params);
-                    UniMessage uniMessage = new UniMessage();
-                    uniMessage.setTemplateCode(req.getTemplateCode());
-                    uniMessage.setLanguage(req.getLanguage());
-                    uniMessage.setTitle(title);
-                    uniMessage.setContent(content);
-                    uniMessage.setExtraData(req.getExtraData());
-                    uniMessage.setTemplateParams(params);
-                    return uniMessage;
+                .flatMap(tpl -> {
+                    if (tpl.isProviderManaged()) {
+                        return Mono.just(buildUniMessage(req, "", "", req.getTemplateParams()));
+                    }
+                    return Mono.justOrEmpty(
+                            tpl.getLocalizedTemplates() != null
+                                    ? tpl.getLocalizedTemplates().get(req.getLanguage())
+                                    : null)
+                            .map(lt -> {
+                                Map<String, Object> params = req.getTemplateParams() != null
+                                        ? req.getTemplateParams()
+                                        : Collections.emptyMap();
+                                String title = fill(req.getTemplateCode(), req.getLanguage(), lt.getTitle(), params);
+                                String content = fill(req.getTemplateCode(), req.getLanguage(), lt.getContent(), params);
+                                return buildUniMessage(req, title, content, params);
+                            });
                 });
+    }
+
+    private UniMessage buildUniMessage(UniMessage req, String title, String content, Map<String, Object> params) {
+        UniMessage uniMessage = new UniMessage();
+        uniMessage.setTemplateCode(req.getTemplateCode());
+        uniMessage.setLanguage(req.getLanguage());
+        uniMessage.setTitle(title);
+        uniMessage.setContent(content);
+        uniMessage.setExtraData(req.getExtraData());
+        uniMessage.setTemplateParams(params);
+        return uniMessage;
     }
 
     public Mono<Set<String>> findMissingVariables(UniMessage req) {

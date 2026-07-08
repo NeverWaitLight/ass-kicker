@@ -27,6 +27,11 @@ public class TemplateEntity {
 
         private ChannelType channelType;
 
+        /**
+         * 是否将模板托管至服务商，由服务商负责渲染与发送
+         */
+        private boolean providerManaged = false;
+
         private Map<Language, LocalizedTemplate> localizedTemplates;
 
         private Long createdAt;
