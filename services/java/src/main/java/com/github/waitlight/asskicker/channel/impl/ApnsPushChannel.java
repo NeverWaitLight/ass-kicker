@@ -183,7 +183,7 @@ public class ApnsPushChannel extends AbstractChannel<PushReq> {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    static class Properties {
+    public static class Properties {
 
         /** APNs 服务器地址:留空走生产环境;"sandbox" 走开发环境;也可显式写 host 或 host:port */
         private String url;

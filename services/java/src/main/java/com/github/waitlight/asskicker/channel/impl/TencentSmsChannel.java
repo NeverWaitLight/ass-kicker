@@ -99,7 +99,7 @@ public class TencentSmsChannel extends AbstractChannel<SmsReq> {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    static class Properties {
+    public static class Properties {
 
         /** 腾讯云 API 密钥 SecretId */
         @NotBlank

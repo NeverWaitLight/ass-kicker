@@ -70,7 +70,7 @@ public class AliyunSmsChannel extends AbstractChannel<SmsReq> {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    static class Properties {
+    public static class Properties {
 
         /** 阿里云访问密钥 AccessKey ID */
         @NotBlank

@@ -171,7 +171,7 @@ public class FcmPushChannel extends AbstractChannel<PushReq> {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    static class Properties {
+    public static class Properties {
 
         /** Firebase 项目 ID,对应 Firebase 控制台的 project id */
         @NotBlank

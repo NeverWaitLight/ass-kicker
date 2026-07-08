@@ -89,7 +89,7 @@ public class SmtpEmailChannel extends AbstractChannel<EmailReq> {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    static class Properties {
+    public static class Properties {
 
         /** SMTP 服务器主机名,如 smtp.gmail.com */
         @NotBlank
