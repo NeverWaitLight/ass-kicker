@@ -145,7 +145,7 @@ class SenderTest {
                                 .verifyComplete();
 
                 ArgumentCaptor<RecordEntity> captor = ArgumentCaptor.forClass(RecordEntity.class);
-                verify(recordService, timeout(5000).times(1)).writeRecord(captor.capture());
+                verify(recordService, timeout(5000).times(1)).create(captor.capture());
 
                 RecordEntity record = captor.getValue();
                 assertThat(record.getTaskId()).isEqualTo("task-fill-null");
@@ -174,7 +174,7 @@ class SenderTest {
                                 .verifyComplete();
 
                 ArgumentCaptor<RecordEntity> captor = ArgumentCaptor.forClass(RecordEntity.class);
-                verify(recordService, timeout(5000).times(1)).writeRecord(captor.capture());
+                verify(recordService, timeout(5000).times(1)).create(captor.capture());
 
                 RecordEntity record = captor.getValue();
                 assertThat(record.getTaskId()).isEqualTo("task-fill-throws");
@@ -207,7 +207,7 @@ class SenderTest {
                                 .verifyComplete();
 
                 ArgumentCaptor<RecordEntity> captor = ArgumentCaptor.forClass(RecordEntity.class);
-                verify(recordService, timeout(5000).times(2)).writeRecord(captor.capture());
+                verify(recordService, timeout(5000).times(2)).create(captor.capture());
 
                 assertThat(captor.getAllValues())
                                 .extracting(RecordEntity::getRecipient,

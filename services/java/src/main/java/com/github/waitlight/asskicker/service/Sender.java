@@ -188,7 +188,7 @@ public class Sender {
         sr.setChannelName(context.getChannel().getCode());
         sr.setStatus(SendRecordStatus.SUCCESS);
         sr.setSentAt(System.currentTimeMillis());
-        recordService.writeRecord(sr);
+        recordService.create(sr);
     }
 
     /**
@@ -216,7 +216,7 @@ public class Sender {
         sr.setSubmittedAt(resolveSubmittedAt(task));
         sr.setStatus(SendRecordStatus.FAILED);
         sr.setErrorMessage(errorMessage);
-        recordService.writeRecord(sr);
+        recordService.create(sr);
     }
 
     /**

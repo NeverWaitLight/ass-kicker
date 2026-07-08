@@ -76,7 +76,7 @@ public class RecordService implements DisposableBean {
                         .orElseGet(() -> Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "发送记录不存在"))));
     }
 
-    public void writeRecord(RecordEntity record) {
+    public void create(RecordEntity record) {
         List<RecordEntity> toFlush = null;
         synchronized (buffer) {
             buffer.add(record);
