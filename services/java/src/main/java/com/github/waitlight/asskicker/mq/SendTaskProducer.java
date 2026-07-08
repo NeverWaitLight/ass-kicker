@@ -2,17 +2,15 @@ package com.github.waitlight.asskicker.mq;
 
 import com.github.waitlight.asskicker.config.RocketMQConfig;
 import com.github.waitlight.asskicker.dto.UniTask;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Component
 public class SendTaskProducer {
-
-    private static final Logger logger = LoggerFactory.getLogger(SendTaskProducer.class);
 
     private final RocketMQTemplate rocketMQTemplate;
 
@@ -30,10 +28,10 @@ public class SendTaskProducer {
                     RocketMQConfig.SEND_TASKS_TOPIC,
                     MessageBuilder.withPayload(task).build()
             );
-            logger.debug("SendTask published taskId={}", task.getTaskId());
+            log.debug("SendTask published taskId={}", task.getTaskId());
             return task;
         }).onErrorResume(ex -> {
-            logger.warn("SendTask publish failed taskId={} reason={}",
+            log.warn("SendTask publish failed taskId={} reason={}",
                     task.getTaskId(), ex.getMessage());
             return Mono.error(ex);
         });

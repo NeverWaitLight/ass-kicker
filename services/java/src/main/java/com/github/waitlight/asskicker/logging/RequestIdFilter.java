@@ -1,7 +1,6 @@
 package com.github.waitlight.asskicker.logging;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -14,13 +13,12 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
+@Slf4j
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class RequestIdFilter implements WebFilter {
     public static final String REQUEST_ID_KEY = "requestId";
     public static final String REQUEST_ID_HEADER = "X-Request-Id";
-
-    private static final Logger log = LoggerFactory.getLogger(RequestIdFilter.class);
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {

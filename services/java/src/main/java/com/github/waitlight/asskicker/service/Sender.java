@@ -6,8 +6,6 @@ import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.dto.UniAddress;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.model.RecordEntity;
-import com.github.waitlight.asskicker.model.SendRecordStatus;
 import jakarta.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +28,6 @@ public class Sender {
 
     private final TemplateEngine templateEngine;
     private final ChannelManager channelManager;
-    private final RecordService recordService;
 
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
@@ -106,12 +103,10 @@ public class Sender {
             filled = templateEngine.fillold(task.getMessage()).block();
             if (filled == null) {
                 log.warn("Template fill returned null for taskId={}", task.getTaskId());
-                writeFailedRecord(task, null, null, "Template fill returned null");
                 return;
             }
         } catch (Exception e) {
             log.error("Failed to fill message template taskId={}", task.getTaskId(), e);
-            writeFailedRecord(task, null, null, "Template fill stage failed: " + e.getMessage());
             return;
         }
 
@@ -135,7 +130,6 @@ public class Sender {
             channel = channelManager.chose(singleAddr.getChannelType(), recipient).block();
             if (channel == null) {
                 log.warn("No channel available for recipient={} taskId={}", recipient, baseCtx.getTask().getTaskId());
-                writeFailedRecord(baseCtx.getTask(), recipient, null, "No channel available");
                 return;
             }
 
@@ -150,11 +144,8 @@ public class Sender {
 
             String result = channel.send(sendTask).block().toString();
             ctx.setSendResult(result);
-
-            processRecord(ctx);
         } catch (Exception e) {
             log.error("Failed to send to recipient={} taskId={}", recipient, baseCtx.getTask().getTaskId(), e);
-            writeFailedRecord(baseCtx.getTask(), recipient, channel, e.getMessage());
         }
     }
 
@@ -169,62 +160,6 @@ public class Sender {
                 .channelKey(original.getChannelKey())
                 .recipients(Set.of(recipient))
                 .build();
-    }
-
-    private void processRecord(SendContext context) {
-        UniTask task = context.getTask();
-        UniMessage message = context.getUniMessage();
-
-        RecordEntity sr = new RecordEntity();
-        sr.setTaskId(task.getTaskId());
-        sr.setTemplateCode(message.getTemplateCode());
-        sr.setLanguageCode(message.getLanguage().getCode());
-        sr.setParams(message.getTemplateParams());
-        sr.setChannelId(context.getChannel().getId());
-        sr.setRecipient(context.getRecipient());
-        sr.setSubmittedAt(resolveSubmittedAt(task));
-        sr.setRenderedContent(context.getUniMessage().getContent());
-        sr.setChannelType(context.getChannel().getType());
-        sr.setChannelName(context.getChannel().getCode());
-        sr.setStatus(SendRecordStatus.SUCCESS);
-        sr.setSentAt(System.currentTimeMillis());
-        recordService.create(sr);
-    }
-
-    /**
-     * @deprecated 随 {@link UniTask} 废弃而废弃。
-     */
-    @Deprecated
-    private void writeFailedRecord(UniTask task, String recipient, AbstractChannel channel, String errorMessage) {
-        UniMessage message = task.getMessage();
-
-        RecordEntity sr = new RecordEntity();
-        sr.setTaskId(task.getTaskId());
-        if (message != null) {
-            sr.setTemplateCode(message.getTemplateCode());
-            if (message.getLanguage() != null) {
-                sr.setLanguageCode(message.getLanguage().getCode());
-            }
-            sr.setParams(message.getTemplateParams());
-        }
-        sr.setRecipient(recipient);
-        if (channel != null) {
-            sr.setChannelId(channel.getId());
-            sr.setChannelType(channel.getType());
-            sr.setChannelName(channel.getCode());
-        }
-        sr.setSubmittedAt(resolveSubmittedAt(task));
-        sr.setStatus(SendRecordStatus.FAILED);
-        sr.setErrorMessage(errorMessage);
-        recordService.create(sr);
-    }
-
-    /**
-     * @deprecated 随 {@link UniTask} 废弃而废弃。
-     */
-    @Deprecated
-    private long resolveSubmittedAt(UniTask task) {
-        return task.getSubmittedAt() != null ? task.getSubmittedAt() : System.currentTimeMillis();
     }
 
     @Getter

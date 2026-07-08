@@ -2,11 +2,7 @@ package com.github.waitlight.asskicker.channel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.dto.UniTask;
-import com.github.waitlight.asskicker.model.ChannelEntity;
-import com.github.waitlight.asskicker.model.ChannelProvider;
-import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.model.RecordEntity;
-import com.github.waitlight.asskicker.model.SendRecordStatus;
+import com.github.waitlight.asskicker.model.*;
 import com.github.waitlight.asskicker.service.RecordService;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -23,17 +19,19 @@ public abstract class AbstractChannel<T extends SendReq> {
     private final String code;
     private final ChannelType type;
     private final ChannelProvider provider;
+    private final ChannelEntity channel;
 
     protected final WebClient webClient;
     protected final ObjectMapper objectMapper;
     protected final RecordService recordService;
 
-    protected AbstractChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper,
+    protected AbstractChannel(ChannelEntity channel, WebClient webClient, ObjectMapper objectMapper,
                               RecordService recordService) {
-        this.id = entity.getId();
-        this.code = entity.getCode();
-        this.type = entity.getType();
-        this.provider = entity.getProvider();
+        this.id = channel.getId();
+        this.code = channel.getCode();
+        this.type = channel.getType();
+        this.provider = channel.getProvider();
+        this.channel = channel;
 
         this.webClient = webClient;
         this.objectMapper = objectMapper;
@@ -42,8 +40,8 @@ public abstract class AbstractChannel<T extends SendReq> {
 
     public final Mono<String> send(T req) {
         return doSend(req)
-                .doOnSuccess(result -> writeRecord(req, SendRecordStatus.SUCCESS, null))
-                .doOnError(error -> writeRecord(req, SendRecordStatus.FAILED, error.getMessage()));
+                .doOnSuccess(result -> recording(req, SendRecordStatus.SUCCESS, null))
+                .doOnError(error -> recording(req, SendRecordStatus.FAILED, error.getMessage()));
     }
 
     protected abstract Mono<String> doSend(T req);
@@ -58,19 +56,19 @@ public abstract class AbstractChannel<T extends SendReq> {
 
     public abstract void dispose();
 
-    private void writeRecord(SendReq req, SendRecordStatus status, String errorMessage) {
-        RecordEntity record = new RecordEntity();
-        record.setTemplateCode(req.getTemplateCode());
-        record.setLanguageCode(req.getLanguage() != null ? req.getLanguage().getCode() : null);
+    private void recording(SendReq req, SendRecordStatus status, String errorMessage) {
+        RecordEntity r = new RecordEntity();
+        r.setTemplateCode(req.getTemplateCode());
+        r.setLanguageCode(req.getLanguage() != null ? req.getLanguage().getCode() : null);
         if (req.getTemplateParams() != null) {
-            record.setParams(new HashMap<>(req.getTemplateParams()));
+            r.setParams(new HashMap<>(req.getTemplateParams()));
         }
-        record.setChannelId(id);
-        record.setChannelType(type);
-        record.setChannelName(code);
-        record.setStatus(status);
-        record.setErrorMessage(errorMessage);
-        record.setSentAt(System.currentTimeMillis());
-        recordService.create(record);
+        r.setChannelId(id);
+        r.setChannelType(type);
+        r.setChannelName(channel.getName());
+        r.setStatus(status);
+        r.setErrorMessage(errorMessage);
+        r.setSentAt(System.currentTimeMillis());
+        recordService.create(r);
     }
 }
