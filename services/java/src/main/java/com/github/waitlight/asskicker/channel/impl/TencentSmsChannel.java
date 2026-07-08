@@ -7,6 +7,7 @@ import com.github.waitlight.asskicker.exception.SendException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
+import com.github.waitlight.asskicker.service.RecordService;
 import com.tencentcloudapi.common.Credential;
 import com.tencentcloudapi.common.profile.ClientProfile;
 import com.tencentcloudapi.common.profile.HttpProfile;
@@ -33,8 +34,9 @@ public class TencentSmsChannel extends AbstractChannel<SmsReq> {
     private final SmsClient client;
     private final String smsSdkAppId;
 
-    public TencentSmsChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
-        super(entity, webClient, objectMapper);
+    public TencentSmsChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper,
+                             RecordService recordService) {
+        super(entity, webClient, objectMapper, recordService);
         Properties properties = objectMapper.convertValue(entity.getProperties(), Properties.class);
         try {
             Credential credential = new Credential(properties.getSecretId(), properties.getSecretKey());

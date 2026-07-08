@@ -14,6 +14,7 @@ import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
+import com.github.waitlight.asskicker.service.RecordService;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
@@ -39,22 +40,24 @@ public class ApnsPushChannel extends AbstractChannel<PushReq> {
     private final Properties properties;
     private final ApnsClient apnsClient;
 
-    public ApnsPushChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
-        super(provider, webClient, objectMapper);
+    public ApnsPushChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper,
+                           RecordService recordService) {
+        super(provider, webClient, objectMapper, recordService);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
         validateSpec(this.properties);
         this.apnsClient = buildApnsClient(this.properties);
     }
 
-    ApnsPushChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper, ApnsClient apnsClient) {
-        super(provider, webClient, objectMapper);
+    ApnsPushChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper,
+                    RecordService recordService, ApnsClient apnsClient) {
+        super(provider, webClient, objectMapper, recordService);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
         this.apnsClient = apnsClient;
     }
 
     public static ApnsPushChannel forTesting(ChannelEntity provider, WebClient webClient,
-            ObjectMapper objectMapper, ApnsClient apnsClient) {
-        return new ApnsPushChannel(provider, webClient, objectMapper, apnsClient);
+            ObjectMapper objectMapper, RecordService recordService, ApnsClient apnsClient) {
+        return new ApnsPushChannel(provider, webClient, objectMapper, recordService, apnsClient);
     }
 
     @Override

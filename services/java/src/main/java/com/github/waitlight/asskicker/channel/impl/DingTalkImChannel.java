@@ -16,6 +16,7 @@ import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
+import com.github.waitlight.asskicker.service.RecordService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -29,8 +30,9 @@ public class DingTalkImChannel extends AbstractChannel<ImReq> {
 
     private static final String WEBHOOK_URL = "https://oapi.dingtalk.com/robot/send";
 
-    public DingTalkImChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
-        super(entity, webClient, objectMapper);
+    public DingTalkImChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper,
+                             RecordService recordService) {
+        super(entity, webClient, objectMapper, recordService);
     }
 
     @Override

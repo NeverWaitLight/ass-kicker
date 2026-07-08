@@ -15,6 +15,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.config.ChannelObjectMapperConfig;
+import com.github.waitlight.asskicker.service.RecordService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,6 +34,7 @@ public class ChannelFactory {
 
     private final WebClient webClient;
     private final ObjectMapper channelObjectMapper;
+    private final RecordService recordService;
 
     /**
      * (ChannelType, ChannelProvider) 联合键
@@ -50,9 +52,11 @@ public class ChannelFactory {
     private final Map<ChannelKey, ChannelMeta> channelMetaCache = new ConcurrentHashMap<>();
 
     public ChannelFactory(WebClient webClient,
-            @Qualifier(ChannelObjectMapperConfig.BEAN_NAME) ObjectMapper channelObjectMapper) {
+            @Qualifier(ChannelObjectMapperConfig.BEAN_NAME) ObjectMapper channelObjectMapper,
+            RecordService recordService) {
         this.webClient = webClient;
         this.channelObjectMapper = channelObjectMapper;
+        this.recordService = recordService;
     }
 
     @PostConstruct
@@ -121,11 +125,12 @@ public class ChannelFactory {
 
         try {
             Constructor<? extends AbstractChannel<?>> ctor = meta.channelClass()
-                    .getDeclaredConstructor(ChannelEntity.class, WebClient.class, ObjectMapper.class);
+                    .getDeclaredConstructor(ChannelEntity.class, WebClient.class, ObjectMapper.class,
+                            RecordService.class);
             ctor.setAccessible(true);
-            return ctor.newInstance(entity, webClient, channelObjectMapper);
+            return ctor.newInstance(entity, webClient, channelObjectMapper, recordService);
         } catch (NoSuchMethodException e) {
-            log.error("Channel {} missing required constructor (ChannelEntity, WebClient, ObjectMapper)",
+            log.error("Channel {} missing required constructor (ChannelEntity, WebClient, ObjectMapper, RecordService)",
                     meta.channelClass().getName(), e);
             return null;
         } catch (ReflectiveOperationException e) {

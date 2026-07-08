@@ -11,6 +11,7 @@ import com.github.waitlight.asskicker.exception.SendException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
+import com.github.waitlight.asskicker.service.RecordService;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
@@ -27,8 +28,9 @@ public class AliyunSmsChannel extends AbstractChannel<SmsReq> {
 
     private final Client client;
 
-    public AliyunSmsChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
-        super(entity, webClient, objectMapper);
+    public AliyunSmsChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper,
+                            RecordService recordService) {
+        super(entity, webClient, objectMapper, recordService);
         Properties properties = objectMapper.convertValue(entity.getProperties(), Properties.class);
         try {
             this.client = new Client(new Config()

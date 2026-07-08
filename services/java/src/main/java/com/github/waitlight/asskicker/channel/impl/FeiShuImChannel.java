@@ -16,6 +16,7 @@ import com.github.waitlight.asskicker.exception.SendException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
+import com.github.waitlight.asskicker.service.RecordService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -32,8 +33,9 @@ public class FeiShuImChannel extends AbstractChannel<ImReq> {
 
     private static final String WEBHOOK_URL_TEMPLATE = "https://open.feishu.cn/open-apis/bot/v2/hook/%s";
 
-    public FeiShuImChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
-        super(entity, webClient, objectMapper);
+    public FeiShuImChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper,
+                           RecordService recordService) {
+        super(entity, webClient, objectMapper, recordService);
     }
 
     @Override

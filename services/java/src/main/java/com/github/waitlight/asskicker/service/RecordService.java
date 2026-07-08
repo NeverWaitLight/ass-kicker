@@ -9,6 +9,7 @@ import com.github.waitlight.asskicker.model.RecordEntity;
 import com.github.waitlight.asskicker.repository.RecordRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * 发送记录的读写入口，内置缓冲批量写入与按 ID 缓存查询。
+ */
 @Service
 @Slf4j
 public class RecordService implements DisposableBean {
@@ -53,6 +57,9 @@ public class RecordService implements DisposableBean {
                         .toFuture());
     }
 
+    /**
+     * 分页查询发送记录，支持按收件人和渠道类型过滤。
+     */
     public Mono<PageResp<RecordVO>> page(int page, int size, String recipient, String channelType) {
         int normalizedPage = page <= 0 ? 1 : page;
         int normalizedSize = size <= 0 ? 10 : size;
@@ -69,6 +76,9 @@ public class RecordService implements DisposableBean {
                 .map(tuple -> PageResp.success(normalizedPage, normalizedSize, tuple.getT2(), tuple.getT1()));
     }
 
+    /**
+     * 按 ID 查询单条发送记录，命中缓存时直接返回。
+     */
     public Mono<RecordVO> getById(String id) {
         return Mono.fromFuture(recordByIdCache.get(id))
                 .flatMap(opt -> opt
@@ -76,7 +86,15 @@ public class RecordService implements DisposableBean {
                         .orElseGet(() -> Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "发送记录不存在"))));
     }
 
-    public void create(RecordEntity record) {
+    /**
+     * 写入一条发送记录，预生成 MongoDB ID 并在缓冲满时异步批量落库。
+     *
+     * @return 预生成的记录 ID
+     */
+    public String create(RecordEntity record) {
+        String id = ObjectId.get().toString();
+        record.setId(id);
+
         List<RecordEntity> toFlush = null;
         synchronized (buffer) {
             buffer.add(record);
@@ -88,6 +106,7 @@ public class RecordService implements DisposableBean {
         if (toFlush != null && !toFlush.isEmpty()) {
             flushAsync(toFlush);
         }
+        return id;
     }
 
     @Scheduled(fixedDelayString = "${send-record.flush-interval-ms:5000}")

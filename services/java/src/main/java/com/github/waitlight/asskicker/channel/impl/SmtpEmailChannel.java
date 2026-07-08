@@ -6,6 +6,7 @@ import com.github.waitlight.asskicker.channel.AbstractChannel;
 import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
+import com.github.waitlight.asskicker.service.RecordService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -31,8 +32,9 @@ public class SmtpEmailChannel extends AbstractChannel<EmailReq> {
     private final Properties properties;
     private final JavaMailSender mailSender;
 
-    public SmtpEmailChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
-        super(provider, webClient, objectMapper);
+    public SmtpEmailChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper,
+                            RecordService recordService) {
+        super(provider, webClient, objectMapper, recordService);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
         this.mailSender = buildMailSender(this.properties);
     }

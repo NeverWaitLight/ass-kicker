@@ -13,6 +13,7 @@ import com.github.waitlight.asskicker.channel.Channel;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
+import com.github.waitlight.asskicker.service.RecordService;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -41,8 +42,9 @@ public class FcmPushChannel extends AbstractChannel<PushReq> {
     private final FirebaseApp firebaseApp;
     private final FirebaseMessaging messaging;
 
-    public FcmPushChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper) {
-        super(provider, webClient, objectMapper);
+    public FcmPushChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper,
+                          RecordService recordService) {
+        super(provider, webClient, objectMapper, recordService);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
         validateSpec(this.properties);
         this.firebaseApp = buildFirebaseApp(provider, this.properties);
@@ -50,20 +52,16 @@ public class FcmPushChannel extends AbstractChannel<PushReq> {
     }
 
     FcmPushChannel(ChannelEntity provider, WebClient webClient, ObjectMapper objectMapper,
-            FirebaseApp firebaseApp, FirebaseMessaging messaging) {
-        super(provider, webClient, objectMapper);
+                   RecordService recordService, FirebaseApp firebaseApp, FirebaseMessaging messaging) {
+        super(provider, webClient, objectMapper, recordService);
         this.properties = objectMapper.convertValue(provider.getProperties(), Properties.class);
         this.firebaseApp = firebaseApp;
         this.messaging = messaging;
     }
 
-    /**
-     * Visible for testing — bypasses FirebaseApp initialization so tests can inject a mocked
-     * FirebaseMessaging without touching Google credentials or the network.
-     */
     public static FcmPushChannel forTesting(ChannelEntity provider, WebClient webClient,
-            ObjectMapper objectMapper, FirebaseMessaging messaging) {
-        return new FcmPushChannel(provider, webClient, objectMapper, null, messaging);
+            ObjectMapper objectMapper, RecordService recordService, FirebaseMessaging messaging) {
+        return new FcmPushChannel(provider, webClient, objectMapper, recordService, null, messaging);
     }
 
     @Override
