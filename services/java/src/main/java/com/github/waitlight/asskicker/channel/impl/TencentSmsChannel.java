@@ -52,7 +52,7 @@ public class TencentSmsChannel extends AbstractChannel<SmsReq> {
     }
 
     @Override
-    public Mono<String> send(SmsReq req) {
+    protected Mono<String> doSend(SmsReq req) {
         try {
             SendSmsRequest sendSmsRequest = new SendSmsRequest();
             sendSmsRequest.setSmsSdkAppId(smsSdkAppId);

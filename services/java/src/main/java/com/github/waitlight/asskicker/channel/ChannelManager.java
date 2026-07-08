@@ -53,7 +53,7 @@ public class ChannelManager {
 
     public Mono<AbstractChannel<?>> chose(ChannelType channelType, String recipient) {
         List<AbstractChannel<?>> matching = cache.values().stream()
-                .filter(c -> c.getChannelType() == channelType)
+                .filter(c -> c.getType() == channelType)
                 .filter(AbstractChannel::isEnabled)
                 .sorted(BY_CODE)
                 .toList();
@@ -72,7 +72,7 @@ public class ChannelManager {
     public Mono<AbstractChannel<?>> chose(ChannelType channelType, ChannelProvider provider) {
         AbstractChannel<?> chosen = cache.values().stream()
                 .filter(AbstractChannel::isEnabled)
-                .filter(c -> channelType == null || c.getChannelType() == channelType)
+                .filter(c -> channelType == null || c.getType() == channelType)
                 .filter(c -> provider == null || c.getProvider() == provider)
                 .min(BY_CODE)
                 .orElse(null);

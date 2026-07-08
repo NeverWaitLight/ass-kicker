@@ -37,7 +37,7 @@ public class FeiShuImChannel extends AbstractChannel<ImReq> {
     }
 
     @Override
-    public Mono<String> send(ImReq req) {
+    protected Mono<String> doSend(ImReq req) {
         return Mono.defer(() -> {
             if (StringUtils.isBlank(req.getToken())) {
                 return Mono.error(new IllegalArgumentException("FEISHU_BOT token required"));

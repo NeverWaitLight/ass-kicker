@@ -58,7 +58,7 @@ public class ApnsPushChannel extends AbstractChannel<PushReq> {
     }
 
     @Override
-    public Mono<String> send(PushReq req) {
+    protected Mono<String> doSend(PushReq req) {
         return Mono.defer(() -> {
             String token = StringUtils.trimToNull(req.getDeviceToken());
             if (token == null) {

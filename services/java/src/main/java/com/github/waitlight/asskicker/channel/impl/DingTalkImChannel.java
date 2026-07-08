@@ -34,7 +34,7 @@ public class DingTalkImChannel extends AbstractChannel<ImReq> {
     }
 
     @Override
-    public Mono<String> send(ImReq req) {
+    protected Mono<String> doSend(ImReq req) {
         return Mono.fromCallable(() -> {
             String url = buildSignedUrl(req.getToken(), req.getSecret());
             DefaultDingTalkClient client = new DefaultDingTalkClient(url);

@@ -41,7 +41,7 @@ public class AliyunSmsChannel extends AbstractChannel<SmsReq> {
     }
 
     @Override
-    public Mono<String> send(SmsReq req) {
+    protected Mono<String> doSend(SmsReq req) {
         try {
             String templateParam = req.getTemplateParams() == null
                     ? "{}"

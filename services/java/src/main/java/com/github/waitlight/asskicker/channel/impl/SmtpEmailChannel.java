@@ -38,7 +38,7 @@ public class SmtpEmailChannel extends AbstractChannel<EmailReq> {
     }
 
     @Override
-    public Mono<String> send(EmailReq req) {
+    protected Mono<String> doSend(EmailReq req) {
         return Mono.defer(() -> {
             List<String> recipients = req.getTo();
             if (recipients == null || recipients.isEmpty()) {

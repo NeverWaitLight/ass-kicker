@@ -184,7 +184,7 @@ public class Sender {
         sr.setRecipient(context.getRecipient());
         sr.setSubmittedAt(resolveSubmittedAt(task));
         sr.setRenderedContent(context.getUniMessage().getContent());
-        sr.setChannelType(context.getChannel().getChannelType());
+        sr.setChannelType(context.getChannel().getType());
         sr.setChannelName(context.getChannel().getCode());
         sr.setStatus(SendRecordStatus.SUCCESS);
         sr.setSentAt(System.currentTimeMillis());
@@ -210,7 +210,7 @@ public class Sender {
         sr.setRecipient(recipient);
         if (channel != null) {
             sr.setChannelId(channel.getId());
-            sr.setChannelType(channel.getChannelType());
+            sr.setChannelType(channel.getType());
             sr.setChannelName(channel.getCode());
         }
         sr.setSubmittedAt(resolveSubmittedAt(task));

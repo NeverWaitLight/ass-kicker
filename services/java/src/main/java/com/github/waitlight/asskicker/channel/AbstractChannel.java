@@ -16,7 +16,7 @@ public abstract class AbstractChannel<T extends SendReq> {
 
     private final String id;
     private final String code;
-    private final ChannelType channelType;
+    private final ChannelType type;
     private final ChannelProvider provider;
     private final boolean enabled;
 
@@ -26,7 +26,7 @@ public abstract class AbstractChannel<T extends SendReq> {
     protected AbstractChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
         this.id = entity.getId();
         this.code = entity.getCode();
-        this.channelType = entity.getType();
+        this.type = entity.getType();
         this.provider = entity.getProvider();
         this.enabled = entity.isEnabled();
 
@@ -34,7 +34,11 @@ public abstract class AbstractChannel<T extends SendReq> {
         this.objectMapper = objectMapper;
     }
 
-    public abstract Mono<String> send(T req);
+    public final Mono<String> send(T req) {
+        return doSend(req);
+    }
+
+    protected abstract Mono<String> doSend(T req);
 
     /**
      * @deprecated 随 {@link com.github.waitlight.asskicker.dto.UniTask} 废弃而废弃，改用 {@link #send(SendReq)}

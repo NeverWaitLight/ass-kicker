@@ -8,11 +8,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class ImReq extends SendReq {
-    /**
-     * IM 机器人 webhook token:
-     * - DingTalk: webhook URL 中的 access_token 参数值
-     * - Feishu: webhook URL 中最后一段 hook token(即 /open-apis/bot/v2/hook/{token})
-     */
+    /** IM 机器人 webhook token */
     @NotBlank
     private String token;
 

@@ -71,7 +71,7 @@ class ChannelManagerRefreshFailureTest {
         }
 
         @Override
-        public Mono<String> send(SendReq req) {
+        protected Mono<String> doSend(SendReq req) {
             return Mono.empty();
         }
 
