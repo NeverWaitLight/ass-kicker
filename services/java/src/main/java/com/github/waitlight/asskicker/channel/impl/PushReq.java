@@ -29,4 +29,10 @@ public class PushReq extends SendReq {
 
     /** 自定义数据字段,APNs 作为 payload 自定义键,FCM 转为 data map(值会 toString) */
     private Map<String, Object> data;
+
+    @Override
+    public void applyRendered(String title, String content) {
+        if (title != null && !title.isBlank()) this.title = title;
+        if (content != null && !content.isBlank()) this.body = content;
+    }
 }

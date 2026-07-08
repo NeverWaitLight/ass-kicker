@@ -33,4 +33,10 @@ public class EmailReq extends SendReq {
     /** 邮件正文(纯文本) */
     @NotBlank
     private String body;
+
+    @Override
+    public void applyRendered(String title, String content) {
+        if (title != null && !title.isBlank()) this.subject = title;
+        if (content != null && !content.isBlank()) this.body = content;
+    }
 }

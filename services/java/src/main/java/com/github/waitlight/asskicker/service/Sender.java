@@ -52,8 +52,9 @@ public class Sender {
         if (req == null || req.getType() == null) {
             return Mono.empty();
         }
-        return channelManager.chose(req)
-                .flatMap(channel -> invokeChannelSend(channel, req));
+        return templateEngine.fill(req)
+                .flatMap(r -> channelManager.chose(r)
+                        .flatMap(channel -> invokeChannelSend(channel, r)));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -90,7 +91,7 @@ public class Sender {
     private void process(UniTask task) {
         UniMessage filled = null;
         try {
-            filled = templateEngine.fill(task.getMessage()).block();
+            filled = templateEngine.fillold(task.getMessage()).block();
             if (filled == null) {
                 log.warn("Template fill returned null for taskId={}", task.getTaskId());
                 writeFailedRecord(task, null, null, "Template fill returned null");

@@ -3,6 +3,7 @@ package com.github.waitlight.asskicker.service;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -17,10 +18,10 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
+import com.github.waitlight.asskicker.channel.SendReq;
 import com.github.waitlight.asskicker.config.CaffeineCacheProperties;
 import com.github.waitlight.asskicker.dto.UniMessage;
 import com.github.waitlight.asskicker.model.Language;
-import com.github.waitlight.asskicker.model.TemplateEntity;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
@@ -45,7 +46,10 @@ public class TemplateEngine {
                 .build();
     }
 
-    public Mono<UniMessage> fill(UniMessage req) {
+    public Mono<UniMessage> fillold(UniMessage req) {
+        if (req.isDirectSend() || req.getTemplateCode() == null || req.getTemplateCode().isBlank()) {
+            return Mono.just(req);
+        }
         return templateService.findByCode(req.getTemplateCode())
                 .flatMap(tpl -> {
                     if (tpl.isProviderManaged()) {
@@ -59,8 +63,8 @@ public class TemplateEngine {
                                 Map<String, Object> params = req.getTemplateParams() != null
                                         ? req.getTemplateParams()
                                         : Collections.emptyMap();
-                                String title = fill(req.getTemplateCode(), req.getLanguage(), lt.getTitle(), params);
-                                String content = fill(req.getTemplateCode(), req.getLanguage(), lt.getContent(), params);
+                                String title = fillold(req.getTemplateCode(), req.getLanguage(), lt.getTitle(), params);
+                                String content = fillold(req.getTemplateCode(), req.getLanguage(), lt.getContent(), params);
                                 return buildUniMessage(req, title, content, params);
                             });
                 });
@@ -75,6 +79,26 @@ public class TemplateEngine {
         uniMessage.setExtraData(req.getExtraData());
         uniMessage.setTemplateParams(params);
         return uniMessage;
+    }
+
+    public <T extends SendReq> Mono<T> fill(T req) {
+        UniMessage msg = toUniMessage(req);
+        return fillold(msg)
+                .map(filled -> {
+                    req.applyRendered(filled.getTitle(), filled.getContent());
+                    return req;
+                });
+    }
+
+    private UniMessage toUniMessage(SendReq req) {
+        UniMessage msg = new UniMessage();
+        msg.setTemplateCode(req.getTemplateCode());
+        msg.setLanguage(req.getLanguage());
+        msg.setDirectSend(req.isDirectSend());
+        if (req.getTemplateParams() != null) {
+            msg.setTemplateParams(new HashMap<>(req.getTemplateParams()));
+        }
+        return msg;
     }
 
     public Mono<Set<String>> findMissingVariables(UniMessage req) {
@@ -107,8 +131,8 @@ public class TemplateEngine {
         compiledTemplateCache.asMap().keySet().removeIf(k -> k.startsWith(prefix));
     }
 
-    private String fill(String templateCode, Language language, String templateContent,
-            Map<String, Object> templateParams) {
+    private String fillold(String templateCode, Language language, String templateContent,
+                           Map<String, Object> templateParams) {
         String body = templateContent != null ? templateContent : "";
         String cacheKey = cacheKey(templateCode, language, body);
         Mustache mustache = compiledTemplateCache.get(cacheKey,

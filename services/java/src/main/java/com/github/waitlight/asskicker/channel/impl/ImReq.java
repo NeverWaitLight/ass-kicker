@@ -22,4 +22,9 @@ public class ImReq extends SendReq {
     /** 消息文本内容 */
     @NotBlank
     private String content;
+
+    @Override
+    public void applyRendered(String title, String content) {
+        if (content != null && !content.isBlank()) this.content = content;
+    }
 }

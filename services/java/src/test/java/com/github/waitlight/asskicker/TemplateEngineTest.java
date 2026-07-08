@@ -58,7 +58,7 @@ class TemplateEngineTest {
         Map<String, Object> extra = new HashMap<>();
         extra.put("k", "v");
         req.setExtraData(extra);
-        StepVerifier.create(engine.fill(req))
+        StepVerifier.create(engine.fillold(req))
                 .assertNext(msg -> {
                     assertThat(msg.getTemplateCode()).isEqualTo("sms_captcha");
                     assertThat(msg.getLanguage()).isEqualTo(Language.ZH_CN);
@@ -155,7 +155,7 @@ class TemplateEngineTest {
         req.setTemplateCode("missing");
         req.setLanguage(Language.ZH_CN);
 
-        StepVerifier.create(engine.fill(req)).verifyComplete();
+        StepVerifier.create(engine.fillold(req)).verifyComplete();
     }
 
     @Test
@@ -167,7 +167,7 @@ class TemplateEngineTest {
         req.setTemplateCode("x");
         req.setLanguage(Language.EN);
 
-        StepVerifier.create(engine.fill(req)).verifyComplete();
+        StepVerifier.create(engine.fillold(req)).verifyComplete();
     }
 
     @Test
@@ -177,7 +177,7 @@ class TemplateEngineTest {
         UniMessage req = new UniMessage();
         req.setTemplateCode("x");
         req.setLanguage(Language.ZH_CN);
-        StepVerifier.create(engine.fill(req)).verifyComplete();
+        StepVerifier.create(engine.fillold(req)).verifyComplete();
     }
 
     @Test
@@ -190,7 +190,7 @@ class TemplateEngineTest {
         req.setLanguage(Language.EN);
         req.setTemplateParams(null);
 
-        StepVerifier.create(engine.fill(req))
+        StepVerifier.create(engine.fillold(req))
                 .assertNext(msg -> {
                     assertThat(msg.getContent()).isEqualTo("Hello ");
                     assertThat(msg.getTemplateParams()).isEmpty();
@@ -207,7 +207,7 @@ class TemplateEngineTest {
         req.setTemplateCode("empty_body");
         req.setLanguage(Language.DE);
 
-        StepVerifier.create(engine.fill(req))
+        StepVerifier.create(engine.fillold(req))
                 .assertNext(msg -> assertThat(msg.getContent()).isEmpty())
                 .verifyComplete();
     }
@@ -223,7 +223,7 @@ class TemplateEngineTest {
         req.setLanguage(Language.ZH_CN);
         req.setTemplateParams(Map.of("p", "1"));
 
-        StepVerifier.create(engine.fill(req))
+        StepVerifier.create(engine.fillold(req))
                 .assertNext(m -> assertThat(m.getContent()).isEqualTo("x 1"))
                 .verifyComplete();
 

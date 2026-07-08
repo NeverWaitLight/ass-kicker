@@ -20,4 +20,6 @@ public class UniMessage {
     private String title;
     private String content;
     private Map<String, Object> extraData;
+
+    private boolean directSend = false;
 }

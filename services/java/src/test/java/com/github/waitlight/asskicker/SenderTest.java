@@ -65,7 +65,7 @@ class SenderTest {
                 UniMessage template = buildTemplate();
                 UniMessage rendered = buildTemplate();
                 rendered.setContent("ok");
-                when(templateEngine.fill(any())).thenReturn(Mono.just(rendered));
+                when(templateEngine.fillold(any(UniMessage.class))).thenReturn(Mono.just(rendered));
                 when(channelManager.chose(any(ChannelType.class), anyString())).thenReturn(Mono.empty());
 
                 Sender sender = new Sender(templateEngine, channelManager, recordService);
@@ -105,7 +105,7 @@ class SenderTest {
                 UniMessage template = buildTemplate();
                 UniMessage rendered = buildTemplate();
                 rendered.setContent("ok");
-                when(templateEngine.fill(any())).thenReturn(Mono.just(rendered));
+                when(templateEngine.fillold(any(UniMessage.class))).thenReturn(Mono.just(rendered));
                 when(channelManager.chose(any(ChannelType.class), anyString())).thenReturn(Mono.empty());
 
                 Sender sender = new Sender(templateEngine, channelManager, recordService);
@@ -128,7 +128,7 @@ class SenderTest {
 
         @Test
         void send_writesFailedRecordWhenTemplateFillReturnsNull() {
-                when(templateEngine.fill(any())).thenReturn(Mono.empty());
+                when(templateEngine.fillold(any(UniMessage.class))).thenReturn(Mono.empty());
 
                 Sender sender = new Sender(templateEngine, channelManager, recordService);
                 UniTask task = UniTask.builder()
@@ -156,7 +156,7 @@ class SenderTest {
 
         @Test
         void send_writesFailedRecordWhenTemplateFillThrows() {
-                when(templateEngine.fill(any()))
+                when(templateEngine.fillold(any(UniMessage.class)))
                                 .thenReturn(Mono.error(new RuntimeException("template-engine-error")));
 
                 Sender sender = new Sender(templateEngine, channelManager, recordService);
@@ -187,7 +187,7 @@ class SenderTest {
         void send_writesFailedRecordPerRecipientWhenChannelNotFound() {
                 UniMessage rendered = buildTemplate();
                 rendered.setContent("ok");
-                when(templateEngine.fill(any())).thenReturn(Mono.just(rendered));
+                when(templateEngine.fillold(any(UniMessage.class))).thenReturn(Mono.just(rendered));
                 when(channelManager.chose(any(ChannelType.class), anyString())).thenReturn(Mono.empty());
 
                 Sender sender = new Sender(templateEngine, channelManager, recordService);

@@ -21,4 +21,9 @@ public class SmsReq extends SendReq {
     /** 短信签名,对应服务商控制台已审核通过的签名名称 */
     @NotBlank
     private String signName;
+
+    @Override
+    public void applyRendered(String title, String content) {
+        // SMS 正文由服务商模板管理，本地无内容字段可填充
+    }
 }
