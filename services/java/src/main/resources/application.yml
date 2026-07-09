@@ -1,27 +1,45 @@
 spring:
   application:
     name: ass-kicker
+  main:
+    web-application-type: reactive
   messages:
     basename: i18n/ValidationMessages
     encoding: UTF-8
     fallback-to-system-locale: false
-  main:
-    web-application-type: reactive
   data:
     mongodb:
       uri: "mongodb://admin:123456@localhost:27017/asskicker?authSource=admin"
       auto-index-creation: true
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+logging:
+  async:
+    queue-size: 1024
+    discarding-threshold: 0
+
 rocketmq:
   name-server: localhost:9876
   producer:
     group: ass-kicker-producer-group
     send-message-timeout: 3000
     retry-times-when-send-failed: 2
+
 send-record:
   buffer-size: 100
   flush-interval-ms: 5000
-  ttl-days: 7
+
 ass-kicker:
+  rocketmq:
+    send-reqs-topic: ass-kicker-send-reqs
   cache:
     maximum-size: 1000
     expire-after-write-minutes: 10
@@ -30,24 +48,8 @@ ass-kicker:
     debug:
       enabled: true
       sleep-ms: 100
-  rocketmq:
-    send-reqs-topic: ass-kicker-send-reqs
   security:
     jwt:
       secret: change-this-secret-to-32-chars-minimum
       access-token-ttl: PT24H
       refresh-token-ttl: PT720H
-logging:
-  async:
-    queue-size: 1024
-    discarding-threshold: 0
-server:
-  port: 8080
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health
-scalar:
-  enabled: true
-  path: /scalar
