@@ -1,7 +1,6 @@
 package com.github.waitlight.asskicker.mq;
 
 import com.github.waitlight.asskicker.channel.SendReq;
-import com.github.waitlight.asskicker.config.RocketMQConfig;
 import com.github.waitlight.asskicker.service.Sender;
 
 import lombok.RequiredArgsConstructor;
@@ -12,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @RocketMQMessageListener(
-        topic = RocketMQConfig.SEND_REQS_TOPIC,
+        topic = "${ass-kicker.rocketmq.send-reqs-topic}",
         consumerGroup = "ass-kicker-send-req-consumer-group"
 )
 public class SendReqConsumer implements RocketMQListener<SendReq> {

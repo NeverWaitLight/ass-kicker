@@ -1,9 +1,9 @@
 package com.github.waitlight.asskicker.config;
 
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
+@EnableConfigurationProperties(RocketMQProperties.class)
 public class RocketMQConfig {
-
-    public static final String SEND_REQS_TOPIC = "ass-kicker-send-reqs";
 }

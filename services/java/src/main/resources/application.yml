@@ -30,6 +30,8 @@ ass-kicker:
     debug:
       enabled: true
       sleep-ms: 100
+  rocketmq:
+    send-reqs-topic: ass-kicker-send-reqs
   security:
     jwt:
       secret: change-this-secret-to-32-chars-minimum
