@@ -67,6 +67,7 @@ public abstract class AbstractChannel<T extends SendReq> {
         r.setChannelType(type);
         r.setChannelName(channel.getName());
         r.setRecipient(req.recipient());
+        r.setRenderedContent(req.renderedContent());
         r.setStatus(status);
         r.setErrorMessage(errorMessage);
         r.setSentAt(System.currentTimeMillis());

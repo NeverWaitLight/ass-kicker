@@ -28,4 +28,9 @@ public class ImReq extends SendReq {
     public String recipient() {
         return token;
     }
+
+    @Override
+    public String renderedContent() {
+        return content;
+    }
 }

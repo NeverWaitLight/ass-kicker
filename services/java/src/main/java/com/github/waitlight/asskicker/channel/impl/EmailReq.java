@@ -45,4 +45,14 @@ public class EmailReq extends SendReq {
         if (to == null || to.isEmpty()) return null;
         return String.join(",", to);
     }
+
+    @Override
+    public String renderedContent() {
+        boolean hasSubject = subject != null && !subject.isBlank();
+        boolean hasBody = body != null && !body.isBlank();
+        if (hasSubject && hasBody) return subject + "\n" + body;
+        if (hasSubject) return subject;
+        if (hasBody) return body;
+        return null;
+    }
 }

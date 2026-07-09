@@ -53,4 +53,10 @@ public abstract class SendReq {
      * SMS 为手机号，Email 为收件人列表，IM 为 webhook token，Push 为 device token。
      */
     public abstract String recipient();
+
+    /**
+     * 返回本次实际发送的正文，用于写入发送记录的 renderedContent。
+     * SMS 由服务商侧渲染，本地无正文，返回 null。
+     */
+    public abstract String renderedContent();
 }

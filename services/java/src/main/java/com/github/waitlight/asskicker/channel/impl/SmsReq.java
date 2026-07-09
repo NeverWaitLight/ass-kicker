@@ -34,4 +34,9 @@ public class SmsReq extends SendReq {
                 ? "+" + countryCode + phoneNumber
                 : phoneNumber;
     }
+
+    @Override
+    public String renderedContent() {
+        return null;
+    }
 }

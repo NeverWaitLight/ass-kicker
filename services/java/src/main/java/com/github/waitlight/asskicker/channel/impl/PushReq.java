@@ -40,4 +40,14 @@ public class PushReq extends SendReq {
     public String recipient() {
         return deviceToken;
     }
+
+    @Override
+    public String renderedContent() {
+        boolean hasTitle = title != null && !title.isBlank();
+        boolean hasBody = body != null && !body.isBlank();
+        if (hasTitle && hasBody) return title + "\n" + body;
+        if (hasTitle) return title;
+        if (hasBody) return body;
+        return null;
+    }
 }
