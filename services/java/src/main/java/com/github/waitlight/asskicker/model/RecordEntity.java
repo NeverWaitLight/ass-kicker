@@ -20,9 +20,6 @@ public class RecordEntity {
     @Id
     private String id;
 
-    @Field("task_id")
-    private String taskId;
-
     @Field("template_code")
     private String templateCode;
 

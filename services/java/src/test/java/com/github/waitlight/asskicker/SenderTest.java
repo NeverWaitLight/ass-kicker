@@ -148,7 +148,6 @@ class SenderTest {
                 verify(recordService, timeout(5000).times(1)).create(captor.capture());
 
                 RecordEntity record = captor.getValue();
-                assertThat(record.getTaskId()).isEqualTo("task-fill-null");
                 assertThat(record.getStatus()).isEqualTo(com.github.waitlight.asskicker.model.SendRecordStatus.FAILED);
                 assertThat(record.getRecipient()).isNull();
                 assertThat(record.getErrorMessage()).isNotBlank();
@@ -177,7 +176,6 @@ class SenderTest {
                 verify(recordService, timeout(5000).times(1)).create(captor.capture());
 
                 RecordEntity record = captor.getValue();
-                assertThat(record.getTaskId()).isEqualTo("task-fill-throws");
                 assertThat(record.getStatus()).isEqualTo(com.github.waitlight.asskicker.model.SendRecordStatus.FAILED);
                 assertThat(record.getRecipient()).isNull();
                 assertThat(record.getErrorMessage()).contains("template-engine-error");

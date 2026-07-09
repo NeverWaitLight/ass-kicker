@@ -7,7 +7,6 @@ import java.util.Map;
 
 public record RecordVO(
         String id,
-        String taskId,
         String templateCode,
         String languageCode,
         Map<String, Object> params,

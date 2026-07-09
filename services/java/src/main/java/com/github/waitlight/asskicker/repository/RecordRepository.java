@@ -35,12 +35,6 @@ public class RecordRepository {
         return mongoTemplate.findOne(query, RecordEntity.class);
     }
 
-    public Flux<RecordEntity> findByTaskId(String taskId) {
-        Query query = new Query();
-        query.addCriteria(Criteria.where("task_id").is(taskId));
-        return mongoTemplate.find(query, RecordEntity.class);
-    }
-
     public Flux<RecordEntity> findPage(int limit, int offset, String recipient, String channelType) {
         Query query = buildListQuery(recipient, channelType);
         query.with(Sort.by(Sort.Direction.DESC, "sentAt"));
