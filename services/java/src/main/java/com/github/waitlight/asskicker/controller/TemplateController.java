@@ -17,11 +17,17 @@ import com.github.waitlight.asskicker.config.OpenApiConfig;
 import com.github.waitlight.asskicker.converter.TemplateConverter;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
+import com.github.waitlight.asskicker.dto.template.CreateLocalizedTemplateDTO;
 import com.github.waitlight.asskicker.dto.template.CreateTemplateDTO;
+import com.github.waitlight.asskicker.dto.template.LocalizedTemplateVO;
 import com.github.waitlight.asskicker.dto.template.TemplateVO;
+import com.github.waitlight.asskicker.dto.template.UpdateLocalizedTemplateDTO;
 import com.github.waitlight.asskicker.dto.template.UpdateTemplateDTO;
 import com.github.waitlight.asskicker.model.ChannelType;
+import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.service.TemplateService;
+
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -43,20 +49,22 @@ public class TemplateController {
 
     @Operation(summary = "创建模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
-    public Mono<Resp<TemplateVO>> create(@Valid @RequestBody CreateTemplateDTO request) {
+    public Mono<Resp<TemplateVO>> create(@Valid @RequestBody CreateTemplateDTO request,
+            @AuthenticationPrincipal UserPrincipal principal) {
         return Mono.just(request)
                 .map(templateConverter::toEntity)
-                .flatMap(templateService::create)
+                .flatMap(entity -> templateService.create(entity, principal.userId()))
                 .map(templateConverter::toVO)
                 .map(Resp::success);
     }
 
     @Operation(summary = "更新模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PutMapping
-    public Mono<Resp<TemplateVO>> update(@Valid @RequestBody UpdateTemplateDTO request) {
+    public Mono<Resp<TemplateVO>> update(@Valid @RequestBody UpdateTemplateDTO request,
+            @AuthenticationPrincipal UserPrincipal principal) {
         return Mono.just(request)
                 .map(templateConverter::toEntity)
-                .flatMap(patch -> templateService.update(request.getId(), patch))
+                .flatMap(patch -> templateService.update(request.getId(), patch, principal.userId()))
                 .map(templateConverter::toVO)
                 .map(Resp::success);
     }
@@ -104,6 +112,52 @@ public class TemplateController {
     public Mono<Resp<TemplateVO>> getByCode(@PathVariable String code) {
         return templateService.findByCode(code)
                 .map(templateConverter::toVO)
+                .map(Resp::success);
+    }
+
+    @Operation(summary = "创建语言模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @PostMapping("/localized")
+    public Mono<Resp<LocalizedTemplateVO>> createLocalized(@Valid @RequestBody CreateLocalizedTemplateDTO request,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return Mono.just(request)
+                .map(templateConverter::toEntity)
+                .flatMap(entity -> templateService.createLocalized(entity, principal.userId()))
+                .map(templateConverter::toLocalizedVO)
+                .map(Resp::success);
+    }
+
+    @Operation(summary = "更新语言模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @PutMapping("/localized")
+    public Mono<Resp<LocalizedTemplateVO>> updateLocalized(@Valid @RequestBody UpdateLocalizedTemplateDTO request,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return Mono.just(request)
+                .map(templateConverter::toEntity)
+                .flatMap(patch -> templateService.updateLocalized(request.getId(), patch, principal.userId()))
+                .map(templateConverter::toLocalizedVO)
+                .map(Resp::success);
+    }
+
+    @Operation(summary = "删除语言模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @DeleteMapping("/localized/{id}")
+    public Mono<Resp<Void>> deleteLocalized(@PathVariable @NotBlank String id) {
+        return templateService.deleteLocalizedById(id)
+                .thenReturn(Resp.success(null));
+    }
+
+    @Operation(summary = "查询语言模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @GetMapping("/localized/{id}")
+    public Mono<Resp<LocalizedTemplateVO>> getLocalizedById(@PathVariable String id) {
+        return templateService.findLocalizedById(id)
+                .map(templateConverter::toLocalizedVO)
+                .map(Resp::success);
+    }
+
+    @Operation(summary = "查询模板下的所有语言模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @GetMapping("/{templateId}/localized")
+    public Mono<Resp<List<LocalizedTemplateVO>>> listLocalized(@PathVariable @NotBlank String templateId) {
+        return templateService.listLocalized(templateId)
+                .map(templateConverter::toLocalizedVO)
+                .collectList()
                 .map(Resp::success);
     }
 }

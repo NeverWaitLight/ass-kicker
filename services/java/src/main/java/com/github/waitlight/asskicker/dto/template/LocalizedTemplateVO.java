@@ -1,6 +1,6 @@
 package com.github.waitlight.asskicker.dto.template;
 
-import com.github.waitlight.asskicker.model.ChannelType;
+import com.github.waitlight.asskicker.model.Language;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,17 +10,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TemplateVO {
+public class LocalizedTemplateVO {
 
     private String id;
 
-    private String code;
+    private String templateId;
 
-    private String name;
+    private Language language;
 
-    private ChannelType channelType;
+    private String title;
 
-    private boolean providerManaged;
+    private String content;
 
     private String creator;
 

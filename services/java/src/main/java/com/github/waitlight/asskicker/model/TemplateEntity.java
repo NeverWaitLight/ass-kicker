@@ -29,6 +29,8 @@ public class TemplateEntity {
          */
         private boolean providerManaged = false;
 
+        private String creator;
+        private String updater;
         private Long createdAt;
         private Long updatedAt;
 }
