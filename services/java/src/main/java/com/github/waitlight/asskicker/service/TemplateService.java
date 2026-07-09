@@ -27,6 +27,7 @@ public class TemplateService {
 
     private final TemplateRepository templateRepository;
     private final LocalizedTemplateRepository localizedTemplateRepository;
+    private final ProviderTemplateService providerTemplateService;
     private final CaffeineCacheConfig caffeineCacheConfig;
 
     private AsyncLoadingCache<String, Optional<TemplateEntity>> templateByIdCache;
@@ -109,7 +110,9 @@ public class TemplateService {
     public Mono<Void> delete(String id) {
         return templateRepository.findById(id)
                 .switchIfEmpty(Mono.error(new NotFoundException("template.id.notFound", id)))
-                .flatMap(template -> localizedTemplateRepository.deleteByTemplateId(template.getId())
+                .flatMap(template -> localizedTemplateRepository.findByTemplateId(template.getId())
+                        .flatMap(localized -> providerTemplateService.deleteByLocalizedTemplateId(localized.getId()))
+                        .then(localizedTemplateRepository.deleteByTemplateId(template.getId()))
                         .then(templateRepository.deleteById(template.getId()))
                         .doOnSuccess(v -> invalidateTemplateCaches(template, template)));
     }

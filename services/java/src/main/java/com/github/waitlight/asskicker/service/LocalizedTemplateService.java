@@ -27,6 +27,7 @@ public class LocalizedTemplateService {
 
     private final TemplateRepository templateRepository;
     private final LocalizedTemplateRepository localizedTemplateRepository;
+    private final ProviderTemplateService providerTemplateService;
     private final CaffeineCacheConfig caffeineCacheConfig;
 
     private AsyncLoadingCache<String, Optional<LocalizedTemplateEntity>> localizedByTemplateIdAndLanguageCache;
@@ -65,7 +66,8 @@ public class LocalizedTemplateService {
         }
         return localizedTemplateRepository.findByTemplateIdAndLanguage(templateId, language)
                 .switchIfEmpty(Mono.error(new NotFoundException("template.localized.notFound", templateId)))
-                .flatMap(found -> localizedTemplateRepository.deleteById(found.getId())
+                .flatMap(found -> providerTemplateService.deleteByLocalizedTemplateId(found.getId())
+                        .then(localizedTemplateRepository.deleteById(found.getId()))
                         .doOnSuccess(v -> invalidateLocalizedCache(found)));
     }
 
@@ -119,7 +121,8 @@ public class LocalizedTemplateService {
         }
         return localizedTemplateRepository.findById(id)
                 .switchIfEmpty(Mono.error(new NotFoundException("template.localized.notFound", id)))
-                .flatMap(found -> localizedTemplateRepository.deleteById(found.getId())
+                .flatMap(found -> providerTemplateService.deleteByLocalizedTemplateId(found.getId())
+                        .then(localizedTemplateRepository.deleteById(found.getId()))
                         .doOnSuccess(v -> invalidateLocalizedCache(found)));
     }
 
