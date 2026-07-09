@@ -41,6 +41,9 @@ public class RecordEntity {
     @Field("rendered_content")
     private String renderedContent;
 
+    @Field("direct_send")
+    private boolean directSend;
+
     @Field("channel_type")
     private ChannelType channelType;
 

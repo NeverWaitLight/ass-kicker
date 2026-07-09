@@ -14,6 +14,7 @@ public record RecordVO(
         String recipient,
         Long submittedAt,
         String renderedContent,
+        boolean directSend,
         ChannelType channelType,
         String channelName,
         SendRecordStatus status,
