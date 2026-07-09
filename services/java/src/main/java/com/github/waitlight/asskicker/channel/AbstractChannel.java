@@ -40,7 +40,7 @@ public abstract class AbstractChannel<T extends SendReq> {
 
     public final Mono<String> send(T req) {
         return doSend(req)
-                .doOnSuccess(result -> recording(req, SendRecordStatus.SUCCESS, null))
+                .map(result -> recording(req, SendRecordStatus.SUCCESS, null))
                 .doOnError(error -> recording(req, SendRecordStatus.FAILED, error.getMessage()));
     }
 
@@ -56,7 +56,7 @@ public abstract class AbstractChannel<T extends SendReq> {
 
     public abstract void dispose();
 
-    private void recording(SendReq req, SendRecordStatus status, String errorMessage) {
+    private String recording(SendReq req, SendRecordStatus status, String errorMessage) {
         RecordEntity r = new RecordEntity();
         r.setTemplateCode(req.getTemplateCode());
         r.setLanguageCode(req.getLanguage() != null ? req.getLanguage().getCode() : null);
@@ -70,6 +70,6 @@ public abstract class AbstractChannel<T extends SendReq> {
         r.setStatus(status);
         r.setErrorMessage(errorMessage);
         r.setSentAt(System.currentTimeMillis());
-        recordService.create(r);
+        return recordService.create(r);
     }
 }

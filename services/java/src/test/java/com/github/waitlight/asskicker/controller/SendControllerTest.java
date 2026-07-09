@@ -72,7 +72,7 @@ class SendControllerTest {
         StepVerifier.create(controller.send(task))
                 .assertNext(resp -> {
                     assertThat(resp.code()).isEqualTo("200");
-                    assertThat(resp.data().taskId()).isNotBlank();
+                    assertThat(resp.data().recordId()).isNotBlank();
                 })
                 .verifyComplete();
 
