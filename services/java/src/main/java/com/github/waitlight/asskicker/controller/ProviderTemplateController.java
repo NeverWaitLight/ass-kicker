@@ -18,10 +18,12 @@ import com.github.waitlight.asskicker.converter.TemplateConverter;
 import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.template.CreateProviderTemplateDTO;
 import com.github.waitlight.asskicker.dto.template.ProviderTemplateVO;
+import com.github.waitlight.asskicker.dto.template.SyncLocalizedTemplateDTO;
 import com.github.waitlight.asskicker.dto.template.UpdateProviderTemplateDTO;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.service.ProviderTemplateService;
+import com.github.waitlight.asskicker.service.TemplateSyncService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -40,6 +42,7 @@ import reactor.core.publisher.Mono;
 public class ProviderTemplateController {
 
     private final ProviderTemplateService providerTemplateService;
+    private final TemplateSyncService templateSyncService;
     private final TemplateConverter templateConverter;
 
     @Operation(summary = "创建服务商模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
@@ -96,6 +99,22 @@ public class ProviderTemplateController {
         return providerTemplateService.listProvider(localizedTemplateId)
                 .map(templateConverter::toProviderVO)
                 .collectList()
+                .map(Resp::success);
+    }
+
+    @Operation(summary = "同步本地模板到服务商", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
+    @PostMapping("/localized/{localizedTemplateId}/sync")
+    public Mono<Resp<ProviderTemplateVO>> sync(@PathVariable @NotBlank String localizedTemplateId,
+            @Valid @RequestBody SyncLocalizedTemplateDTO request,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        TemplateSyncService.SyncSpec spec = new TemplateSyncService.SyncSpec(
+                request.getProvider(),
+                request.getChannelId(),
+                request.getSmsTemplateType(),
+                request.getInternational(),
+                request.getRemark());
+        return templateSyncService.sync(localizedTemplateId, spec, principal.userId())
+                .map(templateConverter::toProviderVO)
                 .map(Resp::success);
     }
 }
