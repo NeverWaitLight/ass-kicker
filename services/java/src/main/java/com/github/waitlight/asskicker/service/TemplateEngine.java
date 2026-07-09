@@ -49,10 +49,7 @@ public class TemplateEngine {
                         req.applyRendered("", "");
                         return Mono.just(req);
                     }
-                    return Mono.justOrEmpty(
-                            tpl.getLocalizedTemplates() != null
-                                    ? tpl.getLocalizedTemplates().get(req.getLanguage())
-                                    : null)
+                    return templateService.findLocalized(tpl.getId(), req.getLanguage())
                             .map(lt -> {
                                 Map<String, Object> params = toObjectMap(req.getTemplateParams());
                                 String title = renderTemplate(req.getTemplateCode(), req.getLanguage(), lt.getTitle(), params);

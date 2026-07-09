@@ -2,7 +2,6 @@ package com.github.waitlight.asskicker.controller;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,12 +11,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.github.waitlight.asskicker.config.OpenApiConfig;
 import com.github.waitlight.asskicker.converter.TemplateConverter;
-import com.github.waitlight.asskicker.dto.PageReq;
 import com.github.waitlight.asskicker.dto.PageResp;
 import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.template.CreateTemplateDTO;
@@ -66,9 +63,9 @@ public class TemplateController {
 
     @Operation(summary = "删除模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public Mono<Void> delete(@PathVariable @NotBlank String id) {
-        return templateService.delete(id);
+    public Mono<Resp<Void>> delete(@PathVariable @NotBlank String id) {
+        return templateService.delete(id)
+                .thenReturn(Resp.success(null));
     }
 
     @Operation(summary = "查询模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
@@ -81,22 +78,24 @@ public class TemplateController {
 
     @Operation(summary = "分页查询", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @GetMapping
-    public Mono<PageResp<TemplateVO>> page(@Validated PageReq pageReq,
+    public Mono<PageResp<TemplateVO>> page(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) ChannelType channelType) {
-        int page = pageReq.getPage();
-        int size = pageReq.getSize();
-        String keyword = pageReq.getKeyword();
-        int offset = (page - 1) * size;
+        int p = Math.max(page, 1);
+        int s = Math.max(size, 1);
+        int offset = (p - 1) * s;
 
         return templateService.count(keyword, channelType)
                 .flatMap(total -> {
                     if (total == 0) {
-                        return Mono.just(PageResp.success(page, size, total, List.of()));
+                        return Mono.just(PageResp.success(p, s, total, List.of()));
                     }
-                    return templateService.list(keyword, channelType, size, offset)
+                    return templateService.list(keyword, channelType, s, offset)
                             .map(templateConverter::toVO)
                             .collectList()
-                            .map(templates -> PageResp.success(page, size, total, templates));
+                            .map(templates -> PageResp.success(p, s, total, templates));
                 });
     }
 

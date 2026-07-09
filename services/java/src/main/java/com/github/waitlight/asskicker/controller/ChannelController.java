@@ -106,8 +106,9 @@ public class ChannelController {
 
         @Operation(summary = "删除渠道", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @DeleteMapping("/{id}")
-        public Mono<Void> delete(@PathVariable String id) {
-                return channelService.delete(id);
+        public Mono<Resp<Void>> delete(@PathVariable String id) {
+                return channelService.delete(id)
+                                .thenReturn(Resp.success(null));
         }
 
 }

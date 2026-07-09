@@ -1,8 +1,8 @@
 package com.github.waitlight.asskicker.dto.template;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.github.waitlight.asskicker.model.ChannelType;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,15 +21,20 @@ public class UpdateTemplateDTO {
     @NotBlank
     private String id;
 
+    @NotBlank
     @Size(max = 100)
     private String code;
 
+    @NotBlank
     @Size(max = 255)
     private String name;
 
+    @NotNull
     private ChannelType channelType;
 
-    private JsonNode templates;
-
-    private JsonNode channels;
+    /**
+     * 是否将模板托管至服务商，由服务商负责渲染与发送
+     */
+    @Builder.Default
+    private boolean providerManaged = false;
 }

@@ -2,7 +2,6 @@ package com.github.waitlight.asskicker.controller;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -12,7 +11,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.github.waitlight.asskicker.config.OpenApiConfig;
@@ -74,9 +72,9 @@ public class UserController {
 
     @Operation(summary = "删除用户", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public Mono<Void> delete(@PathVariable @NotBlank String id) {
-        return userService.delete(id);
+    public Mono<Resp<Void>> delete(@PathVariable @NotBlank String id) {
+        return userService.delete(id)
+                .thenReturn(Resp.success(null));
     }
 
     @Operation(summary = "踢下线", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))

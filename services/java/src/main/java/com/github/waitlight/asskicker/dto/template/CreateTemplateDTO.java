@@ -1,7 +1,5 @@
 package com.github.waitlight.asskicker.dto.template;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.github.waitlight.asskicker.model.ChannelType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -31,10 +29,9 @@ public class CreateTemplateDTO {
     @NotNull
     private ChannelType channelType;
 
-    @NotNull
+    /**
+     * 是否将模板托管至服务商，由服务商负责渲染与发送
+     */
     @Builder.Default
-    private JsonNode templates = JsonNodeFactory.instance.objectNode();
-
-    @Builder.Default
-    private JsonNode channels = JsonNodeFactory.instance.objectNode();
+    private boolean providerManaged = false;
 }
