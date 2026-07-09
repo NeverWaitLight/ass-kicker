@@ -26,12 +26,15 @@ import reactor.core.publisher.Mono;
 public class TemplateEngine {
 
     private final TemplateService templateService;
+    private final LocalizedTemplateService localizedTemplateService;
     private final MustacheFactory mustacheFactory;
     private final Cache<String, Mustache> compiledTemplateCache;
 
     public TemplateEngine(TemplateService templateService,
+            LocalizedTemplateService localizedTemplateService,
             CaffeineCacheProperties cacheProperties) {
         this.templateService = templateService;
+        this.localizedTemplateService = localizedTemplateService;
         this.mustacheFactory = new DefaultMustacheFactory();
         this.compiledTemplateCache = Caffeine.newBuilder()
                 .maximumSize(cacheProperties.getMaximumSize())
@@ -49,7 +52,7 @@ public class TemplateEngine {
                         req.applyRendered("", "");
                         return Mono.just(req);
                     }
-                    return templateService.findLocalized(tpl.getId(), req.getLanguage())
+                    return localizedTemplateService.findLocalized(tpl.getId(), req.getLanguage())
                             .map(lt -> {
                                 Map<String, Object> params = toObjectMap(req.getTemplateParams());
                                 String title = renderTemplate(req.getTemplateCode(), req.getLanguage(), lt.getTitle(), params);

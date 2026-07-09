@@ -1,6 +1,8 @@
 package com.github.waitlight.asskicker;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -22,7 +24,10 @@ import com.github.waitlight.asskicker.channel.impl.EmailReq;
 import com.github.waitlight.asskicker.config.CaffeineCacheConfig.CaffeineCacheProperties;
 import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.Language;
+import com.github.waitlight.asskicker.model.LocalizedTemplateEntity;
 import com.github.waitlight.asskicker.model.TemplateEntity;
+import com.github.waitlight.asskicker.service.LocalizedTemplateEntityFixtures;
+import com.github.waitlight.asskicker.service.LocalizedTemplateService;
 import com.github.waitlight.asskicker.service.TemplateEngine;
 import com.github.waitlight.asskicker.service.TemplateEntityFixtures;
 import com.github.waitlight.asskicker.service.TemplateService;
@@ -36,6 +41,9 @@ class TemplateEngineTest {
     @Mock
     private TemplateService templateService;
 
+    @Mock
+    private LocalizedTemplateService localizedTemplateService;
+
     private TemplateEngine engine;
 
     @BeforeEach
@@ -43,7 +51,7 @@ class TemplateEngineTest {
         CaffeineCacheProperties cacheProperties = new CaffeineCacheProperties();
         cacheProperties.setMaximumSize(100);
         cacheProperties.setExpireAfterWriteMinutes(60);
-        engine = new TemplateEngine(templateService, cacheProperties);
+        engine = new TemplateEngine(templateService, localizedTemplateService, cacheProperties);
     }
 
     private static EmailReq emailReq(String templateCode, Language language, Map<String, String> params) {
@@ -61,7 +69,10 @@ class TemplateEngineTest {
     @Test
     void fill_rendersMustache_intoSubjectAndBody() {
         TemplateEntity entity = TemplateEntityFixtures.smsCaptchaZhCn();
+        LocalizedTemplateEntity localizedEntity = LocalizedTemplateEntityFixtures.smsCaptchaZhCn(entity.getId());
         when(templateService.findByCode("sms_captcha")).thenReturn(Mono.just(entity));
+        when(localizedTemplateService.findLocalized(entity.getId(), Language.ZH_CN))
+                .thenReturn(Mono.just(localizedEntity));
 
         Map<String, String> params = new HashMap<>();
         params.put("name", "王德发");
@@ -76,6 +87,7 @@ class TemplateEngineTest {
                 .verifyComplete();
 
         verify(templateService).findByCode("sms_captcha");
+        verify(localizedTemplateService).findLocalized(entity.getId(), Language.ZH_CN);
     }
 
     @Test
@@ -91,6 +103,7 @@ class TemplateEngineTest {
                 .verifyComplete();
 
         verifyNoInteractions(templateService);
+        verifyNoInteractions(localizedTemplateService);
     }
 
     @Test
@@ -105,6 +118,7 @@ class TemplateEngineTest {
                 .verifyComplete();
 
         verifyNoInteractions(templateService);
+        verifyNoInteractions(localizedTemplateService);
     }
 
     @Test
@@ -120,6 +134,8 @@ class TemplateEngineTest {
     void fill_whenLocalizedMissing_completesEmpty() {
         TemplateEntity entity = TemplateEntityFixtures.localizedEmpty();
         when(templateService.findByCode("x")).thenReturn(Mono.just(entity));
+        when(localizedTemplateService.findLocalized(eq(entity.getId()), any(Language.class)))
+                .thenReturn(Mono.empty());
 
         EmailReq req = emailReq("x", Language.EN, Map.of());
 
@@ -130,6 +146,8 @@ class TemplateEngineTest {
     void fill_whenLocalizedTemplatesNull_completesEmpty() {
         TemplateEntity entity = TemplateEntityFixtures.localizedTemplatesNull();
         when(templateService.findByCode("x")).thenReturn(Mono.just(entity));
+        when(localizedTemplateService.findLocalized(eq(entity.getId()), any(Language.class)))
+                .thenReturn(Mono.empty());
 
         EmailReq req = emailReq("x", Language.ZH_CN, Map.of());
 
@@ -139,7 +157,10 @@ class TemplateEngineTest {
     @Test
     void fill_whenTemplateParamsNull_rendersWithoutSubstitution() {
         TemplateEntity entity = TemplateEntityFixtures.greetEn();
+        LocalizedTemplateEntity localizedEntity = LocalizedTemplateEntityFixtures.greetEn(entity.getId());
         when(templateService.findByCode("greet")).thenReturn(Mono.just(entity));
+        when(localizedTemplateService.findLocalized(entity.getId(), Language.EN))
+                .thenReturn(Mono.just(localizedEntity));
 
         EmailReq req = emailReq("greet", Language.EN, null);
 
@@ -154,7 +175,10 @@ class TemplateEngineTest {
     @Test
     void fill_whenTemplateContentNull_rendersEmptyStringWithoutOverwritingBody() {
         TemplateEntity entity = TemplateEntityFixtures.emptyBodyDe();
+        LocalizedTemplateEntity localizedEntity = LocalizedTemplateEntityFixtures.emptyBodyDe(entity.getId());
         when(templateService.findByCode("empty_body")).thenReturn(Mono.just(entity));
+        when(localizedTemplateService.findLocalized(entity.getId(), Language.DE))
+                .thenReturn(Mono.just(localizedEntity));
 
         EmailReq req = emailReq("empty_body", Language.DE, Map.of());
 
@@ -170,7 +194,10 @@ class TemplateEngineTest {
     @SuppressWarnings("unchecked")
     void invalidateCompiledTemplates_removesCacheEntriesForPrefix() {
         TemplateEntity entity = TemplateEntityFixtures.invZhCn();
+        LocalizedTemplateEntity localizedEntity = LocalizedTemplateEntityFixtures.invZhCn(entity.getId());
         when(templateService.findByCode("inv")).thenReturn(Mono.just(entity));
+        when(localizedTemplateService.findLocalized(entity.getId(), Language.ZH_CN))
+                .thenReturn(Mono.just(localizedEntity));
 
         EmailReq req = emailReq("inv", Language.ZH_CN, Map.of("p", "1"));
 

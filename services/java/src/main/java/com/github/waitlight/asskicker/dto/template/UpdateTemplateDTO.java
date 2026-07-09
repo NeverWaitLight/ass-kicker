@@ -19,9 +19,6 @@ import lombok.NoArgsConstructor;
 public class UpdateTemplateDTO {
 
     @NotBlank
-    private String id;
-
-    @NotBlank
     @Size(max = 100)
     private String code;
 

@@ -6,8 +6,6 @@ import com.github.waitlight.asskicker.exception.BadRequestException;
 import com.github.waitlight.asskicker.exception.ConflictException;
 import com.github.waitlight.asskicker.exception.NotFoundException;
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.model.Language;
-import com.github.waitlight.asskicker.model.LocalizedTemplateEntity;
 import com.github.waitlight.asskicker.model.TemplateEntity;
 import com.github.waitlight.asskicker.repository.LocalizedTemplateRepository;
 import com.github.waitlight.asskicker.repository.TemplateRepository;
@@ -33,7 +31,6 @@ public class TemplateService {
 
     private AsyncLoadingCache<String, Optional<TemplateEntity>> templateByIdCache;
     private AsyncLoadingCache<String, Optional<TemplateEntity>> templateByCodeCache;
-    private AsyncLoadingCache<String, Optional<LocalizedTemplateEntity>> localizedByTemplateIdAndLanguageCache;
 
     @PostConstruct
     void initCaches() {
@@ -47,16 +44,6 @@ public class TemplateService {
                         .map(Optional::of)
                         .defaultIfEmpty(Optional.empty())
                         .toFuture());
-
-        localizedByTemplateIdAndLanguageCache = caffeineCacheConfig.buildCache((key, executor) -> {
-            int sep = key.indexOf('|');
-            String templateId = key.substring(0, sep);
-            Language language = Language.valueOf(key.substring(sep + 1));
-            return localizedTemplateRepository.findByTemplateIdAndLanguage(templateId, language)
-                    .map(Optional::of)
-                    .defaultIfEmpty(Optional.empty())
-                    .toFuture();
-        });
     }
 
     public Mono<TemplateEntity> create(TemplateEntity entity, String userId) {
@@ -70,13 +57,12 @@ public class TemplateService {
         return templateRepository.findByCode(entity.getCode())
                 .flatMap(existing -> Mono.<TemplateEntity>error(new ConflictException("template.code.exists")))
                 .switchIfEmpty(Mono.defer(() -> {
-                    TemplateEntity toCreate = copyFieldsForCreate(entity);
                     long now = Instant.now().toEpochMilli();
-                    toCreate.setCreator(userId);
-                    toCreate.setUpdater(userId);
-                    toCreate.setCreatedAt(now);
-                    toCreate.setUpdatedAt(now);
-                    return templateRepository.save(toCreate)
+                    entity.setCreator(userId);
+                    entity.setUpdater(userId);
+                    entity.setCreatedAt(now);
+                    entity.setUpdatedAt(now);
+                    return templateRepository.save(entity)
                             .doOnSuccess(saved -> invalidateTemplateCaches(saved, saved));
                 }));
     }
@@ -123,14 +109,9 @@ public class TemplateService {
     public Mono<Void> delete(String id) {
         return templateRepository.findById(id)
                 .switchIfEmpty(Mono.error(new NotFoundException("template.id.notFound", id)))
-                .flatMap(template -> localizedTemplateRepository.findByTemplateId(template.getId())
-                        .collectList()
-                        .flatMap(localized -> localizedTemplateRepository.deleteByTemplateId(template.getId())
-                                .then(templateRepository.deleteById(template.getId()))
-                                .doOnSuccess(v -> {
-                                    invalidateTemplateCaches(template, template);
-                                    localized.forEach(this::invalidateLocalizedCache);
-                                })));
+                .flatMap(template -> localizedTemplateRepository.deleteByTemplateId(template.getId())
+                        .then(templateRepository.deleteById(template.getId()))
+                        .doOnSuccess(v -> invalidateTemplateCaches(template, template)));
     }
 
     public Mono<TemplateEntity> update(String id, TemplateEntity entity, String userId) {
@@ -142,7 +123,7 @@ public class TemplateService {
                 .switchIfEmpty(Mono.error(new NotFoundException("template.id.notFound", id)))
                 .flatMap(existing -> ensureCodeAvailable(entity, existing)
                         .then(Mono.defer(() -> {
-                            mergePatch(entity, existing);
+                            applyUpdate(entity, existing);
                             existing.setUpdater(userId);
                             existing.setUpdatedAt(Instant.now().toEpochMilli());
                             return templateRepository.save(existing)
@@ -150,160 +131,20 @@ public class TemplateService {
                         })));
     }
 
-    public Mono<LocalizedTemplateEntity> findLocalized(String templateId, Language language) {
-        if (!StringUtils.hasText(templateId) || language == null) {
-            return Mono.empty();
-        }
-        return Mono.fromFuture(localizedByTemplateIdAndLanguageCache.get(localizedCacheKey(templateId, language)))
-                .flatMap(opt -> opt.map(Mono::just).orElseGet(Mono::empty));
-    }
-
-    public Flux<LocalizedTemplateEntity> listLocalized(String templateId) {
-        if (!StringUtils.hasText(templateId)) {
-            return Flux.empty();
-        }
-        return localizedTemplateRepository.findByTemplateId(templateId);
-    }
-
-    public Mono<LocalizedTemplateEntity> upsertLocalized(LocalizedTemplateEntity entity, String userId) {
-        if (entity == null || !StringUtils.hasText(entity.getTemplateId()) || entity.getLanguage() == null) {
-            return Mono.error(new BadRequestException("template.localized.key.empty"));
-        }
-        return templateRepository.findById(entity.getTemplateId())
-                .switchIfEmpty(Mono.error(new NotFoundException("template.id.notFound", entity.getTemplateId())))
-                .then(Mono.defer(() -> localizedTemplateRepository
-                        .findByTemplateIdAndLanguage(entity.getTemplateId(), entity.getLanguage())
-                        .flatMap(existing -> {
-                            mergeLocalizedPatch(entity, existing);
-                            existing.setUpdater(userId);
-                            existing.setUpdatedAt(Instant.now().toEpochMilli());
-                            return localizedTemplateRepository.save(existing);
-                        })
-                        .switchIfEmpty(Mono.defer(() -> {
-                            long now = Instant.now().toEpochMilli();
-                            entity.setCreator(userId);
-                            entity.setUpdater(userId);
-                            entity.setCreatedAt(now);
-                            entity.setUpdatedAt(now);
-                            return localizedTemplateRepository.save(entity);
-                        }))
-                        .doOnSuccess(this::invalidateLocalizedCache)));
-    }
-
-    public Mono<Void> deleteLocalized(String templateId, Language language) {
-        if (!StringUtils.hasText(templateId) || language == null) {
-            return Mono.error(new BadRequestException("template.localized.key.empty"));
-        }
-        return localizedTemplateRepository.findByTemplateIdAndLanguage(templateId, language)
-                .switchIfEmpty(Mono.error(new NotFoundException("template.localized.notFound", templateId)))
-                .flatMap(found -> localizedTemplateRepository.deleteById(found.getId())
-                        .doOnSuccess(v -> invalidateLocalizedCache(found)));
-    }
-
-    public Mono<LocalizedTemplateEntity> findLocalizedById(String id) {
-        if (!StringUtils.hasText(id)) {
-            return Mono.error(new BadRequestException("template.localized.id.empty"));
-        }
-        return localizedTemplateRepository.findById(id)
-                .switchIfEmpty(Mono.error(new NotFoundException("template.localized.notFound", id)));
-    }
-
-    public Mono<LocalizedTemplateEntity> createLocalized(LocalizedTemplateEntity entity, String userId) {
-        if (entity == null || !StringUtils.hasText(entity.getTemplateId()) || entity.getLanguage() == null) {
-            return Mono.error(new BadRequestException("template.localized.key.empty"));
-        }
-        return templateRepository.findById(entity.getTemplateId())
-                .switchIfEmpty(Mono.error(new NotFoundException("template.id.notFound", entity.getTemplateId())))
-                .then(Mono.defer(() -> localizedTemplateRepository
-                        .findByTemplateIdAndLanguage(entity.getTemplateId(), entity.getLanguage())
-                        .flatMap(existing -> Mono.<LocalizedTemplateEntity>error(
-                                new ConflictException("template.localized.exists")))
-                        .switchIfEmpty(Mono.defer(() -> {
-                            long now = Instant.now().toEpochMilli();
-                            entity.setCreator(userId);
-                            entity.setUpdater(userId);
-                            entity.setCreatedAt(now);
-                            entity.setUpdatedAt(now);
-                            return localizedTemplateRepository.save(entity)
-                                    .doOnSuccess(this::invalidateLocalizedCache);
-                        }))));
-    }
-
-    public Mono<LocalizedTemplateEntity> updateLocalized(String id, LocalizedTemplateEntity patch, String userId) {
-        if (!StringUtils.hasText(id)) {
-            return Mono.error(new BadRequestException("template.localized.id.empty"));
-        }
-        return localizedTemplateRepository.findById(id)
-                .switchIfEmpty(Mono.error(new NotFoundException("template.localized.notFound", id)))
-                .flatMap(existing -> {
-                    mergeLocalizedPatch(patch, existing);
-                    existing.setUpdater(userId);
-                    existing.setUpdatedAt(Instant.now().toEpochMilli());
-                    return localizedTemplateRepository.save(existing)
-                            .doOnSuccess(this::invalidateLocalizedCache);
-                });
-    }
-
-    public Mono<Void> deleteLocalizedById(String id) {
-        if (!StringUtils.hasText(id)) {
-            return Mono.error(new BadRequestException("template.localized.id.empty"));
-        }
-        return localizedTemplateRepository.findById(id)
-                .switchIfEmpty(Mono.error(new NotFoundException("template.localized.notFound", id)))
-                .flatMap(found -> localizedTemplateRepository.deleteById(found.getId())
-                        .doOnSuccess(v -> invalidateLocalizedCache(found)));
-    }
-
     /**
-     * 创建前从入参实体拷贝业务字段（不含 id、时间戳）
+     * 用入参 entity 全量覆盖 target 的业务字段，保留 id、creator、createdAt
      */
-    private TemplateEntity copyFieldsForCreate(TemplateEntity source) {
-        TemplateEntity copy = new TemplateEntity();
-        copy.setCode(source.getCode());
-        copy.setName(source.getName());
-        copy.setChannelType(source.getChannelType());
-        copy.setProviderManaged(source.isProviderManaged());
-        return copy;
-    }
-
-    /**
-     * 合并 patch 到 target，忽略 null 值，保持 id、createdAt、updatedAt 由调用方处理
-     */
-    private void mergePatch(TemplateEntity patch, TemplateEntity target) {
-        if (patch.getCode() != null) {
-            target.setCode(patch.getCode());
-        }
-        if (patch.getName() != null) {
-            target.setName(patch.getName().trim());
-        }
-        if (patch.getChannelType() != null) {
-            target.setChannelType(patch.getChannelType());
-        }
-        target.setProviderManaged(patch.isProviderManaged());
-    }
-
-    private void mergeLocalizedPatch(LocalizedTemplateEntity patch, LocalizedTemplateEntity target) {
-        if (patch.getTitle() != null) {
-            target.setTitle(patch.getTitle());
-        }
-        if (patch.getContent() != null) {
-            target.setContent(patch.getContent());
-        }
+    private void applyUpdate(TemplateEntity source, TemplateEntity target) {
+        target.setCode(source.getCode());
+        target.setName(source.getName().trim());
+        target.setChannelType(source.getChannelType());
+        target.setProviderManaged(source.isProviderManaged());
     }
 
     private void invalidateTemplateCaches(TemplateEntity existing, TemplateEntity saved) {
         templateByIdCache.synchronous().invalidate(saved.getId());
         templateByCodeCache.synchronous().invalidate(existing.getCode());
         templateByCodeCache.synchronous().invalidate(saved.getCode());
-    }
-
-    private void invalidateLocalizedCache(LocalizedTemplateEntity localized) {
-        localizedByTemplateIdAndLanguageCache.synchronous()
-                .invalidate(localizedCacheKey(localized.getTemplateId(), localized.getLanguage()));
-    }
-
-    private String localizedCacheKey(String templateId, Language language) {
-        return templateId + "|" + language.name();
     }
 
     private Mono<Void> ensureCodeAvailable(TemplateEntity entity, TemplateEntity existing) {

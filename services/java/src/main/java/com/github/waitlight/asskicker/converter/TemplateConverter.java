@@ -44,6 +44,7 @@ public interface TemplateConverter {
     @Mapping(target = "updatedAt", ignore = true)
     LocalizedTemplateEntity toEntity(CreateLocalizedTemplateDTO dto);
 
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "templateId", ignore = true)
     @Mapping(target = "language", ignore = true)
     @Mapping(target = "creator", ignore = true)

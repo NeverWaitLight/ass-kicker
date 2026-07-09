@@ -1,6 +1,5 @@
 package com.github.waitlight.asskicker.dto.template;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,9 +14,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class UpdateLocalizedTemplateDTO {
-
-    @NotBlank
-    private String id;
 
     @Size(max = 255)
     private String title;
