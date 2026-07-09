@@ -2,8 +2,13 @@ package com.github.waitlight.asskicker.config;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
@@ -12,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(CaffeineCacheProperties.class)
+@EnableConfigurationProperties(CaffeineCacheConfig.CaffeineCacheProperties.class)
 public class CaffeineCacheConfig {
 
     private final CaffeineCacheProperties properties;
@@ -45,5 +50,21 @@ public class CaffeineCacheConfig {
                 .maximumSize(properties.getMaximumSize())
                 .expireAfterWrite(jitteredExpireMinutes(), TimeUnit.MINUTES)
                 .buildAsync(loader::apply);
+    }
+
+    @Data
+    @Validated
+    @ConfigurationProperties(prefix = "ass-kicker.cache")
+    public static class CaffeineCacheProperties {
+
+        @Min(1)
+        private long maximumSize = 1000;
+
+        @Min(1)
+        private long expireAfterWriteMinutes = 10;
+
+        @Min(0)
+        @Max(100)
+        private int randomJitterPercent = 20;
     }
 }
