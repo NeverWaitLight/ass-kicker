@@ -1,6 +1,6 @@
 spring:
   application:
-    name: ${SPRING_APPLICATION_NAME:ass-kicker}
+    name: ass-kicker
   messages:
     basename: i18n/ValidationMessages
     encoding: UTF-8
@@ -9,43 +9,43 @@ spring:
     web-application-type: reactive
   data:
     mongodb:
-      uri: ${SPRING_DATA_MONGODB_URI:mongodb://admin:123456@localhost:27017/asskicker?authSource=admin}
-      auto-index-creation: ${SPRING_DATA_MONGODB_AUTO_INDEX_CREATION:true}
+      uri: "mongodb://admin:123456@localhost:27017/asskicker?authSource=admin"
+      auto-index-creation: true
 rocketmq:
-  name-server: ${ROCKETMQ_NAME_SERVER:localhost:9876}
+  name-server: localhost:9876
   producer:
     group: ass-kicker-producer-group
     send-message-timeout: 3000
     retry-times-when-send-failed: 2
 send-record:
-  buffer-size: ${SEND_RECORD_BUFFER_SIZE:100}
-  flush-interval-ms: ${SEND_RECORD_FLUSH_INTERVAL_MS:5000}
-  ttl-days: ${SEND_RECORD_TTL_DAYS:7}
+  buffer-size: 100
+  flush-interval-ms: 5000
+  ttl-days: 7
 ass-kicker:
   cache:
-    maximum-size: ${ASS_KICKER_CACHE_MAXIMUM_SIZE:1000}
-    expire-after-write-minutes: ${ASS_KICKER_CACHE_EXPIRE_AFTER_WRITE_MINUTES:10}
-    random-jitter-percent: ${ASS_KICKER_CACHE_RANDOM_JITTER_PERCENT:20}
+    maximum-size: 1000
+    expire-after-write-minutes: 10
+    random-jitter-percent: 20
   channel:
     debug:
-      enabled: ${ASS_KICKER_CHANNEL_DEBUG_ENABLED:true}
-      sleep-ms: ${ASS_KICKER_CHANNEL_DEBUG_SLEEP_MS:100}
+      enabled: true
+      sleep-ms: 100
   security:
     jwt:
-      secret: ${ASS_KICKER_SECURITY_JWT_SECRET:change-this-secret-to-32-chars-minimum}
-      access-token-ttl: ${ASS_KICKER_SECURITY_JWT_ACCESS_TOKEN_TTL:PT24H}
-      refresh-token-ttl: ${ASS_KICKER_SECURITY_JWT_REFRESH_TOKEN_TTL:PT720H}
+      secret: change-this-secret-to-32-chars-minimum
+      access-token-ttl: PT24H
+      refresh-token-ttl: PT720H
 logging:
   async:
-    queue-size: ${LOGGING_ASYNC_QUEUE_SIZE:1024}
-    discarding-threshold: ${LOGGING_ASYNC_DISCARDING_THRESHOLD:0}
+    queue-size: 1024
+    discarding-threshold: 0
 server:
-  port: ${SERVER_PORT:8080}
+  port: 8080
 management:
   endpoints:
     web:
       exposure:
         include: health
 scalar:
-  enabled: ${SCALAR_ENABLED:true}
-  path: ${SCALAR_PATH:/scalar}
+  enabled: true
+  path: /scalar

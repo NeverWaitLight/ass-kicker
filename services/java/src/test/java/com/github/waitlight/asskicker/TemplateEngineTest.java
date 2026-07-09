@@ -2,9 +2,11 @@ package com.github.waitlight.asskicker;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -16,11 +18,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.mustachejava.Mustache;
+import com.github.waitlight.asskicker.channel.impl.EmailReq;
 import com.github.waitlight.asskicker.config.CaffeineCacheProperties;
-import com.github.waitlight.asskicker.dto.UniMessage;
-import com.github.waitlight.asskicker.service.TemplateEngine;
+import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.Language;
 import com.github.waitlight.asskicker.model.TemplateEntity;
+import com.github.waitlight.asskicker.service.TemplateEngine;
 import com.github.waitlight.asskicker.service.TemplateEntityFixtures;
 import com.github.waitlight.asskicker.service.TemplateService;
 
@@ -43,30 +46,32 @@ class TemplateEngineTest {
         engine = new TemplateEngine(templateService, cacheProperties);
     }
 
+    private static EmailReq emailReq(String templateCode, Language language, Map<String, String> params) {
+        EmailReq req = new EmailReq();
+        req.setType(ChannelType.EMAIL);
+        req.setTo(List.of("dev@example.com"));
+        req.setSubject("placeholder");
+        req.setBody("placeholder");
+        req.setTemplateCode(templateCode);
+        req.setLanguage(language);
+        req.setTemplateParams(params);
+        return req;
+    }
+
     @Test
-    void fill_rendersMustache_andCopiesTitleAndExtraData() {
+    void fill_rendersMustache_intoSubjectAndBody() {
         TemplateEntity entity = TemplateEntityFixtures.smsCaptchaZhCn();
         when(templateService.findByCode("sms_captcha")).thenReturn(Mono.just(entity));
 
-        UniMessage req = new UniMessage();
-        req.setTemplateCode("sms_captcha");
-        req.setLanguage(Language.ZH_CN);
-        Map<String, Object> params = new HashMap<>();
+        Map<String, String> params = new HashMap<>();
         params.put("name", "王德发");
         params.put("code", "123456");
-        req.setTemplateParams(params);
-        Map<String, Object> extra = new HashMap<>();
-        extra.put("k", "v");
-        req.setExtraData(extra);
-        StepVerifier.create(engine.fillold(req))
-                .assertNext(msg -> {
-                    assertThat(msg.getTemplateCode()).isEqualTo("sms_captcha");
-                    assertThat(msg.getLanguage()).isEqualTo(Language.ZH_CN);
-                    assertThat(msg.getTitle()).isEqualTo("验证码");
-                    assertThat(msg.getContent()).isEqualTo("您好 王德发，您的验证码是 123456");
-                    assertThat(msg.getExtraData()).isEqualTo(extra);
-                    assertThat(msg.getTemplateParams()).containsEntry("name", "王德发")
-                            .containsEntry("code", "123456");
+        EmailReq req = emailReq("sms_captcha", Language.ZH_CN, params);
+
+        StepVerifier.create(engine.fill(req))
+                .assertNext(filled -> {
+                    assertThat(filled.getSubject()).isEqualTo("验证码");
+                    assertThat(filled.getBody()).isEqualTo("您好 王德发，您的验证码是 123456");
                 })
                 .verifyComplete();
 
@@ -74,88 +79,41 @@ class TemplateEngineTest {
     }
 
     @Test
-    void findMissingVariables_whenRequestParamsComplete_passes() {
-        TemplateEntity entity = TemplateEntityFixtures.brandWelcomeEmail();
-        when(templateService.findByCode("brand_welcome")).thenReturn(Mono.just(entity));
+    void fill_whenDirectSend_skipsTemplateLookup() {
+        EmailReq req = emailReq("sms_captcha", Language.ZH_CN, Map.of());
+        req.setDirectSend(true);
 
-        UniMessage req = new UniMessage();
-        req.setTemplateCode("brand_welcome");
-        req.setLanguage(Language.EN);
-        req.setTemplateParams(Map.of(
-                "brandName", "Ass Kicker",
-                "teamName", "Ops Team",
-                "name", "Alice"));
-
-        StepVerifier.create(engine.findMissingVariables(req))
-                .assertNext(missing -> assertThat(missing).isEmpty())
+        StepVerifier.create(engine.fill(req))
+                .assertNext(filled -> {
+                    assertThat(filled.getSubject()).isEqualTo("placeholder");
+                    assertThat(filled.getBody()).isEqualTo("placeholder");
+                })
                 .verifyComplete();
+
+        verifyNoInteractions(templateService);
     }
 
     @Test
-    void findMissingVariables_reportsMissingFromTitleAndContent() {
-        TemplateEntity entity = TemplateEntityFixtures.brandWelcomeEmail();
-        when(templateService.findByCode("brand_welcome")).thenReturn(Mono.just(entity));
+    void fill_whenTemplateCodeBlank_skipsTemplateLookup() {
+        EmailReq req = emailReq("", Language.ZH_CN, Map.of());
 
-        UniMessage req = new UniMessage();
-        req.setTemplateCode("brand_welcome");
-        req.setLanguage(Language.EN);
-        req.setTemplateParams(Map.of("brandName", "Ass Kicker"));
-
-        StepVerifier.create(engine.findMissingVariables(req))
-                .assertNext(missing -> assertThat(missing).containsExactly("teamName", "name"))
+        StepVerifier.create(engine.fill(req))
+                .assertNext(filled -> {
+                    assertThat(filled.getSubject()).isEqualTo("placeholder");
+                    assertThat(filled.getBody()).isEqualTo("placeholder");
+                })
                 .verifyComplete();
-    }
 
-    @Test
-    void findMissingVariables_treatsNullAsMissingButAllowsEmptyString() {
-        TemplateEntity entity = TemplateEntityFixtures.brandWelcomeEmail();
-        when(templateService.findByCode("brand_welcome")).thenReturn(Mono.just(entity));
-
-        Map<String, Object> params = new HashMap<>();
-        params.put("brandName", "");
-        params.put("teamName", null);
-        params.put("name", "");
-        UniMessage req = new UniMessage();
-        req.setTemplateCode("brand_welcome");
-        req.setLanguage(Language.EN);
-        req.setTemplateParams(params);
-
-        StepVerifier.create(engine.findMissingVariables(req))
-                .assertNext(missing -> assertThat(missing).containsExactly("teamName"))
-                .verifyComplete();
-    }
-
-    @Test
-    void findMissingVariables_allowsDottedVariablesFromNestedMap() {
-        TemplateEntity entity = new TemplateEntity();
-        entity.setCode("nested");
-        entity.setLocalizedTemplates(Map.of(
-                Language.EN,
-                new TemplateEntity.LocalizedTemplate("Hi {{user.name}}", "{{user.profile.title}}")));
-        when(templateService.findByCode("nested")).thenReturn(Mono.just(entity));
-
-        UniMessage req = new UniMessage();
-        req.setTemplateCode("nested");
-        req.setLanguage(Language.EN);
-        req.setTemplateParams(Map.of(
-                "user", Map.of(
-                        "name", "Alice",
-                        "profile", Map.of("title", ""))));
-
-        StepVerifier.create(engine.findMissingVariables(req))
-                .assertNext(missing -> assertThat(missing).isEmpty())
-                .verifyComplete();
+        verifyNoInteractions(templateService);
     }
 
     @Test
     void fill_whenTemplateNotFound_completesEmpty() {
         when(templateService.findByCode("missing")).thenReturn(Mono.empty());
 
-        UniMessage req = new UniMessage();
-        req.setTemplateCode("missing");
-        req.setLanguage(Language.ZH_CN);
+        EmailReq req = emailReq("missing", Language.ZH_CN, Map.of());
 
-        StepVerifier.create(engine.fillold(req)).verifyComplete();
+        StepVerifier.create(engine.fill(req)).verifyComplete();
     }
 
     @Test
@@ -163,21 +121,19 @@ class TemplateEngineTest {
         TemplateEntity entity = TemplateEntityFixtures.localizedEmpty();
         when(templateService.findByCode("x")).thenReturn(Mono.just(entity));
 
-        UniMessage req = new UniMessage();
-        req.setTemplateCode("x");
-        req.setLanguage(Language.EN);
+        EmailReq req = emailReq("x", Language.EN, Map.of());
 
-        StepVerifier.create(engine.fillold(req)).verifyComplete();
+        StepVerifier.create(engine.fill(req)).verifyComplete();
     }
 
     @Test
     void fill_whenLocalizedTemplatesNull_completesEmpty() {
         TemplateEntity entity = TemplateEntityFixtures.localizedTemplatesNull();
         when(templateService.findByCode("x")).thenReturn(Mono.just(entity));
-        UniMessage req = new UniMessage();
-        req.setTemplateCode("x");
-        req.setLanguage(Language.ZH_CN);
-        StepVerifier.create(engine.fillold(req)).verifyComplete();
+
+        EmailReq req = emailReq("x", Language.ZH_CN, Map.of());
+
+        StepVerifier.create(engine.fill(req)).verifyComplete();
     }
 
     @Test
@@ -185,30 +141,28 @@ class TemplateEngineTest {
         TemplateEntity entity = TemplateEntityFixtures.greetEn();
         when(templateService.findByCode("greet")).thenReturn(Mono.just(entity));
 
-        UniMessage req = new UniMessage();
-        req.setTemplateCode("greet");
-        req.setLanguage(Language.EN);
-        req.setTemplateParams(null);
+        EmailReq req = emailReq("greet", Language.EN, null);
 
-        StepVerifier.create(engine.fillold(req))
-                .assertNext(msg -> {
-                    assertThat(msg.getContent()).isEqualTo("Hello ");
-                    assertThat(msg.getTemplateParams()).isEmpty();
+        StepVerifier.create(engine.fill(req))
+                .assertNext(filled -> {
+                    assertThat(filled.getSubject()).isEqualTo("t");
+                    assertThat(filled.getBody()).isEqualTo("Hello ");
                 })
                 .verifyComplete();
     }
 
     @Test
-    void fill_whenTemplateContentNull_rendersEmptyString() {
+    void fill_whenTemplateContentNull_rendersEmptyStringWithoutOverwritingBody() {
         TemplateEntity entity = TemplateEntityFixtures.emptyBodyDe();
         when(templateService.findByCode("empty_body")).thenReturn(Mono.just(entity));
 
-        UniMessage req = new UniMessage();
-        req.setTemplateCode("empty_body");
-        req.setLanguage(Language.DE);
+        EmailReq req = emailReq("empty_body", Language.DE, Map.of());
 
-        StepVerifier.create(engine.fillold(req))
-                .assertNext(msg -> assertThat(msg.getContent()).isEmpty())
+        StepVerifier.create(engine.fill(req))
+                .assertNext(filled -> {
+                    assertThat(filled.getSubject()).isEqualTo("only title");
+                    assertThat(filled.getBody()).isEqualTo("placeholder");
+                })
                 .verifyComplete();
     }
 
@@ -218,13 +172,10 @@ class TemplateEngineTest {
         TemplateEntity entity = TemplateEntityFixtures.invZhCn();
         when(templateService.findByCode("inv")).thenReturn(Mono.just(entity));
 
-        UniMessage req = new UniMessage();
-        req.setTemplateCode("inv");
-        req.setLanguage(Language.ZH_CN);
-        req.setTemplateParams(Map.of("p", "1"));
+        EmailReq req = emailReq("inv", Language.ZH_CN, Map.of("p", "1"));
 
-        StepVerifier.create(engine.fillold(req))
-                .assertNext(m -> assertThat(m.getContent()).isEqualTo("x 1"))
+        StepVerifier.create(engine.fill(req))
+                .assertNext(filled -> assertThat(filled.getBody()).isEqualTo("x 1"))
                 .verifyComplete();
 
         Cache<String, Mustache> cache = (Cache<String, Mustache>) ReflectionTestUtils.getField(engine,

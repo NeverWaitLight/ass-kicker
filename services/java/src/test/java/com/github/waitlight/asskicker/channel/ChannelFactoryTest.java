@@ -11,6 +11,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.waitlight.asskicker.service.RecordService;
+
+import static org.mockito.Mockito.mock;
 
 class ChannelFactoryTest {
 
@@ -18,7 +21,7 @@ class ChannelFactoryTest {
           .configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true);
 
   private final ChannelFactory factory = new ChannelFactory(WebClient.create(),
-          ChannelTestObjectMappers.channelObjectMapper());
+          ChannelTestObjectMappers.channelObjectMapper(), mock(RecordService.class));
 
   @BeforeEach
   void scan() {

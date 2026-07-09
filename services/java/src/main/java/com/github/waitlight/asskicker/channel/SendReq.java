@@ -43,6 +43,12 @@ public abstract class SendReq {
     private boolean directSend = false;
 
     /**
+     * 预生成的发送记录 ID。上游（如 MQ 生产端）已生成 ObjectId 时携带；
+     * 下游 AbstractChannel 会复用该 ID 作为 RecordEntity.id，避免二次生成。
+     */
+    private String recordId;
+
+    /**
      * 将模板引擎渲染后的 title / content 写入子类各自的内容字段；
      * 空值不覆盖，以兼容服务商托管模板（content 由服务商侧渲染）。
      */

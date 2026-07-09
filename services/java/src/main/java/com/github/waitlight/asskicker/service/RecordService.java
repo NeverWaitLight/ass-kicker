@@ -92,7 +92,9 @@ public class RecordService implements DisposableBean {
      * @return 预生成的记录 ID
      */
     public String create(RecordEntity record) {
-        String id = ObjectId.get().toString();
+        String id = (record.getId() != null && !record.getId().isBlank())
+                ? record.getId()
+                : ObjectId.get().toString();
         record.setId(id);
 
         List<RecordEntity> toFlush = null;

@@ -16,9 +16,12 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.waitlight.asskicker.service.ChannelService;
+import com.github.waitlight.asskicker.service.RecordService;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
 class ChannelManagerRefreshFailureTest {
@@ -44,14 +47,14 @@ class ChannelManagerRefreshFailureTest {
                 {
                   "id": "id-1",
                   "code": "dummy-refresh",
-                  "type": "PUSH",
+                  "type": "APNS",
                   "provider": "APPLE",
                   "enabled": true
                 }
                 """;
         ChannelEntity entity = MAPPER.readValue(json, ChannelEntity.class);
         AbstractChannel channel = new NoOpChannel(entity, WebClient.create(),
-                ChannelTestObjectMappers.channelObjectMapper());
+                ChannelTestObjectMappers.channelObjectMapper(), mock(RecordService.class));
         ConcurrentHashMap<String, AbstractChannel> map = new ConcurrentHashMap<>();
         map.put("id-1", channel);
         ReflectionTestUtils.setField(channelManager, "cache", map);
@@ -66,8 +69,9 @@ class ChannelManagerRefreshFailureTest {
     /** Avoids MapStruct-backed channels so this test does not depend on generated mapper classes. */
     private static final class NoOpChannel extends AbstractChannel<SendReq> {
 
-        NoOpChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper) {
-            super(entity, webClient, objectMapper);
+        NoOpChannel(ChannelEntity entity, WebClient webClient, ObjectMapper objectMapper,
+                RecordService recordService) {
+            super(entity, webClient, objectMapper, recordService);
         }
 
         @Override

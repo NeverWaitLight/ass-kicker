@@ -19,7 +19,14 @@ services:
       - "10912:10912"
     environment:
       - NAMESRV_ADDR=namesrv:9876
-    command: sh mqbroker -n namesrv:9876 -c /home/rocketmq/rocketmq-5.1.4/conf/broker.conf
+    command: >
+      sh -c "grep -q '^brokerIP1=' /home/rocketmq/rocketmq-5.1.4/conf/broker.conf
+      || echo 'brokerIP1=host.docker.internal' >> /home/rocketmq/rocketmq-5.1.4/conf/broker.conf;
+      grep -q '^autoCreateTopicEnable=' /home/rocketmq/rocketmq-5.1.4/conf/broker.conf
+      || echo 'autoCreateTopicEnable=true' >> /home/rocketmq/rocketmq-5.1.4/conf/broker.conf;
+      sh mqbroker -n namesrv:9876 -c /home/rocketmq/rocketmq-5.1.4/conf/broker.conf"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - namesrv
     networks:
