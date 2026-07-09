@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.sync.impl;
+package com.github.waitlight.asskicker.template.impl;
 
 import com.aliyun.dysmsapi20170525.Client;
 import com.aliyun.dysmsapi20170525.models.AddSmsTemplateRequest;
@@ -15,10 +15,10 @@ import com.github.waitlight.asskicker.exception.SendException;
 import com.github.waitlight.asskicker.model.ChannelEntity;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.sync.AbstractTemplateSynchronizer;
-import com.github.waitlight.asskicker.sync.SyncContext;
-import com.github.waitlight.asskicker.sync.SyncResult;
-import com.github.waitlight.asskicker.sync.TemplateSync;
+import com.github.waitlight.asskicker.template.AbstractTemplateSynchronizer;
+import com.github.waitlight.asskicker.template.SyncContext;
+import com.github.waitlight.asskicker.template.SyncResult;
+import com.github.waitlight.asskicker.template.TemplateSync;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;

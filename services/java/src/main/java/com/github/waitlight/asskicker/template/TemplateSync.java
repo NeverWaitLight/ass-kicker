@@ -1,4 +1,4 @@
-package com.github.waitlight.asskicker.sync;
+package com.github.waitlight.asskicker.template;
 
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.model.ChannelType;
