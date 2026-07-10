@@ -1,7 +1,5 @@
 package com.github.waitlight.asskicker.service;
 
-import java.time.Instant;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -64,14 +62,12 @@ public class ApiKeyService {
         String raw = API_KEY_PREFIX + ObjectId.get().toString();
         String keyPrefix = raw.substring(0, 12);
         String keyHash = passwordEncoder.encode(raw);
-        long now = Instant.now().toEpochMilli();
 
         ApiKeyEntity apiKey = new ApiKeyEntity();
         apiKey.setUserId(userId);
         apiKey.setName(name);
         apiKey.setKeyHash(keyHash);
         apiKey.setKeyPrefix(keyPrefix);
-        apiKey.setCreatedAt(now);
 
         return apiKeyRepository.save(apiKey)
                 .map(saved -> new CreateResult(saved, raw));

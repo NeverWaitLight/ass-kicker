@@ -15,7 +15,7 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 @Document(collection = "records")
-public class RecordEntity {
+public class RecordEntity implements Auditable {
 
     @Id
     private String id;
@@ -61,6 +61,18 @@ public class RecordEntity {
 
     @Field("sent_at")
     private Long sentAt;
+
+    @Field("creator")
+    private String creator;
+
+    @Field("updater")
+    private String updater;
+
+    @Field("created_at")
+    private Long createdAt;
+
+    @Field("updated_at")
+    private Long updatedAt;
 
     /**
      * Absolute time when this document may be removed by MongoDB TTL.

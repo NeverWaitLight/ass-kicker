@@ -12,7 +12,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Document(collection = "api_keys")
-public class ApiKeyEntity {
+public class ApiKeyEntity implements Auditable {
 
     @Id
     private String id;
@@ -32,6 +32,15 @@ public class ApiKeyEntity {
     @Field("masked_raw_key")
     private String maskedRawKey;
 
+    @Field("creator")
+    private String creator;
+
+    @Field("updater")
+    private String updater;
+
     @Field("created_at")
     private Long createdAt;
+
+    @Field("updated_at")
+    private Long updatedAt;
 }

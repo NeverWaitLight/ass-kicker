@@ -60,12 +60,9 @@ public class UserService {
     }
 
     private UserEntity initNewUser(UserEntity u) {
-        long now = Instant.now().toEpochMilli();
         u.setPassword(passwordEncoder.encode(u.getPassword()));
         u.setRole(Optional.ofNullable(u.getRole()).orElse(UserRole.DEVELOPER));
         u.setStatus(UserStatus.ACTIVE);
-        u.setCreatedAt(now);
-        u.setUpdatedAt(now);
         u.setDeletedAt(SoftDeleteConstants.NOT_DELETED);
         return u;
     }
@@ -87,9 +84,7 @@ public class UserService {
     }
 
     public Mono<UserEntity> recordLogin(UserEntity user) {
-        long now = Instant.now().toEpochMilli();
-        user.setLastLoginAt(now);
-        user.setUpdatedAt(now);
+        user.setLastLoginAt(Instant.now().toEpochMilli());
         return userRepository.save(user)
                 .doOnSuccess(saved -> invalidateUserCaches(user, saved));
     }
@@ -114,7 +109,6 @@ public class UserService {
         long now = Instant.now().toEpochMilli();
         user.setDeletedAt(now);
         user.setKickedOutAt(now);
-        user.setUpdatedAt(now);
         return user;
     }
 
@@ -144,7 +138,6 @@ public class UserService {
 
     private UserEntity applyNewPassword(UserEntity user, String newPassword) {
         user.setPassword(passwordEncoder.encode(newPassword));
-        user.setUpdatedAt(Instant.now().toEpochMilli());
         return user;
     }
 
@@ -160,7 +153,6 @@ public class UserService {
                         return Mono.just(existing);
                     }
                     existing.setStatus(status);
-                    existing.setUpdatedAt(Instant.now().toEpochMilli());
                     return userRepository.save(existing)
                             .doOnSuccess(saved -> invalidateUserCaches(existing, saved));
                 });
@@ -182,7 +174,6 @@ public class UserService {
                             .flatMap(found -> Mono.<UserEntity>error(new ConflictException("user.username.exists")))
                             .switchIfEmpty(Mono.defer(() -> {
                                 existing.setUsername(trimmedUsername);
-                                existing.setUpdatedAt(Instant.now().toEpochMilli());
                                 return userRepository.save(existing)
                                         .doOnSuccess(saved -> invalidateUserCaches(existing, saved));
                             }));
@@ -193,9 +184,7 @@ public class UserService {
         return userRepository.findById(id)
                 .switchIfEmpty(Mono.error(new NotFoundException("user.id.notFound", id)))
                 .flatMap(user -> {
-                    long now = Instant.now().toEpochMilli();
-                    user.setKickedOutAt(now);
-                    user.setUpdatedAt(now);
+                    user.setKickedOutAt(Instant.now().toEpochMilli());
                     return userRepository.save(user)
                             .doOnSuccess(saved -> invalidateUserCaches(user, saved));
                 });

@@ -17,7 +17,10 @@ public interface ApiKeyConverter {
     @Mapping(target = "keyHash", ignore = true)
     @Mapping(target = "keyPrefix", ignore = true)
     @Mapping(target = "maskedRawKey", ignore = true)
+    @Mapping(target = "creator", ignore = true)
+    @Mapping(target = "updater", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     ApiKeyEntity toEntity(CreateApiKeyDTO dto);
 
     default CreateApiKeyVO toCreateVO(ApiKeyEntity entity, String rawKey) {

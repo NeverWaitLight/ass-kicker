@@ -14,6 +14,8 @@ public interface UserConverter {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "role", ignore = true)
     @Mapping(target = "status", ignore = true)
+    @Mapping(target = "creator", ignore = true)
+    @Mapping(target = "updater", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "lastLoginAt", ignore = true)

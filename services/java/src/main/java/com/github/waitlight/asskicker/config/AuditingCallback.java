@@ -32,14 +32,16 @@ public class AuditingCallback implements ReactiveBeforeConvertCallback<Object> {
                 .map(opt -> {
                     String userId = opt.orElse(null);
                     if (isCreate) {
-                        if (auditable.getCreator() == null) {
+                        if (auditable.getCreator() == null && userId != null) {
                             auditable.setCreator(userId);
                         }
                         if (auditable.getCreatedAt() == null) {
                             auditable.setCreatedAt(now);
                         }
                     }
-                    auditable.setUpdater(userId);
+                    if (userId != null) {
+                        auditable.setUpdater(userId);
+                    }
                     auditable.setUpdatedAt(now);
                     return (Object) auditable;
                 });
