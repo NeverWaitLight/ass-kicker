@@ -3,7 +3,6 @@ package com.github.waitlight.asskicker.model;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -15,10 +14,7 @@ import java.util.Map;
 @Setter
 @NoArgsConstructor
 @Document(collection = "records")
-public class RecordEntity implements Creatable {
-
-    @Id
-    private String id;
+public class RecordEntity extends Creatable {
 
     @Field("template_code")
     private String templateCode;
@@ -61,12 +57,6 @@ public class RecordEntity implements Creatable {
 
     @Field("sent_at")
     private Long sentAt;
-
-    @Field("creator")
-    private String creator;
-
-    @Field("created_at")
-    private Long createdAt;
 
     /**
      * Absolute time when this document may be removed by MongoDB TTL.

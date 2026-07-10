@@ -1,15 +1,21 @@
 package com.github.waitlight.asskicker.model;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.mongodb.core.mapping.Field;
+
 /**
- * 支持创建与更新审计的实体接口，在 {@link Creatable} 之上追加 updater/updatedAt。
+ * 支持创建与更新审计的实体基类，在 {@link Creatable} 之上追加 updater/updatedAt。
  */
-public interface Auditable extends Creatable {
+@Getter
+@Setter
+@NoArgsConstructor
+public abstract class Auditable extends Creatable {
 
-    String getUpdater();
+    @Field("updater")
+    private String updater;
 
-    void setUpdater(String updater);
-
-    Long getUpdatedAt();
-
-    void setUpdatedAt(Long updatedAt);
+    @Field("updated_at")
+    private Long updatedAt;
 }

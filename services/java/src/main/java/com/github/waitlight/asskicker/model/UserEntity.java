@@ -3,7 +3,6 @@ package com.github.waitlight.asskicker.model;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -13,10 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @NoArgsConstructor
 @Document(collection = "users")
 @CompoundIndex(name = "uk_t_user_username_deleted_at", def = "{'username': 1, 'deleted_at': 1}", unique = true)
-public class UserEntity implements Auditable {
-
-    @Id
-    private String id;
+public class UserEntity extends Auditable {
 
     @Field("username")
     private String username;
@@ -29,18 +25,6 @@ public class UserEntity implements Auditable {
 
     @Field("status")
     private UserStatus status;
-
-    @Field("creator")
-    private String creator;
-
-    @Field("updater")
-    private String updater;
-
-    @Field("created_at")
-    private Long createdAt;
-
-    @Field("updated_at")
-    private Long updatedAt;
 
     @Field("last_login_at")
     private Long lastLoginAt;

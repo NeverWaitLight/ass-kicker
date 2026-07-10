@@ -1,6 +1,5 @@
 package com.github.waitlight.asskicker.model;
 
-import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -12,10 +11,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Document(collection = "api_keys")
-public class ApiKeyEntity implements Auditable {
-
-    @Id
-    private String id;
+public class ApiKeyEntity extends Auditable {
 
     @Field("user_id")
     private String userId;
@@ -31,16 +27,4 @@ public class ApiKeyEntity implements Auditable {
 
     @Field("masked_raw_key")
     private String maskedRawKey;
-
-    @Field("creator")
-    private String creator;
-
-    @Field("updater")
-    private String updater;
-
-    @Field("created_at")
-    private Long createdAt;
-
-    @Field("updated_at")
-    private Long updatedAt;
 }
