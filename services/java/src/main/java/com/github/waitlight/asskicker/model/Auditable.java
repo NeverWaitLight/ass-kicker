@@ -1,22 +1,15 @@
 package com.github.waitlight.asskicker.model;
 
-public interface Auditable {
-
-    String getCreator();
-
-    void setCreator(String creator);
+/**
+ * 支持创建与更新审计的实体接口，在 {@link Creatable} 之上追加 updater/updatedAt。
+ */
+public interface Auditable extends Creatable {
 
     String getUpdater();
 
     void setUpdater(String updater);
 
-    Long getCreatedAt();
-
-    void setCreatedAt(Long createdAt);
-
     Long getUpdatedAt();
 
     void setUpdatedAt(Long updatedAt);
-
-    String getId();
 }

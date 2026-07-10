@@ -7,15 +7,19 @@ import org.springframework.data.mongodb.core.mapping.event.ReactiveBeforeConvert
 import org.springframework.stereotype.Component;
 
 import com.github.waitlight.asskicker.model.Auditable;
+import com.github.waitlight.asskicker.model.Creatable;
 import com.github.waitlight.asskicker.security.AuditorContext;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 /**
- * 通过 Spring Data 的保存前回调，自动填充 Auditable 实体的 creator/updater/createdAt/updatedAt。
- * 首次保存（id 为空或 createdAt 未设置）视为 create，会填充 creator + createdAt；
- * 其余保存视为 update，只刷新 updater + updatedAt。
+ * Spring Data 保存前回调，按实体接口层级自动填充审计字段。
+ * <ul>
+ *   <li>{@link Creatable}：首次保存时补 creator + createdAt。</li>
+ *   <li>{@link Auditable}：在 Creatable 基础上，无论新旧都刷新 updater + updatedAt。</li>
+ * </ul>
+ * 拿不到当前用户时（例如 MQ 消费线程、匿名注册），仅补空的 creator/updater，不覆盖既有值。
  */
 @Component
 @Slf4j
@@ -23,27 +27,29 @@ public class AuditingCallback implements ReactiveBeforeConvertCallback<Object> {
 
     @Override
     public Publisher<Object> onBeforeConvert(Object entity, String collection) {
-        if (!(entity instanceof Auditable auditable)) {
+        if (!(entity instanceof Creatable creatable)) {
             return Mono.just(entity);
         }
         long now = Instant.now().toEpochMilli();
-        boolean isCreate = auditable.getId() == null || auditable.getCreatedAt() == null;
+        boolean isCreate = creatable.getId() == null || creatable.getCreatedAt() == null;
         return AuditorContext.currentUserId()
                 .map(opt -> {
                     String userId = opt.orElse(null);
                     if (isCreate) {
-                        if (auditable.getCreator() == null && userId != null) {
-                            auditable.setCreator(userId);
+                        if (creatable.getCreator() == null && userId != null) {
+                            creatable.setCreator(userId);
                         }
-                        if (auditable.getCreatedAt() == null) {
-                            auditable.setCreatedAt(now);
+                        if (creatable.getCreatedAt() == null) {
+                            creatable.setCreatedAt(now);
                         }
                     }
-                    if (userId != null) {
-                        auditable.setUpdater(userId);
+                    if (creatable instanceof Auditable auditable) {
+                        if (userId != null) {
+                            auditable.setUpdater(userId);
+                        }
+                        auditable.setUpdatedAt(now);
                     }
-                    auditable.setUpdatedAt(now);
-                    return (Object) auditable;
+                    return (Object) creatable;
                 });
     }
 }
