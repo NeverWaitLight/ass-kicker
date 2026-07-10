@@ -12,7 +12,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Document(collection = "templates")
-public class TemplateEntity {
+public class TemplateEntity implements Auditable {
 
         @Id
         private String id;

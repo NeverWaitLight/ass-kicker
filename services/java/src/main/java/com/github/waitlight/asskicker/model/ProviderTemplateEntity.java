@@ -12,7 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @CompoundIndex(name = "uk_t_localized_template_id_provider", def = "{'localizedTemplateId': 1, 'provider': 1}", unique = true)
 @Document(collection = "provider_template")
-public class ProviderTemplateEntity {
+public class ProviderTemplateEntity implements Auditable {
     @Id
     private String id;
     private String localizedTemplateId;

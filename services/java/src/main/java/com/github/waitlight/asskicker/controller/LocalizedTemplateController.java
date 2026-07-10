@@ -18,10 +18,7 @@ import com.github.waitlight.asskicker.dto.Resp;
 import com.github.waitlight.asskicker.dto.template.CreateLocalizedTemplateDTO;
 import com.github.waitlight.asskicker.dto.template.LocalizedTemplateVO;
 import com.github.waitlight.asskicker.dto.template.UpdateLocalizedTemplateDTO;
-import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.service.LocalizedTemplateService;
-
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -43,11 +40,10 @@ public class LocalizedTemplateController {
 
     @Operation(summary = "创建语言模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping("/localized")
-    public Mono<Resp<LocalizedTemplateVO>> createLocalized(@Valid @RequestBody CreateLocalizedTemplateDTO request,
-            @AuthenticationPrincipal UserPrincipal principal) {
+    public Mono<Resp<LocalizedTemplateVO>> createLocalized(@Valid @RequestBody CreateLocalizedTemplateDTO request) {
         return Mono.just(request)
                 .map(templateConverter::toEntity)
-                .flatMap(entity -> localizedTemplateService.createLocalized(entity, principal.userId()))
+                .flatMap(localizedTemplateService::createLocalized)
                 .map(templateConverter::toLocalizedVO)
                 .map(Resp::success);
     }
@@ -55,11 +51,10 @@ public class LocalizedTemplateController {
     @Operation(summary = "更新语言模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PutMapping("/localized/{id}")
     public Mono<Resp<LocalizedTemplateVO>> updateLocalized(@PathVariable @NotBlank String id,
-            @Valid @RequestBody UpdateLocalizedTemplateDTO request,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            @Valid @RequestBody UpdateLocalizedTemplateDTO request) {
         return Mono.just(request)
                 .map(templateConverter::toEntity)
-                .flatMap(patch -> localizedTemplateService.updateLocalized(id, patch, principal.userId()))
+                .flatMap(patch -> localizedTemplateService.updateLocalized(id, patch))
                 .map(templateConverter::toLocalizedVO)
                 .map(Resp::success);
     }

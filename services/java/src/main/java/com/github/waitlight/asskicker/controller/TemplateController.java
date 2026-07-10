@@ -21,10 +21,7 @@ import com.github.waitlight.asskicker.dto.template.CreateTemplateDTO;
 import com.github.waitlight.asskicker.dto.template.TemplateVO;
 import com.github.waitlight.asskicker.dto.template.UpdateTemplateDTO;
 import com.github.waitlight.asskicker.model.ChannelType;
-import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.service.TemplateService;
-
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -46,11 +43,10 @@ public class TemplateController {
 
     @Operation(summary = "创建模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping
-    public Mono<Resp<TemplateVO>> create(@Valid @RequestBody CreateTemplateDTO request,
-            @AuthenticationPrincipal UserPrincipal principal) {
+    public Mono<Resp<TemplateVO>> create(@Valid @RequestBody CreateTemplateDTO request) {
         return Mono.just(request)
                 .map(templateConverter::toEntity)
-                .flatMap(entity -> templateService.create(entity, principal.userId()))
+                .flatMap(templateService::create)
                 .map(templateConverter::toVO)
                 .map(Resp::success);
     }
@@ -58,11 +54,10 @@ public class TemplateController {
     @Operation(summary = "更新模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PutMapping("/{id}")
     public Mono<Resp<TemplateVO>> update(@PathVariable @NotBlank String id,
-            @Valid @RequestBody UpdateTemplateDTO request,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            @Valid @RequestBody UpdateTemplateDTO request) {
         return Mono.just(request)
                 .map(templateConverter::toEntity)
-                .flatMap(patch -> templateService.update(id, patch, principal.userId()))
+                .flatMap(patch -> templateService.update(id, patch))
                 .map(templateConverter::toVO)
                 .map(Resp::success);
     }

@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.Instant;
 import java.util.Optional;
 
 @Service
@@ -84,12 +83,7 @@ public class ChannelService {
         return channelRepository.findByChannelTypeAndEnabled(type, true);
     }
 
-    public Mono<ChannelEntity> create(ChannelEntity c, String userId) {
-        long now = Instant.now().toEpochMilli();
-        c.setCreator(userId);
-        c.setUpdater(userId);
-        c.setCreatedAt(now);
-        c.setUpdatedAt(now);
+    public Mono<ChannelEntity> create(ChannelEntity c) {
         return ensureUniqueCode(c.getCode(), null)
                 .then(Mono.defer(() -> channelRepository.save(c)))
                 .doOnSuccess(saved -> {
@@ -99,7 +93,7 @@ public class ChannelService {
                 });
     }
 
-    public Mono<ChannelEntity> update(String id, ChannelEntity patch, String userId) {
+    public Mono<ChannelEntity> update(String id, ChannelEntity patch) {
         return channelRepository.findById(id)
                 .switchIfEmpty(Mono.error(new NotFoundException("channel.notFound", new Object[] { id })))
                 .flatMap(existing -> {
@@ -107,8 +101,6 @@ public class ChannelService {
                     return ensureUniqueCode(patch.getCode(), id)
                             .then(Mono.defer(() -> {
                                 mergeEntity(patch, existing);
-                                existing.setUpdater(userId);
-                                existing.setUpdatedAt(Instant.now().toEpochMilli());
                                 return channelRepository.save(existing)
                                         .doOnSuccess(saved -> {
                                             if (saved != null) {

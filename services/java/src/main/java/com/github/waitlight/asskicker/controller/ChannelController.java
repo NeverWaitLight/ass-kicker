@@ -23,8 +23,6 @@ import com.github.waitlight.asskicker.model.ChannelType;
 import com.github.waitlight.asskicker.model.ChannelProvider;
 import com.github.waitlight.asskicker.dto.channel.UpdateChannelDTO;
 import com.github.waitlight.asskicker.service.ChannelService;
-import com.github.waitlight.asskicker.security.UserPrincipal;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -45,11 +43,10 @@ public class ChannelController {
 
         @Operation(summary = "创建渠道", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @PostMapping
-        public Mono<Resp<ChannelVO>> create(@Valid @RequestBody CreateChannelDTO request,
-                        @AuthenticationPrincipal UserPrincipal principal) {
+        public Mono<Resp<ChannelVO>> create(@Valid @RequestBody CreateChannelDTO request) {
                 return Mono.just(request)
                                 .map(channelConverter::toEntity)
-                                .flatMap(entity -> channelService.create(entity, principal.userId()))
+                                .flatMap(channelService::create)
                                 .map(channelConverter::toVO)
                                 .map(Resp::success);
         }
@@ -95,11 +92,10 @@ public class ChannelController {
 
         @Operation(summary = "更新渠道", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
         @PutMapping
-        public Mono<Resp<ChannelVO>> update(@Valid @RequestBody UpdateChannelDTO request,
-                        @AuthenticationPrincipal UserPrincipal principal) {
+        public Mono<Resp<ChannelVO>> update(@Valid @RequestBody UpdateChannelDTO request) {
                 return Mono.just(request)
                                 .map(channelConverter::toEntity)
-                                .flatMap(patch -> channelService.update(request.getId(), patch, principal.userId()))
+                                .flatMap(patch -> channelService.update(request.getId(), patch))
                                 .map(channelConverter::toVO)
                                 .map(Resp::success);
         }

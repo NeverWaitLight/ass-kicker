@@ -2,7 +2,6 @@ package com.github.waitlight.asskicker.controller;
 
 import java.util.List;
 
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,7 +20,6 @@ import com.github.waitlight.asskicker.dto.template.ProviderTemplateVO;
 import com.github.waitlight.asskicker.dto.template.SyncLocalizedTemplateDTO;
 import com.github.waitlight.asskicker.dto.template.UpdateProviderTemplateDTO;
 import com.github.waitlight.asskicker.model.ChannelProvider;
-import com.github.waitlight.asskicker.security.UserPrincipal;
 import com.github.waitlight.asskicker.service.ProviderTemplateService;
 import com.github.waitlight.asskicker.service.TemplateSyncService;
 
@@ -47,11 +45,10 @@ public class ProviderTemplateController {
 
     @Operation(summary = "创建服务商模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping("/provider")
-    public Mono<Resp<ProviderTemplateVO>> createProvider(@Valid @RequestBody CreateProviderTemplateDTO request,
-            @AuthenticationPrincipal UserPrincipal principal) {
+    public Mono<Resp<ProviderTemplateVO>> createProvider(@Valid @RequestBody CreateProviderTemplateDTO request) {
         return Mono.just(request)
                 .map(templateConverter::toEntity)
-                .flatMap(entity -> providerTemplateService.createProvider(entity, principal.userId()))
+                .flatMap(providerTemplateService::createProvider)
                 .map(templateConverter::toProviderVO)
                 .map(Resp::success);
     }
@@ -59,11 +56,10 @@ public class ProviderTemplateController {
     @Operation(summary = "更新服务商模板", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PutMapping("/provider/{id}")
     public Mono<Resp<ProviderTemplateVO>> updateProvider(@PathVariable @NotBlank String id,
-            @Valid @RequestBody UpdateProviderTemplateDTO request,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            @Valid @RequestBody UpdateProviderTemplateDTO request) {
         return Mono.just(request)
                 .map(templateConverter::toEntity)
-                .flatMap(patch -> providerTemplateService.updateProvider(id, patch, principal.userId()))
+                .flatMap(patch -> providerTemplateService.updateProvider(id, patch))
                 .map(templateConverter::toProviderVO)
                 .map(Resp::success);
     }
@@ -105,15 +101,14 @@ public class ProviderTemplateController {
     @Operation(summary = "同步本地模板到服务商", security = @SecurityRequirement(name = OpenApiConfig.BEARER_JWT))
     @PostMapping("/localized/{localizedTemplateId}/sync")
     public Mono<Resp<ProviderTemplateVO>> sync(@PathVariable @NotBlank String localizedTemplateId,
-            @Valid @RequestBody SyncLocalizedTemplateDTO request,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            @Valid @RequestBody SyncLocalizedTemplateDTO request) {
         TemplateSyncService.SyncSpec spec = new TemplateSyncService.SyncSpec(
                 request.getProvider(),
                 request.getChannelId(),
                 request.getSmsTemplateType(),
                 request.getInternational(),
                 request.getRemark());
-        return templateSyncService.sync(localizedTemplateId, spec, principal.userId())
+        return templateSyncService.sync(localizedTemplateId, spec)
                 .map(templateConverter::toProviderVO)
                 .map(Resp::success);
     }

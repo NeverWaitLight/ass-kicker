@@ -17,7 +17,6 @@ import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.Instant;
 import java.util.Optional;
 
 @Service
@@ -69,7 +68,7 @@ public class ProviderTemplateService {
                 .switchIfEmpty(Mono.error(new NotFoundException("template.provider.notFound", id)));
     }
 
-    public Mono<ProviderTemplateEntity> createProvider(ProviderTemplateEntity entity, String userId) {
+    public Mono<ProviderTemplateEntity> createProvider(ProviderTemplateEntity entity) {
         if (entity == null || !StringUtils.hasText(entity.getLocalizedTemplateId()) || entity.getProvider() == null) {
             return Mono.error(new BadRequestException("template.provider.key.empty"));
         }
@@ -80,18 +79,11 @@ public class ProviderTemplateService {
                         .findByLocalizedTemplateIdAndProvider(entity.getLocalizedTemplateId(), entity.getProvider())
                         .flatMap(existing -> Mono.<ProviderTemplateEntity>error(
                                 new ConflictException("template.provider.exists")))
-                        .switchIfEmpty(Mono.defer(() -> {
-                            long now = Instant.now().toEpochMilli();
-                            entity.setCreator(userId);
-                            entity.setUpdater(userId);
-                            entity.setCreatedAt(now);
-                            entity.setUpdatedAt(now);
-                            return providerTemplateRepository.save(entity)
-                                    .doOnSuccess(this::invalidateProviderCache);
-                        }))));
+                        .switchIfEmpty(Mono.defer(() -> providerTemplateRepository.save(entity)
+                                .doOnSuccess(this::invalidateProviderCache)))));
     }
 
-    public Mono<ProviderTemplateEntity> updateProvider(String id, ProviderTemplateEntity patch, String userId) {
+    public Mono<ProviderTemplateEntity> updateProvider(String id, ProviderTemplateEntity patch) {
         if (!StringUtils.hasText(id)) {
             return Mono.error(new BadRequestException("template.provider.id.empty"));
         }
@@ -99,8 +91,6 @@ public class ProviderTemplateService {
                 .switchIfEmpty(Mono.error(new NotFoundException("template.provider.notFound", id)))
                 .flatMap(existing -> {
                     mergeProviderPatch(patch, existing);
-                    existing.setUpdater(userId);
-                    existing.setUpdatedAt(Instant.now().toEpochMilli());
                     return providerTemplateRepository.save(existing)
                             .doOnSuccess(this::invalidateProviderCache);
                 });

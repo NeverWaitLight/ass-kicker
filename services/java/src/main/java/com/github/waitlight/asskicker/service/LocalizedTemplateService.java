@@ -17,7 +17,6 @@ import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.Instant;
 import java.util.Optional;
 
 @Service
@@ -79,7 +78,7 @@ public class LocalizedTemplateService {
                 .switchIfEmpty(Mono.error(new NotFoundException("template.localized.notFound", id)));
     }
 
-    public Mono<LocalizedTemplateEntity> createLocalized(LocalizedTemplateEntity entity, String userId) {
+    public Mono<LocalizedTemplateEntity> createLocalized(LocalizedTemplateEntity entity) {
         if (entity == null || !StringUtils.hasText(entity.getTemplateId()) || entity.getLanguage() == null) {
             return Mono.error(new BadRequestException("template.localized.key.empty"));
         }
@@ -89,18 +88,11 @@ public class LocalizedTemplateService {
                         .findByTemplateIdAndLanguage(entity.getTemplateId(), entity.getLanguage())
                         .flatMap(existing -> Mono.<LocalizedTemplateEntity>error(
                                 new ConflictException("template.localized.exists")))
-                        .switchIfEmpty(Mono.defer(() -> {
-                            long now = Instant.now().toEpochMilli();
-                            entity.setCreator(userId);
-                            entity.setUpdater(userId);
-                            entity.setCreatedAt(now);
-                            entity.setUpdatedAt(now);
-                            return localizedTemplateRepository.save(entity)
-                                    .doOnSuccess(this::invalidateLocalizedCache);
-                        }))));
+                        .switchIfEmpty(Mono.defer(() -> localizedTemplateRepository.save(entity)
+                                .doOnSuccess(this::invalidateLocalizedCache)))));
     }
 
-    public Mono<LocalizedTemplateEntity> updateLocalized(String id, LocalizedTemplateEntity patch, String userId) {
+    public Mono<LocalizedTemplateEntity> updateLocalized(String id, LocalizedTemplateEntity patch) {
         if (!StringUtils.hasText(id)) {
             return Mono.error(new BadRequestException("template.localized.id.empty"));
         }
@@ -108,8 +100,6 @@ public class LocalizedTemplateService {
                 .switchIfEmpty(Mono.error(new NotFoundException("template.localized.notFound", id)))
                 .flatMap(existing -> {
                     mergeLocalizedPatch(patch, existing);
-                    existing.setUpdater(userId);
-                    existing.setUpdatedAt(Instant.now().toEpochMilli());
                     return localizedTemplateRepository.save(existing)
                             .doOnSuccess(this::invalidateLocalizedCache);
                 });

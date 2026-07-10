@@ -68,7 +68,7 @@ public class TemplateSyncService {
     /**
      * 触发本地模板同步：将 LocalizedTemplateEntity 推送到指定服务商，并回写 ProviderTemplateEntity。
      */
-    public Mono<ProviderTemplateEntity> sync(String localizedTemplateId, SyncSpec spec, String userId) {
+    public Mono<ProviderTemplateEntity> sync(String localizedTemplateId, SyncSpec spec) {
         if (!StringUtils.hasText(localizedTemplateId)) {
             return Mono.error(new BadRequestException("template.localized.id.empty"));
         }
@@ -81,7 +81,7 @@ public class TemplateSyncService {
                 .flatMap(localized -> templateRepository.findById(localized.getTemplateId())
                         .switchIfEmpty(Mono.error(new NotFoundException("template.id.notFound", localized.getTemplateId())))
                         .flatMap(template -> resolveChannel(template.getChannelType(), spec)
-                                .flatMap(channel -> doSyncAndPersist(template, localized, channel, spec, userId))));
+                                .flatMap(channel -> doSyncAndPersist(template, localized, channel, spec))));
     }
 
     private Mono<ChannelEntity> resolveChannel(ChannelType type, SyncSpec spec) {
@@ -108,8 +108,7 @@ public class TemplateSyncService {
     private Mono<ProviderTemplateEntity> doSyncAndPersist(TemplateEntity template,
             LocalizedTemplateEntity localized,
             ChannelEntity channel,
-            SyncSpec spec,
-            String userId) {
+            SyncSpec spec) {
         TemplateSynchronizer synchronizer = synchronizerIndex
                 .get(new SynchronizerKey(template.getChannelType(), spec.provider()));
         if (synchronizer == null) {
@@ -119,7 +118,7 @@ public class TemplateSyncService {
 
         return providerTemplateRepository
                 .findByLocalizedTemplateIdAndProvider(localized.getId(), spec.provider())
-                .defaultIfEmpty(newProviderEntity(localized.getId(), spec.provider(), userId))
+                .defaultIfEmpty(newProviderEntity(localized.getId(), spec.provider()))
                 .flatMap(existing -> {
                     SyncContext ctx = SyncContext.builder()
                             .template(template)
@@ -131,49 +130,27 @@ public class TemplateSyncService {
                             .remark(spec.remark())
                             .build();
                     return synchronizer.sync(ctx)
-                            .flatMap(result -> persistSuccess(existing, result, userId))
-                            .onErrorResume(err -> persistFailure(existing, err, userId));
+                            .flatMap(result -> persistSuccess(existing, result))
+                            .onErrorResume(err -> persistFailure(existing, err));
                 });
     }
 
-    private ProviderTemplateEntity newProviderEntity(String localizedTemplateId, ChannelProvider provider,
-            String userId) {
-        long now = Instant.now().toEpochMilli();
+    private ProviderTemplateEntity newProviderEntity(String localizedTemplateId, ChannelProvider provider) {
         ProviderTemplateEntity entity = new ProviderTemplateEntity();
         entity.setLocalizedTemplateId(localizedTemplateId);
         entity.setProvider(provider);
-        entity.setCreator(userId);
-        entity.setUpdater(userId);
-        entity.setCreatedAt(now);
-        entity.setUpdatedAt(now);
         return entity;
     }
 
-    private Mono<ProviderTemplateEntity> persistSuccess(ProviderTemplateEntity entity, SyncResult result,
-            String userId) {
-        long now = Instant.now().toEpochMilli();
+    private Mono<ProviderTemplateEntity> persistSuccess(ProviderTemplateEntity entity, SyncResult result) {
         entity.setProviderTemplateCode(result.providerTemplateCode());
-        entity.setUploadedAt(now);
+        entity.setUploadedAt(Instant.now().toEpochMilli());
         entity.setFailureReason(null);
-        entity.setUpdater(userId);
-        entity.setUpdatedAt(now);
-        if (entity.getCreatedAt() == null) {
-            entity.setCreatedAt(now);
-            entity.setCreator(userId);
-        }
         return providerTemplateRepository.save(entity);
     }
 
-    private Mono<ProviderTemplateEntity> persistFailure(ProviderTemplateEntity entity, Throwable error,
-            String userId) {
-        long now = Instant.now().toEpochMilli();
+    private Mono<ProviderTemplateEntity> persistFailure(ProviderTemplateEntity entity, Throwable error) {
         entity.setFailureReason(error.getMessage());
-        entity.setUpdater(userId);
-        entity.setUpdatedAt(now);
-        if (entity.getCreatedAt() == null) {
-            entity.setCreatedAt(now);
-            entity.setCreator(userId);
-        }
         return providerTemplateRepository.save(entity)
                 .then(Mono.error(error instanceof SendException
                         ? error

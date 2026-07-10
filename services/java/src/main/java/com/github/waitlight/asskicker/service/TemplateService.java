@@ -17,7 +17,6 @@ import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.Instant;
 import java.util.Optional;
 
 @Service
@@ -47,7 +46,7 @@ public class TemplateService {
                         .toFuture());
     }
 
-    public Mono<TemplateEntity> create(TemplateEntity entity, String userId) {
+    public Mono<TemplateEntity> create(TemplateEntity entity) {
         if (entity == null || !StringUtils.hasText(entity.getCode())) {
             return Mono.error(new BadRequestException("template.code.empty"));
         }
@@ -57,15 +56,8 @@ public class TemplateService {
 
         return templateRepository.findByCode(entity.getCode())
                 .flatMap(existing -> Mono.<TemplateEntity>error(new ConflictException("template.code.exists")))
-                .switchIfEmpty(Mono.defer(() -> {
-                    long now = Instant.now().toEpochMilli();
-                    entity.setCreator(userId);
-                    entity.setUpdater(userId);
-                    entity.setCreatedAt(now);
-                    entity.setUpdatedAt(now);
-                    return templateRepository.save(entity)
-                            .doOnSuccess(saved -> invalidateTemplateCaches(saved, saved));
-                }));
+                .switchIfEmpty(Mono.defer(() -> templateRepository.save(entity)
+                        .doOnSuccess(saved -> invalidateTemplateCaches(saved, saved))));
     }
 
     public Mono<TemplateEntity> findById(String id) {
@@ -117,7 +109,7 @@ public class TemplateService {
                         .doOnSuccess(v -> invalidateTemplateCaches(template, template)));
     }
 
-    public Mono<TemplateEntity> update(String id, TemplateEntity entity, String userId) {
+    public Mono<TemplateEntity> update(String id, TemplateEntity entity) {
         if (entity == null || !StringUtils.hasText(id)) {
             return Mono.error(new BadRequestException("template.id.empty"));
         }
@@ -127,8 +119,6 @@ public class TemplateService {
                 .flatMap(existing -> ensureCodeAvailable(entity, existing)
                         .then(Mono.defer(() -> {
                             applyUpdate(entity, existing);
-                            existing.setUpdater(userId);
-                            existing.setUpdatedAt(Instant.now().toEpochMilli());
                             return templateRepository.save(existing)
                                     .doOnSuccess(saved -> invalidateTemplateCaches(existing, saved));
                         })));

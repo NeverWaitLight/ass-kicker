@@ -16,7 +16,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Document(collection = "channels")
-public class ChannelEntity {
+public class ChannelEntity implements Auditable {
 
         @Id
         private String id;
