@@ -4,18 +4,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum Language {
-    ZH_CN("zh-CN", "简体中文"),
-    ZH_TW("zh-TW", "繁体中文"),
-    EN("en", "English"),
-    FR("fr", "Français"),
-    DE("de", "Deutsch");
+    ZH_CN("zh-CN"),
+    ZH_TW("zh-TW"),
+    EN("en"),
+    FR("fr"),
+    DE("de");
 
     private final String code;
-    private final String displayName;
 
-    Language(String code, String displayName) {
+    Language(String code) {
         this.code = code;
-        this.displayName = displayName;
     }
 
     @JsonCreator
@@ -37,7 +35,4 @@ public enum Language {
         return code;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
 }
