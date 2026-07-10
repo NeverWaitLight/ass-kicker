@@ -5,16 +5,12 @@ import org.mapstruct.Mapping;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
 import com.github.waitlight.asskicker.dto.template.CreateLocalizedTemplateDTO;
-import com.github.waitlight.asskicker.dto.template.CreateProviderTemplateDTO;
 import com.github.waitlight.asskicker.dto.template.CreateTemplateDTO;
 import com.github.waitlight.asskicker.dto.template.LocalizedTemplateVO;
-import com.github.waitlight.asskicker.dto.template.ProviderTemplateVO;
 import com.github.waitlight.asskicker.dto.template.TemplateVO;
 import com.github.waitlight.asskicker.dto.template.UpdateLocalizedTemplateDTO;
-import com.github.waitlight.asskicker.dto.template.UpdateProviderTemplateDTO;
 import com.github.waitlight.asskicker.dto.template.UpdateTemplateDTO;
 import com.github.waitlight.asskicker.model.LocalizedTemplateEntity;
-import com.github.waitlight.asskicker.model.ProviderTemplateEntity;
 import com.github.waitlight.asskicker.model.TemplateEntity;
 
 /**
@@ -56,22 +52,4 @@ public interface TemplateConverter {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     LocalizedTemplateEntity toEntity(UpdateLocalizedTemplateDTO dto);
-
-    ProviderTemplateVO toProviderVO(ProviderTemplateEntity entity);
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "creator", ignore = true)
-    @Mapping(target = "updater", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    ProviderTemplateEntity toEntity(CreateProviderTemplateDTO dto);
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "localizedTemplateId", ignore = true)
-    @Mapping(target = "provider", ignore = true)
-    @Mapping(target = "creator", ignore = true)
-    @Mapping(target = "updater", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    ProviderTemplateEntity toEntity(UpdateProviderTemplateDTO dto);
 }
